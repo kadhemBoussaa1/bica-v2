@@ -1,0 +1,274 @@
+/*
+ * A list banded by month over sentence-like rows, from `Sales invoices
+ * v3.dc.html` and `Purchase orders v4.dc.html`: the shell that both share.
+ * Each module adds its own fixed columns beside `.main` and sets their
+ * widths from the French labels, the widest of the four languages.
+ *
+ * Sits inside DataTable's `flush` custom body, so the toolbar and the pager
+ * are the table's own.
+ */
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The first column: a state dot, then two lines of text. Grows to fill. */
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+}
+
+/* The column heads, mono and uppercase, hidden once the rows stack. */
+.columns {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: center;
+  padding: 11px var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-tint-strong);
+  font: 600 0.625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+/* --- a month band --- */
+
+.band {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: baseline;
+  padding: 9px var(--bp-space-5);
+  background: rgb(26 23 20 / 0.035);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.bandLabel {
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.bandMeta {
+  flex: 1;
+  min-width: 0;
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- a row: a link, the whole of it the click target --- */
+
+.row {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: center;
+  min-height: 70px;
+  padding: var(--bp-space-3) var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: rgb(242 145 0 / 0.07);
+  text-decoration: none;
+  color: inherit;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+}
+
+/*
+ * The state tones: colour AND dot shape carry the meaning, so the set
+ * survives a grayscale print. Set on the row as variables, read by the
+ * dot and the pill. Neutral is the default.
+ */
+.row,
+.toneNeutral {
+  --state-dot: var(--bp-ink-faint);
+  --state-dot-radius: 2px;
+  --state-bg: rgb(26 23 20 / 0.07);
+  --state-fg: var(--bp-ink-strong);
+  --state-border: rgb(26 23 20 / 0.16);
+}
+
+.toneSuccess {
+  --state-dot: var(--bp-success);
+  --state-dot-radius: 50%;
+  --state-bg: rgb(46 125 79 / 0.16);
+  --state-fg: var(--bp-success-text);
+  --state-border: rgb(32 96 59 / 0.3);
+}
+
+.toneDanger {
+  --state-dot: var(--bp-danger);
+  --state-dot-radius: 0;
+  --state-bg: rgb(193 53 43 / 0.14);
+  --state-fg: var(--bp-danger-text);
+  --state-border: rgb(143 37 30 / 0.34);
+}
+
+/* Awaiting: the brand orange, round — live, not wrong. */
+.tonePending {
+  --state-dot: var(--bp-orange-500);
+  --state-dot-radius: 50%;
+  --state-bg: rgb(242 145 0 / 0.18);
+  --state-fg: var(--bp-orange-800);
+  --state-border: rgb(217 124 0 / 0.34);
+}
+
+/* Partial: amber, softly squared — between pending and done. */
+.toneWarning {
+  --state-dot: var(--bp-warning);
+  --state-dot-radius: 2px;
+  --state-bg: rgb(224 161 6 / 0.2);
+  --state-fg: var(--bp-warning-text);
+  --state-border: rgb(224 161 6 / 0.44);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  display: block;
+  border-radius: var(--state-dot-radius);
+  background: var(--state-dot);
+}
+
+.mainText {
+  min-width: 0;
+}
+
+/* Number and what sits beside it (a date, a category tag). */
+.head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.no {
+  font: 600 0.875rem/1.4 var(--bp-font-mono);
+  letter-spacing: -0.01em;
+}
+
+.headMeta,
+.meta {
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.meta {
+  display: block;
+  font-size: 0.6875rem;
+}
+
+/* The second line: who it is with and what it is for, one line, cut short. */
+.sub {
+  display: block;
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subStrong {
+  font-weight: 500;
+}
+
+.subMuted {
+  color: var(--bp-ink-muted);
+}
+
+.mono {
+  font: 400 0.78125rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.danger {
+  color: var(--bp-danger-text);
+}
+
+/* The money column: figure over its currency, end-aligned. */
+.figure {
+  display: block;
+  font: 600 0.9375rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--state-bg);
+  color: var(--state-fg);
+  border: 1px solid var(--state-border);
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pillDot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  display: block;
+  background: var(--state-fg);
+  border-radius: var(--state-dot-radius);
+}
+
+/* A small neutral tag beside the number: the category. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: var(--bp-radius-pill);
+  background: rgb(26 23 20 / 0.06);
+  border: 1px solid rgb(26 23 20 / 0.1);
+  font: 500 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bp-ink-strong);
+}
+
+/*
+ * Under 900px — where DataTable's own rows become cards — the row stacks:
+ * the sentence on top, then the fixed columns on one line. Each module's
+ * columns drop their width there (`.col` is the shared part).
+ */
+@media (max-width: 899px) {
+  .columns {
+    display: none;
+  }
+
+  .row {
+    flex-wrap: wrap;
+    row-gap: var(--bp-space-2);
+  }
+
+  .main {
+    flex-basis: 100%;
+  }
+
+  /* `min-width: 0`, or a no-wrap cell (a supplier name) keeps its full
+     width and pushes the others onto lines of their own. */
+  .col {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

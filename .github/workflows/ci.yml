@@ -1,0 +1,80 @@
+# The gate: every push to main and every pull request. Cheap checks first,
+# in parallel; nothing here builds images, pushes or touches a server
+# (that is docker.yml, main only).
+#
+# There are no tests in this repo, so the jobs are lint, types, a full build,
+# and a check that the migrations produce exactly schema.prisma.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # prisma.config.ts resolves env("DATABASE_URL") even for `prisma generate`,
+  # which never connects. The migrations job overrides it with a real one.
+  DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+  TURBO_TELEMETRY_DISABLED: 1
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm lint
+
+  check-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm check-types
+
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # The same command the production migrate container runs, on an empty
+      # database: every migration must apply cleanly, in order.
+      - name: Apply every migration
+        working-directory: apps/api
+        run: pnpm db:deploy
+      # Exit code 2 = the migrated database differs from schema.prisma, i.e. a
+      # schema edit without its `prisma migrate dev`.
+      - name: Schema matches the migrations
+        working-directory: apps/api
+        run: pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
+  build:
+    needs: [lint, check-types]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm build

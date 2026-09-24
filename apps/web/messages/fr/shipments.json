@@ -1,0 +1,261 @@
+{
+  "eyebrow": "Opérations",
+  "title": "Expéditions",
+  "subtitle": "Ce qui a quitté le dépôt, et les brouillons en attente d'un camion. Recherchez par numéro, liste de colisage, déclaration en douane, client, facture ou commande. Créez-en une depuis la page de la commande une fois sa facture émise.",
+  "back": "← Expéditions",
+  "detailTitle": "Expédition",
+  "detailSubtitle": "Une exportation : le camion, la facture qui l'accompagne, la liste de colisage et la déclaration en douane.",
+  "searchPlaceholder": "Rechercher n° d'expédition, liste de colisage, client, commande…",
+  "empty": "Aucune expédition ne correspond à ces filtres.",
+  "loading": "Chargement de l'expédition…",
+  "open": "Ouvrir",
+  "archivedShort": "ARCH",
+  "archived": "ARCHIVÉ",
+  "draft": "Brouillon",
+  "draftInvoice": "Facture brouillon",
+  "noInvoice": "Aucune facture rattachée",
+  "missing": "MANQUANTE",
+  "parcelCount": "{count, plural, one {# colis} other {# colis}}",
+  "activityLink": "Activité sur cette expédition",
+  "editor": {
+    "eyebrow": "Exploitation · Expédition",
+    "title": "Brouillon d’expédition",
+    "lede": "Le camion n’est pas encore numéroté. Il prendra le prochain numéro {prefix} à l’expédition, puis sera figé — seule la déclaration en douane restera modifiable.",
+    "ready": "Prêt à expédier",
+    "checks": {
+      "invoice": "Facture émise",
+      "invoiceNumbered": "Facture émise · {numero}",
+      "exportDate": "Date d’export",
+      "packingListNumber": "N° de liste de colisage",
+      "packingListDocument": "Liste de colisage jointe",
+      "declarationNumber": "N° de déclaration",
+      "declarationDate": "Date de déclaration",
+      "declarationDocument": "Déclaration jointe"
+    },
+    "required": "requis",
+    "optional": "facultatif",
+    "numberPending": "à l’expédition",
+    "carrierNote": "Note au transporteur",
+    "carrierNotePlaceholder": "Créneau de livraison, contact sur place…",
+    "truck": {
+      "title": "Le camion",
+      "meta": "Figé à l’expédition, sauf la douane"
+    },
+    "documents": {
+      "title": "Les deux papiers du camion",
+      "lede": "Déposez le fichier ici, ou choisissez-le depuis votre appareil.",
+      "bothAttached": "Les deux sont joints",
+      "customsMissing": "Douane encore manquante",
+      "noneAttached": "Aucun des deux n’est joint",
+      "packingNote": "Ce que le chauffeur emporte",
+      "customsNote": "Visée avant le départ",
+      "required": "Requis",
+      "optional": "Facultatif",
+      "drop": "Déposez le PDF ici",
+      "choose": "Choisir un fichier",
+      "savedMeta": "enregistré avec le brouillon",
+      "unsavedMeta": "pas encore enregistré — enregistrez le brouillon",
+      "packingMissing": "Liste de colisage encore manquante"
+    },
+    "cargo": {
+      "title": "Ce qui part",
+      "meta": "{lines, plural, one {# ligne} other {# lignes}} · {orders, plural, one {# commande} other {# commandes}}",
+      "line": "Ligne",
+      "perParcel": "{count} {unit}/colis",
+      "total": "Total sur le camion",
+      "settled": "Soldée",
+      "remaining": "Reste"
+    },
+    "gate": {
+      "title": "Expédier",
+      "blockedNote": "À l’expédition, le camion prend son numéro et se fige. Il manque encore de quoi l’émettre.",
+      "readyNote": "Tout est là. Le camion prendra le numéro {prefix} et sera figé.",
+      "shipBlocked": "Expédier · {count} à compléter",
+      "ship": "Expédier le camion"
+    },
+    "links": {
+      "title": "L’expédition",
+      "journal": "Journal"
+    },
+    "trail": {
+      "title": "Suivi",
+      "created": "Brouillon créé",
+      "packingAttached": "Liste de colisage jointe",
+      "packingExpected": "Liste de colisage attendue",
+      "requiredBeforeShipping": "requise avant l’expédition",
+      "customsAttached": "Déclaration jointe",
+      "customsExpected": "Déclaration attendue"
+    },
+    "discard": {
+      "title": "Abandonner",
+      "body": "Le brouillon disparaît et les colis retournent au reste à expédier de la commande."
+    }
+  },
+  "facets": {
+    "draft": "Brouillon",
+    "shipped": "Expédiée",
+    "missingCustoms": "Douane manquante"
+  },
+  "kpis": {
+    "shipped": "Expédiées",
+    "shippedUnit": "sur la période",
+    "drafts": "Brouillons en attente",
+    "draftsUnit": "d'un camion",
+    "parcelsOut": "Colis partis",
+    "parcelsOutUnit": "colis",
+    "missingDocs": "Documents manquants",
+    "missingDocsUnit": "expéditions"
+  },
+  "load": {
+    "COMPLETE": "Complète",
+    "PARTIAL": "Partielle"
+  },
+  "docChips": {
+    "packingOk": "Colisage ok",
+    "packingNone": "Sans colisage",
+    "customsOk": "Douane ok",
+    "customsPart": "Douane partielle",
+    "customsNone": "Sans douane",
+    "packingOkTitle": "Liste de colisage joint",
+    "packingNoneTitle": "Liste de colisage manquante",
+    "customsOkTitle": "Déclaration en douane complète",
+    "customsPartTitle": "Déclaration en douane entamée, scan non joint",
+    "customsNoneTitle": "Déclaration en douane manquante"
+  },
+  "content": {
+    "orders": "{count, plural, one {# commande} other {# commandes}}"
+  },
+  "columns": {
+    "shipment": "Expédition",
+    "exportDate": "Date d'export",
+    "client": "Client",
+    "orders": "Commandes",
+    "invoice": "Facture",
+    "parcels": "Colis",
+    "kind": "Type",
+    "status": "Statut",
+    "customs": "Douane"
+  },
+  "units": {
+    "kg": "kg",
+    "pcs": "pcs"
+  },
+  "tiles": {
+    "parcels": "Colis",
+    "parcel": "colis",
+    "units": "Unités",
+    "exportDate": "Date d'export",
+    "attached": "joints"
+  },
+  "docs": {
+    "attached": "Joint"
+  },
+  "panels": {
+    "packingList": "Liste de colisage",
+    "customs": "Déclaration en douane",
+    "actions": "Actions",
+    "lines": "Lignes ({count})"
+  },
+  "fields": {
+    "number": "Numéro",
+    "status": "Statut",
+    "client": "Client",
+    "invoice": "Facture",
+    "exportDate": "Date d'export",
+    "shippedBy": "Expédiée par",
+    "draftedBy": "Préparée par",
+    "trace": "Traçabilité",
+    "note": "Note",
+    "document": "Document",
+    "packingListNumber": "N° de liste de colisage",
+    "packingListDocument": "Document de liste de colisage",
+    "declarationNumber": "N° de déclaration",
+    "declarationDate": "Date de déclaration",
+    "documentUrl": "Document",
+    "noteRequired": "Note (obligatoire)"
+  },
+  "lines": {
+    "order": "Commande",
+    "description": "Désignation",
+    "parcels": "Colis",
+    "units": "Unités",
+    "balance": "Solde",
+    "allShipped": "les {planned} expédiés",
+    "stillToShip": "{balance} sur {planned} restent à expédier",
+    "descriptionAria": "Désignation de la ligne {n}",
+    "parcelsAria": "Colis de la ligne {n}",
+    "mentionFromInvoice": "Mention produit, reprise de la facture"
+  },
+  "customs": {
+    "savedToast": "Déclaration en douane enregistrée"
+  },
+  "actions": {
+    "saveDraft": "Enregistrer le brouillon",
+    "saved": "Enregistré",
+    "discardDraft": "Abandonner le brouillon",
+    "askAdmin": "Demandez à un administrateur d'abandonner un brouillon créé par erreur."
+  },
+  "hints": {
+    "invoiceBills": "La facture {invoice} facture {count, plural, one {# colis} other {# colis}}",
+    "takesRest": "cette ligne prend le reste — la commande se termine à l'expédition",
+    "willRemain": "{count} resteront après cette ligne",
+    "atMost": "au plus {cap} peuvent partir sur cette expédition"
+  },
+  "shipDialog": {
+    "title": "Expédier",
+    "confirm": "Expédier",
+    "body": "L'expédition reçoit le prochain numéro de la série {year} et est figée.",
+    "remain": "{count, plural, one {# colis reste} other {# colis restent}} : la commande repasse en facturation pour la prochaine expédition.",
+    "allOn": "Tous les colis y sont : la commande est marquée exportée.",
+    "unsavedFirst": "Vos modifications non enregistrées sont d'abord sauvegardées.",
+    "closeOrder": "Clôturer la commande — {parcels} ne partiront pas",
+    "closeOrderHint": "Marque la commande exportée maintenant au lieu de la renvoyer en facturation. Audité avec la note.",
+    "closeNoteRequired": "Clôturer la commande en partiel exige une note"
+  },
+  "discardDialog": {
+    "title": "Abandonner l'expédition brouillon",
+    "confirm": "Abandonner",
+    "body": "Le brouillon est supprimé et sa commande repasse en facturée ; la facture peut être associée à une nouvelle expédition. La note est inscrite dans l'historique de la commande."
+  },
+  "toasts": {
+    "shipped": "Expédition {numero} expédiée",
+    "exported": "{orders} exportée(s)",
+    "backToInvoicing": "{orders} de retour en facturation",
+    "remainingLeft": "{numero} ({remaining} restants)",
+    "discarded": "Expédition brouillon abandonnée"
+  },
+  "upload": {
+    "choose": "Joindre un fichier",
+    "replace": "Remplacer",
+    "remove": "Retirer",
+    "uploading": "Téléversement…",
+    "failed": "Échec du téléversement — réessayez.",
+    "tooLarge": "Le fichier dépasse 25 Mo.",
+    "wrongType": "Joignez un PDF ou une image.",
+    "open": "Ouvrir",
+    "download": "Télécharger"
+  },
+  "record": {
+    "lede": "Partie le {date} pour {client}, sur la facture {invoice}. Le camion est figé ; seule la déclaration en douane reste modifiable.",
+    "ledeNoInvoice": "Partie le {date} pour {client}. Le camion est figé ; seule la déclaration en douane reste modifiable.",
+    "onTruck": "Sur le camion",
+    "papers": "Papiers",
+    "docsNote": "La liste de colisage est partie avec le camion et ne change plus. La déclaration peut encore être corrigée ou remplacée.",
+    "packingLocked": "Figée avec l’expédition",
+    "customsNote": "Modifiable après le départ",
+    "noScan": "Aucun scan — figée avec l’expédition",
+    "declaredOn": "Déclarée le",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "cargoTitle": "Ce qui est parti",
+    "totalLeft": "Total parti",
+    "trailDeclared": "Déclaration en douane {numero}",
+    "trailDeclaredOn": "déclarée le {date}",
+    "trailShipped": "Expédiée",
+    "trailNumber": "numéro {numero}",
+    "frozenTitle": "Figée",
+    "frozenBody": "Le camion est parti : lignes, colis et facture ne bougent plus. Seule la déclaration en douane reste modifiable.",
+    "missing": "Manquant"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "goTo": "Aller à…",
+  "goToModule": "Aller à un module",
+  "modules": "Modules",
+  "noModuleMatches": "Aucun module ne correspond",
+  "signOut": "Se déconnecter",
+  "signingOut": "Déconnexion…",
+  "breadcrumb": "Fil d'Ariane",
+  "new": "Nouveau",
+  "edit": "Modifier",
+  "detail": "Détail"
+}

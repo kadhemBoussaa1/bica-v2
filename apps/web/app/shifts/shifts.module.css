@@ -1,0 +1,1727 @@
+/*
+ * Shift planning — docs/shift-planning-plan.md §6.
+ *
+ * The planner is a week grid beside a shift panel; the worker's pages sit on
+ * the floor surface. The stepper is the production page's day navigation,
+ * the split/panel rules are the activity trace's, both copied rather than
+ * imported across route folders. Logical properties throughout: the grid
+ * reads right-to-left in Arabic on its own.
+ */
+
+/* --- toolbar: the week stepper, the status pill, publish --- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  margin-block: var(--bp-space-5) var(--bp-space-4);
+}
+
+/* ‹ Semaine du 27 sept. au 3 oct. › — one bordered box, as the handoff draws it. */
+.stepperBox {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg);
+  overflow: hidden;
+}
+
+.stepArrow {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: 500 1.0625rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.stepArrow:hover {
+  background: var(--bp-control-bg-soft);
+}
+
+.stepArrow:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+}
+
+/* The label is the date input's face: the real control sits under it,
+   invisible but focusable, so the week can still be typed or picked. */
+.stepLabel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 220px;
+  padding: 0 var(--bp-space-3);
+  font: 600 0.875rem/1 var(--bp-font-body);
+  text-align: center;
+  cursor: pointer;
+}
+
+.stepInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.stepLabel:focus-within {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+  border-radius: var(--bp-radius-dense);
+}
+
+.linkBtn {
+  min-height: 40px;
+  padding: 0 var(--bp-space-3);
+  border: 0;
+  border-radius: var(--bp-radius);
+  background: transparent;
+  color: var(--bp-orange-700);
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.linkBtn:hover {
+  background: var(--bp-control-bg-soft);
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* The header's "Change requests" button lights up when something waits. */
+.inboxHot {
+  border-color: rgb(242 201 138) !important;
+  background: rgb(255 248 238) !important;
+}
+
+.inboxCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  margin-inline-start: 8px;
+  padding: 0 7px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-orange-500);
+  color: var(--bp-neutral-900);
+  font: 700 0.78125rem/1 var(--bp-font-mono);
+}
+
+/* A status pill, tinted: the records badge recipe on the toolbar. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--bp-radius-pill);
+  white-space: nowrap;
+}
+
+.pillDraft {
+  border: 1px dashed rgb(26 23 20 / 0.3);
+  color: var(--bp-ink-muted);
+}
+
+.pillLive {
+  background: rgb(46 125 79 / 0.16);
+  border-color: rgb(32 96 59 / 0.3);
+  color: var(--bp-success-text);
+}
+
+.pillWarn {
+  background: rgb(224 161 6 / 0.18);
+  border-color: rgb(224 161 6 / 0.34);
+  color: var(--bp-warning-text);
+}
+
+.pillDanger {
+  background: rgb(193 53 43 / 0.14);
+  border-color: rgb(143 37 30 / 0.3);
+  color: var(--bp-danger-text);
+}
+
+.pillNeutral {
+  background: rgb(26 23 20 / 0.06);
+  border-color: rgb(26 23 20 / 0.12);
+  color: var(--bp-ink);
+}
+
+.pillInfo {
+  background: rgb(89 128 166 / 0.16);
+  border-color: rgb(34 88 124 / 0.28);
+  color: var(--bp-info-text);
+}
+
+/* The pill's dot takes the pill's own ink. */
+.pillDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* --- avatars: the photo, or initials on a tint. Squircles, like the toolkit. --- */
+
+.av {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--bp-radius-dense);
+  font: 600 0.78125rem/1 var(--bp-font-display);
+}
+
+.avSm {
+  width: 30px;
+  height: 30px;
+  font-size: 0.71875rem;
+}
+
+.avMd {
+  width: 34px;
+  height: 34px;
+}
+
+.avLg {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--bp-radius);
+  font-size: 0.875rem;
+}
+
+.avImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avTint0 { background: #fce3bf; color: #7a4400; }
+.avTint1 { background: #dce6f0; color: #22587c; }
+.avTint2 { background: #e1eedf; color: #2f5e3e; }
+.avTint3 { background: #efe0ec; color: #6e2f62; }
+.avTint4 { background: #f1e6d6; color: #6b4a1e; }
+.avTint5 { background: #e4e7f3; color: #3a4478; }
+
+/* --- the day strip: seven days, each with its ticket count --- */
+
+.dayBar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-block-end: var(--bp-space-4);
+}
+
+.dayBtn {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  padding: 9px 10px;
+  border: 1px solid rgb(26 23 20 / 0.12);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-surface);
+  color: var(--bp-ink);
+  cursor: pointer;
+  text-align: start;
+}
+
+.dayBtn:hover {
+  border-color: rgb(214 207 195);
+}
+
+.dayBtn:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.dayBtnActive,
+.dayBtnActive:hover {
+  background: var(--bp-ink);
+  color: var(--bp-surface);
+  border-color: var(--bp-ink);
+}
+
+.dayBtnName {
+  font: 600 0.875rem/1.4 var(--bp-font-body);
+  text-transform: capitalize;
+}
+
+.dayBtnDate,
+.dayBtnCount {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .dayBar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* --- the board: three shift columns and the not-placed column --- */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: var(--bp-space-4);
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-panel);
+  overflow: hidden;
+}
+
+/* The not-placed column is information, not a shift: dashed, quieter. */
+.columnPool {
+  border: 1px dashed rgb(26 23 20 / 0.2);
+  background: rgb(255 255 255 / 0.4);
+  box-shadow: none;
+}
+
+.columnHead {
+  padding: var(--bp-space-4) var(--bp-space-4) var(--bp-space-3);
+  border-bottom: 1px solid rgb(26 23 20 / 0.07);
+}
+
+/* Each shift's head carries its own faint tint, as the handoff does. */
+.columnMORNING .columnHead { background: #fff8ec; }
+.columnAFTERNOON .columnHead { background: #fbf3e8; }
+.columnNIGHT .columnHead { background: #f1f3f6; }
+
+.columnTitleRow {
+  display: flex;
+  gap: 4px 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.columnTitle {
+  font: 700 1.125rem/1.2 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+.columnHours {
+  font: 400 0.875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-neutral-800);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.columnCount,
+.columnMeta {
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.columnCount {
+  white-space: nowrap;
+}
+
+.columnOff {
+  padding: 10px var(--bp-space-4);
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+  background: #f8f6f1;
+  border-bottom: 1px solid rgb(26 23 20 / 0.07);
+}
+
+.columnEmpty {
+  padding: 22px var(--bp-space-4) 6px;
+  text-align: center;
+  font: 400 0.875rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.columnFoot {
+  padding: var(--bp-space-3) var(--bp-space-4) var(--bp-space-4);
+}
+
+.addBtn {
+  width: 100%;
+  min-height: 42px;
+  border: 1.5px dashed rgb(214 207 195);
+  border-radius: var(--bp-radius);
+  background: transparent;
+  color: var(--bp-neutral-800);
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.addBtn:hover {
+  border-color: var(--bp-orange-500);
+  color: var(--bp-orange-700);
+  background: #fff8ee;
+}
+
+.addBtn:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* One person on a shift: avatar, name and the day's tickets, then actions. */
+.personRow {
+  border-bottom: 1px solid rgb(26 23 20 / 0.06);
+}
+
+.person {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px 10px var(--bp-space-4);
+}
+
+.personText {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.personText:disabled {
+  cursor: default;
+}
+
+.personText:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 4px;
+  border-radius: var(--bp-radius-dense);
+}
+
+.personName {
+  font: 500 0.90625rem/1.35 var(--bp-font-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personMeta {
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personMetaHot {
+  color: var(--bp-orange-800);
+}
+
+.personTasks {
+  display: grid;
+  gap: var(--bp-space-2);
+  padding: 0 var(--bp-space-4) var(--bp-space-3) 60px;
+}
+
+.ticketBtn {
+  flex: none;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: 8px;
+  background: var(--bp-surface);
+  color: inherit;
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.ticketBtn:hover {
+  border-color: var(--bp-orange-500);
+  color: var(--bp-orange-700);
+}
+
+.menuBtn {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: 400 1rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.menuBtn:hover,
+.menuBtnOpen {
+  background: #f1ede6;
+}
+
+.ticketBtn:focus-visible,
+.menuBtn:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* The person's menu: move to another shift, or take them off. */
+.menu {
+  position: absolute;
+  inset-inline-end: 10px;
+  top: 48px;
+  z-index: 20;
+  width: 240px;
+  padding: 6px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: rgb(255 255 255 / 0.92);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-float);
+  animation: popUp 140ms ease-out;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: 400 0.875rem/1.3 var(--bp-font-body);
+  text-align: start;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: var(--bp-control-bg-soft);
+}
+
+.menuItem:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+}
+
+.menuItemDanger {
+  color: var(--bp-danger-text);
+}
+
+.menuItemDanger:hover {
+  background: rgb(248 227 225);
+}
+
+.menuRule {
+  height: 1px;
+  margin: 4px 0;
+  background: rgb(26 23 20 / 0.07);
+}
+
+@keyframes popUp {
+  from {
+    transform: translateY(8px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    animation: none;
+  }
+}
+
+/* The not-placed column: search, then rows with one-tap shift letters. */
+.poolSearch {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.poolSearch:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+}
+
+.poolList {
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 0 8px 10px;
+}
+
+.poolRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+}
+
+.quick {
+  flex: none;
+  display: flex;
+  gap: 3px;
+}
+
+.quickBtn {
+  width: 30px;
+  height: 28px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: 7px;
+  background: var(--bp-surface);
+  color: inherit;
+  font: 600 0.75rem/1 var(--bp-font-mono);
+  cursor: pointer;
+}
+
+.quickBtn:hover {
+  border-color: var(--bp-orange-500);
+  background: #fff8ee;
+}
+
+.quickBtn:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.muted {
+  margin: 0;
+  font: 400 0.8125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the add modal: "Who works nights?" --- */
+
+.pickerBody {
+  display: grid;
+  gap: var(--bp-space-3);
+}
+
+.pickerLede {
+  margin: 0;
+  font: 400 0.875rem/1.55 var(--bp-font-body);
+  color: var(--bp-neutral-800);
+}
+
+.pickerError {
+  margin: 0;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  border: 1px solid var(--bp-danger-border);
+  background: var(--bp-danger-bg);
+  color: var(--bp-danger-text);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+}
+
+.pickerBar {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pickerInput {
+  flex: 1 1 220px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.pickerInput:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+}
+
+/* Not placed | Everyone. */
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--bp-radius);
+  background: #f1ede6;
+}
+
+.segment {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-neutral-800);
+  font: 500 0.8125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.segmentOn {
+  background: var(--bp-surface);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(40 30 15 / 0.12);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* The roster as photo cards, bulk-selectable. Scrolls inside the dialog. */
+.pickerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.pickCard {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 14px 10px 12px;
+  border: 1px solid rgb(26 23 20 / 0.12);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.pickCard:hover {
+  border-color: rgb(214 207 195);
+}
+
+.pickCard:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.pickCardOn,
+.pickCardOn:hover {
+  background: #fff8ee;
+  border-color: var(--bp-orange-500);
+}
+
+/* The tick box in the corner: the state as a glyph, so it survives grayscale. */
+.pickCheck {
+  position: absolute;
+  top: 8px;
+  inset-inline-start: 8px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid #cfc7ba;
+  background: var(--bp-surface);
+  font: 700 0.6875rem/1 var(--bp-font-mono);
+  color: var(--bp-surface);
+}
+
+.pickCardOn .pickCheck {
+  background: var(--bp-orange-500);
+  border-color: var(--bp-orange-500);
+}
+
+.pickName {
+  margin-top: 4px;
+  font: 500 0.84375rem/1.25 var(--bp-font-body);
+  overflow-wrap: anywhere;
+}
+
+.pickMeta {
+  font: 400 0.75rem/1.3 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.pickMetaWarm {
+  color: var(--bp-orange-700);
+}
+
+.pickerEmpty {
+  margin: 0;
+  padding: 24px 8px;
+  text-align: center;
+  font: 400 0.875rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.pickerFoot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: var(--bp-space-3);
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.pickerSummary {
+  flex: 1 1 200px;
+  font: 400 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.pickerCount {
+  font: 500 0.78125rem/1.3 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the ticket modal: "A ticket for Amir" --- */
+
+.ticketForm {
+  display: grid;
+  gap: var(--bp-space-3);
+}
+
+.ticketHead {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.ticketWhen {
+  font: 400 0.875rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-800);
+}
+
+.ticketExisting {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--bp-radius);
+  background: #f5f2ec;
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-800);
+}
+
+.ticketLabel {
+  margin-top: 4px;
+  font: 500 0.84375rem/1.3 var(--bp-font-body);
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.typeChip {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: inherit;
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.typeChipOn {
+  border-color: var(--bp-orange-500);
+  background: #fff8ee;
+}
+
+.typeChip:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* --- tickets --- */
+
+.tasks {
+  display: grid;
+  gap: var(--bp-space-2);
+}
+
+.task {
+  display: grid;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-3);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-veil-bg);
+}
+
+.taskDone {
+  opacity: 0.7;
+}
+
+.taskHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.taskType {
+  font: 600 0.8125rem/1.3 var(--bp-font-display);
+}
+
+.taskLine {
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+}
+
+.taskLabel {
+  color: var(--bp-ink-muted);
+}
+
+.taskNote {
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+  white-space: pre-wrap;
+}
+
+.taskActions {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+  margin-top: var(--bp-space-1);
+}
+
+/* --- employee picker --- */
+
+/* On a published week the picker also records a change per person. */
+.pickerNote {
+  margin: 0 0 var(--bp-space-3);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  border: 1px solid rgb(89 128 166 / 0.28);
+  background: rgb(89 128 166 / 0.12);
+  color: var(--bp-info-text);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+}
+
+.pickerBar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+}
+
+.pickerSearch {
+  flex: 1 1 240px;
+}
+
+.pickerBulk {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding-block-end: 2px;
+}
+
+.pickerCount {
+  font: 500 0.78125rem/1.3 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* The roster as photo cards, bulk-selectable. Scrolls inside the dialog. */
+.pickerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: var(--bp-space-2);
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 2px;
+  margin-block: var(--bp-space-3);
+}
+
+.pickCard {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-3) var(--bp-space-2) var(--bp-space-3);
+  border: 1px solid rgb(26 23 20 / 0.12);
+  border-radius: var(--bp-radius-card);
+  background: rgb(255 255 255 / 0.5);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.pickCard:hover {
+  background: rgb(242 145 0 / 0.1);
+  border-color: rgb(217 124 0 / 0.34);
+}
+
+.pickCard:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.pickCardOn,
+.pickCardOn:hover {
+  background: rgb(242 145 0 / 0.18);
+  border-color: var(--bp-orange-500);
+  box-shadow: 0 0 0 2px rgb(242 145 0 / 0.25);
+}
+
+/* Already on a shift this week: shown, named, not offered. */
+.pickCardTaken,
+.pickCardTaken:hover {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background: rgb(26 23 20 / 0.04);
+  border-color: rgb(26 23 20 / 0.12);
+  box-shadow: none;
+}
+
+/* The tick in the corner: the state as a glyph, so it survives grayscale. */
+.pickCheck {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgb(26 23 20 / 0.2);
+  background: var(--bp-surface);
+  font: 700 0.75rem/1 var(--bp-font-mono);
+  color: var(--bp-surface);
+}
+
+.pickCardOn .pickCheck {
+  background: var(--bp-orange-500);
+  border-color: var(--bp-orange-600);
+}
+
+.pickName {
+  font: 600 0.78125rem/1.25 var(--bp-font-display);
+  overflow-wrap: anywhere;
+}
+
+.pickMeta {
+  font: 500 0.65625rem/1.3 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the requests screen: filter pills and one card per change --- */
+
+.filterBar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-block: var(--bp-space-5) var(--bp-space-4);
+}
+
+.filterPill {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--bp-radius-pill);
+  background: transparent;
+  color: var(--bp-neutral-800);
+  font: 500 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.filterPill:hover {
+  background: #f1ede6;
+}
+
+.filterPillOn,
+.filterPillOn:hover {
+  background: var(--bp-ink);
+  color: var(--bp-surface);
+}
+
+.filterPill:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.filterCount {
+  opacity: 0.7;
+  font-family: var(--bp-font-mono);
+}
+
+.reqList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: opacity 120ms ease-out;
+}
+
+.dim {
+  opacity: 0.6;
+}
+
+.reqCard {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding: 18px;
+  border: 1px solid rgb(26 23 20 / 0.12);
+  border-radius: var(--bp-radius-card);
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-card);
+}
+
+.reqCardPending {
+  border-color: rgb(242 201 138);
+}
+
+.reqMain {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.reqLine {
+  font: 400 0.96875rem/1.5 var(--bp-font-body);
+}
+
+.reqRoute {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.reqChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: #f5f2ec;
+  font: 500 0.84375rem/1 var(--bp-font-body);
+}
+
+.reqChipTo {
+  background: #fbebd2;
+  font-weight: 600;
+}
+
+.reqArrow {
+  color: var(--bp-neutral-600);
+}
+
+.reqPeriod {
+  font: 400 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.reqReason {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--bp-radius);
+  background: #f8f6f1;
+  font: 400 0.875rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-800);
+}
+
+.reqMeta {
+  margin-top: 8px;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.reqSide {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 190px;
+}
+
+.reqActions {
+  display: flex;
+  gap: 8px;
+}
+
+.reqEmpty {
+  padding: 48px 20px;
+  text-align: center;
+  border: 1.5px dashed rgb(26 23 20 / 0.16);
+  border-radius: var(--bp-radius);
+}
+
+.reqEmptyTitle {
+  font: 600 1rem/1.4 var(--bp-font-body);
+}
+
+.reqEmptyBody {
+  margin-top: 4px;
+  font: 400 0.875rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.pager {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: var(--bp-space-4);
+}
+
+/* --- "My shifts": the week schedule, the detail card, the team, the requests --- */
+
+.meNav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.meArrow {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: rgb(255 255 255 / 0.8);
+  color: inherit;
+  font: 500 1.125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.meThis {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: rgb(255 255 255 / 0.8);
+  color: inherit;
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.meArrow:hover,
+.meThis:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.meThisOn,
+.meThisOn:hover {
+  background: var(--bp-ink);
+  color: var(--bp-surface);
+  border-color: var(--bp-ink);
+}
+
+.meArrow:focus-visible,
+.meThis:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.meLayout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.mePanel {
+  flex: 4 1 640px;
+  min-width: 0;
+  padding: 16px 16px 18px;
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.meBar {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0 4px 12px;
+}
+
+/* The week's shift as a pill in the shift's own tint. */
+.shiftPillNIGHT { background: rgb(34 88 124 / 0.14); border-color: transparent; color: #22587c; }
+.shiftPillMORNING { background: rgb(242 145 0 / 0.18); border-color: transparent; color: var(--bp-orange-800); }
+.shiftPillAFTERNOON { background: rgb(46 125 79 / 0.16); border-color: transparent; color: #20603b; }
+
+.legend {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font: 400 0.78125rem/1.3 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1.5px solid transparent;
+}
+
+.sw_todo { background: #fff3e0; border-color: rgb(217 124 0 / 0.4); }
+.sw_live { background: rgb(242 145 0 / 0.28); border-color: var(--bp-orange-500); }
+.sw_done { background: #e2f0e8; border-color: rgb(32 96 59 / 0.3); }
+
+.scheduleScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 4px 8px;
+}
+
+/* An hour rail and seven day columns; ten hours tall, the shift's eight in the middle. */
+.schedule {
+  display: grid;
+  grid-template-columns: 48px repeat(7, minmax(88px, 1fr));
+  gap: 4px;
+  min-width: 680px;
+}
+
+.dayHead {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  padding: 8px 8px 10px;
+  border: 1.5px solid transparent;
+  border-radius: var(--bp-radius-dense);
+  background: rgb(255 255 255 / 0.55);
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.dayHead:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.dayHead:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.dayHeadOn {
+  background: #fff8ee;
+  border-color: var(--bp-orange-500);
+}
+
+.dayHeadToday {
+  background: var(--bp-ink);
+  color: var(--bp-surface);
+}
+
+.dayHeadName {
+  font: 600 0.875rem/1.4 var(--bp-font-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayHeadMeta {
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail {
+  position: relative;
+}
+
+.railHour {
+  position: absolute;
+  inset-inline-end: 6px;
+  transform: translateY(-50%);
+  font: 400 0.6875rem/1 var(--bp-font-mono);
+  color: var(--bp-neutral-600);
+}
+
+.col {
+  position: relative;
+  border-radius: var(--bp-radius-dense);
+  background-image: repeating-linear-gradient(180deg, rgb(26 23 20 / 0.06) 0 1px, transparent 1px 52px);
+}
+
+.colToday {
+  background-color: rgb(242 145 0 / 0.06);
+}
+
+.colOn {
+  background-color: rgb(242 145 0 / 0.035);
+}
+
+/* The eight hours the person works that day. */
+.window {
+  position: absolute;
+  inset-inline: 2px;
+  border-radius: 10px;
+  border: 1.5px dashed rgb(26 23 20 / 0.2);
+  background: rgb(255 255 255 / 0.45);
+}
+
+.colOff {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.colNone {
+  position: absolute;
+  inset-inline: 8px;
+  top: 220px;
+  text-align: center;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+/* A ticket in its day column: to do, running now, or done. */
+.taskBlock {
+  position: absolute;
+  inset-inline: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  padding: 6px 8px;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.tb_todo,
+.tb_planned { background: #fff3e0; border-color: rgb(217 124 0 / 0.4); color: #6e4000; }
+/* Running now: the warm active tone, not the mock's ink slab (user, 2026-09-24). */
+.tb_live { background: rgb(242 145 0 / 0.28); border-color: var(--bp-orange-500); color: var(--bp-orange-800); }
+.tb_done { background: #e2f0e8; border-color: rgb(32 96 59 / 0.3); color: #20603b; }
+
+.taskBlock:hover {
+  filter: brightness(0.98);
+}
+
+.taskBlock:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.taskBlockOn {
+  border-color: var(--bp-orange-600);
+  box-shadow: 0 8px 18px rgb(217 124 0 / 0.3);
+}
+
+.taskBlockLabel {
+  font: 600 0.78125rem/1.25 var(--bp-font-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taskBlockTime {
+  font: 400 0.65625rem/1.3 var(--bp-font-mono);
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taskBlockMachine {
+  font: 400 0.71875rem/1.3 var(--bp-font-body);
+  opacity: 0.9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nowLine {
+  position: absolute;
+  inset-inline: -3px;
+  height: 2px;
+  background: var(--bp-danger);
+  z-index: 3;
+}
+
+.nowDot {
+  position: absolute;
+  inset-inline-start: -2px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bp-danger);
+}
+
+/* The side column: the selected ticket, the team, the requests. */
+.meAside {
+  flex: 1 1 270px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.meCard {
+  padding: 18px 20px;
+  border-radius: var(--bp-radius-panel);
+  background: rgb(255 255 255 / 0.58);
+  border: 1px solid var(--bp-glass-border);
+}
+
+.meCardStrong {
+  padding: 20px;
+  background: rgb(255 255 255 / 0.74);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.meCardHead {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.meKicker,
+.meKickerMuted {
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-orange-700);
+}
+
+.meKickerMuted {
+  color: var(--bp-neutral-600);
+  margin-block-end: 6px;
+}
+
+.st_done { background: rgb(46 125 79 / 0.16); border-color: transparent; color: #20603b; }
+.st_live { background: rgb(242 145 0 / 0.2); border-color: transparent; color: var(--bp-orange-800); }
+.st_todo,
+.st_planned { background: rgb(26 23 20 / 0.07); border-color: transparent; color: var(--bp-neutral-800); }
+
+.meCardTitle {
+  margin-top: 6px;
+  font: 700 1.4375rem/1.2 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+.meCardWhen {
+  font: 400 0.8125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-neutral-600);
+}
+
+.meFacts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0;
+  font: 400 0.875rem/1.4 var(--bp-font-body);
+}
+
+.meFacts dt {
+  font-size: 0.75rem;
+  color: var(--bp-neutral-600);
+}
+
+.meFacts dd {
+  margin: 0;
+}
+
+.meNote {
+  padding: 10px 12px;
+  border-radius: var(--bp-radius-dense);
+  background: rgb(242 145 0 / 0.12);
+  color: var(--bp-neutral-800);
+}
+
+.meMark {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.meHint {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: var(--bp-radius-dense);
+  background: rgb(26 23 20 / 0.05);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-800);
+}
+
+.meEmpty {
+  padding: 6px 0;
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.teamRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.reqRow {
+  padding: 10px 0;
+  border-top: 1px solid rgb(26 23 20 / 0.08);
+}
+
+.reqRowHead {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  font: 600 0.875rem/1.4 var(--bp-font-body);
+}
+
+.reqRowDetail {
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-800);
+}
+
+.reqRowReply {
+  margin-top: 4px;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.withdrawBtn {
+  margin-top: 6px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bp-danger-text);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.withdrawBtn:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* --- the request modal: kind cards, chips, why --- */
+
+.kindGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.kindCard {
+  display: grid;
+  gap: 2px;
+  padding: 14px;
+  border: 1.5px solid rgb(26 23 20 / 0.14);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-surface);
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.kindCardOn {
+  border-color: var(--bp-orange-500);
+  background: #fff8ee;
+}
+
+.kindCard:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.kindLabel {
+  font: 600 0.9375rem/1.3 var(--bp-font-body);
+}
+
+.kindHint {
+  font: 400 0.8125rem/1.3 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.typeChipSoft {
+  font-weight: 500;
+}
+
+.whyLabel {
+  display: block;
+}
+
+.whyLabel > span {
+  display: block;
+  margin-block-end: 6px;
+  font: 600 0.84375rem/1.3 var(--bp-font-body);
+}
+
+.whyHint {
+  font-weight: 400;
+  color: var(--bp-neutral-600);
+}
+
+.whyInput {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+.whyInput:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+}
+
+.formError {
+  margin: 0;
+  font: 400 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-danger-text);
+}
+
+@media (max-width: 560px) {
+  .kindGrid {
+    grid-template-columns: 1fr;
+  }
+}

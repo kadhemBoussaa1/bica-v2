@@ -1,0 +1,164 @@
+{
+  "eyebrow": "Paramètres",
+  "title": "Journal d'activité",
+  "metaTitle": "Journal d'activité · Bicapack ERP",
+  "columns": {
+    "when": "Date",
+    "user": "Acteur",
+    "action": "Action",
+    "entity": "Entité",
+    "outcome": "Résultat",
+    "time": "Durée"
+  },
+  "anonymous": "Anonyme",
+  "filters": {
+    "reads": "Lectures",
+    "writes": "Écritures",
+    "signIns": "Connexions",
+    "errors": "Erreurs"
+  },
+  "searchPlaceholder": "Rechercher une action, un acteur, une entité, une erreur…",
+  "emptyMessage": "Aucune activité ne correspond à ces filtres.",
+  "showingByActor": "Activité de <strong>{actor}</strong>",
+  "showingForEntity": "Activité liée à <strong>{entity}</strong> (y compris les enregistrements qui en découlent)",
+  "clear": "Effacer",
+  "kind": {
+    "QUERY": "LECTURE",
+    "MUTATION": "ÉCRITURE",
+    "AUTH": "AUTH"
+  },
+  "outcome": {
+    "OK": "OK",
+    "ERROR": "ERREUR"
+  },
+  "duration": "{ms} ms",
+  "panel": {
+    "ariaLabel": "Détail de l'activité",
+    "loading": "Chargement…",
+    "who": "Qui",
+    "what": "Quoi",
+    "input": "Saisie",
+    "client": "Poste client",
+    "user": "Acteur",
+    "email": "E-mail",
+    "role": "Rôle",
+    "impersonatedBy": "Au nom de l'utilisateur, par",
+    "trace": "Historique",
+    "traceLink": "Toute l'activité de cet acteur",
+    "when": "Horodatage",
+    "entity": "Entité",
+    "from": "Origine",
+    "duration": "Durée",
+    "error": "Erreur",
+    "message": "Message",
+    "ip": "Adresse IP",
+    "browser": "Navigateur",
+    "noInput": "Aucune saisie.",
+    "truncated": "Tronqué : {bytes} octets envoyés, seuls les 16 premiers Ko sont conservés."
+  },
+  "actions": {
+    "auth": {
+      "signIn": "Connexion",
+      "signOut": "Déconnexion"
+    },
+    "order": {
+      "create": "Commande créée",
+      "update": "Commande modifiée",
+      "transition": "Statut de commande changé",
+      "acceptQuote": "Devis accepté",
+      "setColours": "Couleurs de la commande définies",
+      "setActive": "Commande archivée / restaurée"
+    },
+    "production": {
+      "create": "Production enregistrée",
+      "update": "Production modifiée",
+      "remove": "Production supprimée"
+    },
+    "shipment": {
+      "createFromOrder": "Brouillon d'expédition créé",
+      "updateDraft": "Brouillon d'expédition modifié",
+      "createPackingListUpload": "Dépôt de la liste de colisage demandé",
+      "createCustomsUpload": "Dépôt du scan de douane demandé",
+      "updateCustoms": "Douane de l'expédition modifiée",
+      "ship": "Expédié",
+      "discardDraft": "Brouillon d'expédition abandonné"
+    },
+    "salesInvoice": {
+      "createFromOrder": "Brouillon de facture de vente créé",
+      "updateDraft": "Brouillon de facture modifié",
+      "refreshFromPackaging": "Facture actualisée depuis l'emballage",
+      "issue": "Facture de vente émise",
+      "discardDraft": "Brouillon de facture abandonné"
+    },
+    "purchaseInvoice": {
+      "create": "Facture d'achat enregistrée",
+      "update": "Facture d'achat modifiée",
+      "remove": "Facture d'achat supprimée"
+    },
+    "stock": {
+      "createRoll": "Bobine ajoutée",
+      "updateRoll": "Bobine modifiée",
+      "setRollArchived": "Bobine archivée / restaurée",
+      "removeRoll": "Bobine supprimée",
+      "createShipment": "Livraison de papier enregistrée",
+      "updateShipment": "Livraison de papier modifiée",
+      "setShipmentActive": "Livraison de papier archivée / restaurée",
+      "removeShipment": "Livraison de papier supprimée",
+      "setShipmentRolls": "Bobines de la livraison définies"
+    },
+    "client": {
+      "create": "Client créé",
+      "update": "Client modifié",
+      "setActive": "Client archivé / restauré"
+    },
+    "supplier": {
+      "create": "Fournisseur créé",
+      "update": "Fournisseur modifié",
+      "setActive": "Fournisseur archivé / restauré"
+    },
+    "supplierFamily": {
+      "create": "Famille de fournisseurs créée",
+      "update": "Famille de fournisseurs modifiée",
+      "setActive": "Famille de fournisseurs archivée / restaurée",
+      "remove": "Famille de fournisseurs supprimée"
+    },
+    "product": {
+      "create": "Produit créé",
+      "update": "Produit modifié",
+      "setActive": "Produit archivé / restauré"
+    },
+    "machine": {
+      "create": "Machine créée",
+      "update": "Machine modifiée",
+      "setActive": "Machine archivée / restaurée"
+    },
+    "employee": {
+      "create": "Employé créé",
+      "update": "Employé modifié",
+      "setActive": "Employé archivé / restauré"
+    },
+    "user": {
+      "create": "Utilisateur créé",
+      "setRole": "Rôle d'utilisateur modifié",
+      "setBanned": "Utilisateur banni / réactivé",
+      "remove": "Utilisateur supprimé"
+    },
+    "shift": {
+      "openWeek": "Semaine ouverte",
+      "copyWeek": "Effectif d'une semaine copié",
+      "clearWeek": "Semaine brouillon vidée",
+      "publish": "Semaine publiée",
+      "assign": "Personnes affectées à un poste",
+      "unassign": "Personne retirée d'un poste",
+      "change": "Changement d'effectif enregistré",
+      "requestChange": "Changement de poste demandé",
+      "withdraw": "Demande de changement retirée",
+      "accept": "Demande de changement acceptée",
+      "reject": "Demande de changement refusée",
+      "createTask": "Ticket créé",
+      "updateTask": "Ticket modifié",
+      "removeTask": "Ticket supprimé",
+      "setTaskDone": "Ticket marqué fait / rouvert"
+    }
+  }
+}

@@ -1,0 +1,2961 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Strictly ordered hierarchy. Rank is defined in packages/api-contract/src/roles.ts:
+/// SUPER_ADMIN(100) > ADMIN(75) > PRODUCTION(50) == MAGASINIER(50)
+/// PRODUCTION and MAGASINIER are siblings: neither inherits the other.
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  PRODUCTION
+  MAGASINIER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(MAGASINIER)
+  banned        Boolean   @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  /// Who provisioned this account. Null only for the seeded super admin.
+  createdById  String?
+  createdBy    User?   @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers User[]  @relation("UserCreatedBy")
+
+  sessions Session[]
+  accounts Account[]
+
+  /// Orders this user accepted from a quote (`Order.acceptedBy`) and status
+  /// changes they made (`OrderStatusChange.by`) — two distinct order-lifecycle
+  /// links, so each needs its own relation name. See
+  /// docs/order-lifecycle-plan.md §2.1/§2.4.
+  acceptedOrders     Order[]             @relation("OrderAcceptedBy")
+  orderStatusChanges OrderStatusChange[] @relation("OrderStatusChangeBy")
+  productionRuns     ProductionRun[]     @relation("ProductionRunRecordedBy")
+  /// Ink drawn from stock for an order by this user — see InkUsage.
+  inkUsagesRecorded  InkUsage[]          @relation("InkUsageRecordedBy")
+  rollAllocations    RollAllocation[]    @relation("RollAllocationBy")
+  /// Reels this user scanned in on the warehouse floor — see PaperRoll.receivedAt.
+  rollsReceived      PaperRoll[]         @relation("PaperRollReceivedBy")
+  /// How far into the notice stream this user has read — see ChatRead.
+  chatRead           ChatRead?
+  /// Stocktakes this user opened — see StockCount.openedBy. Restrict, not
+  /// SetNull like the rest: a count is a signed document, so it keeps its
+  /// author or it is not a count. Archive the account instead of deleting it.
+  stockCountsOpened  StockCount[]        @relation("StockCountOpenedBy")
+  /// Sales invoices this user drafted / issued — see docs/sales-invoice-plan.md §3.1.
+  salesInvoicesCreated SalesInvoice[] @relation("SalesInvoiceCreatedBy")
+  salesInvoicesIssued  SalesInvoice[] @relation("SalesInvoiceIssuedBy")
+  documentTemplateVersions DocumentTemplateVersion[]
+  /// Outbound shipments this user drafted / shipped — docs/export-plan.md Step 1.
+  shipmentsCreated Shipment[] @relation("ShipmentCreatedBy")
+  shipmentsShipped Shipment[] @relation("ShipmentShippedBy")
+  /// Activity trace rows this user produced — docs/audit-log-plan.md Step 1.
+  auditLogs AuditLog[] @relation("AuditLogActor")
+  /// Notices this user posted, and the ones they pinned — docs/chat-plan.md §1.
+  /// Two distinct links to the same table, so each needs its own relation name.
+  /// Both SetNull: a notice outlives the account, and `ChatMessage.authorName`
+  /// is the snapshot that keeps it readable.
+  chatMessages       ChatMessage[] @relation("ChatMessageAuthor")
+  chatMessagesPinned ChatMessage[] @relation("ChatMessagePinnedBy")
+  /// The employee this account belongs to — see Employee.userId.
+  employee Employee? @relation("EmployeeUser")
+  /// Shift planning — docs/shift-planning-plan.md §2. All SetNull: the
+  /// employee row, not the account, is the durable identity there.
+  shiftWeeksPublished  ShiftWeek[]   @relation("ShiftWeekPublishedBy")
+  shiftChangesRequested ShiftChange[] @relation("ShiftChangeRequestedBy")
+  shiftChangesDecided   ShiftChange[] @relation("ShiftChangeDecidedBy")
+  shiftTasksDone        ShiftTask[]   @relation("ShiftTaskDoneBy")
+  shiftTasksCreated     ShiftTask[]   @relation("ShiftTaskCreatedBy")
+
+  @@index([role, id])
+  /// Foreign key: Postgres does not index one on its own, and deleting a user
+  /// SetNulls every account it created.
+  @@index([createdById])
+  /// Every list sort carries an `id` tiebreaker, so the real key is (column, id).
+  /// Every user-selectable sort column is indexed; `email` needs none because it
+  /// is already unique, and `role` is the (role, id) index above.
+  ///
+  /// Measured on 50k rows: `ORDER BY name, id LIMIT 10` plans at cost 2096 with a
+  /// Seq Scan and no index, and 1.31 with an Index Scan once (name, id) exists.
+  /// The default sort never touches it, but `name` is a clickable sort header, so
+  /// one click sorts the whole table without it.
+  ///
+  /// Search is a leading-wildcard ILIKE, which no btree can serve; pg_trgm is the
+  /// upgrade path if a list ever outgrows a sequential scan.
+  @@index([createdAt, id])
+  @@index([name, id])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Set while a higher-ranked user is impersonating; null otherwise.
+  impersonatedBy String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  /// Required by Better Auth 1.7+ (identifies the credential issuer).
+  issuer                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  /// Hashed by Better Auth (scrypt). Never stored in plain text.
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+/// Supplier family. The legacy `fournisseur.famille` was free text with
+/// inconsistent casing (`SERVICE` vs `Service`) and two overlapping FOURNITURE*
+/// values; those are normalised on import. Legacy distribution:
+/// ACCESSOIRE 57, SERVICE 45, blank 20, CHIMIQUE 5, TRANSPORT 3, rest singletons.
+/// Supplier family — purchasing category.
+///
+/// A table rather than an enum, deliberately. The legacy data arrived with six of
+/// its eleven raw values appearing exactly once, so the set is not naturally
+/// stable: an ADMIN adds a family in the app and uses it immediately, instead of
+/// a new purchasing category needing a schema migration and a deploy.
+///
+/// The trade-off accepted in exchange: `family` is no longer a compile-time
+/// union, so nothing can switch exhaustively on it. Code that needs a specific
+/// family must look it up by `code`.
+model SupplierFamily {
+  id String @id @default(cuid())
+
+  /// Stable machine key (ACCESSOIRE, SERVICE, ...). Uppercase, unique, and NOT
+  /// meant to be edited: `label` is what the UI renders, so a family can be
+  /// renamed without breaking anything that refers to it by code. It is also
+  /// what the list's facet chips key on.
+  code String @unique
+
+  /// Display text, e.g. "Accessoire". Unique so two families cannot be created
+  /// that a user would read as the same thing.
+  label String @unique
+
+  /// Ordering in pickers and facet chips. Lower first, `label` breaks ties.
+  /// Seeded from how common each family is in the migrated data.
+  sortOrder Int @default(100)
+
+  /// False hides the family from pickers without touching the suppliers already
+  /// assigned to it — the same archive-not-delete rule as Client and Supplier.
+  /// A family in use cannot be deleted at all; see SupplierFamilyService.
+  active Boolean @default(true)
+
+  suppliers Supplier[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, sortOrder, label])
+}
+
+/// Customer. Migrated from legacy `client` (19 rows).
+///
+/// Every contact column is nullable even though the legacy schema declared
+/// `email`, `adresse` and `phone1` NOT NULL: all 19 legacy rows stored the empty
+/// string, so the constraint was decorative. The import maps '' -> NULL. Do not
+/// re-add NOT NULL without real data to back it.
+model Client {
+  id String @id @default(cuid())
+
+  name String @unique
+
+  /// Tunisian matricule fiscal. Empty on every legacy row.
+  taxId   String?
+  address String?
+  email   String?
+  phone   String?
+
+  imageUrl String?
+
+  /// Legacy `date_creation` — when the customer relationship began, which is not
+  /// the same as `createdAt` (the row's insert time, uniform across the import).
+  registeredAt DateTime? @db.Date
+
+  /// Legacy `created_by` held a typed-in person's name, not a user id, so it is
+  /// kept as free text rather than a relation.
+  legacyCreatedBy String?
+
+  /// False archives the record: it stays in the database, keeps its history and
+  /// disappears from the default list. Trading partners cannot be hard-deleted
+  /// once `commande` / `facture_achat` reference them (14 of 19 clients and 126
+  /// of 136 suppliers already are, in the legacy data), and an invoice from last
+  /// year must keep naming its supplier. Archiving is the normal "delete".
+  active Boolean @default(true)
+
+  orders          Order[]
+  products        Product[]
+  salesInvoices   SalesInvoice[]
+  exportShipments Shipment[]
+
+  /// Legacy bigint primary key, kept so later migration passes can rewire
+  /// foreign keys (`commande.client_id`) without a separate mapping table.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt, id])
+  @@index([name, id])
+  /// Every list sort leads with `active: "desc"` (archived rows sink) and
+  /// ends with the `id` tiebreaker, so these match the real sort keys — the
+  /// list has no default scope. See the note on User's indexes.
+  @@index([active, name, id])
+  @@index([active, registeredAt, id])
+  @@index([active, createdAt, id])
+}
+
+/// Supplier. Migrated from legacy `fournisseur` (136 rows, 126 referenced by
+/// purchase invoices). Contact data here is real, unlike Client.
+model Supplier {
+  id String @id @default(cuid())
+
+  name String @unique
+
+  /// Matricule fiscal, present on 130 of 136 legacy rows.
+  taxId   String?
+  address String?
+  email   String?
+  phone   String?
+  phone2  String?
+  fax     String?
+  website String?
+
+  /// Null means uncategorised, which 20 of the migrated rows are. `SetNull` on
+  /// delete is a backstop only: the service refuses to delete a family that is
+  /// still referenced, so this should never actually fire.
+  familyId String?
+  family   SupplierFamily? @relation(fields: [familyId], references: [id], onDelete: SetNull)
+
+  /// Parsed from the legacy `tva` *string* ("19%" -> 19). Stored as a percentage,
+  /// so 19 means 19%, and Float per the schema-wide choice for numerics.
+  vatRate Float?
+
+  /// The legacy `tva` verbatim when it would not parse to a single rate — two
+  /// rows only: "ATU58113767" (a VAT number misfiled into the rate column) and
+  /// "19% /7%" (two rates in one cell). Preserved so nothing is lost silently;
+  /// clear it once the real rate is entered.
+  vatRateNote String?
+
+  /// False archives the record: it stays in the database, keeps its history and
+  /// disappears from the default list. Trading partners cannot be hard-deleted
+  /// once `commande` / `facture_achat` reference them (14 of 19 clients and 126
+  /// of 136 suppliers already are, in the legacy data), and an invoice from last
+  /// year must keep naming its supplier. Archiving is the normal "delete".
+  active Boolean @default(true)
+
+  machines         Machine[]
+  shipments        ImportShipment[]
+  purchaseInvoices PurchaseInvoice[]
+  purchaseOrders   PurchaseOrder[]
+  goodsReceipts    GoodsReceipt[]
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt, id])
+  @@index([name, id])
+  @@index([familyId])
+  /// Every list sort leads with `active: "desc"` and ends with `id`; see Client.
+  @@index([active, name, id])
+  @@index([active, vatRate, id])
+  @@index([active, createdAt, id])
+}
+
+/// The kinds of machine on the shop floor.
+///
+/// An enum rather than a lookup table (unlike SupplierFamily): these are eight
+/// distinct classes of physical equipment, and a ninth means the factory bought a
+/// new kind of machine — a project, not a data-entry moment. The set has been
+/// stable across the legacy system's life.
+enum MachineType {
+  SAC_POIGNE_TORSADE
+  SAC_POIGNE_PLATE
+  SAC_V
+  IMPRESSION
+  CORDON
+  COUPE
+  COUPE_SOUS_PLAT
+  SAC_LUXE
+}
+
+/// A production machine. Migrated from legacy `machine` (22 rows).
+///
+/// The capability columns (laize/grammage/length/width ranges) are deliberately
+/// all optional and mostly sparse: which ones apply depends on the machine type.
+/// A bag machine declares grammage with and without a handle; a printing machine
+/// declares none of them. Storing them flat matches the legacy shape and keeps
+/// the import lossless — normalising per type would invent structure the data
+/// does not have.
+model Machine {
+  id String @id @default(cuid())
+
+  /// Inventory code, e.g. "R2024106". The real identifier, and unique on all 22
+  /// legacy rows.
+  code String @unique
+
+  /// NOT unique: the legacy data holds two distinct machines (codes R2024337 and
+  /// R2024335) whose names differ only by a trailing space, which trimming on
+  /// import collapses into one string. They are separate physical machines, so
+  /// the name is a label and `code` is what identifies a machine.
+  name String
+
+  type MachineType
+
+  brand        String?
+  price        Float?
+  purchaseDate DateTime? @db.Date
+
+  /// S3 URLs from the legacy system. Kept as plain strings: the files live in
+  /// someone else's bucket and are not re-hosted by this app.
+  imageUrl   String?
+  invoiceUrl String?
+
+  /// Who supplied it. Null where the legacy row had no supplier.
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  /// Web width in mm.
+  laize    Float?
+  laizeMin Float?
+  laizeMax Float?
+
+  /// Paper weight in g/m². The plain `grammage` is a single rated value; the
+  /// min/max pairs are operating ranges, and the *WithHandle / *WithoutHandle
+  /// pairs differ because a handle adds material the machine must still feed.
+  grammage                 Float?
+  grammageMin              Float?
+  grammageMax              Float?
+  grammageMinWithoutHandle Float?
+  grammageMaxWithoutHandle Float?
+  grammageMinWithHandle    Float?
+  grammageMaxWithHandle    Float?
+
+  /// Grammage limits per paper type, where the machine distinguishes them.
+  grammageMinKraft          Float?
+  grammageMaxKraft          Float?
+  grammageMinLaminatedKraft Float?
+  grammageMaxLaminatedKraft Float?
+
+  /// Bag dimensions the machine can produce, in mm.
+  lengthMin Float?
+  lengthMax Float?
+  widthMin  Float?
+  widthMax  Float?
+
+  /// Archive rather than delete — a machine appears on historical orders.
+  active Boolean @default(true)
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productionRuns ProductionRun[]
+  /// Tickets naming this machine — see ShiftTask. Restrict there.
+  shiftTasks     ShiftTask[]
+
+  @@index([createdAt, id])
+  @@index([active, name, id])
+  @@index([type])
+  /// Foreign key: deleting a supplier SetNulls it here.
+  @@index([supplierId])
+}
+
+/// An employee. Migrated from legacy `employee` (94 rows).
+///
+/// **This model holds sensitive personal data**: `salary`, `cin` (Tunisian
+/// national ID), `socialSecurityNumber`, `birthDate` and `address`. Those fields
+/// are read by ADMIN and above only, enforced in EmployeeService by selecting a
+/// narrower shape for lower ranks — the data never leaves Postgres rather than
+/// being fetched and filtered. Do not add them to the default list select.
+model Employee {
+  id String @id @default(cuid())
+
+  /// Payroll number. Present and unique on all 94 legacy rows.
+  matricule String @unique
+
+  firstName String
+  lastName  String
+
+  /// Free text, cleaned on import: the legacy data held Production /
+  /// Productionn / PRODUCTION as three distinct values. Not a lookup table by
+  /// deliberate choice — see docs/legacy-migration.md.
+  department String?
+  jobTitle   String?
+
+  /// CDI, CIVP, or absent. Free text: two values in 94 rows does not justify
+  /// an enum, and Tunisian contract types are set by law, not by this app.
+  employmentType String?
+  /// Collective-agreement grade and step. Numeric in the data but kept as text:
+  /// they are labels, never arithmetic.
+  categorie      String?
+  echelon        String?
+
+  gender String?
+
+  /// Present on only 23 of the 94 legacy rows.
+  email  String?
+  phone  String?
+  phone2 String?
+
+  hireDate        DateTime? @db.Date
+  contractEndDate DateTime? @db.Date
+
+  photo String?
+
+  /// Suspension is the legacy system's way of marking someone off the roster
+  /// without deleting them; 55 of 94 rows are suspended.
+  suspended        Boolean   @default(false)
+  suspendedAt      DateTime? @db.Date
+  suspensionReason String?
+
+  // ---- restricted: ADMIN and above only -----------------------------------
+
+  /// Net monthly salary. `salaryGross` is empty on every legacy row but kept so
+  /// the column exists when payroll starts using it.
+  salary      Float?
+  salaryGross Float?
+
+  /// Tunisian national identity number. Present on all 94 rows.
+  cin String?
+
+  socialSecurityNumber String?
+
+  birthDate DateTime? @db.Date
+  address   String?
+
+  // -------------------------------------------------------------------------
+
+  /// Archive rather than delete — an employee appears on historical orders.
+  active Boolean @default(true)
+
+  /// The account this person signs in with, for the shift planning module
+  /// (docs/shift-planning-plan.md Phase 0). Nullable: 55 of 94 rows are
+  /// suspended and get no account, and an admin who never works shifts has
+  /// no employee row. Unique, so one account is one person. SetNull, so
+  /// deleting the account keeps the person: the employee row, not the
+  /// account, is the durable identity on rosters and tickets.
+  userId String? @unique
+  user   User?   @relation("EmployeeUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  production ProductionRun[]
+
+  /// Shift planning — docs/shift-planning-plan.md §2.
+  assignments        ShiftAssignment[]
+  shiftChanges       ShiftChange[]     @relation("ShiftChangeEmployee")
+  counterpartChanges ShiftChange[]     @relation("ShiftChangeCounterpart")
+  shiftTasks         ShiftTask[]
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt, id])
+  @@index([active, lastName, id])
+  @@index([department])
+}
+
+/// Bag construction. SAC_LUXE removed 2026-09: not a produced bag type, only
+/// `MachineType.SAC_LUXE` (a class of machine) still uses that name.
+enum TypeSac {
+  FOND_V
+  FOND_CARRE
+  SOUS_PLAT
+}
+
+enum PaperType {
+  PAPIER_BLANC
+  PAPIER_KRAFT
+}
+
+enum TypeImpression {
+  IMPRESSION_SUR_ROULEAU
+  IMPRESSION_SUR_SAC
+}
+
+/// Where an order sits in the export pipeline. Legacy `export_status` was a free
+/// string holding only these two values (217 EXPORTED, 1 PREPARATION) with 179
+/// blank, so it is an enum here and blank imports as null.
+enum ExportStatus {
+  PREPARATION
+  EXPORTED
+}
+
+/// Pieces, or kilograms for a SOUS_PLAT sheet — see `quantityUnitFor` in
+/// `@repo/api-contract`, the only place this is derived from a bag type.
+enum QuantityUnit {
+  PIECES
+  KILOGRAMS
+}
+
+/// Where an order's price snapshot came from. LEGACY = migrated with a
+/// recorded price, unchanged until the order is next saved. COMPUTED = priced
+/// by the pricing engine in `@repo/api-contract`.
+enum PricingSource {
+  LEGACY
+  COMPUTED
+}
+
+/// Whether an `Order` row is a quotation or a confirmed order — see
+/// docs/order-lifecycle-plan.md §2.1. Replaces the legacy `offreDePrix`
+/// boolean; QUOTE -> ORDER is a one-way transition (§3.1), never the reverse.
+enum OrderKind {
+  QUOTE
+  ORDER
+}
+
+/// The order lifecycle, replacing `okFacturation`/`okExport`/`produitFini` —
+/// see docs/order-lifecycle-plan.md §2.2 for the seven-state machine and §3
+/// for the transition table. INVOICEABLE and INVOICED are kept distinct even
+/// though no migrated row separates them (measured: perfectly correlated in
+/// the legacy data) because the split is a capability this change adds, not
+/// one it is merely preserving.
+enum OrderStatus {
+  DRAFT
+  IN_PRODUCTION
+  PRODUCED
+  INVOICEABLE
+  INVOICED
+  READY_FOR_EXPORT
+  /// Terminal for every order — named COMPLETED, not EXPORTED, because
+  /// orders produced for stock reach this state too (plan §2.2, decision 2
+  /// in §7). `ExportStatus.EXPORTED` is unrelated and
+  /// unaffected: that enum still means what it always meant.
+  COMPLETED
+  CANCELLED
+}
+
+/// A bag or sheet specification a client orders. Migrated from the legacy
+/// `Order` rows that carried this inline (see the migration note on `Order`):
+/// 397 orders collapsed into 354 distinct (client, name, spec) products, 154
+/// of them named only by a generated string because the legacy order had no
+/// `product_name`.
+///
+/// `name` is deliberately NOT unique: two products can share a name with
+/// different dimensions (a client's "Sac boulangerie" in two sizes), and the
+/// order form's product picker disambiguates by showing the spec alongside
+/// the name.
+///
+/// Never locked: a product stays editable even once orders reference it.
+/// Changing its specification does not rewrite those orders' recorded prices
+/// — each is recomputed the next time it is saved, from whatever the product
+/// looks like then. See `docs/legacy-migration.md` for the dedupe and the 11
+/// migrated rows whose `grammage` is 0 (real historical orders, priced as
+/// "incomplete" until someone enters the real value).
+model Product {
+  id String @id @default(cuid())
+
+  name String
+
+  /// Null means shared: any client's order may pick it. Non-null products are
+  /// scoped to that one client in the order form's picker.
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  typeSac       TypeSac
+  /// Centimetres. Legacy `largeur`, which the old model comment wrongly
+  /// called millimetres.
+  widthCm       Float
+  /// Centimetres. Legacy `longueur`.
+  lengthCm      Float
+  /// Centimetres. Required for FOND_* (0 when the bag has none), null for
+  /// SOUS_PLAT — see `normaliseProductSpec` in `@repo/api-contract`, the one
+  /// place this null-vs-0 rule is defined.
+  gussetCm      Float?
+  /// Centimetres. Legacy `pliEnLargeur`. Null for SOUS_PLAT.
+  pleatWidthCm  Float?
+  /// Centimetres. Legacy `pliEnLongueur`. Null for SOUS_PLAT.
+  pleatLengthCm Float?
+  /// g/m². NOT NULL, but 11 migrated rows hold 0 — see the model comment.
+  grammage      Float
+  paperType     PaperType?
+
+  hasHandle     Boolean @default(false)
+  /// Grams. Only meaningful when `hasHandle`; null otherwise.
+  handleWeightG Float?
+
+  /// Artwork and reference photos of the bag itself. A plain string array,
+  /// matching the legacy `text[]`: these are URLs into someone else's bucket,
+  /// not managed assets.
+  ///
+  /// Moved here from `Order` (2026-09-03), which is where the legacy system
+  /// kept them. The backfill took the **union** of every distinct URL across
+  /// a product's orders — 467 URLs across 348 products, nothing discarded.
+  /// The consequence to know: 30 products whose orders carried genuinely
+  /// different job artwork now show all of it together, so a gallery can mix
+  /// several clients' designs for one shared bag size. Splitting those is a
+  /// data-entry job, not something the migration could decide.
+  images String[]
+
+  /// False archives the record: it stays referenced by its orders and
+  /// disappears from the default picker and list. The same convention as
+  /// Client and Supplier.
+  active Boolean @default(true)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([active, name, id])
+  @@index([typeSac])
+}
+
+/// A production order. Migrated from legacy `commande` (397 rows).
+///
+/// The bag specification is no longer inline: it is a `Product`, either
+/// picked from the client's existing ones or created alongside the order.
+/// Pricing is computed **live** by the engine in `@repo/api-contract` from
+/// `Product` plus this order's inputs, and re-stored as a snapshot on every
+/// save — see the 11 `*Cm`/`*G`/price columns below, none of which is
+/// user-editable directly.
+///
+/// **Reproduction, checked against the legacy database**: every FOND_CARRE
+/// and FOND_V unit price (244/244) and parcel price (133/133) reproduces
+/// exactly with the engine, once centimetres (not millimetres — the old
+/// comment here was wrong) and two implicit terms (cm²→m² ÷ 10 000, and
+/// handle weight) are accounted for. The 4 SOUS_PLAT rows priced per piece
+/// (CMD-516..519) do not reproduce and are kept as recorded history. See
+/// `docs/legacy-migration.md`.
+model Order {
+  id String @id @default(cuid())
+
+  /// Business key, e.g. "CMD-12". Unique across all 397 legacy rows.
+  numero String @unique
+
+  description String?
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  productId String
+  /// Restrict, not SetNull or Cascade: an order without a product is not a
+  /// valid state, so a product with orders cannot be deleted (only archived).
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  /// Pieces, or kilograms for a SOUS_PLAT order. Matches `product.typeSac`
+  /// via `quantityUnitFor` — not independently settable.
+  quantityUnit QuantityUnit
+
+  /// NOT NULL in the legacy schema, so required here. Pieces or kilograms,
+  /// per `quantityUnit`.
+  quantite Float
+
+  // ---- pricing inputs -------------------------------------------------
+
+  /// Price of the paper, per kilogram. Legacy `prix_kilo`.
+  paperKiloPrice  Float?
+  /// Percent: 2 means 2%. Legacy `marge`.
+  profitMarginPct Float?
+  /// Percent. Legacy `taux_perte`.
+  lossMarginPct   Float?
+
+  /// Three glue lines, each a kilo price and a weight in grams per unit.
+  /// Typed per order — never prefilled from the product or from history.
+  /// `handleGlue*` is only read when the product has a handle.
+  handleGlueKiloPrice   Float?
+  handleGlueWeightG     Float?
+  sideGlueKiloPrice     Float?
+  sideGlueWeightG       Float?
+  baseAdhesiveKiloPrice Float?
+  baseAdhesiveWeightG   Float?
+
+  /// Migrated orders only, and not a form field: the old system recorded glue
+  /// as a cost per bag rather than a weight and a kilo price. Used as a
+  /// fallback by the engine while the three lines above are all blank, and
+  /// replaced (not added to) the moment any of them is filled in. Preserved
+  /// verbatim by the server on every update; never settable through the API.
+  legacyGlueCostPerUnit Float?
+
+  /// How many pieces go in one parcel. FOND types. Legacy
+  /// `nombre_de_piece_par_colis`.
+  piecesPerParcel Float?
+  /// How many kilograms go in one parcel. SOUS_PLAT. Legacy `kilo_par_colis`.
+  kilosPerParcel  Float?
+  /// Cost of the parcel itself (the carton). Legacy `prix_carton`.
+  parcelPrice     Float?
+  /// Transport, per parcel. Legacy `prix_transport`.
+  transportCost   Float?
+
+  // ---- pricing snapshot: rewritten on every save, never hand-edited -----
+
+  /// Where this snapshot came from. LEGACY until the order is next saved,
+  /// which recomputes everything below and flips this to COMPUTED.
+  pricingSource PricingSource @default(COMPUTED)
+
+  /// Centimetres. Paper reel width needed to make the bag ("laize").
+  productionWidthCm Float?
+  /// Centimetres. Length cut from the reel per unit.
+  cuttingLengthCm   Float?
+  /// Grams. Paper plus handle weight (when applicable) in one unit.
+  unitWeightG       Float?
+
+  /// Paper cost per unit, before margins.
+  unitPrice            Float?
+  /// After profit and loss margins, applied multiplicatively.
+  unitPriceWithMargins Float?
+  /// Glue cost per unit — new glue lines, or the legacy fallback. Always a
+  /// number when priced; 0 when there is none.
+  glueCostPerUnit      Float?
+  /// `unitPriceWithMargins` plus `glueCostPerUnit` — what one unit sells for.
+  finalUnitPrice       Float?
+
+  /// A parcel's contents at `finalUnitPrice`.
+  baseParcelPrice  Float?
+  /// `baseParcelPrice` plus `parcelPrice` plus `transportCost` — what one
+  /// parcel sells for.
+  finalParcelPrice Float?
+  /// `quantite / unitsPerParcel`, an exact (possibly fractional) division —
+  /// not rounded, so `orderTotal` matches `parcelCount × finalParcelPrice`.
+  parcelCount      Float?
+  /// `parcelCount × finalParcelPrice`.
+  orderTotal       Float?
+
+  // ---- lifecycle ------------------------------------------------------------
+  //
+  // Replaces the four legacy workflow booleans below with two orthogonal
+  // columns. See docs/order-lifecycle-plan.md for the full design; this is
+  // steps 1-4 of its §6 sequencing — both old and new columns are live at
+  // once, nothing reads the new ones yet, and the booleans are not dropped
+  // here (that is the plan's step 5, deliberately deferred).
+
+  /// Document kind: a quotation, or a confirmed order. Replaces `offreDePrix`
+  /// as its own axis rather than a pipeline stage — see plan §2.1.
+  kind OrderKind @default(ORDER)
+
+  /// Stamped by the QUOTE -> ORDER transition (plan §3.1), the legacy
+  /// `confirmerOffre`. Null until then, and never set any other way.
+  acceptedAt   DateTime?
+  acceptedById String?
+  /// SetNull, matching `OrderStatusChange.byUserId`: the acceptance record
+  /// must survive a deleted user, the same as every other actor stamp here.
+  acceptedBy   User?     @relation("OrderAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  /// Pipeline position. Replaces `okFacturation`/`okExport`/`produitFini` —
+  /// see plan §2.2 for the seven-state machine and §3 for the transition
+  /// table that is the single authority for changing this column. Never
+  /// written directly outside `OrderService.transition`.
+  status OrderStatus @default(DRAFT)
+
+  /// Every change to `status` (and the one `kind` transition, logged with
+  /// equal from/to — plan §3.1), newest first by `at`. What the booleans
+  /// could never provide: who released an order to invoicing, and when.
+  statusChanges OrderStatusChange[]
+
+  // ---- legacy workflow booleans ---------------------------------------------
+  //
+  // Superseded by `kind`/`status` above. Kept, written only by the legacy
+  // importer (`OrderService` no longer touches them), until the plan's step 5
+  // backfill is verified and these are dropped in a second migration — see
+  // the plan's reversibility note in §6. Not read by any new code.
+
+  okFacturation Boolean?
+  okExport      Boolean?
+  produitFini   Boolean?
+  /// True when the order is a quotation rather than a confirmed order.
+  offreDePrix   Boolean?
+
+  exportStatus ExportStatus?
+
+  /// Metres of reel the order needs at `productionWidthCm` — part of the
+  /// pricing snapshot, rewritten on every save from the product and the
+  /// quantity (`computeMetrageNecessaire`), never typed. Null when the
+  /// product has no grammage. The legacy `poidsNecessaire` (kilograms,
+  /// hand-typed, non-zero on one row) was dropped in its favour —
+  /// docs/roll-allocation-plan.md.
+  metrageNecessaire Float?
+  /// The legacy running kg totals. **Importer only**: the app stopped
+  /// writing them with the allocation work (2026-09-10) and reads what is
+  /// reserved and consumed off `RollAllocation` instead. Dropped later, with
+  /// the workflow booleans above.
+  poidsReserve  Float @default(0)
+  poidsConsomme Float @default(0)
+
+  /// Orders are no longer assigned to a worker or a machine: under the current
+  /// RBAC the production team records its own work, rather than an order naming
+  /// who must do it. The legacy `assigned_worker_id` and `machine_production_id`
+  /// links (65 and 64 rows) were dropped with that change — they remain in the
+  /// legacy database if they are ever needed.
+
+  // ---- printing -----------------------------------------------------------
+
+  /// What the print job IS, not who does it or whether it is done: the progress
+  /// flags (`avecImpression`, `impressionFinie`, `impressionRouleauFaite`) and
+  /// the machine/operator links went with the assignment model. An order is
+  /// printed when it has a `typeImpression` or any `colours`.
+  typeImpression TypeImpression?
+
+  /// Artwork moved to `Product.images` (2026-09-03) — it describes the bag,
+  /// not the run. See the note there on the union backfill.
+
+  colours     OrderColour[]
+  production  ProductionRun[]
+  allocations RollAllocation[]
+  /// Ink drawn from the colour stock for this order — the consumable
+  /// counterpart of `allocations` (paper). Empty on every migrated order:
+  /// the legacy table was never used.
+  inkUsages   InkUsage[]
+  /// The sales invoice lines that bill this order. Empty on every migrated
+  /// order; at most one today (`InvoiceService.createFromOrder` refuses a
+  /// second) — see docs/sales-invoice-plan.md §3.2 for why the link is on
+  /// the line rather than the invoice header.
+  invoiceLines SalesInvoiceLine[]
+  /// The outbound shipment lines that carry this order's parcels — several
+  /// when it ships in parts (docs/export-plan.md). Empty on every migrated
+  /// order.
+  shipmentLines ShipmentLine[]
+  /// Shift tickets that name this order — the daily work plan's link to the
+  /// job (docs/shift-planning-plan.md). Only an IN_PRODUCTION order may be
+  /// named; SetNull there, so a ticket outlives an order's deletion.
+  shiftTasks ShiftTask[]
+
+  /// Archive rather than delete — nine legacy tables reference an order.
+  active Boolean @default(true)
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt, id])
+  /// Every list sort leads with `active: "desc"` (archived orders sink) and
+  /// ends with the `id` tiebreaker, so each sortable column is (active, col, id).
+  /// `client`/`product` sort through a join and are not served by an index here.
+  @@index([active, numero, id])
+  @@index([active, createdAt, id])
+  @@index([active, quantite, id])
+  @@index([active, orderTotal, id])
+  @@index([clientId])
+  @@index([productId])
+  /// Foreign key: deleting a user SetNulls it here.
+  @@index([acceptedById])
+  /// Matches the real sort key for the status-grouped facets in
+  /// `order.list.ts` (plan §5.1): every one filters `active` then `status`.
+  @@index([status, id])
+  @@index([kind, status, id])
+}
+
+/// The `CMD-` sequence every new order's `numero` is allocated from.
+///
+/// Single-row by construction (`id` is always the literal "CMD"), unlike
+/// `SalesInvoiceCounter`/`ShipmentCounter`, which restart per year, and
+/// unlike `PurchaseOrderCounter`, which is per category prefix: job orders
+/// have run one unbroken `CMD-<n>` sequence across every year of the legacy
+/// data, and nobody asked for that to change.
+///
+/// Advanced by one atomic upsert inside the create, exactly as
+/// `PurchasingService.allocate` does it: the row lock the UPDATE takes
+/// serialises concurrent creates, and the `@unique` on `Order.numero` is the
+/// backstop.
+///
+/// Seeded by the migration at 646, from the highest CONTIGUOUS legacy number
+/// (`CMD-645`) rather than `max + 1`. The single `CMD-6009` row is a typo —
+/// the next highest is 645 — and seeding from it would strand ~5 400 numbers
+/// for good. 6009 is simply never re-issued: it already exists, so the
+/// `@unique` would refuse a collision even if the sequence ever reached it.
+model OrderCounter {
+  /// Always the literal "CMD". A one-row table with a named key rather than a
+  /// bare boolean, so a second sequence could be added without a migration.
+  id   String @id
+  next Int
+}
+
+/// One row per status change on an order — the transition audit the legacy
+/// booleans could never provide (docs/order-lifecycle-plan.md §2.4). Written
+/// exclusively by `OrderService.transition`, in the same `$transaction` as the
+/// status write itself: the two must never be separable, or the log becomes
+/// unreliable for exactly the lead-time reporting it exists to enable.
+///
+/// Also carries the one `kind` transition (QUOTE -> ORDER, plan §3.1) as a row
+/// with `fromStatus = toStatus`, so acceptance appears in the same timeline
+/// rather than only in `Order.acceptedAt`/`acceptedBy`.
+model OrderStatusChange {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// Null only on the row the migration backfill writes for every order
+  /// (plan §4) — there is no real "from" for a state that was never a
+  /// recorded transition.
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+
+  /// Null for the migration-generated rows (no actor) and SetNull on delete,
+  /// matching `Order.acceptedBy` — history survives a removed user.
+  byUserId String?
+  by       User?   @relation("OrderStatusChangeBy", fields: [byUserId], references: [id], onDelete: SetNull)
+
+  /// Required on CANCELLED and on every reopen (plan §3); optional elsewhere.
+  /// Also where the §3.2 production-shortfall warning is recorded on
+  /// IN_PRODUCTION -> PRODUCED, since there is no dedicated column for it.
+  note String?
+
+  at DateTime @default(now())
+
+  /// The transition history reads oldest-first per order; `at` is the
+  /// business-relevant ordering (`createdAt` would be identical in practice,
+  /// but `at` is the one meant to be shown, so it is what is indexed).
+  @@index([orderId, at])
+  /// Foreign key: deleting a user SetNulls it here.
+  @@index([byUserId])
+}
+
+enum AuditKind {
+  QUERY
+  MUTATION
+  AUTH
+}
+
+enum AuditOutcome {
+  OK
+  ERROR
+}
+
+/// Who did what, when — every tRPC call and Better Auth sign-in/out
+/// (docs/audit-log.md). Written by the audit middleware after the resolver
+/// returns, outside its transaction: an OK row always describes a committed
+/// change, but the domain tables (`OrderStatusChange`) keep the atomic,
+/// in-transaction guarantee; this is the cross-cutting timeline.
+///
+/// Actor columns are a snapshot so the row still reads after a rename,
+/// demotion or delete (SetNull, like OrderStatusChange.by).
+model AuditLog {
+  id String   @id @default(cuid())
+  at DateTime @default(now())
+
+  actorId    String?
+  actor      User?   @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String?
+  actorName  String?
+  actorRole  Role?
+  /// Admin-plugin impersonation: the real admin behind `actorId`.
+  impersonatedById String?
+
+  kind   AuditKind
+  /// tRPC path ("shipment.ship") or "auth.signIn" / "auth.signOut".
+  action String
+  /// First path segment ("shipment", "auth") — decides the entity link on the web.
+  module String
+
+  /// The record the call is about: the created/updated row, else the id in the input.
+  entityId    String?
+  entityLabel String?
+  /// The parent the call was raised *from* when it differs from `entityId` — the
+  /// order behind a production run, shipment or sales invoice — so the order's
+  /// timeline still shows them.
+  relatedId String?
+
+  /// Submitted input, redacted and capped. The schema's first Json column; detail select only.
+  input Json?
+
+  outcome      AuditOutcome
+  errorCode    String?
+  errorMessage String?
+  durationMs   Int
+
+  ip        String?
+  userAgent String?
+
+  /// Default sort is `at desc, id asc`; a plain (at, id) btree serves only one
+  /// direction, so this one table declares the leading column descending. The
+  /// rest are (filter, sort key).
+  @@index([at(sort: Desc), id])
+  @@index([actorId, at, id])
+  @@index([entityId, at, id])
+  @@index([relatedId, at, id])
+  @@index([module, at, id])
+  @@index([kind, at, id])
+  @@index([outcome, at, id])
+  /// The other sortable columns in `audit.list.ts` (`actor` sorts `actorName`).
+  @@index([action, id])
+  @@index([actorName, id])
+  @@index([durationMs, id])
+}
+
+/// A print colour on an order. Migrated from legacy `produit` (522 rows).
+///
+/// Named `produit` there, but it is not a product catalogue: the rows are ink
+/// names — "NOIR QUADRI", "ROUGE 485", or the placeholder "Couleur 1" — 1 to 5
+/// per order, with an optional cost. Note they appear on unprinted orders too
+/// (230 of the rows), so this is not gated on `Order.avecImpression`.
+model OrderColour {
+  id String @id @default(cuid())
+
+  /// Ink name. Optional because some legacy rows have none.
+  nom  String?
+  /// Cost of this colour on this order. Present on only ~90 of 522 rows.
+  prix Float?
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+}
+
+/// Unit a production run was recorded in. Legacy `production.unit` held
+/// PIECE, METER or blank; blank imports as null rather than a third value.
+enum ProductionUnit {
+  PIECE
+  METER
+}
+
+/// Which workshop station recorded a `ProductionRun`.
+///
+/// A SECOND AXIS, deliberately not part of `Role`. `Role` is a rank — the
+/// whole RBAC (`hasRank`, `canAccess`, "strictly higher rank to manage a
+/// user") is built on it being strictly ordered. These four are peers: a
+/// printer does not outrank a packer. Folding them into `Role` would force a
+/// rank onto each, and every number picked would be a lie — the same
+/// two-axes-in-one-enum mistake the four workflow booleans made (see
+/// docs/order-lifecycle-plan.md §1.1(f)).
+///
+/// The stage lives on the RUN, not on the user: someone who covers two
+/// stations picks the stage each time rather than needing two accounts.
+enum WorkshopStage {
+  PRINTING
+  PRODUCER
+  QUALITY_CONTROL
+  PACKAGING
+}
+
+/// A paper delivery. Migrated from legacy `import_model` (32 rows).
+///
+/// This is where the real import history lives: `dateImport` spreads across
+/// two years (2024-07-03 to 2026-07-14), while every legacy row shares one
+/// `created_at` because they were all loaded into the old system in a single
+/// transaction. Use `dateImport`; `createdAt` here is this app's insert time
+/// and says nothing about when the paper arrived.
+model ImportShipment {
+  id String @id @default(cuid())
+
+  /// Legacy `numero_import`. Unique on all 32 rows, and the only real
+  /// business key in this table.
+  numeroImport String @unique
+
+  /// When the shipment actually arrived — the fact worth migrating.
+  dateImport DateTime? @db.Date
+
+  /// Required: a delivery always came from someone.
+  ///
+  /// The legacy data linked only 18 of 32 shipments and left the rest as a
+  /// typed-in `fournisseur_name`, which recorded the same company two ways —
+  /// `PEREVALLS` linked and `PERE VALLS` as text — so reporting by supplier
+  /// missed a third of the deliveries. The 2026-09-03 migration resolved all
+  /// 14 (11 by whitespace-insensitive match, 2 by an explicit
+  /// `DURU SELULOZ VE KAGIT SA` mapping, and IBERGUM by creating the missing
+  /// supplier) and dropped the text column.
+  ///
+  /// `Restrict`, not `SetNull`: nulling this when a supplier is deleted would
+  /// recreate the orphaned state that migration removed. A supplier with
+  /// deliveries is archived, never deleted.
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  /// Legacy `nom_produit` — what was bought, as free text.
+  productName String?
+
+  totalMetrage Float?
+  totalRolls   Int?
+  /// Legacy `prix` (unit) and `prix_total`.
+  price        Float?
+  priceTotal   Float?
+
+  /// Every legacy row is EUR, but the column exists, so it is carried rather
+  /// than assumed — a second currency must not silently become euros.
+  currency String?
+
+  transportIncluded Boolean?
+  transportPrice    Float?
+
+  hasCertificate Boolean?
+  /// URLs into someone else's bucket, like Order artwork — not managed assets.
+  certificate    String?
+  packingList    String?
+  importFile     String?
+
+  observations String?
+
+  /// False archives the record: it stays referenced by its reels, keeps its
+  /// history and disappears from the default list. The same archive-not-delete
+  /// rule as Client, Supplier and Product — a delivery from last year must
+  /// keep naming its supplier and its price.
+  ///
+  /// A hard delete is permitted only while no reel references the shipment
+  /// (see `StockService.removeShipment`): the FK is `SetNull`, so deleting one
+  /// with reels attached would silently strip their purchase provenance rather
+  /// than failing. 31 of the 32 migrated shipments have reels, one has 136.
+  active Boolean @default(true)
+
+  rolls PaperRoll[]
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dateImport, id])
+  @@index([supplierId])
+  /// Every list sort leads with `active: "desc"` (archived shipments sink)
+  /// and the default sorts by date; matches the real sort key. See the note
+  /// on User's indexes.
+  @@index([active, dateImport, id])
+}
+
+/// One physical reel of paper. Migrated from legacy `rouleau_import` (1688).
+///
+/// **There is no business key.** `numero` is not unique (17 rolls are
+/// literally numbered "0", each a distinct reel with its own weight), and
+/// `code` is a paper grade like "KRS-80" with only 36 distinct values across
+/// 1688 rows. Identity therefore rides on `legacyId`, exactly as it does for
+/// Client and Order, and `numero`/`code` are labels rather than keys.
+///
+/// Rolls are **split**: cutting one creates a child row pointing back at its
+/// parent, nesting up to 16 deep in the migrated data (391 children, zero
+/// dangling parents). `parentId` preserves that lineage — see the note on it.
+model PaperRoll {
+  id String @id @default(cuid())
+
+  /// Legacy `numero` / `numero_interne` / `numero_source`. Labels, NOT keys —
+  /// see the model comment. `numeroInterne` is null on 159 rows and holds a
+  /// single distinct value across the rest, so it identifies nothing.
+  numero        String?
+  numeroInterne String?
+  numeroSource  String?
+
+  /// Legacy `code`: the paper grade ("KRS-80"), shared by many rolls.
+  paperGrade  String?
+  description String?
+
+  /// Length in metres, and what is left of it.
+  metrage        Float?
+  metrageRestant Float  @default(0)
+
+  /// Weight in kilograms: total, remaining, and reserved against orders.
+  poids        Float?
+  poidsRestant Float  @default(0)
+  poidsReserve Float  @default(0)
+  /// Metres promised to RESERVED allocations — the length twin of
+  /// `poidsReserve`, and the one the app actually guards on:
+  /// `metrageRestant − metrageReserve` is what a reservation may take.
+  /// Always equals Σ `metrageReserve` of this reel's RESERVED allocations
+  /// (legacy rows, whose metres are NULL, drop out of both sides).
+  metrageReserve Float @default(0)
+
+  /// Reel width in mm.
+  laize     Float?
+  /// g/m².
+  grammage  Int?
+  paperType PaperType?
+
+  price              Float?
+  priceWithTransport Float?
+
+  /// The legacy stock flags, carried as-is. `disponible`, `consomme` and
+  /// `archived` were NOT NULL there and stay required here; the rest were
+  /// nullable and remain so rather than inventing a false default.
+  valide     Boolean?
+  disponible Boolean  @default(true)
+  partiel    Boolean?
+  reserved   Boolean?
+  consomme   Boolean  @default(false)
+  archived   Boolean  @default(false)
+
+  /// When the roll was used up.
+  dateConsommation DateTime?
+
+  /// Legacy `consomme_par`, kept verbatim as free text by decision. It is not
+  /// one kind of thing: of 205 non-null values, 151 look like an order number
+  /// (148 of which resolve), 120 are split notes like "Split by weight:
+  /// 369.472 + 256.528 kg", and 123 are something else. Structuring it is a
+  /// data-cleaning job, not something the import can decide.
+  consumedByNote String?
+
+  qrCodeUrl String?
+
+  /// When a warehouse user scanned this reel in on the floor, and who did.
+  ///
+  /// A reel typed into the office is PENDING until then: it cannot be cut,
+  /// slit, picked or reserved. This is the legacy `EN_ATTENTE -> EN_STOCK`
+  /// step, which v2 lost when the booleans were migrated as-is — see
+  /// docs/receiving-plan.md.
+  ///
+  /// Monotonic by design: set once by `receiveRoll`, never cleared. That is
+  /// what makes the guarded `updateMany(where: { receivedAt: null })` race-free
+  /// without a transaction-level lock, and it is why a reel's receipt is not a
+  /// boolean — the timestamp is the record.
+  ///
+  /// `receivedById` is SetNull rather than Cascade: deleting an account must
+  /// not erase the fact that the reel arrived. Null also means "backfilled",
+  /// since the reels that predate receiving have a stamp but no scanner.
+  receivedAt   DateTime?
+  receivedById String?
+  receivedBy   User?     @relation("PaperRollReceivedBy", fields: [receivedById], references: [id], onDelete: SetNull)
+
+  /// The roll this one was cut from, and the pieces cut from it.
+  ///
+  /// `NoAction` rather than Cascade: deleting a parent must not silently take
+  /// its children — a remnant on the floor is real stock whatever happened to
+  /// the reel it came from. Nothing hard-deletes rolls anyway (`archived` is
+  /// the retire path), so this is a backstop.
+  parentId String?
+  parent   PaperRoll?  @relation("RollSplit", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children PaperRoll[] @relation("RollSplit")
+
+  /// 1529 of 1688 rolls belong to a shipment; the rest predate the import
+  /// records, so this is nullable.
+  importShipmentId String?
+  importShipment   ImportShipment? @relation(fields: [importShipmentId], references: [id], onDelete: SetNull)
+
+  allocations RollAllocation[]
+
+  /// Times this reel was seen during a stocktake — see StockCountLine.
+  countLines StockCountLine[]
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([importShipmentId])
+  @@index([parentId])
+  @@index([paperGrade])
+  /// The receiving inbox, the per-shipment "N / M received" and the pending
+  /// badge all ask the same question: which reels of this shipment are not in
+  /// yet. See the note on User's indexes.
+  @@index([importShipmentId, receivedAt])
+  @@index([receivedById])
+  @@index([createdAt, id])
+  /// Every stock-list sort leads with `archived: "asc"` (archived rolls sink)
+  /// and ends with the `id` tiebreaker; `paperGrade` is the default. See the
+  /// note on User's indexes.
+  @@index([archived, paperGrade, id])
+  @@index([archived, createdAt, id])
+  @@index([archived, poidsRestant, id])
+  @@index([archived, metrageRestant, id])
+  @@index([archived, grammage, id])
+  @@index([archived, laize, id])
+  /// The allocation picker: same grammage, width at or above the order's,
+  /// sorted by width — matches its scope and default sort.
+  @@index([grammage, laize, id])
+}
+
+/// A recorded run of production against an order. Migrated from legacy
+/// `production` (942 rows across 239 orders, zero orphans).
+///
+/// Sparse by nature: only 43 rows name an employee, 2 were verified and 2
+/// carry piece counts. Everything optional here is genuinely absent in the
+/// source rather than defaulted.
+model ProductionRun {
+  id String @id @default(cuid())
+
+  /// The day the work was done. NOT NULL on every legacy row.
+  dateProduction DateTime @db.Date
+
+  /// Which station recorded this run. Every migrated row is `PRODUCER`: the
+  /// legacy system had no notion of stations, and 942 of 942 rows are shop
+  /// output.
+  stage WorkshopStage @default(PRODUCER)
+
+  /// How much was produced, in `unit`. NOT NULL in the legacy schema.
+  ///
+  /// Kept as-is for the 942 migrated rows, which all use it. New runs record
+  /// through the per-stage columns below instead — this stays because
+  /// rewriting the legacy figures into stage columns would be inventing a
+  /// precision the old data never had.
+  quantite Float
+  /// Blank in the legacy data imports as null rather than a third enum value.
+  unit     ProductionUnit?
+
+  // ---- per-stage measures ---------------------------------------------------
+  //
+  // Nullable by necessity: each stage fills its own subset and leaves the
+  // rest null. The invariant "a PRINTING row has no parcelsClosed" is
+  // enforced in `createProductionRunInput`, a Zod discriminated union on
+  // `stage` — the same technique as `orderProductRef` — so a malformed row
+  // cannot be built through the API. There is no CHECK constraint: Postgres
+  // would need one per stage, and the union already refuses the input.
+
+  /// PRINTING: metres of paper run through the press.
+  metersPrinted Float?
+
+  /// PRODUCER: the shift's own breakdown of what came off the machine.
+  ///
+  /// These do NOT have to sum to `piecesProduced`. Measured against the only
+  /// two legacy rows carrying a breakdown, `goodPieces + defectivePieces`
+  /// came to 10 516 of 11 500 and 13 960 of 14 200 — the remainder is
+  /// unaccounted in the source data. Each is validated as non-negative and
+  /// nothing enforces the arithmetic.
+  piecesProduced  Int?
+  wastePieces     Int?
+  piecesToFix     Int?
+  /// Legacy columns, reused by the PRODUCER stage rather than duplicated.
+  /// Populated on just 2 of 942 migrated rows.
+  goodPieces      Int?
+  defectivePieces Int?
+
+  /// QUALITY_CONTROL: how many pieces were checked. One count, no pass/fail
+  /// split — the workshop records the volume controlled, not a verdict.
+  piecesControlled Int?
+
+  /// PACKAGING: parcels closed.
+  parcelsClosed Int?
+
+  note String?
+
+  /// Legacy `verified_at` / `verified_by`. `verifiedBy` held a typed-in name,
+  /// not a user id, so it stays free text — the same call as
+  /// `Client.legacyCreatedBy`.
+  verifiedAt DateTime?
+  verifiedBy String?
+
+  /// Required: a production run with no order is not a valid record, and the
+  /// legacy data has none. Restrict, so an order with recorded production
+  /// cannot be deleted out from under it.
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  /// Who ran it, where the legacy row said. Null on 899 of 942 rows.
+  ///
+  /// Historic only. New runs are attributed through `recordedBy` instead:
+  /// orders are no longer assigned to a worker, and the person at the
+  /// keyboard is the one the app can actually vouch for.
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  /// Which machine the work ran on. Required by the PRINTING and PRODUCER
+  /// stages (enforced in `createProductionRunInput`, not by the column, since
+  /// QUALITY_CONTROL and PACKAGING have no machine) and matched to the
+  /// station: a printing run names an `IMPRESSION` machine, a producer run
+  /// one of the bag machines. See `machineTypesForStage`.
+  ///
+  /// Null on all 942 migrated rows — the legacy `machine_production_id` link
+  /// was dropped with the assignment model and is not backfilled here: which
+  /// machine ran a job in 2024 is not something this column should guess.
+  ///
+  /// Restrict, not SetNull: a machine with recorded output cannot be deleted
+  /// out from under its runs. Machines are archived (`active`), not deleted.
+  machineId String?
+  machine   Machine? @relation(fields: [machineId], references: [id], onDelete: Restrict)
+
+  /// Who entered this run, from the session. Null on every migrated row
+  /// (nobody entered them) and SetNull on delete, so the record survives a
+  /// removed account — the same rule as `Order.acceptedBy`.
+  ///
+  /// `createdAt` below is the "time of the data insertion" that pairs with
+  /// it; `dateProduction` is the day the WORK happened, which is not
+  /// necessarily the day it was typed in.
+  recordedById String?
+  recordedBy   User?   @relation("ProductionRunRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([employeeId])
+  @@index([dateProduction, id])
+  /// The other sortable columns in `production.list.ts`, with the tiebreaker.
+  @@index([quantite, id])
+  @@index([stage, id])
+  /// The `IN_PRODUCTION -> PRODUCED` guard asks "does this order have a
+  /// PACKAGING run?" on every attempt, and the production list facets by
+  /// stage. Both are (orderId, stage) lookups.
+  @@index([orderId, stage])
+  @@index([recordedById])
+  /// "What has this machine produced?" — the reporting query this link exists
+  /// to enable.
+  @@index([machineId, dateProduction])
+}
+
+/// State of a paper allocation. Legacy enum `EtatAllocation`, carried across
+/// with the same three values and the same spelling (CANCELED, one L, as the
+/// legacy data has it) so nothing is lost in translation.
+enum AllocationState {
+  RESERVED
+  CONSUMED
+  CANCELED
+}
+
+/// Paper allocated to an order: this reel, that order, this many kilograms.
+/// Migrated from legacy `rouleau_commande` (214 rows, 75 orders, 198 reels).
+///
+/// The join carries its own facts — a reserved weight and a lifecycle — so it
+/// is a model rather than an implicit many-to-many. `Order.poidsReserve` and
+/// `poidsConsomme` are the running totals the old system kept alongside these
+/// rows; this table is where the individual reservations live.
+///
+/// **No unique constraint on (order, roll)**, deliberately. Seven legacy rows
+/// sit in two duplicate groups: CMD-260 has five byte-identical 775 kg
+/// allocations of reel 695 (almost certainly a double-submit, inflating its
+/// reserved weight by 3100 kg), and CMD-603 has two that differ only in
+/// cancellation date. All 214 migrate verbatim by decision — the duplicates
+/// are history to be cleaned up in the app, not something the import judges.
+/// Adding a unique index here would reject the real data.
+model RollAllocation {
+  id String @id @default(cuid())
+
+  /// Kilograms of this reel committed to this order. NOT NULL in the legacy
+  /// schema on every row.
+  poidsReserve Float
+
+  /// Metres committed. NULL on all 214 legacy rows — the old system tracked
+  /// allocation by weight only — but the column existed, so it is carried
+  /// rather than dropped on the assumption it never will be used.
+  metrageReserve Float?
+
+  state AllocationState
+
+  /// When the paper was committed. NOT NULL on every legacy row.
+  dateAllocation   DateTime
+  /// Set on exactly the 154 CONSUMED rows.
+  dateConsommation DateTime?
+  /// Set on exactly the 17 CANCELED rows.
+  dateAnnulation   DateTime?
+
+  /// Restrict on both sides: an allocation with no order or no reel is not a
+  /// valid record, and neither is hard-deleted anywhere in this app (both use
+  /// an archive flag), so this is a backstop rather than a workflow.
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  paperRollId String
+  paperRoll   PaperRoll @relation(fields: [paperRollId], references: [id], onDelete: Restrict)
+
+  /// Who reserved the paper. Null on every legacy row (the old system did
+  /// not record it) and on a removed account — SetNull, the same rule as
+  /// `Order.acceptedBy`: the allocation outlives the user.
+  allocatedById String?
+  allocatedBy   User?   @relation("RollAllocationBy", fields: [allocatedById], references: [id], onDelete: SetNull)
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  /// `releaseForOrder` and the invariant check read a reel's (or an order's)
+  /// RESERVED rows; the plain `paperRollId` index this replaces was a prefix.
+  @@index([paperRollId, state])
+  @@index([allocatedById])
+  /// The default list sorts newest-first; matches the real sort key.
+  @@index([dateAllocation, id])
+  @@index([state])
+}
+
+// ---------------------------------------------------------------------------
+// Invoices
+// ---------------------------------------------------------------------------
+
+/// How an invoice was settled. Legacy `mode_paiement` was free text holding
+/// exactly these three values (VIREMENT 430, CHEQUE 72, ESPECES 29 across the
+/// purchase invoices) and blanks; nothing else ever appeared, so a closed enum
+/// loses nothing. Null means "not recorded", which is also what every sales
+/// invoice carries.
+enum PaymentMethod {
+  VIREMENT
+  CHEQUE
+  ESPECES
+}
+
+/// A supplier's invoice to us. Migrated from legacy `facture_achat` (614 rows)
+/// with `ligne_facture_achat` (2928) as `PurchaseInvoiceLine` and the PDF scans
+/// in `document_facturation` (639) as `documents`.
+///
+/// Two legacy columns are deliberately NOT carried:
+///   - `brouillon` ("draft") is TRUE on every one of the 661 invoices in both
+///     tables, so it distinguishes nothing. Payment state is read from
+///     `paidAt`/`dueAt` instead — see `purchaseInvoiceListDeclaration`.
+///   - `exonere` is NULL on every row.
+model PurchaseInvoice {
+  id String @id @default(cuid())
+
+  /// The supplier's own invoice number, as printed on the document. Unique on
+  /// all 614 legacy rows; one of them is "MIGR-NULL-560", a placeholder the
+  /// old system wrote where the number was missing. Free text, since every
+  /// supplier numbers differently ("F250064", "2025/000430", "N°09/2025").
+  numero String @unique
+
+  /// `date_facture` — present on every legacy row.
+  issuedAt DateTime? @db.Date
+  /// `date_echeance`. Absent on 137 legacy rows.
+  dueAt    DateTime? @db.Date
+  /// `date_paiement`. Set on 550 of 614 legacy rows; null means unpaid.
+  paidAt   DateTime? @db.Date
+
+  paymentMethod PaymentMethod?
+
+  /// Legacy `categorisation`, free text; one row holds "MACHINE", the rest
+  /// nothing. Kept for that one row rather than dropped.
+  category String?
+
+  /// Legacy `achat_production`: was this bought for production? Recorded on a
+  /// single row (false); null elsewhere.
+  forProduction Boolean?
+
+  /// Required, and `Restrict`: an invoice always names its supplier, and a
+  /// supplier with invoices is archived, never deleted — the same rule as
+  /// ImportShipment. 126 of 138 suppliers are referenced.
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  /// Header totals. The importer copied them from the legacy row as-is:
+  /// `totalTtc` equals the sum of `lines.total` on every migrated invoice, but
+  /// `totalHt` differs from it on 87 — see PurchaseInvoiceLine. Every app write
+  /// (`InvoiceService.purchaseHeader`) recomputes them from the lines.
+  totalHt        Float?
+  vatAmount      Float?
+  totalTtc       Float?
+  /// Retenue à la source. Zero on every legacy row, but the column exists and
+  /// the withholding is real Tunisian practice, so it is carried.
+  withholdingTax Float?
+  /// `totalTtc - withholdingTax`; equal to `totalTtc` on every legacy row.
+  netPayable     Float?
+
+  /// "TND" (505), "EUR" (45), or null (64). Not defaulted to TND: an invoice
+  /// whose currency was never recorded should say so.
+  currency     String?
+  /// `cours`: the exchange rate applied to a foreign-currency invoice. The
+  /// legacy data stores 0 on every row that has one, meaning "not set", which
+  /// the importer maps to null so a real rate of 0 can never be confused with
+  /// a missing one.
+  exchangeRate Float?
+
+  /// The goods-receipt note this invoice was raised against — the legacy
+  /// `gr_type`/`gr_id` (136 rows), resolved to a `GoodsReceipt` by the
+  /// step-6 importer for 135 of them; the one left over points at an ink
+  /// receipt (#61) that no longer exists in the legacy database. `SetNull`:
+  /// the invoice is the financial record and outlives the note.
+  receiptId String?
+  receipt   GoodsReceipt? @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+
+  /// The legacy reference verbatim, kept so the one unresolved link (and
+  /// any future re-resolution) can still be traced. Shown on the detail page
+  /// only when `receipt` is null.
+  legacyReceiptType String?
+  legacyReceiptId   BigInt?
+
+  /// Scanned PDFs, as URLs into the legacy bucket — the same treatment as
+  /// `Product.images`: not managed assets. 609 legacy invoices have at least
+  /// one; a few have up to seven.
+  documents String[]
+
+  lines PurchaseInvoiceLine[]
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Every sortable column as (column, id) to match the real sort key — see
+  /// the note on User's indexes. `numero` needs none: it is unique.
+  @@index([issuedAt, id])
+  @@index([dueAt, id])
+  @@index([totalTtc, id])
+  @@index([supplierId])
+  @@index([receiptId])
+  /// The payment facets test `paidAt IS NULL` and then `dueAt`.
+  @@index([paidAt, dueAt])
+}
+
+/// One line of a purchase invoice. Lines are owned by their invoice and
+/// carry no identity of their own beyond `position` — cascade on delete.
+///
+/// `total` is TAX-INCLUSIVE. Verified against all 2928 legacy lines:
+/// `total = quantity × unitPrice × (1 − discountPct/100) × (1 + taxPct/100)`
+/// holds to the cent on every one, and the plain `quantity × unitPrice`
+/// form fails on 550. That is why the invoice's `totalHt` is not the sum of
+/// its lines on the 87 invoices whose lines carry VAT — `totalTtc` is.
+model PurchaseInvoiceLine {
+  id String @id @default(cuid())
+
+  invoiceId String
+  invoice   PurchaseInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  /// Order on the document, 1-based. Legacy rows are ordered by their id.
+  position Int
+
+  /// Legacy `produit`: a short code or name ("ENCRE", "DROIT DE TIMBRE",
+  /// "KRP-80"). Blank on 881 of 2928 lines — the description carries it then.
+  product     String?
+  description String?
+
+  quantity    Float?
+  unitPrice   Float?
+  /// Percentage, so 15 means 15 %.
+  discountPct Float?
+  /// Percentage: 0, 7 or 19 in the legacy data.
+  taxPct      Float?
+  total       Float?
+
+  /// Legacy bigint primary key. Lines are replaced wholesale per invoice on
+  /// import, so this is a trace back to the source, not an upsert key.
+  legacyId BigInt?
+
+  @@index([invoiceId, position])
+}
+
+/// Our invoice to a customer. Migrated from legacy `facture_vente` (47 rows)
+/// with `ligne_facture_vente` (314) and one PDF each in `document_facturation`.
+///
+/// Same shape as PurchaseInvoice minus what only applies to a supplier's
+/// invoice (withholding, exchange rate, receipt-note link). Two models rather
+/// than one with a `kind`: the partner relation differs in both target and
+/// nullability, and the two lists are browsed separately.
+/// Whether a sales invoice is still being drafted or has been issued — see
+/// docs/sales-invoice-plan.md §3.1. Every migrated row is ISSUED (the
+/// migration backfills it); DRAFT exists only for invoices raised here.
+enum SalesInvoiceStatus {
+  DRAFT
+  ISSUED
+}
+
+model SalesInvoice {
+  id String @id @default(cuid())
+
+  /// Our own sequence: "F2025/001", "F260012", "I260001", plus one credit
+  /// note "CN250001" (negative total). Unique on all 47 migrated rows.
+  ///
+  /// Null while DRAFT: the number is assigned at issue, from
+  /// `SalesInvoiceCounter`, so a discarded draft never burns one. Postgres
+  /// unique indexes allow multiple NULLs, so drafts do not collide.
+  numero String? @unique
+
+  status SalesInvoiceStatus @default(DRAFT)
+
+  /// Who drafted it and who issued it, from the session. SetNull, like
+  /// `Order.acceptedBy`: the invoice outlives a removed account. Null on
+  /// every migrated row.
+  createdById String?
+  createdBy   User?   @relation("SalesInvoiceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  issuedById  String?
+  issuedBy    User?   @relation("SalesInvoiceIssuedBy", fields: [issuedById], references: [id], onDelete: SetNull)
+
+  issuedAt DateTime? @db.Date
+  dueAt    DateTime? @db.Date
+  paidAt   DateTime? @db.Date
+
+  /// Null on every migrated row — the legacy sales invoices never recorded it.
+  paymentMethod PaymentMethod?
+  category      String?
+
+  /// Nullable, and `Restrict` like the supplier link. Only 23 of the 47
+  /// legacy rows name a client (all of them AMS Distribution); the other 24
+  /// — including every export invoice in EUR/USD — were raised without one.
+  /// That is a gap in the source data, not a modelling choice: the UI marks
+  /// these as "no client" rather than hiding them.
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  /// `totalHt` equals the sum of `lines.total` on every migrated row (no
+  /// sales line carries VAT), and `totalTtc = totalHt + vatAmount` on all 47.
+  totalHt   Float?
+  vatAmount Float?
+  totalTtc  Float?
+
+  /// "EUR" (10), "TND" (5), "USD" (2), null (30).
+  currency String?
+
+  /// One PDF per legacy invoice, as a URL into the legacy bucket.
+  documents String[]
+
+  /// The template version this invoice prints with, pinned inside the issuing
+  /// transaction so a later change of default never restyles an issued
+  /// invoice. Null on a draft (it previews on the current default) and on the
+  /// 47 migrated rows. Restrict: a version an invoice prints with stays.
+  templateVersionId String?
+  templateVersion   DocumentTemplateVersion? @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+
+  /// Everything the PDF prints, frozen at issue — `salesInvoiceModelSchema`
+  /// in the contract. `Client` is a live relation and the issuer block a code
+  /// constant, so without this a language first requested months later would
+  /// print whatever they say by then. Null on drafts and on the migrated
+  /// rows, which render from live data and are never stored.
+  issuedSnapshot Json?
+
+  /// The generated PDFs, one per language, minted on first request. NOT
+  /// `documents`, which is the legacy scans above.
+  pdfs SalesInvoicePdf[]
+
+  lines SalesInvoiceLine[]
+
+  /// The outbound shipment(s) this invoice travelled with. One per cycle by
+  /// rule (`ShipmentService.createFromOrder` picks only an invoice with none),
+  /// but the FK sits on the shipment and is neither unique nor required, so a
+  /// discarded draft leaves the invoice free to be paired again.
+  shipments Shipment[]
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([issuedAt, id])
+  @@index([dueAt, id])
+  @@index([totalTtc, id])
+  @@index([clientId])
+  @@index([paidAt, dueAt])
+  /// The sales list's `draft` facet and the ISSUED-only payment facets.
+  @@index([status, issuedAt, id])
+  @@index([createdById])
+  @@index([issuedById])
+  @@index([templateVersionId])
+}
+
+/// A generated sales invoice PDF, stored so the file a client was sent is the
+/// file that is served forever after. One per language, rendered from the
+/// invoice's `issuedSnapshot` and pinned template version the first time that
+/// language is asked for; `@@unique` makes two racing first requests settle on
+/// one row. The bytes live here rather than in S3 because `StorageService`
+/// only mints presigned PUTs. Never select `bytes` in a list.
+model SalesInvoicePdf {
+  id String @id @default(cuid())
+
+  invoiceId String
+  invoice   SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  /// A `PdfLocale`: "fr", "en", "ar", "es".
+  locale String
+
+  bytes      Bytes
+  byteLength Int
+  /// Hex SHA-256 of `bytes`; served as the ETag.
+  sha256     String
+
+  createdAt DateTime @default(now())
+
+  @@unique([invoiceId, locale])
+}
+
+/// The forest-certification mention a billed product carries. Chosen when an
+/// invoice is raised from an order, shown after the designation ("… — FSC")
+/// on the invoice and the packing list. Only the acronym for now: the claim
+/// wording, the certificate code and a PEFC logo are not available yet.
+enum ProductMention {
+  FSC
+  PEFC
+}
+
+/// One line of a sales invoice. Same columns and the same tax-inclusive
+/// `total` rule as PurchaseInvoiceLine; in the legacy data every sales line
+/// has `taxPct` 0, so `total` is simply `quantity × unitPrice` there.
+model SalesInvoiceLine {
+  id String @id @default(cuid())
+
+  invoiceId String
+  invoice   SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  position Int
+
+  /// Legacy `produit`, e.g. "Sac en V", "Sac en kraft"; the description holds
+  /// the full spec ("Sac en V 10,5*5,5*23 en papier kraft blanchit 35 grammes").
+  product     String?
+  description String?
+
+  /// Optional, and only ever set on a line that bills an order — a manually
+  /// typed line cannot carry one (the service refuses it). Kept apart from
+  /// `description`, which is free text, and joined to it at display time by
+  /// `withMention`. Null on every migrated line.
+  mention ProductMention?
+
+  quantity    Float?
+  unitPrice   Float?
+  discountPct Float?
+  taxPct      Float?
+  total       Float?
+
+  /// The order this line bills. Null on the 314 migrated lines (the legacy
+  /// `facture_vente` never linked to `commande`). Restrict, so an order with
+  /// a billed line cannot be deleted out from under it. Indexed, NOT unique:
+  /// the service refuses a second invoice for an order today, but the schema
+  /// deliberately leaves room for partial invoicing later — see
+  /// docs/sales-invoice-plan.md §3.2.
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  legacyId BigInt?
+
+  @@index([invoiceId, position])
+  @@index([orderId])
+}
+
+/// The per-year sales invoice sequence — docs/sales-invoice-plan.md §3.3.
+/// `year` is the two-digit issue year (26), `next` the sequence the next
+/// issued invoice receives. Advanced by one atomic upsert inside the issuing
+/// transaction, whose row lock serialises concurrent issues; the `@unique`
+/// on `SalesInvoice.numero` is the backstop. Seeded by the migration from the
+/// legacy 2026 numbers (`^[FI]26\d{4}$` — one counter across both prefixes).
+model SalesInvoiceCounter {
+  year Int @id
+  next Int
+}
+
+// ---------------------------------------------------------------------------
+// Outbound shipments (exports) — docs/export-plan.md
+// ---------------------------------------------------------------------------
+
+/// DRAFT until shipped; SHIPPED is final. A shipped shipment is never
+/// deleted and only its customs fields may still change.
+enum ShipmentStatus {
+  DRAFT
+  SHIPPED
+}
+
+/// Whether the shipment carried the order's whole un-shipped balance or only
+/// part of it. Derived by the server from the parcel figures at the moment it
+/// ships and stored for reporting; never client-supplied.
+enum ShipmentKind {
+  COMPLETE
+  PARTIAL
+}
+
+/// One export: the truck, the invoice it travels with, the packing list and
+/// the customs declaration. Raised from an INVOICED order whose latest issued
+/// invoice has no shipment yet, and numbered at ship from `ShipmentCounter`.
+/// Carries no money — the warehouse reads it; the invoice number is the only
+/// link to the commercial side.
+model Shipment {
+  id String @id @default(cuid())
+
+  /// "EXP260001" — assigned at ship, null while DRAFT (see `SalesInvoice.numero`).
+  numero String? @unique
+
+  status ShipmentStatus @default(DRAFT)
+  kind   ShipmentKind   @default(COMPLETE)
+
+  /// The day the goods left. Set on ship (defaults to the day of shipping),
+  /// editable on the draft beforehand.
+  exportDate DateTime? @db.Date
+
+  /// The consignee. Restrict, like `SalesInvoice.client`: an export names a
+  /// client and that client cannot be deleted from under it.
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  /// The issued invoice the goods travel with. Nullable and not unique on
+  /// purpose: a discarded draft must free the invoice to be paired again,
+  /// and the service — not the schema — enforces "one shipment per invoice".
+  salesInvoiceId String?
+  salesInvoice   SalesInvoice? @relation(fields: [salesInvoiceId], references: [id], onDelete: SetNull)
+
+  /// Packing list: its number (required to ship) and the scan, a URL like
+  /// `ImportShipment.packingList` until the upload path exists.
+  packingListNumber   String?
+  packingListDocument String?
+
+  /// Customs declaration. Recorded after shipping in practice, so none of
+  /// the three gates the ship action and all three stay editable on SHIPPED.
+  customsDeclarationNumber   String?
+  customsDeclarationDate     DateTime? @db.Date
+  customsDeclarationDocument String?
+
+  note String?
+
+  /// Who drafted it and who shipped it, from the session. SetNull like the
+  /// invoice stamps: the record outlives a removed account.
+  createdById String?
+  createdBy   User?   @relation("ShipmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  shippedById String?
+  shippedBy   User?   @relation("ShipmentShippedBy", fields: [shippedById], references: [id], onDelete: SetNull)
+
+  lines ShipmentLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The list's `draft` / `shipped` / `missingCustoms` facets, sorted by date.
+  @@index([status, exportDate, id])
+  @@index([exportDate, id])
+  @@index([createdAt, id])
+  @@index([clientId])
+  @@index([salesInvoiceId])
+  @@index([createdById])
+  @@index([shippedById])
+}
+
+/// What a shipment carries: one line per order, in parcels, with the spec
+/// snapshotted the way `SalesInvoiceLine.description` is.
+model ShipmentLine {
+  id String @id @default(cuid())
+
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  position Int
+
+  /// The order whose parcels these are. Restrict, so an order that has
+  /// shipped can only be archived; indexed and NOT unique, because an order
+  /// ships in several parts (docs/export-plan.md "The order cycles").
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  /// Snapshot via `describeProductSpec`, as on the invoice line.
+  description String?
+
+  /// Snapshot of the ISSUED invoice line's mention, copied when the shipment
+  /// is raised. Not editable here: the invoice is where it is chosen.
+  mention ProductMention?
+
+  /// Parcels on this line. Whole numbers; Float to match `Order.parcelCount`
+  /// and `SalesInvoiceLine.quantity`, which it is compared against.
+  quantity Float
+
+  /// Pieces or kilograms, per the order's `quantityUnit`: quantity × the
+  /// order's units per parcel at the time of the edit. A snapshot for the
+  /// packing list, not a source of truth.
+  units Float?
+
+  @@index([shipmentId, position])
+  @@index([orderId])
+}
+
+/// The per-year export sequence, the twin of `SalesInvoiceCounter`: `year`
+/// is the two-digit export year, `next` the sequence the next shipped
+/// shipment receives. Advanced by the same atomic upsert inside `ship`'s
+/// transaction. Not seeded — the legacy `export` tables are empty.
+model ShipmentCounter {
+  year Int @id
+  next Int
+}
+
+// ---------------------------------------------------------------------------
+// Purchasing: purchase orders and goods receipts
+// ---------------------------------------------------------------------------
+
+/// What a purchase order (and the goods receipt raised against it) is for.
+///
+/// The legacy system had NINE parallel table families — `bon_de_commande`
+/// (paper), `_ink`, `_plate`, `_glue`, `_boxes`, `_pallets`, `_stretch_film`,
+/// `_transport`, `_misc` — each with its own header, line, receipt and
+/// receipt-line table, 36 tables in all. The headers are column-for-column
+/// identical and the lines share `designation / quantite / prix_unit /
+/// total_ht`, differing only in a few per-family dimension columns. So this
+/// is one model with a category, and the family-specific columns sit flat and
+/// nullable on the line (the same choice as Machine's capability columns).
+///
+/// The category is also encoded in every legacy number: `26PBC-002` (paper
+/// order), `26EBC-001` (ink, "encre"), `26CLBC-` (plate, "cliché"), `26CBC-`
+/// (glue, "colle"), `26CSBC-` (boxes, "caisse"), `26CSPC-` (pallets),
+/// `26FEBC-` (stretch film, "film étirable"), `26MSBC-` (misc), `26BCT-`
+/// (transport); receipts use `…BR-` / `26BRT-` / `26IBR-` / `26CSPR-`.
+enum PurchaseCategory {
+  PAPER
+  INK
+  PLATE
+  GLUE
+  BOXES
+  PALLETS
+  STRETCH_FILM
+  TRANSPORT
+  MISC
+}
+
+/// Legacy `StatutReception`. Null on the 48 transport receipts, whose legacy
+/// table never had the column — a service is not "received" in parts.
+enum ReceiptStatus {
+  PENDING
+  PARTIAL
+  COMPLETE
+}
+
+/// Legacy `TypeStretchFilm`, on stretch-film lines only.
+enum StretchFilmType {
+  STRETCH_FILM
+  THERMO_PVC_STRETCH_FILM
+}
+
+/// A purchase order to a supplier. Migrated from the nine legacy
+/// `bon_de_commande*` tables (556 rows, 1871 lines) — see `PurchaseCategory`
+/// for why they are one model here, and docs/legacy-migration.md "Step 6".
+///
+/// Writable since docs/purchasing-write-path-plan.md: `PurchasingService`
+/// owns the numbering rule, allocating `numero` from `PurchaseOrderCounter`
+/// per the prefixes above. `totalHt` and `totalQuantity` are derived from the
+/// lines on any write that sends them, so a stored total cannot contradict
+/// them — the migrated figures were copied as recorded.
+///
+/// Not carried from the legacy headers: `invoice_url` (blank on all 556),
+/// and the transport-only `nombre_de_colis` / `poids` / `incoterm` (null on
+/// all 48). The receipt's `invoice_url` IS carried — see GoodsReceipt.
+model PurchaseOrder {
+  id String @id @default(cuid())
+
+  /// Legacy `numero_bon`. Unique within each legacy table and, as it turns
+  /// out, across all nine — the prefix differs per category — so it is
+  /// unique here too.
+  numero   String           @unique
+  category PurchaseCategory
+
+  /// Legacy `date`. Equal to `created_at`'s day on every row, so it is the
+  /// day the order was raised.
+  issuedAt   DateTime  @db.Date
+  /// Legacy `estimated_receiving_date`. Set on all but one order.
+  expectedAt DateTime? @db.Date
+
+  /// Required, `Restrict`: the same rule as PurchaseInvoice and
+  /// ImportShipment — a supplier with orders is archived, never deleted.
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  /// Header figures. The importer copied them from the legacy row: `totalHt`
+  /// equals the sum of the lines on every order that has one, but is NULL on
+  /// 35 of the 48 transport orders (all the EUR ones), where only the line
+  /// carries the amount, and `totalQuantity` is null on every transport order.
+  /// Every app write that sends lines recomputes both from them
+  /// (`PurchasingService.orderTotals`), so an edited order gets a figure.
+  totalHt       Float?
+  totalQuantity Float?
+  /// "EUR" or "TND", set on every legacy row. Paper is all EUR, transport is
+  /// mixed, everything else is TND.
+  currency      String
+
+  /// Legacy `addresse`: a delivery address, on 9 rows.
+  address String?
+  /// Legacy `observation`: 15 rows, mostly a delivery-note / invoice
+  /// cross-reference ("BL N°00029240/ FACTURE N°25000261").
+  notes   String?
+
+  /// Legacy `created_by`, a typed-in name (six distinct people). Kept as text:
+  /// the legacy accounts are not migrated, so there is nothing to link to.
+  createdByName String?
+
+  lines    PurchaseOrderLine[]
+  receipts GoodsReceipt[]
+
+  /// Legacy bigint primary key. NOT unique on its own: each of the nine
+  /// legacy tables had its own sequence, so `(category, legacyId)` is the
+  /// upsert key.
+  legacyId BigInt?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([category, legacyId])
+  @@index([issuedAt, id])
+  @@index([expectedAt, id])
+  @@index([totalHt, id])
+  @@index([supplierId])
+  /// The per-category facets (one per `PurchaseCategory`) filter on
+  /// `category` and then sort.
+  @@index([category, issuedAt, id])
+}
+
+/// One line of a purchase order. Owned by its order — cascade on delete.
+///
+/// `total` is `quantity × unitPrice` on 1532 of 1543 non-plate lines. On
+/// plate (cliché) lines it is `quantity × unitPrice × unitSurface` for 168 of
+/// 279 — the price is per cm² — and neither on the rest, so it is copied as
+/// recorded, never recomputed.
+///
+/// The dimension columns are per category and null elsewhere:
+///   - PAPER: `grammage` (g/m²), `laize` (web width, mm) — all 110 lines
+///   - BOXES: `length` / `width` / `height` — all 52
+///   - PALLETS: `length` / `width` — all 19
+///   - STRETCH_FILM: `filmType` on all 27; `length` / `width` / `thickness`
+///     on 7 of them
+///   - PLATE: `height` / `width` / `colourCount` / `unitSurface` — all 279
+///   - INK: the legacy `couleur` column was blank on all 320 lines and is not
+///     carried; the designation names the ink ("ROUGE 032/NF HYDROFLEX")
+///   - GLUE, MISC, TRANSPORT: none
+model PurchaseOrderLine {
+  id String @id @default(cuid())
+
+  orderId String
+  order   PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// Order on the document, 1-based. Legacy rows are ordered by their id.
+  position Int
+
+  /// Legacy `designation` — required there and never blank.
+  designation String
+  quantity    Float
+  /// Legacy `prix_unit` (`prix_unitaire_hors_taxe` on transport lines).
+  unitPrice   Float
+  total       Float
+
+  grammage    Float?
+  laize       Float?
+  length      Float?
+  width       Float?
+  height      Float?
+  thickness   Float?
+  filmType    StretchFilmType?
+  colourCount Int?
+  unitSurface Float?
+
+  /// How much of `quantity` has arrived, summed over this line's receipt
+  /// lines. Denormalised so the order's lines can show what is outstanding
+  /// without a join per row, and so the over-receipt guard has a figure to
+  /// check against.
+  ///
+  /// Maintained by `PurchasingService.syncReceivedQuantities`, which
+  /// RECOMPUTES from the receipt lines rather than adding a delta: receipt
+  /// lines are replaced wholesale on every edit, so there is no stable
+  /// per-line identity to diff against (unlike `InkColour.stock`, which does
+  /// take deltas). A recompute is also self-healing — a missed call shows up
+  /// as a stale figure that the next write corrects, not as drift that
+  /// accumulates.
+  ///
+  /// Zero, never null: a line nothing has arrived against has received zero.
+  /// Note the 6 migrated MISC lines whose receipts exceed the ordered
+  /// quantity by 0.004–0.005 — Float noise in the legacy data, which is why
+  /// the guard allows a small tolerance instead of comparing exactly.
+  receivedQuantity Float @default(0)
+
+  /// The receipt lines that received against this line. `SetNull` on the
+  /// far side (see GoodsReceiptLine) so deleting an order line — which
+  /// cascades from the order anyway — never takes a receipt with it.
+  ///
+  /// This is also why `PurchasingService.updateOrder` refuses to replace the
+  /// lines of an order that already has a receipt: a wholesale replacement
+  /// would SetNull every receipt line pointing here, and nothing could
+  /// re-link them — a receipt line's only pointer back is this relation, and
+  /// `position` is not unique.
+  receiptLines GoodsReceiptLine[]
+
+  /// Legacy bigint primary key, per legacy line table — a trace back to the
+  /// source, not an upsert key: lines are replaced wholesale per order.
+  legacyId BigInt?
+
+  @@index([orderId, position])
+}
+
+/// A goods receipt note ("bon de réception"): what actually arrived against
+/// a purchase order. Migrated from the nine legacy `bon_de_reception*` tables
+/// (551 rows, 1856 lines). Every receipt names exactly one order of the same
+/// category, and in the migrated data no order has more than one receipt —
+/// but the relation is one-to-many because a partial delivery followed by
+/// the rest is exactly what `ReceiptStatus.PARTIAL` is for.
+///
+/// `supplierId` and `category` are copied from the order (the legacy tables
+/// carried both too, and they agree on every row) so the list can sort and
+/// facet without a join.
+model GoodsReceipt {
+  id String @id @default(cuid())
+
+  /// Legacy `numero_bon_reception`; unique across all nine tables.
+  numero   String           @unique
+  category PurchaseCategory
+
+  orderId String
+  order   PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  /// Legacy `date` — the day the note was raised (equals `created_at`'s day
+  /// on every row). Often LATER than `receivedAt`: the notes were entered in
+  /// bulk in January 2026 for deliveries going back to April 2024.
+  issuedAt   DateTime  @db.Date
+  /// Legacy `reception_date` — when the goods arrived. Null on the 9 still
+  /// pending and one other.
+  receivedAt DateTime? @db.Date
+
+  /// Legacy `status`. 493 complete, 9 pending, 1 partial; null on transport.
+  status    ReceiptStatus?
+  /// Legacy `validation_status` (`VALIDE` / `NON_VALIDE`). False on exactly
+  /// the 9 pending receipts.
+  validated Boolean        @default(false)
+
+  /// Legacy `received_quantity`, the sum of the lines (verified on every
+  /// row); null on transport, whose lines carry a price instead.
+  receivedQuantity Float?
+
+  /// Legacy `numero_facture`: the supplier invoice this delivery was billed
+  /// on, typed in (86 rows). Every one matches a `PurchaseInvoice.numero`;
+  /// the structural link is `PurchaseInvoice.receiptId`, which comes from
+  /// the invoice's own `gr_type`/`gr_id` and agrees with this text on all
+  /// but one row. Kept as text because it is what the note says.
+  invoiceNumber String?
+  /// Legacy `invoice_url`: a scanned document, on 132 rows. A URL into the
+  /// legacy bucket, like `PurchaseInvoice.documents` — not a managed asset.
+  invoiceUrl    String?
+
+  /// Legacy `observation` — blank on every migrated row, but a reception
+  /// remark is real practice and the column will be used.
+  notes String?
+
+  /// Legacy `updated_by`, a typed-in name — see PurchaseOrder.createdByName.
+  updatedByName String?
+
+  lines    GoodsReceiptLine[]
+  invoices PurchaseInvoice[]
+
+  legacyId BigInt?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([category, legacyId])
+  @@index([issuedAt, id])
+  @@index([receivedAt, id])
+  @@index([supplierId])
+  @@index([orderId])
+  @@index([category, issuedAt, id])
+}
+
+/// One line of a goods receipt, received against one line of the order.
+/// The designation and dimensions are copied from the order line at receipt
+/// time (they agree on every migrated row); `receivedQuantity` is what
+/// actually arrived, which differs from the ordered quantity on 12 lines.
+/// The purchase-order and goods-receipt sequences, one row per number
+/// prefix. Advanced by one atomic upsert inside the creating transaction,
+/// whose row lock serialises concurrent creates; the `@unique` on `numero`
+/// is the backstop.
+///
+/// Keyed on the prefix string rather than `(year, category)` for two
+/// reasons. The `26` in every legacy number is a fixed series marker, not the
+/// issue year — the 556 migrated orders carry `26` but were raised across
+/// 2024, 2025 and 2026 — so keying on the issue year would mint `25PBC-001`
+/// for a backdated order, a prefix that exists nowhere in the data. And a
+/// `String` key keeps the upsert's raw SQL the same shape as
+/// `SalesInvoiceCounter`'s: a `PurchaseCategory` parameter would need an
+/// explicit `::"PurchaseCategory"` cast, which nothing else in this codebase
+/// does.
+///
+/// Two tables because the prefixes are independent per category AND per
+/// document kind: ink orders are `26EBC` but ink receipts are `26IBR`, and
+/// transport inverts to `26BCT` / `26BRT`. Neither set is derivable from the
+/// other, so `purchasing.numbering.ts` holds both maps.
+///
+/// Seeded by the migration from `max(sequence) + 1` per prefix, not from the
+/// row count: the legacy sequences have gaps (30 paper orders, highest 035).
+model PurchaseOrderCounter {
+  /// e.g. "26PBC". The literal text before the dash in `PurchaseOrder.numero`.
+  prefix String @id
+  next   Int
+}
+
+model GoodsReceiptCounter {
+  /// e.g. "26PBR". The literal text before the dash in `GoodsReceipt.numero`.
+  prefix String @id
+  next   Int
+}
+
+model GoodsReceiptLine {
+  id String @id @default(cuid())
+
+  receiptId String
+  receipt   GoodsReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+
+  /// The order line this received against. Set on every migrated line;
+  /// `SetNull` (as in the legacy schema) because a receipt is a record of
+  /// what arrived and must outlive an edit to the order.
+  orderLineId String?
+  orderLine   PurchaseOrderLine? @relation(fields: [orderLineId], references: [id], onDelete: SetNull)
+
+  position Int
+
+  designation      String
+  /// Null on transport lines (49), which carry `unitPrice` instead.
+  receivedQuantity Float?
+  /// Transport lines only: legacy `prix_unitaire_hors_taxe`.
+  unitPrice        Float?
+
+  /// Same per-category columns as PurchaseOrderLine, minus `unitSurface`,
+  /// which the legacy receipt tables never had.
+  grammage    Float?
+  laize       Float?
+  length      Float?
+  width       Float?
+  height      Float?
+  thickness   Float?
+  filmType    StretchFilmType?
+  colourCount Int?
+
+  /// Legacy `observation` — blank on all 1856 lines; kept for the same
+  /// reason as GoodsReceipt.notes.
+  notes String?
+
+  legacyId BigInt?
+
+  @@index([receiptId, position])
+  @@index([orderLineId])
+}
+
+// ---------------------------------------------------------------------------
+// Ink stock
+// ---------------------------------------------------------------------------
+
+/// Unit an ink colour is stocked in. The legacy column was free text with a
+/// default of "KG" and no row ever set anything else (the table was empty),
+/// so a closed set loses nothing.
+enum InkUnit {
+  KG
+  L
+}
+
+/// An ink colour in the catalogue, with its live stock balance. Rebuilt from
+/// the legacy `couleur` table (Spring Boot V22, "color stock") — which existed
+/// but held **zero rows**, so nothing is imported and `legacyId` is absent;
+/// see docs/legacy-migration.md "Step 7".
+///
+/// Not the same thing as `OrderColour`: that is the print colour NAMED on an
+/// order (the legacy `produit` rows, "NOIR QUADRI"), a spec. This is the tin
+/// of ink on the shelf and how much is left in it.
+///
+/// `stock` is the single live balance, moved in place — restocked, corrected
+/// after a count, and decremented by every `InkUsage`. The legacy design
+/// deliberately kept no movement ledger (the decision is recorded in its
+/// COLOR_STOCK_PLAN.md) and this keeps the same shape: the usage lines are
+/// the only history. Every write to it is an atomic `increment`/`decrement`
+/// or a conditional `updateMany`, never read-modify-write — see InkService.
+model InkColour {
+  id String @id @default(cuid())
+
+  /// The identifier — "PMS485", "NOIR". Unique, like the legacy column.
+  code String  @unique
+  /// Display name, "Rouge Pantone 485". Optional, as in the legacy schema.
+  name String?
+
+  unit InkUnit @default(KG)
+
+  /// Live balance in `unit`. Never negative: a usage that would take it below
+  /// zero is refused.
+  stock Float @default(0)
+  /// Optional low-stock threshold; the list flags a colour at or under it.
+  alertThreshold Float?
+
+  /// Archive rather than delete once a usage line names it — see
+  /// `InkService.remove`.
+  active Boolean @default(true)
+
+  usages InkUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Sort keys, each with the `active` lead the list sorts by and the `id`
+  /// tiebreaker.
+  @@index([active, code, id])
+  @@index([active, name, id])
+  @@index([active, stock, id])
+}
+
+/// Ink taken from stock for an order — legacy `commande_couleur`. There is no
+/// reservation phase (unlike paper's `RollAllocation`): the quantity typed in
+/// is consumed at that moment and the colour's `stock` drops by it in the
+/// same transaction. Editing a line moves the balance by the difference;
+/// deleting one puts the quantity back.
+///
+/// Restrict on both parents: a line naming no order or no colour is not a
+/// record, and neither is hard-deleted in this app (both archive).
+model InkUsage {
+  id String @id @default(cuid())
+
+  /// In the colour's `unit`. Strictly positive.
+  quantity Float
+
+  /// When the ink was used. Defaults to the moment of recording, but is
+  /// editable so a day's usage can be keyed in afterwards.
+  usedAt DateTime @default(now())
+
+  note String?
+
+  colourId String
+  colour   InkColour @relation(fields: [colourId], references: [id], onDelete: Restrict)
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  /// Who recorded it — the session, like ProductionRun.recordedBy.
+  recordedById String?
+  recordedBy   User?   @relation("InkUsageRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The order's panel lists newest-first; the colour's history likewise.
+  @@index([orderId, usedAt, id])
+  @@index([colourId, usedAt, id])
+  @@index([recordedById])
+}
+
+/// Where a stocktake is in its life. Only one may be OPEN at a time — enforced
+/// by a partial unique index that Prisma cannot express, so it is hand-written
+/// in the migration. See docs/inventory-plan.md Step 2.
+enum StockCountStatus {
+  OPEN
+  CLOSED
+}
+
+/// A stocktake: a walk of the warehouse confirming which reels are physically
+/// present. Presence only — no locations, no measured quantities.
+///
+/// Deliberately does NOT write to PaperRoll. A count is a record of what was
+/// seen; acting on a variance is a separate, manual admin decision. In
+/// particular a count must never stamp `receivedAt` on an unreceived reel it
+/// finds — that column is receiving's, it is monotonic, and writing it here
+/// would forge a receiving event.
+///
+/// The sibling of receiving and the second job for the same handheld, but it
+/// cannot reuse `receivedAt`: receiving is per-delivery, once-per-reel and
+/// monotonic, while a stocktake is recurring and spans the whole live
+/// population. See docs/inventory-plan.md.
+model StockCount {
+  id String @id @default(cuid())
+
+  status StockCountStatus @default(OPEN)
+
+  /// The countable population at the moment the session opened, frozen so a
+  /// reel consumed mid-count cannot retroactively change the denominator.
+  ///
+  /// A number, not a list of ids, and that is the whole design: freezing ids
+  /// would make "missing" mean "missing as of Tuesday" and a reel legitimately
+  /// consumed mid-count would report missing forever. The cost is that
+  /// `counted + missing` need not equal this exactly if the population shifts
+  /// mid-count — the report shows all three figures so the drift is visible
+  /// rather than hidden.
+  expectedCount Int
+
+  /// The scannable subset of `expectedCount` at open time: countable reels
+  /// that carry a printed label. Progress is shown against this, because a
+  /// reel with no sticker cannot be scanned however present it is. Measured
+  /// 2026-09-12: 213 of 353 countable reels were labelled.
+  labelledCount Int
+
+  openedAt   DateTime @default(now())
+  openedById String
+  openedBy   User     @relation("StockCountOpenedBy", fields: [openedById], references: [id], onDelete: Restrict)
+
+  closedAt DateTime?
+
+  notes String?
+
+  lines StockCountLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The session list sorts by status then recency; both are selectable sorts
+  /// and every sort carries the `id` tiebreaker. See the note on User's indexes.
+  @@index([status, openedAt, id])
+  @@index([openedAt, id])
+  @@index([openedById])
+}
+
+/// One reel seen during one stocktake. Presence is the whole payload: the row
+/// existing IS the fact, which is why there is no `present` boolean.
+model StockCountLine {
+  id String @id @default(cuid())
+
+  countId String
+  count   StockCount @relation(fields: [countId], references: [id], onDelete: Cascade)
+
+  /// Restrict: a counted reel may not be deleted out from under a closed
+  /// count. Nothing hard-deletes reels anyway (`archived` is the retire path).
+  paperRollId String
+  paperRoll   PaperRoll @relation(fields: [paperRollId], references: [id], onDelete: Restrict)
+
+  scannedAt DateTime @default(now())
+
+  /// True when the reel was consumed or archived AT SCAN TIME: physically on
+  /// the floor but not expected to be. A finding, not an error.
+  ///
+  /// A snapshot, not a derivation. Recomputing it later would silently change
+  /// a closed count's findings — the same reasoning as GoodsReceipt copying
+  /// `receivedQuantity` rather than recomputing it.
+  unexpected Boolean @default(false)
+
+  /// One line per reel per count. This is what makes a re-scan a safe
+  /// `upsert` under a race: the second scan collides and updates nothing. The
+  /// scan still reads the row first, only to report `alreadyCounted` honestly.
+  @@unique([countId, paperRollId])
+  /// The report pages lines oldest-first within a count.
+  @@index([countId, scannedAt, id])
+  /// `unexpected` splits the lines into the report's two line-backed sides.
+  @@index([countId, unexpected, id])
+  @@index([paperRollId])
+}
+
+/// One notice on the shared plant-wide stream — docs/chat-plan.md §1.
+///
+/// Append-only by decision, not by omission: no `updatedAt`, no `deletedAt`,
+/// no edit path anywhere in the app. A notice posted to the whole plant is a
+/// published fact, and a correction is posted under it. Pinning is the only
+/// moderation lever that exists.
+///
+/// One global room, so there is no `Channel` table and no `channelId`. Adding
+/// rooms later is a migration, which is cheaper than carrying a foreign key
+/// that is always equal.
+model ChatMessage {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  /// Optional ONLY so a photo can post with no words. Never empty alongside
+  /// an empty attachment list — the contract's `.refine` rejects that pair.
+  body String?
+
+  /// SetNull like `AuditLog.actor`: a notice outlives the account that wrote
+  /// it, and `authorName` below is what keeps it readable.
+  authorId String?
+  author   User?   @relation("ChatMessageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  /// Denormalised at write time from the SESSION, never from input.
+  ///
+  /// Earns its place twice: a deleted account nulls `authorId` and the feed
+  /// would otherwise render "Unknown" for real history, and it lets the
+  /// hottest read in the app render without joining User at all.
+  authorName String
+
+  /// When this notice was pinned above the flow, null when it is not.
+  ///
+  /// A nullable timestamp rather than a boolean: it doubles as the pinned
+  /// strip's sort key and records *when*, which a boolean cannot. Re-pinning
+  /// re-stamps it, so the action is idempotent.
+  pinnedAt   DateTime?
+  pinnedById String?
+  pinnedBy   User?     @relation("ChatMessagePinnedBy", fields: [pinnedById], references: [id], onDelete: SetNull)
+
+  attachments ChatAttachment[]
+
+  /// The feed is keyset-paginated on (createdAt, id) descending, so both
+  /// indexes lead descending like `AuditLog.at` — a plain ascending btree
+  /// serves only one direction.
+  ///
+  /// The `id` tiebreaker is NOT decorative the way it is on an offset list.
+  /// Two notices posted in the same millisecond are real (one paste of two
+  /// lines, two tablets at once), `createdAt` alone gives them undefined
+  /// relative order, and a keyset page boundary would then repeat one and
+  /// skip the other.
+  @@index([createdAt(sort: Desc), id])
+  @@index([pinnedAt(sort: Desc), id])
+  /// Foreign keys: deleting a user SetNulls both.
+  @@index([authorId])
+  @@index([pinnedById])
+}
+
+/// A photo or file hanging off one notice — docs/chat-plan.md §1.
+///
+/// A child table, not `String[]`. The array precedents in this schema
+/// (`Product.images`, `PurchaseInvoice.documents`) are all documented as URLs
+/// into someone else's bucket — legacy columns this app renders but does not
+/// own. These are assets this app mints, and the feed must know each one's
+/// content type to choose between an inline thumbnail and a file link, plus
+/// the original filename as a label (the S3 key is `{epochMillis}_{sanitized}`
+/// and reads as noise). An array carries neither, forcing extension-sniffing
+/// at render time.
+model ChatAttachment {
+  id String @id @default(cuid())
+
+  /// Cascade: an attachment has no meaning without its notice. Nothing
+  /// deletes a ChatMessage today, so this is a schema-level invariant rather
+  /// than a path anything exercises.
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  url String
+  /// A plain String, not an enum: the allowlist is `CHAT_CONTENT_TYPES` in the
+  /// contract and is signed into the presigned PUT, so a DB enum would be a
+  /// second copy needing its own migration every time a file kind is added.
+  contentType String
+  /// The name the user chose, for the link label. The S3 key is not it.
+  filename String
+  size     Int
+
+  /// Loaded per message, in insertion order.
+  @@index([messageId, id])
+}
+
+/// How far into the notice stream a user has read, for the launcher's
+/// unread badge.
+///
+/// Per ACCOUNT, replacing the per-browser localStorage stamp: the same
+/// person on a phone and a desktop reads one stream and should carry one
+/// badge, and a fresh browser must not silently count the whole history as
+/// read. One row per user, advanced monotonically by the room when the
+/// reader reaches the bottom of a visible feed or posts a notice.
+model ChatRead {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// `createdAt` of the newest notice the user has seen. Unread is
+  /// everything newer, written by someone else.
+  lastSeenAt DateTime
+}
+
+// ---------------------------------------------------------------------------
+// Document templates — docs/sales-invoice-pdf-plan.md
+// ---------------------------------------------------------------------------
+
+/// The kinds of generated document that print from a stored layout. The
+/// purchase order and goods receipt are still hard-coded; the packing list is
+/// expected to join.
+enum DocumentTemplateKind {
+  SALES_INVOICE
+}
+
+/// A named layout for one kind of document. At most one per kind is the
+/// default — a partial unique index the migration adds by hand, since Prisma
+/// cannot express `WHERE "isDefault"`.
+model DocumentTemplate {
+  id String @id @default(cuid())
+
+  kind DocumentTemplateKind
+  name String
+
+  isDefault Boolean @default(false)
+
+  versions DocumentTemplateVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind, name, id])
+}
+
+/// One revision of a template. `publishedAt` null is the template's draft —
+/// at most one, overwritten by each save, which nothing pins. Once published a
+/// row is never written again: an issued invoice pins the version it printed
+/// with, and mints its other languages from that pin later.
+model DocumentTemplateVersion {
+  id String @id @default(cuid())
+
+  templateId String
+  template   DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  version Int
+
+  /// The layout schema this JSON was written against — see
+  /// `LAYOUT_SCHEMA_VERSION` in the contract.
+  schemaVersion Int
+  layout        Json
+
+  publishedAt DateTime?
+
+  /// Null on version 1, which the server creates itself from the built-in
+  /// layout the first time an invoice is issued.
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  salesInvoices SalesInvoice[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([templateId, version])
+  @@index([createdById])
+}
+
+// ---------------------------------------------------------------------------
+// Shift planning and daily tickets — docs/shift-planning-plan.md §2.
+//
+// A week is 18 fixed day-shifts generated by construction (Sunday night to
+// Saturday afternoon); nobody creates or deletes one. A person is on ONE
+// shift type for the WHOLE week (v2, 2026-09-24): the assignment row is
+// (week, employee, type) and which days it covers is derived from the type.
+// An assignment existing IS the fact — the StockCountLine convention — so
+// unassigning deletes and a move updates in place. The history of a
+// published week lives in ShiftChange, one row per change, and every draft
+// edit is still in AuditLog.
+// ---------------------------------------------------------------------------
+
+enum ShiftType {
+  NIGHT
+  MORNING
+  AFTERNOON
+}
+
+/// DRAFT: the admin edits freely and workers cannot see it. PUBLISHED: frozen
+/// for workers; every later edit is a ShiftChange row.
+enum ShiftWeekStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Stored rather than derived, so the inbox and the history read plainly.
+/// Which fields a kind carries is validated in the contract and the service.
+enum ShiftChangeKind {
+  MOVE
+  SWAP
+  REPLACE
+  REMOVE
+  ADD
+}
+
+/// PENDING is a worker's request awaiting the admin. An admin's own change
+/// is created ACCEPTED. WITHDRAWN is the requester taking it back.
+enum ShiftChangeStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ShiftTaskType {
+  SETTING
+  PRODUCTION
+  PRINTING
+  CLEANING
+}
+
+/// "Missed" is never stored: it is an OPEN ticket on a shift that has ended,
+/// derived by `isTaskMissed` in the contract.
+enum ShiftTaskStatus {
+  OPEN
+  DONE
+}
+
+model ShiftWeek {
+  id String @id @default(cuid())
+
+  /// The Sunday the week starts on. One week per Sunday.
+  weekStart DateTime        @unique @db.Date
+  status    ShiftWeekStatus @default(DRAFT)
+
+  publishedAt   DateTime?
+  publishedById String?
+  publishedBy   User?     @relation("ShiftWeekPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+
+  shifts      Shift[]
+  assignments ShiftAssignment[]
+  changes     ShiftChange[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// No `id` tiebreaker: `weekStart` is unique, so the sort key is complete.
+  @@index([status, weekStart])
+  @@index([publishedById])
+}
+
+/// One of a week's 18 shifts. `date` is the day it STARTS: a night shift
+/// belongs to the evening it begins on. `startsAt`/`endsAt` are the absolute
+/// instants, computed from the plant's fixed +01:00 offset at open time, so
+/// "the running shift" is one range query.
+model Shift {
+  id String @id @default(cuid())
+
+  weekId String
+  week   ShiftWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  date DateTime  @db.Date
+  type ShiftType
+
+  startsAt DateTime
+  endsAt   DateTime
+
+  tasks ShiftTask[]
+
+  @@unique([date, type])
+  @@index([weekId, startsAt])
+  @@index([startsAt, endsAt])
+}
+
+/// A person on one shift type for the whole week. The row existing is the
+/// whole fact; which days it covers is derived from `type` (NIGHT: Sunday
+/// night to Friday night; MORNING and AFTERNOON: Monday to Saturday —
+/// `daysForShiftType` in the contract) and never stored, so a mid-week move
+/// changes `type` and the person's remaining days follow. No per-day rows
+/// and no day-level exceptions, by decision (docs/shift-planning-plan.md §1).
+model ShiftAssignment {
+  id String @id @default(cuid())
+
+  weekId String
+  week   ShiftWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  /// Restrict: nothing hard-deletes employees anyway (`active` is the archive).
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  type ShiftType
+
+  createdAt DateTime @default(now())
+
+  changes ShiftChange[]
+
+  /// One shift per person per week.
+  @@unique([weekId, employeeId])
+  @@index([weekId, type])
+  @@index([employeeId])
+}
+
+/// One change to a published week, for the rest of that week: an admin's
+/// move, swap, replacement, removal or addition (created ACCEPTED and applied
+/// at once), or a worker's MOVE/SWAP request on their own row (PENDING until
+/// the admin decides). Applying a change updates or deletes ShiftAssignment
+/// rows; this row is the record of it.
+///
+/// At most one PENDING request per assignment — a partial unique index that
+/// Prisma cannot express, hand-written in the migration.
+///
+/// Every User link is nullable + SetNull (the ProductionRun.recordedBy
+/// convention): `user.remove` hard-deletes, and a required `requestedById`
+/// would block deleting any worker who ever filed a request.
+model ShiftChange {
+  id String @id @default(cuid())
+
+  weekId String
+  week   ShiftWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+
+  kind   ShiftChangeKind
+  status ShiftChangeStatus @default(PENDING)
+
+  /// The person moving, leaving or arriving.
+  employeeId String
+  employee   Employee @relation("ShiftChangeEmployee", fields: [employeeId], references: [id], onDelete: Restrict)
+
+  /// Their weekly row at the time, when the kind has one (all but ADD).
+  /// SetNull: a REMOVE deletes the row and the change survives.
+  assignmentId String?
+  assignment   ShiftAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+
+  /// The shift type the person leaves and the one they join, filled by the
+  /// service from the rows as they were: the history a weekly row cannot
+  /// keep on its own. ADD has no `fromType`; REPLACE and REMOVE no `toType`.
+  fromType ShiftType?
+  toType   ShiftType?
+
+  /// SWAP: who is on `toType` and takes `fromType`. REPLACE: who takes the
+  /// leaver's place on `fromType`.
+  counterpartEmployeeId String?
+  counterpart           Employee? @relation("ShiftChangeCounterpart", fields: [counterpartEmployeeId], references: [id], onDelete: Restrict)
+
+  /// Why — required on a worker's request, optional on an admin's change.
+  reason String?
+  /// The admin's note on a rejection, or "superseded" when an admin's own
+  /// change on the same assignment overtook a pending request. Kept apart
+  /// from `reason` so the worker's words survive the decision.
+  decisionReason String?
+
+  requestedById String?
+  requestedBy   User?   @relation("ShiftChangeRequestedBy", fields: [requestedById], references: [id], onDelete: SetNull)
+  decidedById   String?
+  decidedBy     User?   @relation("ShiftChangeDecidedBy", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt     DateTime?
+
+  createdAt DateTime @default(now())
+
+  /// The inbox sorts by createdAt or decidedAt, faceted by status; every sort
+  /// carries the `id` tiebreaker.
+  @@index([status, createdAt, id])
+  @@index([weekId, createdAt, id])
+  @@index([decidedAt, id])
+  @@index([employeeId])
+  @@index([assignmentId])
+  @@index([counterpartEmployeeId])
+  @@index([requestedById])
+  @@index([decidedById])
+}
+
+/// A ticket: one person, one day, one task — attached to the day-shift the
+/// person works that day. A to-do, not a record: hard-deleted like a
+/// production run, and "missed" is derived from an OPEN status on an ended
+/// shift rather than stored.
+///
+/// The person's weekly row must have the day-shift's type when the ticket is
+/// written (service check). If they are moved off that shift later, their
+/// open tickets on days not yet started are deleted with the move; tickets
+/// on started or past days stay as history.
+model ShiftTask {
+  id String @id @default(cuid())
+
+  shiftId String
+  shift   Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  /// Restrict: nothing hard-deletes employees anyway.
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  type ShiftTaskType
+
+  /// Optional (v2). When given it must be active and a type the ticket's
+  /// kind runs on — `taskMachineTypes` in the contract, the production
+  /// module's stage mapping reused. SetNull so a ticket outlives a machine.
+  machineId String?
+  machine   Machine? @relation(fields: [machineId], references: [id], onDelete: SetNull)
+
+  /// Optional, and only an IN_PRODUCTION order may be named (the floor can
+  /// open those). SetNull so a ticket outlives the order.
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  note String?
+
+  status ShiftTaskStatus @default(OPEN)
+
+  doneAt   DateTime?
+  doneById String?
+  doneBy   User?     @relation("ShiftTaskDoneBy", fields: [doneById], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdBy   User?   @relation("ShiftTaskCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([shiftId, employeeId, id])
+  @@index([employeeId, status])
+  @@index([machineId])
+  @@index([orderId])
+  @@index([doneById])
+  @@index([createdById])
+}

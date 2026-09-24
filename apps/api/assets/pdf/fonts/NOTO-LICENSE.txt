@@ -1,0 +1,40 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Noto
+Upstream-Contact: https://github.com/googlei18n/noto-fonts/issues
+ http://groups.google.com/group/noto-font
+Source: https://github.com/googlei18n/noto-fonts
+
+Files: *
+Copyright:
+  2010,2012-2020, Google Inc.
+  2015-2020, Google LLC.
+License-Grant:
+ This Font Software is licensed under the SIL Open Font License,
+ Version 1.1.
+License: OFL-1.1
+
+Files:
+ debian/*
+Copyright:
+  2013-2020, Jonas Smedegaard <dr@jones.dk>
+  2020, Purism, SPC
+  2013, Vasudev Kamath <kamathvasudev@gmail.com>
+License-Grant:
+ This program is free software;
+ you can redistribute it and/or modify it
+ under the terms of the GNU General Public License
+ as published by the Free Software Foundation;
+ either version 3, or (at your option) any later version.
+License: GPL-3+
+
+Files:
+ debian/NotoMono/NotoMono-Regular.ttf
+Copyright:
+  2007, Google Inc.
+License-Grant:
+ This Font Software is licensed under the SIL Open Font License,
+ Version 1.1.
+License: OFL-1.1
+
+License: OFL-1.1
+ PREAMBLE

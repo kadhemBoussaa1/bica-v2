@@ -1,0 +1,53 @@
+{
+  "eyebrow": "Ajustes",
+  "title": "Usuarios",
+  "listMetaTitle": "Usuarios · Bicapack ERP",
+  "subtitle": "Puedes ver y gestionar las cuentas de rango inferior al tuyo, y los superadministradores pueden gestionarse entre sí. Las cuentas se crean aquí: no hay registro público.",
+  "newUser": "Nuevo usuario",
+  "metaTitle": "Nuevo usuario · Bicapack ERP",
+  "backToUsers": "‹ Volver a usuarios",
+  "newUserSubtitle": "Solo puedes crear los roles que tienes permitido asignar.",
+  "youTag": "TÚ",
+  "active": "Activo",
+  "banned": "Bloqueado",
+  "activity": "Actividad",
+  "ban": "Bloquear",
+  "unban": "Desbloquear",
+  "filters": {
+    "active": "Activos",
+    "banned": "Bloqueados"
+  },
+  "searchPlaceholder": "Buscar usuarios",
+  "emptyMessage": "Ningún usuario coincide con estos filtros.",
+  "deleteTitle": "¿Eliminar el usuario?",
+  "banTitle": "¿Bloquear el usuario?",
+  "unbanTitle": "¿Desbloquear el usuario?",
+  "deleteBody": "<strong>{email}</strong> se eliminará de forma permanente, junto con sus sesiones y credenciales de acceso. Esta acción no se puede deshacer.",
+  "banBody": "Se cerrará la sesión de <strong>{email}</strong> y no podrá iniciar sesión. Puedes deshacerlo en cualquier momento.",
+  "unbanBody": "<strong>{email}</strong> podrá volver a iniciar sesión.",
+  "somethingWentWrong": "Se ha producido un error",
+  "form": {
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "temporaryPassword": "Contraseña temporal",
+    "passwordHint": "Al menos 12 caracteres. Compártela directamente con el usuario: podrá cambiarla tras iniciar sesión.",
+    "role": "Rol",
+    "loadingRoles": "Cargando roles…",
+    "selectRole": "Selecciona un rol",
+    "creating": "Creando…",
+    "createUser": "Crear usuario"
+  },
+  "edit": "Editar",
+  "editHint": "Bloquear y eliminar están en Editar, junto al rol.",
+  "createdOn": "creado el {date}",
+  "editor": {
+    "title": "Editar {name}",
+    "role": "Rol",
+    "status": "Estado",
+    "activeHint": "Puede iniciar sesión.",
+    "bannedHint": "Sesión cerrada y bloqueado para iniciar sesión.",
+    "deleteTitle": "Eliminar la cuenta",
+    "deleteHint": "Elimina la cuenta con sus sesiones y credenciales. No se puede deshacer.",
+    "save": "Guardar el rol"
+  }
+}

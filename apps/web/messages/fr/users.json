@@ -1,0 +1,53 @@
+{
+  "eyebrow": "Paramètres",
+  "title": "Utilisateurs",
+  "listMetaTitle": "Utilisateurs · Bicapack ERP",
+  "subtitle": "Vous voyez et gérez les comptes de rang inférieur au vôtre, et les super administrateurs se gèrent entre eux. Les comptes sont créés ici : il n'y a pas d'inscription publique.",
+  "newUser": "Nouvel utilisateur",
+  "metaTitle": "Nouvel utilisateur · Bicapack ERP",
+  "backToUsers": "‹ Retour aux utilisateurs",
+  "newUserSubtitle": "Vous ne pouvez créer que les rôles que vous êtes autorisé à attribuer.",
+  "youTag": "VOUS",
+  "active": "Actif",
+  "banned": "Banni",
+  "activity": "Activité",
+  "ban": "Bannir",
+  "unban": "Débannir",
+  "filters": {
+    "active": "Actifs",
+    "banned": "Bannis"
+  },
+  "searchPlaceholder": "Rechercher un utilisateur",
+  "emptyMessage": "Aucun utilisateur ne correspond à ces filtres.",
+  "deleteTitle": "Supprimer l'utilisateur ?",
+  "banTitle": "Bannir l'utilisateur ?",
+  "unbanTitle": "Débannir l'utilisateur ?",
+  "deleteBody": "<strong>{email}</strong> sera définitivement supprimé, ainsi que ses sessions et ses identifiants de connexion. Cette action est irréversible.",
+  "banBody": "<strong>{email}</strong> sera déconnecté et ne pourra plus se connecter. Vous pouvez annuler à tout moment.",
+  "unbanBody": "<strong>{email}</strong> pourra de nouveau se connecter.",
+  "somethingWentWrong": "Une erreur s'est produite",
+  "form": {
+    "name": "Nom",
+    "email": "E-mail",
+    "temporaryPassword": "Mot de passe temporaire",
+    "passwordHint": "Au moins 12 caractères. Transmettez-le directement à l'utilisateur : il pourra le changer après connexion.",
+    "role": "Rôle",
+    "loadingRoles": "Chargement des rôles…",
+    "selectRole": "Choisir un rôle",
+    "creating": "Création…",
+    "createUser": "Créer l'utilisateur"
+  },
+  "edit": "Modifier",
+  "editHint": "Bannir et supprimer se trouvent dans Modifier, à côté du rôle.",
+  "createdOn": "créé le {date}",
+  "editor": {
+    "title": "Modifier {name}",
+    "role": "Rôle",
+    "status": "Statut",
+    "activeHint": "Peut se connecter.",
+    "bannedHint": "Déconnecté et bloqué à la connexion.",
+    "deleteTitle": "Supprimer le compte",
+    "deleteHint": "Supprime le compte avec ses sessions et ses identifiants. Irréversible.",
+    "save": "Enregistrer le rôle"
+  }
+}

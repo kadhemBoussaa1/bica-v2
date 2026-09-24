@@ -1,0 +1,140 @@
+# syntax=docker/dockerfile:1.7
+#
+# Production images for Bicapack ERP: one file, one target per deployable.
+#
+#   docker build -f Dockerfile.prod --target runner-api     .
+#   docker build -f Dockerfile.prod --target runner-migrate .
+#   docker build -f Dockerfile.prod --target runner-web \
+#     --build-arg NEXT_PUBLIC_API_URL=https://erp.example.com \
+#     --build-arg NEXT_PUBLIC_APP_URL=https://erp.example.com .
+#
+# CI (.github/workflows/docker.yml) builds and pushes all three; on the server
+# `deploy/deploy.sh --build` builds them through docker/docker-compose.prod.yml.
+
+ARG NODE_VERSION=24
+
+# ---------------------------------------------------------------------------
+# base: Node plus the pnpm version the root package.json pins (and turbo from
+# its declared range), so the image cannot drift from what wrote the lockfile.
+FROM node:${NODE_VERSION}-slim AS base
+ENV CI=1 TURBO_TELEMETRY_DISABLED=1 NEXT_TELEMETRY_DISABLED=1
+COPY package.json /tmp/package.json
+RUN npm install -g --no-fund --no-audit \
+      "pnpm@$(node -p "require('/tmp/package.json').packageManager.split('@')[1]")" \
+      "turbo@$(node -p "require('/tmp/package.json').devDependencies.turbo")" \
+ && rm /tmp/package.json
+
+# ---------------------------------------------------------------------------
+# pruned: the workspace cut down to what api and web need, split into the
+# package manifests (json/) and the full sources (full/). The install layer
+# below copies only json/, so it is keyed on manifests + lockfile and survives
+# every change that does not touch a dependency.
+FROM base AS pruned
+WORKDIR /repo
+COPY . .
+RUN turbo prune api web --docker --out-dir /pruned
+
+# ---------------------------------------------------------------------------
+# installer: every dependency of both apps, dev ones included (the builds need
+# tsc, prisma and next). Shared by build-api and build-web.
+FROM base AS installer
+WORKDIR /app
+COPY --from=pruned /pruned/json/ .
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --store-dir /pnpm/store
+COPY --from=pruned /pruned/full/ .
+# prisma.config.ts resolves env("DATABASE_URL") even for `prisma generate`,
+# which never connects. Scoped to the build stages, never a runner.
+# (`prisma generate` also warns here that it cannot detect OpenSSL. Harmless:
+# the generated client runs on the pg driver adapter and loads no engine.)
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
+
+# ---------------------------------------------------------------------------
+FROM installer AS build-api
+RUN --mount=type=cache,id=turbo-api,target=/app/.turbo/cache \
+    pnpm turbo run build --filter=api
+# `pnpm deploy` resolves the workspace's symlinked node_modules into real
+# files with production dependencies only; a plain COPY would carry dangling
+# links. --legacy because pnpm 10+ otherwise demands inject-workspace-packages.
+# It copies the package the way `npm pack` would, which skips the gitignored
+# dist/, so the compiled output is copied over it. (@repo/api-contract's dist
+# does come along: legacy deploy copies workspace dependencies whole.)
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm --filter=api deploy --prod --legacy --store-dir /pnpm/store /out/api \
+ && cp -r apps/api/dist /out/api/dist \
+ && node -e "require.resolve('@repo/api-contract', { paths: ['/out/api'] })"
+
+# ---------------------------------------------------------------------------
+FROM installer AS build-web
+# Inlined into the client bundle by `next build`, so they are build inputs,
+# not runtime settings: an image is built for one public URL. Neither is a
+# secret. Same origin as the API on purpose (see docs/deployment.md).
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_URL
+RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ -z "$NEXT_PUBLIC_APP_URL" ]; then \
+      echo "NEXT_PUBLIC_API_URL and NEXT_PUBLIC_APP_URL are required build args" >&2; exit 1; \
+    fi
+RUN --mount=type=cache,id=turbo-web,target=/app/.turbo/cache \
+    --mount=type=cache,id=next-cache,target=/app/apps/web/.next/cache \
+    pnpm turbo run build --filter=web
+
+# ---------------------------------------------------------------------------
+# runner-api: compiled output + production dependencies, nothing else.
+FROM node:${NODE_VERSION}-slim AS runner-api
+# deploy.sh prunes old images by this label, and only those.
+LABEL com.bicapack.image=api
+ENV NODE_ENV=production PORT=3001 TZ=Africa/Tunis
+# The PDF fonts and logo are read from assets/ relative to the working
+# directory (pdf.identity.ts), so dist/ and assets/ must sit side by side here.
+WORKDIR /app
+COPY --from=build-api /out/api/package.json ./
+COPY --from=build-api /out/api/node_modules ./node_modules
+COPY --from=build-api /out/api/dist ./dist
+COPY --from=build-api /app/apps/api/assets ./assets
+USER node
+EXPOSE 3001
+CMD ["node", "dist/main.js"]
+
+# ---------------------------------------------------------------------------
+# runner-web: Next's standalone server, which carries its own traced
+# node_modules. Static assets, public/ and the translation files are not
+# traced and are copied beside it: i18n/request.ts reads messages/ from the
+# working directory at runtime, and server.js chdirs to its own folder.
+FROM node:${NODE_VERSION}-slim AS runner-web
+LABEL com.bicapack.image=web
+ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 TZ=Africa/Tunis
+WORKDIR /app
+COPY --from=build-web /app/apps/web/.next/standalone ./
+COPY --from=build-web /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build-web /app/apps/web/public ./apps/web/public
+COPY --from=build-web /app/apps/web/messages ./apps/web/messages
+# The only place Next writes at runtime (image optimisation cache).
+RUN mkdir -p apps/web/.next/cache && chown node:node apps/web/.next/cache
+USER node
+EXPOSE 3000
+CMD ["node", "apps/web/server.js"]
+
+# ---------------------------------------------------------------------------
+# runner-migrate: one shot. Applies pending migrations and exits; compose
+# starts the API only after it exits 0. The prisma CLI and dotenv versions are
+# read from apps/api/package.json, so they cannot drift from development.
+FROM node:${NODE_VERSION}-slim AS runner-migrate
+LABEL com.bicapack.image=migrate
+# Prisma's schema engine is a native binary that links against OpenSSL.
+RUN apt-get update -y \
+ && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=pruned /pruned/json/apps/api/package.json /tmp/api-package.json
+# npm's download cache on a cache mount and Prisma's engine cache deleted:
+# left in the layer, the two weigh more than the install itself.
+RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
+    echo '{"private":true}' > package.json \
+ && npm install --no-fund --no-audit --omit=dev \
+      "prisma@$(node -p "require('/tmp/api-package.json').devDependencies.prisma")" \
+      "dotenv@$(node -p "require('/tmp/api-package.json').dependencies.dotenv")" \
+ && rm -rf /tmp/api-package.json /root/.cache
+COPY --from=pruned /pruned/full/apps/api/prisma.config.ts ./
+COPY --from=pruned /pruned/full/apps/api/prisma ./prisma
+USER node
+CMD ["node_modules/.bin/prisma", "migrate", "deploy"]

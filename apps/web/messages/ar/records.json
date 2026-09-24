@@ -1,0 +1,21 @@
+{
+  "channels": {
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "address": "العنوان"
+  },
+  "channelValue": "{label}: {value}",
+  "channelMissing": "{label}: غير مسجّل",
+  "stats": {
+    "total": "إجمالي {noun}",
+    "reachable": "يمكن الاتصال بهم",
+    "missingContact": "بدون وسيلة اتصال",
+    "possibleDuplicates": "تكرارات محتملة"
+  },
+  "possibleDuplicate": "تكرار محتمل",
+  "duplicateNotice": "يوجد اسم شبه مطابق: <strong>{name}</strong>. ادمج السجلين يدويًا، أو أرشف أحدهما.",
+  "nameClash": "يوجد سجل بالاسم <strong>{name}</strong> مسبقًا. يجب أن تكون الأسماء فريدة — سيتم رفض الحفظ.",
+  "nameClashArchived": "يوجد سجل بالاسم <strong>{name}</strong> مسبقًا (مؤرشف). يجب أن تكون الأسماء فريدة — سيتم رفض الحفظ.",
+  "nameNear": "<strong>{name}</strong> قريب جدًا من هذا الاسم. تحقق قبل إنشاء سجل ثانٍ.",
+  "nameHint": "يجب أن تكون الأسماء فريدة. ترفض القائمة التكرار بدلًا من إنشاء سجل ثانٍ."
+}

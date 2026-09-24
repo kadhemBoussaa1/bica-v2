@@ -1,0 +1,21 @@
+{
+  "channels": {
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "address": "Adresse"
+  },
+  "channelValue": "{label} : {value}",
+  "channelMissing": "{label} : non renseigné",
+  "stats": {
+    "total": "Total {noun}",
+    "reachable": "Joignables",
+    "missingContact": "Sans contact",
+    "possibleDuplicates": "Doublons possibles"
+  },
+  "possibleDuplicate": "Doublon possible",
+  "duplicateNotice": "Un nom quasi identique existe : <strong>{name}</strong>. Fusionnez les deux à la main, ou archivez-en un.",
+  "nameClash": "Une fiche nommée <strong>{name}</strong> existe déjà. Les noms doivent être uniques — l'enregistrement sera refusé.",
+  "nameClashArchived": "Une fiche nommée <strong>{name}</strong> existe déjà (archivée). Les noms doivent être uniques — l'enregistrement sera refusé.",
+  "nameNear": "<strong>{name}</strong> ressemble beaucoup à ce nom. Vérifiez avant de créer une seconde fiche.",
+  "nameHint": "Les noms doivent être uniques. La liste refuse un doublon plutôt que de créer une seconde fiche."
+}

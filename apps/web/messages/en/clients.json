@@ -1,0 +1,79 @@
+{
+  "eyebrow": "Contact",
+  "title": "Clients",
+  "subtitle": "Customers migrated from the previous system, most with only a name. The figures show what still needs filling in; open a row to see its record, edit it, or archive it.",
+  "newClient": "New client",
+  "backToList": "← Clients",
+  "editTitle": "Edit client",
+  "editSubtitle": "Fill in the details the previous system never recorded. Blank fields stay blank rather than being stored as empty text.",
+  "newTitle": "New client",
+  "newSubtitle": "Only the name is required, and it is checked against the book as you type. The preview on the right is the record the list will show.",
+  "loadingClient": "Loading client…",
+  "noun": "clients",
+  "archivedTag": "ARCHIVED",
+  "columns": {
+    "name": "Client",
+    "contact": "Contact",
+    "taxId": "Tax ID",
+    "contactOnFile": "Contact on file",
+    "since": "Client since"
+  },
+  "filters": {
+    "withContact": "Has contact",
+    "withoutContact": "Needs contact",
+    "duplicates": "Duplicates",
+    "archived": "Archived"
+  },
+  "searchPlaceholder": "Search name, tax ID, email…",
+  "emptyMessage": "No clients match these filters.",
+  "archiveDialog": {
+    "title": "Archive client?",
+    "body": "<strong>{name}</strong> will be hidden from the default list and from future pickers. Nothing is deleted — its history stays intact and you can restore it at any time."
+  },
+  "restoreDialog": {
+    "title": "Restore client?",
+    "body": "<strong>{name}</strong> will appear in the list again."
+  },
+  "fields": {
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "taxId": "Tax ID",
+    "since": "Client since",
+    "sinceShort": "Since",
+    "status": "Status"
+  },
+  "status": {
+    "archived": "Archived",
+    "reachable": "Reachable",
+    "needsContact": "Needs contact"
+  },
+  "panel": {
+    "aria": "{name} record",
+    "eyebrow": "Client record",
+    "close": "Close record",
+    "completeness": "Record completeness",
+    "contactSection": "Contact",
+    "recordSection": "Record"
+  },
+  "form": {
+    "identity": "Identity",
+    "required": "Required",
+    "name": "Client name",
+    "namePlaceholder": "e.g. Boulangerie Monteil",
+    "optional": "Optional",
+    "contact": "Contact",
+    "contactMeta": "Optional, but this is what the list is missing",
+    "emailPlaceholder": "name@company.com",
+    "phonePlaceholder": "+216 …",
+    "addressPlaceholder": "Street, city, country",
+    "blankHint": "Leave a field blank rather than guessing — blanks are counted and can be chased later.",
+    "createClient": "Create client",
+    "previewAria": "Record preview",
+    "previewLabel": "How this record will look",
+    "untitled": "Untitled client",
+    "completeness": "Completeness",
+    "reachableNote": "This client will count as reachable.",
+    "unreachableNote": "Blank fields stay blank. This client will show up under “Needs contact” until an email or phone is added."
+  }
+}

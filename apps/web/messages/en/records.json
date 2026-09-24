@@ -1,0 +1,21 @@
+{
+  "channels": {
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address"
+  },
+  "channelValue": "{label}: {value}",
+  "channelMissing": "{label}: not recorded",
+  "stats": {
+    "total": "Total {noun}",
+    "reachable": "Reachable",
+    "missingContact": "Missing contact",
+    "possibleDuplicates": "Possible duplicates"
+  },
+  "possibleDuplicate": "Possible duplicate",
+  "duplicateNotice": "A near-identical name exists: <strong>{name}</strong>. Merge the two by hand, or archive one.",
+  "nameClash": "A record named <strong>{name}</strong> already exists. Names must be unique — this will be rejected.",
+  "nameClashArchived": "A record named <strong>{name}</strong> already exists (archived). Names must be unique — this will be rejected.",
+  "nameNear": "<strong>{name}</strong> looks close to this name. Check before creating a second record.",
+  "nameHint": "Names must be unique. The list rejects a duplicate rather than creating a second record."
+}

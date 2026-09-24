@@ -1,0 +1,80 @@
+{
+  "eyebrow": "الإنتاج",
+  "title": "الآلات",
+  "subtitle": "معدات الورشة المنقولة من النظام السابق، مع عروض الورق وأوزانه التي يمكن لكل آلة تشغيلها. صفِّ حسب النوع، أو ابحث بالاسم أو الرمز أو العلامة التجارية.",
+  "newMachine": "آلة جديدة",
+  "editMachine": "تعديل الآلة",
+  "back": "→ الآلات",
+  "loadingMachine": "جارٍ تحميل الآلة…",
+  "columns": {
+    "machine": "الآلة",
+    "code": "الرمز",
+    "type": "النوع",
+    "laize": "عرض الورق (مم)",
+    "grammage": "الوزن (غ/م²)",
+    "supplier": "المورّد"
+  },
+  "archivedTag": "مؤرشفة",
+  "filters": {
+    "archived": "مؤرشفة"
+  },
+  "searchPlaceholder": "ابحث بالاسم أو الرمز أو العلامة…",
+  "emptyMessage": "لا توجد آلات مطابقة لهذه المرشحات.",
+  "archiveTitle": "أرشفة الآلة؟",
+  "restoreTitle": "استعادة الآلة؟",
+  "archiveBody": "ستُخفى <strong>{name}</strong> من القائمة الافتراضية. لا يُحذف شيء، فالطلبيات السابقة التي نُفّذت عليها تظل تشير إليها.",
+  "restoreBody": "ستظهر <strong>{name}</strong> في القائمة من جديد.",
+  "form": {
+    "code": "الرمز",
+    "type": "النوع",
+    "selectType": "اختر نوعًا",
+    "name": "الاسم",
+    "brand": "العلامة التجارية",
+    "supplier": "المورّد",
+    "noSupplier": "بدون مورّد",
+    "price": "السعر",
+    "purchaseDate": "تاريخ الشراء",
+    "capabilities": "القدرات",
+    "capabilitiesHint": "تختلف المقاسات المنطبقة حسب الآلة. اترك ما لا تحدده الآلة فارغًا بدل إدخال صفر.",
+    "documents": "المستندات",
+    "imageUrl": "رابط الصورة",
+    "invoiceUrl": "رابط الفاتورة",
+    "createMachine": "إنشاء الآلة",
+    "mustBeNumber": "{field} يجب أن يكون رقمًا",
+    "priceMustBeNumber": "السعر يجب أن يكون رقمًا"
+  },
+  "measures": {
+    "laize": "عرض الورق",
+    "grammage": "الوزن",
+    "laizeMin": "عرض الورق الأدنى",
+    "laizeMax": "عرض الورق الأقصى",
+    "grammageMin": "الوزن الأدنى",
+    "grammageMax": "الوزن الأقصى",
+    "grammageMinWithoutHandle": "الوزن الأدنى، بدون مقبض",
+    "grammageMaxWithoutHandle": "الوزن الأقصى، بدون مقبض",
+    "grammageMinWithHandle": "الوزن الأدنى، مع مقبض",
+    "grammageMaxWithHandle": "الوزن الأقصى، مع مقبض",
+    "grammageMinKraft": "الوزن الأدنى، كرافت",
+    "grammageMaxKraft": "الوزن الأقصى، كرافت",
+    "grammageMinLaminatedKraft": "الوزن الأدنى، كرافت مصفّح",
+    "grammageMaxLaminatedKraft": "الوزن الأقصى، كرافت مصفّح",
+    "lengthMin": "الطول الأدنى",
+    "lengthMax": "الطول الأقصى",
+    "widthMin": "العرض الأدنى",
+    "widthMax": "العرض الأقصى"
+  },
+  "kpis": {
+    "machines": "الآلات",
+    "onFloor": "في الورشة",
+    "machinesUnit": "آلات",
+    "archived": "مؤرشفة"
+  },
+  "view": {
+    "label": "العرض",
+    "grid": "عرض البطاقات",
+    "list": "عرض القائمة"
+  },
+  "cards": {
+    "notSet": "غير محدّد"
+  }
+}

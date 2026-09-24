@@ -1,0 +1,141 @@
+{
+  "machineType": {
+    "SAC_V": "Máquina de bolsas fondo V",
+    "CORDON": "Máquina de cordón",
+    "IMPRESSION": "Máquina de impresión",
+    "SAC_POIGNE_TORSADE": "Máquina de bolsas con asa retorcida",
+    "SAC_POIGNE_PLATE": "Máquina de bolsas con asa plana",
+    "COUPE": "Cortadora",
+    "COUPE_SOUS_PLAT": "Cortadora de fondo plano",
+    "SAC_LUXE": "Máquina de bolsas de lujo"
+  },
+  "workshopStage": {
+    "PRINTING": "Impresión",
+    "PRODUCER": "Fabricación",
+    "QUALITY_CONTROL": "Control de calidad",
+    "PACKAGING": "Embalaje"
+  },
+  "inkUnit": {
+    "KG": "kg",
+    "L": "L"
+  },
+  "typeSac": {
+    "FOND_V": "Fondo V",
+    "FOND_CARRE": "Fondo cuadrado",
+    "SOUS_PLAT": "Fondo plano"
+  },
+  "paperType": {
+    "PAPIER_KRAFT": "Papel kraft",
+    "PAPIER_BLANC": "Papel blanco"
+  },
+  "typeImpression": {
+    "IMPRESSION_SUR_ROULEAU": "Impresión en bobina",
+    "IMPRESSION_SUR_SAC": "Impresión en bolsa"
+  },
+  "exportStatus": {
+    "PREPARATION": "En preparación",
+    "EXPORTED": "Exportado"
+  },
+  "orderKind": {
+    "QUOTE": "Presupuesto",
+    "ORDER": "Pedido"
+  },
+  "orderStatus": {
+    "DRAFT": "Borrador",
+    "IN_PRODUCTION": "En producción",
+    "PRODUCED": "Producido",
+    "INVOICEABLE": "Facturable",
+    "INVOICED": "Facturado",
+    "READY_FOR_EXPORT": "Listo para exportar",
+    "COMPLETED": "Completado",
+    "CANCELLED": "Cancelado"
+  },
+  "quantityUnit": {
+    "PIECES": "Piezas",
+    "KILOGRAMS": "Kilogramos"
+  },
+  "pricingSource": {
+    "LEGACY": "Registrado en el sistema anterior",
+    "COMPUTED": "Calculado"
+  },
+  "salesInvoiceStatus": {
+    "DRAFT": "Borrador",
+    "ISSUED": "Emitida"
+  },
+  "paymentMethod": {
+    "VIREMENT": "Transferencia",
+    "CHEQUE": "Cheque",
+    "ESPECES": "Efectivo"
+  },
+  "role": {
+    "SUPER_ADMIN": "Superadministrador",
+    "ADMIN": "Administrador",
+    "PRODUCTION": "Producción",
+    "MAGASINIER": "Almacenero"
+  },
+  "productionUnit": {
+    "PIECE": "Piezas",
+    "METER": "Metros"
+  },
+  "shipmentStatus": {
+    "DRAFT": "Borrador",
+    "SHIPPED": "Enviado"
+  },
+  "shipmentKind": {
+    "COMPLETE": "Completo",
+    "PARTIAL": "Parcial"
+  },
+  "purchaseCategory": {
+    "PAPER": "Papel",
+    "INK": "Tinta",
+    "PLATE": "Planchas",
+    "GLUE": "Cola",
+    "BOXES": "Cajas",
+    "PALLETS": "Palés",
+    "STRETCH_FILM": "Film estirable",
+    "TRANSPORT": "Transporte",
+    "MISC": "Varios"
+  },
+  "receiptStatus": {
+    "PENDING": "Pendiente",
+    "PARTIAL": "Recibido parcialmente",
+    "COMPLETE": "Recibido"
+  },
+  "allocationState": {
+    "RESERVED": "Reservado",
+    "CONSUMED": "Consumido",
+    "CANCELED": "Cancelado"
+  },
+  "shiftType": {
+    "NIGHT": "Noche",
+    "MORNING": "Mañana",
+    "AFTERNOON": "Tarde"
+  },
+  "shiftTaskType": {
+    "SETTING": "Ajuste",
+    "PRODUCTION": "Producción",
+    "PRINTING": "Impresión",
+    "CLEANING": "Limpieza"
+  },
+  "shiftWeekStatus": {
+    "DRAFT": "Borrador",
+    "PUBLISHED": "Publicada"
+  },
+  "shiftChangeKind": {
+    "MOVE": "Movimiento",
+    "SWAP": "Intercambio",
+    "REPLACE": "Sustitución",
+    "REMOVE": "Retirada",
+    "ADD": "Incorporación"
+  },
+  "shiftChangeStatus": {
+    "PENDING": "Pendiente",
+    "ACCEPTED": "Aceptada",
+    "REJECTED": "Rechazada",
+    "WITHDRAWN": "Retirada"
+  },
+  "shiftTaskStatus": {
+    "OPEN": "Abierto",
+    "DONE": "Hecho"
+  }
+}

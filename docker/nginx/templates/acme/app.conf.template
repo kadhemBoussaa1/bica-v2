@@ -1,0 +1,15 @@
+# First certificate only (deploy/deploy.sh --ssl-init). The https config
+# names a certificate file that does not exist yet, so nginx could not start
+# with it; this serves the ACME challenge over HTTP and nothing else.
+server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 503;
+    }
+}

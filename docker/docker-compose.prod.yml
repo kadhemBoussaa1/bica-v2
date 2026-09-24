@@ -1,0 +1,159 @@
+# Production stack for Bicapack ERP.
+#
+# Always driven through deploy/compose.sh (or deploy/deploy.sh, which uses
+# it): the wrapper reads .env.production and derives PUBLIC_URL and
+# NGINX_MODE from DOMAIN, which this file needs. Every variable is described
+# in .env.production.example.
+#
+# Boot order: postgres healthy -> migrate exits 0 -> api. That holds for a
+# first boot, but on a redeploy `up` stops every container it recreates
+# before starting any, so deploy.sh also runs migrate alone first: a failed
+# migration must abort the deploy while the old API is still up.
+#
+# Only nginx publishes ports. Postgres and the apps are reachable on the
+# compose network alone: use `deploy/compose.sh exec postgres psql -U bica`
+# rather than publishing 5432, because Docker publishes ports around ufw.
+
+name: bicapack
+
+x-build: &build
+  context: ..
+  dockerfile: Dockerfile.prod
+
+# Container logs are the only logs; unrotated, they fill the disk in months.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-database-url: &database-url postgresql://bica:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/bica?schema=public
+
+services:
+  postgres:
+    # Same major as development, so a dev dump restores as-is.
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bica
+      POSTGRES_DB: bica
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bica -d bica"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  migrate:
+    image: ${IMAGE_PREFIX:?IMAGE_PREFIX is required}-migrate:${IMAGE_TAG:-main}
+    build:
+      <<: *build
+      target: runner-migrate
+    restart: "no"
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *logging
+
+  api:
+    image: ${IMAGE_PREFIX:?IMAGE_PREFIX is required}-api:${IMAGE_TAG:-main}
+    build:
+      <<: *build
+      target: runner-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: *database-url
+      # Web and API share one origin (nginx routes by path), so the public
+      # URL is both the CORS origin and Better Auth's base URL.
+      CORS_ORIGIN: ${PUBLIC_URL:?run through deploy/compose.sh, which sets PUBLIC_URL}
+      BETTER_AUTH_URL: ${PUBLIC_URL:?run through deploy/compose.sh, which sets PUBLIC_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      # nginx overwrites X-Forwarded-For with the client address.
+      TRUST_PROXY: "1"
+      # Read only by `node dist/seed.js` on a fresh database.
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
+      SUPER_ADMIN_NAME: ${SUPER_ADMIN_NAME:-Super Admin}
+      AWS_REGION: ${AWS_REGION:?AWS_REGION is required}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:?AWS_S3_BUCKET is required}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID is required}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY is required}
+      # Kept out of the environment on purpose: AUDIT_PURGE_DAYS has no
+      # default, and the purge is run by hand (docs/deployment.md).
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/auth/ok').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 30s
+    logging: *logging
+
+  web:
+    image: ${IMAGE_PREFIX:?IMAGE_PREFIX is required}-web:${IMAGE_TAG:-main}
+    build:
+      <<: *build
+      target: runner-web
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_URL:?run through deploy/compose.sh, which sets PUBLIC_URL}
+        NEXT_PUBLIC_APP_URL: ${PUBLIC_URL:?run through deploy/compose.sh, which sets PUBLIC_URL}
+    restart: unless-stopped
+    healthcheck:
+      # /login renders without a session: proves the server, the build and
+      # the translation files, not just an open port.
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login', { redirect: 'manual' }).then(r => process.exit(r.status < 500 ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *logging
+
+  nginx:
+    # `stable` is >= 1.27.3, which the `resolve` upstreams in nginx.conf need.
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required}
+      # The image renders /etc/nginx/templates/*.template into conf.d at
+      # start. Only DOMAIN is substituted, so nginx's own $variables survive.
+      NGINX_ENVSUBST_FILTER: "^DOMAIN$$"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      # https (normal), http (DOMAIN is a bare IP) or acme (--ssl-init only).
+      - ./nginx/templates/${NGINX_MODE:?run through deploy/compose.sh, which sets NGINX_MODE}:/etc/nginx/templates:ro
+      - ./nginx/maintenance:/usr/share/nginx/html/__maintenance:ro
+      - ./nginx/reload-certs.sh:/docker-entrypoint.d/40-reload-certs.sh:ro
+      # deploy/maintenance.sh drops a flag file here; bind-mounted so the
+      # switch survives nginx being recreated.
+      - ./nginx/state:/etc/nginx/state
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    logging: *logging
+
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # Tries a renewal twice a day; certbot only acts within 30 days of
+    # expiry. nginx picks the new certificate up on its next reload
+    # (nginx/reload-certs.sh). With no certificate yet (IP mode) this idles.
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done'"
+    logging: *logging
+
+volumes:
+  postgres_data:

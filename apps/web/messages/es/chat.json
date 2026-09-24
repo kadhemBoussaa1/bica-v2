@@ -1,0 +1,58 @@
+{
+  "title": "Mensajes",
+  "launcher": {
+    "open": "Abrir mensajes",
+    "close": "Minimizar mensajes",
+    "dismiss": "Ocultar mensajes"
+  },
+  "panel": {
+    "everyone": "Todos en la plataforma",
+    "visibleToAll": "Visible para todas las personas con sesión abierta"
+  },
+  "composer": {
+    "label": "Escribir un aviso",
+    "placeholder": "Una máquina está parada, una entrega se ha retrasado, un precio ha cambiado…",
+    "send": "Publicar",
+    "sending": "Publicando…",
+    "hint": "Todas las personas con sesión abierta ven esto, y un aviso no se puede retirar. Adjunta fotos, PDF, hojas de cálculo y documentos, hasta 25 MB.",
+    "attachmentsFull": "Seis adjuntos es el límite por aviso.",
+    "remove": "Quitar {filename}",
+    "tooMany": "Demasiados adjuntos",
+    "failed": "El aviso no se publicó. Inténtalo de nuevo.",
+    "short": "Aa",
+    "mention": "@ Mencionar",
+    "document": "# Documento"
+  },
+  "upload": {
+    "label": "Adjuntar un archivo",
+    "choose": "Adjuntar",
+    "replace": "Reemplazar",
+    "remove": "Quitar",
+    "uploading": "Subiendo…",
+    "failed": "La subida falló. Comprueba la conexión e inténtalo de nuevo.",
+    "tooLarge": "Ese archivo supera los 25 MB.",
+    "wrongType": "Adjunta una foto, un PDF, una hoja de cálculo o un documento."
+  },
+  "pinned": {
+    "title": "Fijados",
+    "empty": "No hay nada fijado.",
+    "pin": "Fijar",
+    "unpin": "No fijar",
+    "pinnedBy": "Fijado {when}",
+    "hide": "Ocultar fijados",
+    "show": "Mostrar fijados"
+  },
+  "feed": {
+    "loading": "Cargando el hilo…",
+    "empty": "Todavía no se ha publicado nada.",
+    "emptyText": "El primer aviso aparecerá aquí para todas las personas con sesión abierta.",
+    "loadOlder": "Cargar más antiguos",
+    "loadingOlder": "Cargando…",
+    "start": "Inicio del hilo",
+    "new": "{count, plural, =1 {1 aviso nuevo} other {# avisos nuevos}}",
+    "jumpToLatest": "Ir al más reciente",
+    "you": "Tú",
+    "attachment": "{filename} ({size})",
+    "error": "No se pudo cargar el hilo."
+  }
+}

@@ -1,0 +1,237 @@
+/*
+ * Bicapack ERP design tokens — v3 "Glass".
+ * Source of truth: "Bicapack Toolkit v3 - Glass.dc.html" in the Claude Design
+ * project "ERP client module redesign". Keep hex values in sync with that
+ * handoff.
+ *
+ * v3 keeps v2's kraft-and-orange identity, spacing scale and touch-first
+ * control sizes, and changes the surfaces: one radius scale instead of 3px
+ * everywhere, panels and cards as translucent glass over a soft coloured
+ * ground, elevation carried by shadows rather than hairline borders, and a
+ * gradient primary. The "v2 → v3, field by field" table in the handoff is
+ * the checklist this file implements.
+ */
+
+:root {
+  /*
+   * The one type knob. Every font size in the app is a rem, so this scales
+   * all of them together and nothing else: spacing, control heights and
+   * radii stay on their own px scales, which is what keeps a bigger label
+   * from bursting a 48px button.
+   *
+   * 16px is the browser default and the size the app was drawn at; 17.5px
+   * is the +9% the plant asked for. Change this number, not a stylesheet.
+   */
+  --bp-text-root: 17.5px;
+
+  /* Brand — Bicapack Orange */
+  --bp-orange-50: #fef6ea;
+  --bp-orange-100: #fdebd0;
+  --bp-orange-300: #ffc46b;
+  --bp-orange-500: #f29100; /* fills only — never text, at any size */
+  --bp-orange-600: #d97c00; /* hover */
+  --bp-orange-700: #b36500; /* text on white; 500 fails AA */
+  --bp-orange-800: #8a4e00; /* small text on orange-50/100 tints */
+
+  /* Neutrals — warm kraft */
+  --bp-neutral-50: #f8f6f2;
+  --bp-neutral-100: #efebe5;
+  --bp-neutral-200: #dcd6ce;
+  --bp-neutral-300: #b5ada3;
+  --bp-neutral-400: #8c837a;
+  --bp-neutral-500: #746b62;
+  --bp-neutral-600: #5c544b;
+  --bp-neutral-800: #2e2a25;
+  --bp-neutral-900: #1a1714;
+
+  /* Semantic — each a fill + text pair, for state only, never the accent */
+  --bp-success: #2e7d4f;
+  --bp-success-bg: #e9f3ed;
+  --bp-success-text: #20603b;
+  --bp-warning: #e0a106;
+  --bp-warning-bg: #fbf3dc;
+  --bp-warning-text: #8a6404;
+  --bp-danger: #c1352b;
+  --bp-danger-bg: #faeae8;
+  --bp-danger-text: #8f251e;
+  --bp-danger-border: #e4b5b0;
+  --bp-info: #2c6e9b;
+  --bp-info-bg: #e8f0f6;
+  --bp-info-text: #22587c;
+
+  /* Ground. v3's page is a deeper kraft wash than v2's paper, with three
+     coloured glows floated over it (globals.css) — glass needs something
+     behind it. `--bp-surface` stays solid white: it is the near-solid ground
+     for dense table bodies, where blur would cost the figures their edge. */
+  --bp-page: #efe9e0;
+  --bp-surface: #ffffff;
+  --bp-border: var(--bp-neutral-200);
+  --bp-border-strong: var(--bp-neutral-300);
+
+  /* Glass — three recipes from the handoff. "paper" is the default panel;
+     "veil" nests inside a panel; "ink" goes over photography and on the shop
+     floor. Text on glass is never alpha-muted: ink on paper, paper on ink. */
+  --bp-glass-bg: rgb(255 255 255 / 0.62);
+  --bp-glass-border: rgb(255 255 255 / 0.78);
+  --bp-glass-blur: blur(22px) saturate(140%);
+  --bp-veil-bg: rgb(255 255 255 / 0.34);
+  --bp-veil-border: rgb(255 255 255 / 0.55);
+  --bp-veil-blur: blur(14px);
+  --bp-glass-ink-bg: rgb(26 23 20 / 0.62);
+  --bp-glass-ink-border: rgb(255 255 255 / 0.16);
+
+  /* Elevation — soft shadows carry the hierarchy hairlines used to. */
+  --bp-shadow-panel: 0 14px 34px rgb(26 23 20 / 0.09);
+  --bp-shadow-card: 0 12px 30px rgb(26 23 20 / 0.08);
+  --bp-shadow-veil: 0 8px 20px rgb(26 23 20 / 0.06);
+  --bp-shadow-ink: 0 16px 38px rgb(26 23 20 / 0.28);
+  --bp-shadow-lift: 0 20px 44px rgb(26 23 20 / 0.14);
+  --bp-shadow-float: 0 24px 60px rgb(26 23 20 / 0.22);
+  /* The primary action is the one element with a coloured shadow. */
+  --bp-shadow-primary: 0 8px 20px rgb(217 124 0 / 0.34);
+  --bp-shadow-primary-hover: 0 12px 26px rgb(217 124 0 / 0.44);
+  --bp-shadow-primary-active: 0 4px 12px rgb(217 124 0 / 0.3);
+  --bp-shadow-primary-dense: 0 5px 14px rgb(217 124 0 / 0.28);
+
+  /* Fills. The warm gradient is the primary button and the progress marks;
+     the lighter one is decorative (radius swatches, card banners). */
+  --bp-gradient-primary: linear-gradient(135deg, #f29100 0%, #d97c00 100%);
+  --bp-gradient-warm: linear-gradient(135deg, #f29100 0%, #ffc46b 100%);
+  --bp-gradient-banner: linear-gradient(
+    135deg,
+    rgb(242 145 0 / 0.34) 0%,
+    rgb(89 128 166 / 0.26) 100%
+  );
+
+  /* Lines and tints on glass: alpha ink, so they read the same on every
+     translucent surface. */
+  --bp-hairline: rgb(26 23 20 / 0.08);
+  --bp-hairline-soft: rgb(26 23 20 / 0.07);
+  --bp-tint: rgb(26 23 20 / 0.06);
+  --bp-tint-strong: rgb(26 23 20 / 0.1);
+
+  /* Controls: inputs and secondary buttons sit a little more solid than the
+     panel they are on, so they read as things to touch. */
+  --bp-control-border: rgb(26 23 20 / 0.16);
+  --bp-control-border-hover: rgb(26 23 20 / 0.3);
+  --bp-control-bg: rgb(255 255 255 / 0.85);
+  --bp-control-bg-soft: rgb(255 255 255 / 0.72);
+
+  /* Text roles. Components read these, not the neutrals, so a scope can
+     invert them (see the shop-floor block below). */
+  --bp-ink: var(--bp-neutral-900);
+  --bp-ink-strong: var(--bp-neutral-800);
+  --bp-ink-muted: var(--bp-neutral-600);
+  --bp-ink-faint: var(--bp-neutral-400);
+  --bp-accent-text: var(--bp-orange-700);
+
+  /* Keyboard focus: a 2px orange-700 ring at 2px offset, everywhere. */
+  --bp-focus: var(--bp-orange-700);
+
+  /* Type.
+   *
+   * The --font-* variables come from next/font and are declared on <body>,
+   * not :root. A :root token cannot read them (custom properties inherit
+   * downward, never up), so these carry only the fallbacks here and are
+   * redefined on body below, where --font-* is actually in scope. */
+  --bp-font-display: system-ui, sans-serif;
+  --bp-font-body: system-ui, sans-serif;
+  --bp-font-mono: ui-monospace, monospace;
+
+  /* Geometry — the v3 radius scale. Five steps, each for one kind of thing;
+     nothing should pick a radius that is not on this list. */
+  --bp-radius-dense: 10px; /* dense controls, table-row buttons, thumbnails */
+  --bp-radius: 14px; /* touch buttons, inputs, avatars */
+  --bp-radius-block: 16px; /* inline blocks inside a panel */
+  --bp-radius-card: 20px; /* figure tiles, small cards */
+  --bp-radius-panel: 24px; /* panels, modals, page header */
+  --bp-radius-pill: 999px; /* filter chips, status and role badges */
+  /* v2's name for the small radius, kept for callers; same as dense now. */
+  --bp-radius-sm: var(--bp-radius-dense);
+
+  /* Spacing — one 4px grid, seven steps. Nothing in the app should use a
+     number that is not on this list. */
+  --bp-space-1: 4px; /* icon to its label */
+  --bp-space-2: 8px; /* chips, buttons in a row, badge gaps */
+  --bp-space-3: 12px; /* label to control, list row padding */
+  --bp-space-4: 16px; /* card padding (dense), table gutter */
+  --bp-space-5: 24px; /* card padding (touch), group to group */
+  --bp-space-6: 32px; /* page gutter, section to section */
+  --bp-space-7: 48px; /* major section break */
+
+  /* Page geometry */
+  --bp-gutter: clamp(16px, 4vw, 32px);
+  --bp-page-max: 1600px;
+  --bp-section-gap: 56px;
+
+  /* Control heights. Touch is the default — a gloved hand first; dense is
+     opt-in for desktop toolbars and table-row controls; floor is the tablet
+     mounted beside a machine, used at arm's length. */
+  --bp-control-h: 48px;
+  --bp-control-h-dense: 36px;
+  --bp-control-h-floor: 56px;
+  --bp-control-pad: 22px;
+  --bp-control-pad-dense: 14px;
+  --bp-control-pad-floor: 26px;
+  /* Kept for callers written against v1; same value as the default now. */
+  --bp-control-h-touch: var(--bp-control-h);
+
+  /* Table rows */
+  --bp-row-h: 56px;
+  --bp-row-h-dense: 40px;
+}
+
+/* Where next/font's variables are in scope, upgrade the type tokens to the
+   real faces. Falls back gracefully if a font fails to load. */
+body {
+  --bp-font-display: var(--font-archivo), system-ui, sans-serif;
+  --bp-font-body: var(--font-plex-sans), system-ui, sans-serif;
+  --bp-font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+/* Arabic: neither Archivo nor Plex Sans carries Arabic glyphs, so both text
+   roles take IBM Plex Sans Arabic (loaded by the app's layout). Figures stay
+   in the mono face — Latin digits are shared with the French and English
+   readers of the same numbers. */
+[dir="rtl"] body {
+  --bp-font-display: var(--font-plex-arabic), system-ui, sans-serif;
+  --bp-font-body: var(--font-plex-arabic), system-ui, sans-serif;
+}
+
+/*
+ * Shop-floor mode. Ink ground for a tablet next to a machine: less glare
+ * under strip lighting, and figures at the size a supervisor reads standing
+ * up. Orange stays a fill; on ink it also becomes legible as text (300).
+ * Panels take the "ink" glass recipe. Apply with `data-surface="floor"` on
+ * any container.
+ */
+[data-surface="floor"] {
+  --bp-page: var(--bp-neutral-900);
+  --bp-surface: var(--bp-neutral-900);
+  --bp-border: var(--bp-neutral-800);
+  --bp-border-strong: var(--bp-neutral-600);
+  --bp-glass-bg: var(--bp-glass-ink-bg);
+  --bp-glass-border: var(--bp-glass-ink-border);
+  --bp-veil-bg: rgb(255 255 255 / 0.06);
+  --bp-veil-border: rgb(255 255 255 / 0.12);
+  --bp-shadow-panel: var(--bp-shadow-ink);
+  --bp-shadow-card: var(--bp-shadow-ink);
+  --bp-hairline: rgb(255 255 255 / 0.1);
+  --bp-hairline-soft: rgb(255 255 255 / 0.08);
+  --bp-tint: rgb(255 255 255 / 0.08);
+  --bp-tint-strong: rgb(255 255 255 / 0.14);
+  --bp-control-border: rgb(255 255 255 / 0.18);
+  --bp-control-border-hover: rgb(255 255 255 / 0.32);
+  --bp-control-bg: rgb(255 255 255 / 0.08);
+  --bp-control-bg-soft: rgb(255 255 255 / 0.06);
+  --bp-ink: var(--bp-neutral-50);
+  --bp-ink-strong: var(--bp-neutral-100);
+  --bp-ink-muted: var(--bp-neutral-300);
+  --bp-ink-faint: var(--bp-neutral-400);
+  --bp-accent-text: var(--bp-orange-300);
+  --bp-focus: var(--bp-orange-300);
+  --bp-control-h: var(--bp-control-h-floor);
+  --bp-control-pad: var(--bp-control-pad-floor);
+  background: var(--bp-page);
+  color: var(--bp-ink);
+}

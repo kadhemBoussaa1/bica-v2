@@ -1,0 +1,21 @@
+{
+  "metaTitle": "Paramètres · Bicapack ERP",
+  "eyebrow": "Préférences",
+  "title": "Paramètres",
+  "pagesAria": "Pages des paramètres",
+  "railNote": "Réservé à l’administration. Chaque section indique le rôle qu’elle exige.",
+  "sectionEyebrow": "Paramètres · {group}",
+  "groups": {
+    "access": "Accès",
+    "documents": "Documents"
+  },
+  "hints": {
+    "users": "Comptes, rôles et accès",
+    "activity": "Qui a fait quoi, et quand",
+    "templates": "Apparence des factures émises"
+  },
+  "counts": {
+    "errors": "{count} err.",
+    "version": "v{version}"
+  }
+}

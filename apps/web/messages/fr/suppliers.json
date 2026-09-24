@@ -1,0 +1,126 @@
+{
+  "eyebrow": "Contact",
+  "title": "Fournisseurs",
+  "subtitle": "Fournisseurs migrés depuis l'ancien système, avec leurs coordonnées et taux de TVA. Filtrez par famille, ou recherchez par nom, e-mail, matricule fiscal et adresse ; ouvrez une ligne pour voir sa fiche, la modifier ou l'archiver.",
+  "newSupplier": "Nouveau fournisseur",
+  "supplierFamilies": "Familles de fournisseurs",
+  "backToList": "← Fournisseurs",
+  "editTitle": "Modifier le fournisseur",
+  "editSubtitle": "Les champs vides restent vides au lieu d'être stockés comme texte vide.",
+  "newTitle": "Nouveau fournisseur",
+  "newSubtitle": "Seul le nom est obligatoire ; il est vérifié dans le fichier au fur et à mesure de la saisie. La famille alimente les filtres de la liste : la renseigner vaut la seconde supplémentaire.",
+  "loadingSupplier": "Chargement du fournisseur…",
+  "noun": "fournisseurs",
+  "archivedTag": "ARCHIVÉ",
+  "columns": {
+    "name": "Fournisseur",
+    "contact": "Contact",
+    "family": "Famille",
+    "taxId": "Matricule fiscal",
+    "contactOnFile": "Contact enregistré",
+    "vat": "TVA"
+  },
+  "vatCheck": "à vérifier",
+  "vatUnparsed": "Valeur héritée non interprétée : {value}",
+  "vatNotSingleRate": "Ce n'est pas un taux unique — saisissez le vrai taux",
+  "filters": {
+    "unassigned": "Sans famille",
+    "duplicates": "Doublons",
+    "archived": "Archivés"
+  },
+  "searchPlaceholder": "Rechercher nom, e-mail, matricule fiscal…",
+  "emptyMessage": "Aucun fournisseur ne correspond à ces filtres.",
+  "archiveDialog": {
+    "title": "Archiver le fournisseur ?",
+    "body": "<strong>{name}</strong> sera masqué de la liste par défaut et des sélecteurs à venir. Rien n'est supprimé — les factures d'achat passées continuent de le nommer, et vous pouvez le restaurer à tout moment."
+  },
+  "restoreDialog": {
+    "title": "Restaurer le fournisseur ?",
+    "body": "<strong>{name}</strong> apparaîtra de nouveau dans la liste."
+  },
+  "fields": {
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "phone2": "Second téléphone",
+    "fax": "Fax",
+    "website": "Site web",
+    "address": "Adresse",
+    "family": "Famille",
+    "taxId": "Matricule fiscal",
+    "vatRate": "Taux de TVA",
+    "status": "Statut"
+  },
+  "status": {
+    "archived": "Archivé",
+    "reachable": "Joignable",
+    "needsContact": "Sans contact"
+  },
+  "panel": {
+    "aria": "Fiche de {name}",
+    "eyebrow": "Fiche fournisseur",
+    "close": "Fermer la fiche",
+    "completeness": "Complétude de la fiche",
+    "contactSection": "Contact",
+    "recordSection": "Fiche"
+  },
+  "form": {
+    "identity": "Identité",
+    "required": "Obligatoire",
+    "name": "Nom du fournisseur",
+    "namePlaceholder": "ex. Nord Emballage",
+    "optional": "Facultatif",
+    "archivedFamily": "(famille archivée)",
+    "loadingFamilies": "Chargement…",
+    "noFamily": "Sans famille",
+    "missingCategory": "Il manque une catégorie ?",
+    "manageFamilies": "Gérer les familles",
+    "vatPlaceholder": "ex. 19",
+    "vatNumberError": "Le taux de TVA doit être un nombre, ex. 19",
+    "vatNoteHint": "L'ancien système avait enregistré « {value} » ici, ce qui n'est pas un taux unique. Saisir un taux le remplace.",
+    "contact": "Contact",
+    "contactMeta": "Facultatif — un e-mail ou un téléphone rend le fournisseur joignable",
+    "emailPlaceholder": "nom@societe.com",
+    "websitePlaceholder": "societe.com",
+    "phonePlaceholder": "+216 …",
+    "addressPlaceholder": "Rue, ville, pays",
+    "blankHint": "Laissez un champ vide plutôt que de deviner — les vides sont comptés et pourront être complétés plus tard.",
+    "createSupplier": "Créer le fournisseur",
+    "previewAria": "Aperçu de la fiche",
+    "previewLabel": "Aperçu de la fiche",
+    "untitled": "Fournisseur sans nom",
+    "completeness": "Complétude",
+    "reachableNote": "Ce fournisseur sera compté comme joignable.",
+    "unreachableNote": "Les champs vides restent vides. Ce fournisseur sera compté sans contact tant qu'un e-mail ou un téléphone n'est pas ajouté."
+  },
+  "families": {
+    "title": "Familles de fournisseurs",
+    "subtitle": "Catégories d'achat des fournisseurs. Ajoutez-en une dès qu'un fournisseur ne rentre pas dans l'existant. Le code est la clé stable utilisée par les filtres fournisseurs et ne peut pas changer ; renommez plutôt le libellé.",
+    "loading": "Chargement des familles…",
+    "genericError": "Une erreur s'est produite",
+    "checkValues": "Vérifiez les valeurs et réessayez",
+    "newFamily": "Nouvelle famille",
+    "labelPlaceholder": "Emballage",
+    "codePlaceholder": "EMBALLAGE",
+    "columns": {
+      "family": "Famille",
+      "code": "Code",
+      "suppliers": "Fournisseurs"
+    },
+    "rename": "Renommer",
+    "codeError": "A-Z, 0-9 et _ uniquement",
+    "adding": "Ajout…",
+    "addFamily": "Ajouter la famille",
+    "deleteDialog": {
+      "title": "Supprimer la famille ?",
+      "body": "<strong>{name}</strong> sera définitivement supprimée. Aucun fournisseur ne l'utilise, rien d'autre ne change."
+    },
+    "archiveDialog": {
+      "title": "Archiver la famille ?",
+      "body": "<strong>{name}</strong> ne sera plus proposée pour les nouveaux fournisseurs. Ceux qui y sont déjà la conservent et l'affichent toujours dans la liste — rien ne devient sans catégorie."
+    },
+    "restoreDialog": {
+      "title": "Restaurer la famille ?",
+      "body": "<strong>{name}</strong> sera de nouveau proposée lors du classement des fournisseurs."
+    }
+  }
+}

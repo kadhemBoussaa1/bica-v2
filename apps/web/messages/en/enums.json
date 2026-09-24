@@ -1,0 +1,141 @@
+{
+  "machineType": {
+    "SAC_V": "V-bottom bag machine",
+    "CORDON": "Cord machine",
+    "IMPRESSION": "Printing press",
+    "SAC_POIGNE_TORSADE": "Twisted-handle bag machine",
+    "SAC_POIGNE_PLATE": "Flat-handle bag machine",
+    "COUPE": "Cutter",
+    "COUPE_SOUS_PLAT": "Flat-bottom cutter",
+    "SAC_LUXE": "Luxury bag machine"
+  },
+  "workshopStage": {
+    "PRINTING": "Printing",
+    "PRODUCER": "Producer",
+    "QUALITY_CONTROL": "Quality control",
+    "PACKAGING": "Packaging"
+  },
+  "inkUnit": {
+    "KG": "kg",
+    "L": "L"
+  },
+  "typeSac": {
+    "FOND_V": "V bottom",
+    "FOND_CARRE": "Square bottom",
+    "SOUS_PLAT": "Flat bottom"
+  },
+  "paperType": {
+    "PAPIER_KRAFT": "Kraft paper",
+    "PAPIER_BLANC": "White paper"
+  },
+  "typeImpression": {
+    "IMPRESSION_SUR_ROULEAU": "Printed on the reel",
+    "IMPRESSION_SUR_SAC": "Printed on the bag"
+  },
+  "exportStatus": {
+    "PREPARATION": "In preparation",
+    "EXPORTED": "Exported"
+  },
+  "orderKind": {
+    "QUOTE": "Quote",
+    "ORDER": "Order"
+  },
+  "orderStatus": {
+    "DRAFT": "Draft",
+    "IN_PRODUCTION": "In production",
+    "PRODUCED": "Produced",
+    "INVOICEABLE": "Invoiceable",
+    "INVOICED": "Invoiced",
+    "READY_FOR_EXPORT": "Ready for export",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "quantityUnit": {
+    "PIECES": "Pieces",
+    "KILOGRAMS": "Kilograms"
+  },
+  "pricingSource": {
+    "LEGACY": "Recorded in the previous system",
+    "COMPUTED": "Computed"
+  },
+  "salesInvoiceStatus": {
+    "DRAFT": "Draft",
+    "ISSUED": "Issued"
+  },
+  "paymentMethod": {
+    "VIREMENT": "Bank transfer",
+    "CHEQUE": "Cheque",
+    "ESPECES": "Cash"
+  },
+  "role": {
+    "SUPER_ADMIN": "Super admin",
+    "ADMIN": "Admin",
+    "PRODUCTION": "Production",
+    "MAGASINIER": "Warehouse"
+  },
+  "productionUnit": {
+    "PIECE": "Pieces",
+    "METER": "Metres"
+  },
+  "shipmentStatus": {
+    "DRAFT": "Draft",
+    "SHIPPED": "Shipped"
+  },
+  "shipmentKind": {
+    "COMPLETE": "Complete",
+    "PARTIAL": "Partial"
+  },
+  "purchaseCategory": {
+    "PAPER": "Paper",
+    "INK": "Ink",
+    "PLATE": "Plates",
+    "GLUE": "Glue",
+    "BOXES": "Boxes",
+    "PALLETS": "Pallets",
+    "STRETCH_FILM": "Stretch film",
+    "TRANSPORT": "Transport",
+    "MISC": "Miscellaneous"
+  },
+  "receiptStatus": {
+    "PENDING": "Pending",
+    "PARTIAL": "Partially received",
+    "COMPLETE": "Received"
+  },
+  "allocationState": {
+    "RESERVED": "Reserved",
+    "CONSUMED": "Consumed",
+    "CANCELED": "Cancelled"
+  },
+  "shiftType": {
+    "NIGHT": "Night",
+    "MORNING": "Morning",
+    "AFTERNOON": "Afternoon"
+  },
+  "shiftTaskType": {
+    "SETTING": "Setting",
+    "PRODUCTION": "Production",
+    "PRINTING": "Printing",
+    "CLEANING": "Cleaning"
+  },
+  "shiftWeekStatus": {
+    "DRAFT": "Draft",
+    "PUBLISHED": "Published"
+  },
+  "shiftChangeKind": {
+    "MOVE": "Move",
+    "SWAP": "Swap",
+    "REPLACE": "Replacement",
+    "REMOVE": "Removal",
+    "ADD": "Addition"
+  },
+  "shiftChangeStatus": {
+    "PENDING": "Pending",
+    "ACCEPTED": "Accepted",
+    "REJECTED": "Rejected",
+    "WITHDRAWN": "Withdrawn"
+  },
+  "shiftTaskStatus": {
+    "OPEN": "Open",
+    "DONE": "Done"
+  }
+}

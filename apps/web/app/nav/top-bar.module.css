@@ -1,0 +1,357 @@
+/*
+ * The top bar: breadcrumb, jump box, account menu. Sticky over the content
+ * column; on a phone it also carries the drawer's menu button.
+ */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-4);
+  min-height: var(--bp-topbar-h);
+  padding: 10px var(--bp-gutter);
+  /* Paper glass over the wash; the page scrolls beneath it. */
+  background: rgb(255 255 255 / 0.58);
+  backdrop-filter: blur(24px) saturate(140%);
+  border-bottom: 1px solid rgb(255 255 255 / 0.72);
+  box-shadow: 0 8px 24px rgb(26 23 20 / 0.06);
+}
+
+/* Phone only: opens the drawer the sidebar renders. */
+.menuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+}
+
+.menuButton:hover {
+  background: var(--bp-surface);
+  border-color: var(--bp-control-border-hover);
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.mobileBrand {
+  display: none;
+  flex: none;
+}
+
+/* --- breadcrumb --- */
+
+.crumbs {
+  flex: 1 1 120px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  font: 400 0.71875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+.crumbPair {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/*
+ * The page the reader is on never truncates; the trail before it gives way
+ * instead, the group name (the least specific) fastest.
+ */
+.crumbPair:first-child {
+  flex-shrink: 4;
+}
+
+.crumbPair:last-child {
+  flex: none;
+}
+
+.crumbSep {
+  color: rgb(26 23 20 / 0.2);
+}
+
+.crumb {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumbCurrent {
+  color: var(--bp-ink);
+  font-weight: 600;
+}
+
+/* --- jump box --- */
+
+.search {
+  position: relative;
+  flex: 0 1 220px;
+  min-width: 120px;
+}
+
+.searchIcon {
+  position: absolute;
+  inset-inline-start: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--bp-ink-faint);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 40px;
+  padding-block: 0;
+  padding-inline: 34px 12px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg);
+  color: var(--bp-ink);
+  font: 400 0.8125rem/1 var(--bp-font-body);
+}
+
+.searchInput:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+  background: var(--bp-surface);
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  z-index: 10;
+  min-width: 240px;
+  padding: 6px;
+  background: rgb(255 255 255 / 0.92);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-card);
+  box-shadow: var(--bp-shadow-lift);
+}
+
+.popoverEmpty {
+  padding: 12px;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+}
+
+.popoverItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-ink);
+  font: 400 0.84375rem/1 var(--bp-font-body);
+  text-align: start;
+  cursor: pointer;
+}
+
+.popoverItem:hover,
+.popoverItemFirst {
+  background: var(--bp-tint);
+}
+
+.popoverItem:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+}
+
+.popoverIcon {
+  display: inline-flex;
+  flex: none;
+  color: var(--bp-ink-muted);
+}
+
+.popoverLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popoverGroup {
+  flex: none;
+  font: 400 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+/* --- account --- */
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex: none;
+  margin-inline-start: auto;
+}
+
+/* Who is signed in. Read-only chrome, with a softer corner than the controls. */
+.accountChip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 12px 0 6px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink);
+}
+
+/* Dark text on the orange-100 fill — white on orange fails at this size. */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  /* Squircle (the handoff's 14px at 44px, scaled), never a circle. */
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--bp-orange-100), var(--bp-orange-300));
+  color: var(--bp-orange-800);
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: start;
+  min-width: 0;
+}
+
+.userName {
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* Role is chrome, not a status badge — quieter than the job-status badges so
+   the two are never confused. */
+.userRole {
+  font: 400 0.59375rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  color: var(--bp-ink-faint);
+  white-space: nowrap;
+}
+
+/* The language list: the same 40px chrome as the sign-out button. */
+.language {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-muted);
+  font: 600 0.8125rem/1 var(--bp-font-display);
+  cursor: pointer;
+}
+
+.language:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.signOut {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-muted);
+  font: 600 0.8125rem/1 var(--bp-font-display);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.signOut:hover:not(:disabled) {
+  background: var(--bp-danger-bg);
+  border-color: var(--bp-danger-border);
+  color: var(--bp-danger-text);
+}
+
+.signOut:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.signOut:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.menuIcon {
+  display: inline-flex;
+  flex: none;
+}
+
+/* --- phone --- */
+
+@media (max-width: 900px) {
+  .menuButton,
+  .mobileBrand {
+    display: inline-flex;
+  }
+
+  /* The crumb yields to the controls; the module name is in the page title. */
+  .crumbs {
+    display: none;
+  }
+
+  .search {
+    flex: 1 1 auto;
+  }
+
+  .identity,
+  .signOutLabel {
+    display: none;
+  }
+
+  .accountChip {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .signOut {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+}

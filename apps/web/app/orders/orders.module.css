@@ -1,0 +1,363 @@
+/*
+ * Job orders as a progress grid: one card per order, the produced-against-
+ * ordered ring the loudest element on each.
+ *
+ * Source: "Orders B - Progress grid.dc.html" in the Claude Design project
+ * "ERP client module redesign", on the toolkit v2 tokens.
+ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--bp-space-4);
+}
+
+/* The whole card opens the order — a stretched link covers it — so any
+   control inside sits above the link (see .cardActions). */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+  overflow: hidden;
+  transition:
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+}
+
+/* The one hover lift outside the primary button: the whole card is a link. */
+.card:hover {
+  box-shadow: var(--bp-shadow-lift);
+  transform: translateY(-2px);
+}
+
+.card:focus-within {
+  border-color: var(--bp-orange-500);
+}
+
+.cardArchived {
+  opacity: 0.7;
+}
+
+.cardLink {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--bp-radius-panel);
+}
+
+.cardLink:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+}
+
+.photo {
+  height: 150px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bp-gradient-banner);
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  padding: 20px;
+}
+
+.head {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: flex-start;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+}
+
+.no {
+  display: block;
+  font: 600 0.75rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  color: var(--bp-accent-text);
+}
+
+.product {
+  display: block;
+  margin-top: 2px;
+  font: 600 1.0625rem/1.25 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+.client {
+  display: block;
+  margin-top: 2px;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  flex: none;
+}
+
+/* --- the ring --- */
+
+.progress {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: center;
+}
+
+/* `--pct` is the fill; `--ring` its colour — orange while open, success
+   once the ordered quantity is reached. The inner disc leaves a 9px band. */
+.ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--ring) calc(var(--pct) * 1%),
+    var(--bp-tint-strong) 0
+  );
+}
+
+.ringInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.92);
+  font: 700 1rem/1 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.figures {
+  flex: 1;
+  min-width: 0;
+}
+
+.figureLabel {
+  display: block;
+  font: 400 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+.figure {
+  display: block;
+  font: 700 1.625rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.figureOf {
+  display: block;
+  font: 400 0.78125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- the spec chips, and the admin's archive control --- */
+
+.foot {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+  align-items: center;
+  border-top: 1px solid var(--bp-hairline-soft);
+  padding-top: 14px;
+}
+
+.chipSpec {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint);
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid rgb(26 23 20 / 0.14);
+  border-radius: var(--bp-radius-pill);
+  color: var(--bp-ink-muted);
+  font: 400 0.6875rem/1 var(--bp-font-mono);
+}
+
+.chipText {
+  font: 400 0.75rem/1 var(--bp-font-body);
+}
+
+.cardActions {
+  position: relative;
+  z-index: 2;
+  margin-inline-start: auto;
+}
+
+.cardActions button {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 0.6875rem;
+}
+
+/* --- the order form's step rail, from "Order create v3.dc.html" --- */
+
+/*
+ * Three steps across the top of the create/edit form. Each is a button, not
+ * a tab: the handoff lets the rail jump to any step at any time, and on an
+ * edit every step already holds saved values.
+ */
+.steps {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-5);
+}
+
+.step {
+  flex: 1 1 180px;
+  min-width: 0;
+  min-height: 52px;
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  padding: 0 var(--bp-space-3);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius);
+  background: var(--bp-veil-bg);
+  cursor: pointer;
+  text-align: start;
+  color: inherit;
+  font: inherit;
+}
+
+.step:hover:not(:disabled) {
+  border-color: var(--bp-orange-500);
+}
+
+.step:disabled {
+  cursor: default;
+}
+
+.stepOn {
+  background: var(--bp-orange-50);
+  border-color: var(--bp-orange-500);
+}
+
+.stepMark {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bp-tint);
+  color: var(--bp-ink-muted);
+  font: 600 0.71875rem/1 var(--bp-font-mono);
+}
+
+.stepOn .stepMark {
+  background: var(--bp-orange-500);
+  color: #fff;
+}
+
+.stepDone .stepMark {
+  background: var(--bp-success);
+  color: #fff;
+}
+
+.stepText {
+  min-width: 0;
+}
+
+.stepKicker {
+  display: block;
+  font: 600 0.59375rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.stepOn .stepKicker {
+  color: var(--bp-orange-800);
+}
+
+.stepLabel {
+  display: block;
+  font-weight: 600;
+  font-size: 0.84375rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The footer's running "still needed" line. */
+.needs {
+  margin: var(--bp-space-4) 0 0;
+  font-size: 0.78125rem;
+  color: var(--bp-ink-muted);
+}
+
+/* "This sells at or below cost" in the live-figures rail. */
+.marginWarning {
+  margin: 0 0 var(--bp-space-3);
+  padding: var(--bp-space-3);
+  border: 1px solid var(--bp-warning);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-warning-bg);
+  font-size: 0.78125rem;
+  color: var(--bp-ink);
+}
+
+.marginWarningTitle {
+  display: block;
+  margin-bottom: 3px;
+  font: 600 0.59375rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-warning-text);
+}
+
+/*
+ * A step that is not showing. `[hidden]` alone does not hide it: the shared
+ * `.formGrid` sets `display: grid`, which wins over the browser's default
+ * `[hidden] { display: none }` rule, so the step needs its own.
+ *
+ * Hidden rather than unmounted so values typed on one step survive a trip to
+ * another; `hidden` also takes the fields out of the tab order and the
+ * accessibility tree, so only the visible step is reachable.
+ */
+.stepPanel[hidden] {
+  display: none;
+}

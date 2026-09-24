@@ -1,0 +1,553 @@
+/*
+ * App-shell sidebar — variant E: a collapsible rail, with identity moved to
+ * the top bar.
+ *
+ * Geometry lives in two custom properties so the shell's content column can
+ * read the same numbers (see globals.css): --bp-sidebar-w expanded (280px),
+ * --bp-sidebar-w-rail collapsed (68px).
+ *
+ * The surface is deliberately the darkest thing in the app. Every page sits on
+ * warm paper (--bp-page); a dark kraft-brown rail frames it, keeps navigation
+ * from competing with data for attention, and gives the orange a ground where
+ * it can be used at full strength instead of the AA-safe text tint.
+ */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  inset-inline-start: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: var(--bp-sidebar-w);
+  height: 100dvh;
+  /* v3: the "ink" glass recipe, a touch denser than the handoff's 62% so the
+     muted labels keep AA over the pale wash and its orange glow. */
+  background: rgb(26 23 20 / 0.84);
+  backdrop-filter: blur(22px) saturate(130%);
+  color: var(--bp-neutral-50);
+  border-inline-end: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: var(--bp-shadow-ink);
+  font-family: var(--bp-font-body);
+  /* The page is `color-scheme: light` (globals.css); the rail is ink, so its
+     native scrollbar must not be — a white track down a dark rail reads as
+     a rendering fault. */
+  color-scheme: dark;
+  /*
+   * Width, deliberately, despite the usual "animate transform, not layout"
+   * rule. The rail RESERVES space — the content column's padding tracks it —
+   * and transform does not reflow, so a transform-only rail would slide over
+   * the page instead of narrowing it. Measured: user-initiated and rare, not a
+   * scroll handler. Reduced-motion drops it at the bottom of this file.
+   */
+  transition: width 160ms ease;
+  overflow: hidden;
+}
+
+.collapsed {
+  width: var(--bp-sidebar-w-rail);
+}
+
+/* First paint, before the stored preference is applied. */
+.noTransition {
+  transition: none;
+}
+
+.sidebarLoading {
+  background: rgb(26 23 20 / 0.84);
+}
+
+/* --- brand --- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--bp-topbar-h);
+  padding: 0 14px;
+  flex: none;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.brandMark {
+  flex: none;
+  border-radius: var(--bp-radius);
+}
+
+.brandName {
+  font: 600 0.75rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-neutral-50);
+  white-space: nowrap;
+  overflow: hidden;
+  /* Fades with the rail rather than reflowing the row. */
+  opacity: 1;
+  transition: opacity 140ms ease-out;
+}
+
+/* Rail mode: the wordmark fades AND stops occupying width, or its nowrap text
+   would widen the rail's scroll box. */
+.collapsed .brandName {
+  opacity: 0;
+  width: 0;
+}
+
+.collapsed .brand {
+  padding: 0;
+  justify-content: center;
+}
+
+.collapsed .brandLink {
+  justify-content: center;
+  gap: 0;
+}
+
+/* --- icon buttons (close on the drawer) --- */
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--bp-radius-sm);
+  background: none;
+  color: var(--bp-neutral-300);
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out;
+}
+
+.iconButton:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+
+.iconButton:focus-visible {
+  outline: 2px solid var(--bp-orange-500);
+  outline-offset: 1px;
+}
+
+/* The drawer's close button only exists at mobile width. */
+.closeButton {
+  display: none;
+}
+
+/* --- nav --- */
+
+.nav {
+  flex: 1;
+  min-height: 0;
+  /*
+   * Both axes are declared. `overflow-y: auto` on its own leaves overflow-x
+   * `visible`, which CSS forbids on a scroll container and the browser
+   * silently promotes to `auto` — so the rail grew a horizontal scrollbar as
+   * soon as a child (the nowrap labels) was wider than the rail.
+   */
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 12px 10px;
+  transition: padding 160ms ease;
+  /* A rail is 68px wide; a scrollbar inside it would eat a third of the row.
+     Thin, a faint thumb, no track: it should read as part of the rail, and
+     only be noticed while scrolling. */
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+}
+
+.nav:hover {
+  scrollbar-color: rgb(255 255 255 / 0.32) transparent;
+}
+
+/* WebKit-only engines without `scrollbar-color` support. */
+.nav::-webkit-scrollbar {
+  width: 6px;
+}
+.nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.18);
+  border-radius: 999px;
+}
+
+.section + .section {
+  margin-top: 16px;
+}
+
+/* Group label with a hairline running out to the rail's edge. */
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 8px;
+  transition: padding 160ms ease;
+}
+
+.sectionLabel {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bp-neutral-400);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 140ms ease-out;
+}
+
+.sectionRule {
+  flex: 1;
+  height: 1px;
+  background: rgb(255 255 255 / 0.08);
+}
+
+/*
+ * Rail mode: the words go, the hairline stays as the group separator. Width
+ * and overflow go with the opacity so the label reserves no space and its
+ * nowrap text cannot widen the rail's scroll box.
+ */
+.collapsed .sectionTitle {
+  padding: 0 6px 10px;
+  gap: 0;
+}
+
+.collapsed .sectionLabel {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Rail mode drops the container inset so a row spans the full width and its
+   centred icon lands on the rail's centre. */
+.collapsed .nav {
+  padding-inline-start: 6px;
+  padding-inline-end: 6px;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 10px;
+  /* Labels fade rather than unmount, so they keep their intrinsic width; the
+     row must clip it instead of letting it widen the rail's scroll box. */
+  overflow: hidden;
+  border-radius: var(--bp-radius);
+  color: var(--bp-neutral-300);
+  font: 400 0.875rem/1 var(--bp-font-body);
+  white-space: nowrap;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out;
+}
+
+/*
+ * The gap must go too. The row's children are the 18px icon and a zero-width
+ * label; with `gap` still applied flexbox centres a wider group, putting the
+ * icon left of the rail's centre.
+ */
+.collapsed .row {
+  justify-content: center;
+  gap: 0;
+  padding-inline-start: 0;
+  padding-inline-end: 0;
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  /* Fixed box keeps every glyph on the same optical centre as the rail
+     narrows, so icons do not shift when labels disappear. */
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 1;
+  transition: opacity 140ms ease-out;
+}
+
+/*
+ * Rail mode: the label fades AND stops occupying width. Opacity alone left
+ * "Shipments" wider than the rail, which inflated the nav's scroll box and
+ * produced a horizontal scrollbar. The text is still in the DOM and the a11y
+ * tree, so nothing is announced differently.
+ */
+.collapsed .label {
+  opacity: 0;
+  flex: none;
+  width: 0;
+  overflow: hidden;
+}
+
+/* The module's live count, at the end of the row. */
+.count {
+  flex: none;
+  font: 400 0.6875rem/1 var(--bp-font-mono);
+  color: var(--bp-neutral-400);
+  font-variant-numeric: tabular-nums;
+}
+
+.collapsed .count {
+  display: none;
+}
+
+a.row:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--bp-orange-500);
+  outline-offset: -2px;
+}
+
+/*
+ * Active route: a lifted ground, white text and the orange icon. There was an
+ * inset orange bar on the leading edge too, but the row's radius bent it into
+ * a crescent rather than a bar, so it read as an artefact. In rail mode the
+ * icon's colour carries the state on its own.
+ */
+.rowActive {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+  font-weight: 600;
+}
+
+.rowActive .icon {
+  opacity: 1;
+  color: var(--bp-orange-300);
+}
+
+/* Planned modules: present, legibly inert. Dimmed rather than removed so the
+   sidebar states the app's scope instead of reshaping as modules ship. */
+.rowPlanned {
+  color: var(--bp-neutral-400);
+  cursor: default;
+}
+
+.rowPlanned .icon {
+  opacity: 0.55;
+}
+
+/* A dot, not a pill: a 3px marker says "not yet" without competing with the
+   live rows beside it. The word stays in the title for anyone who hovers. */
+.planned {
+  flex: none;
+  width: 3px;
+  height: 3px;
+  margin-inline-end: 3px;
+  border-radius: 50%;
+  background: var(--bp-neutral-400);
+}
+
+.collapsed .planned {
+  display: none;
+}
+
+/*
+ * Visually hidden, still announced. Clip rather than display:none, which
+ * would remove it from the accessibility tree entirely. Absolute inside the
+ * positioned row, so it contributes no width to the nav's scroll box.
+ */
+.srOnly {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- foot: the collapse toggle --- */
+
+.collapseButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  background: transparent;
+  color: var(--bp-neutral-400);
+  font: 400 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out,
+    padding 160ms ease;
+}
+
+.collapseButton:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--bp-neutral-50);
+}
+
+.collapseButton:focus-visible {
+  outline: 2px solid var(--bp-orange-500);
+  outline-offset: -2px;
+}
+
+.collapseButton .icon {
+  opacity: 1;
+}
+
+.chevron {
+  transition: transform 160ms ease;
+}
+
+/* The chevron points the way the rail will move: in, then out. */
+.collapsed .chevron {
+  transform: rotate(180deg);
+}
+
+.collapsed .collapseButton {
+  justify-content: center;
+  gap: 0;
+  padding-inline-start: 0;
+  padding-inline-end: 0;
+}
+
+/* --- mobile: off-canvas drawer --- */
+
+.overlay {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgb(26 23 20 / 0.5);
+    animation: fade 160ms ease-out;
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .sidebar {
+    z-index: 40;
+    /* Off-canvas by default. Width is forced back to full so a collapsed
+       desktop preference cannot produce a 68px-wide drawer. */
+    width: var(--bp-sidebar-w);
+    transform: translateX(-100%);
+    transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  /* Off-canvas on the inline-start edge: for Arabic that is the right. */
+  [dir="rtl"] .sidebar {
+    transform: translateX(100%);
+    box-shadow: 2px 0 16px rgb(26 23 20 / 0.28);
+  }
+
+  .drawerOpen {
+    transform: translateX(0);
+  }
+
+  /* The rail is a desktop idea; in a drawer everything shows its label. */
+  .collapsed .brand {
+    padding: 0 14px;
+    justify-content: flex-start;
+  }
+  .collapsed .brandLink {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .collapsed .brandName,
+  .collapsed .sectionLabel,
+  .collapsed .label {
+    opacity: 1;
+    width: auto;
+    flex: 1;
+  }
+  .collapsed .sectionTitle {
+    padding: 0 8px 8px;
+    gap: 10px;
+  }
+  .collapsed .nav {
+    padding-inline-start: 10px;
+    padding-inline-end: 10px;
+  }
+  .collapsed .row {
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 10px;
+  }
+  .collapsed .count,
+  .collapsed .planned {
+    display: inline-flex;
+  }
+
+  .collapseButton {
+    display: none;
+  }
+
+  .closeButton {
+    display: inline-flex;
+  }
+
+  .sidebarLoading {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .nav,
+  .chevron,
+  .brandName,
+  .label,
+  .sectionLabel,
+  .sectionTitle,
+  .collapseButton {
+    transition: none;
+  }
+
+  .overlay {
+    animation: none;
+  }
+}

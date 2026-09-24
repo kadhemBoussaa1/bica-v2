@@ -1,0 +1,200 @@
+/*
+ * The template designer's stage: an A4 sheet at scale, with the layout's
+ * blocks as boxes on it.
+ *
+ * The stage is PHYSICAL geometry — millimetres from the sheet's left edge —
+ * so it is `dir="ltr"` whatever the app's language, and it is the one place
+ * here that uses physical `left`/`top`. Everything around it stays logical.
+ * A plain white ground, never glass: this is a drag surface, and a blurred
+ * translucent one makes 1 mm moves hard to see.
+ */
+
+/*
+ * The record pages' main/rail split, with the weight reversed: here the
+ * sheet is the working surface and the rail (inspector, preview) the
+ * reference, so the sheet takes two thirds. Stacks under 1100px like theirs.
+ */
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.main {
+  flex: 2 1 560px;
+  min-width: 320px;
+}
+
+.rail {
+  flex: 1 1 360px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: var(--bp-space-4);
+}
+
+@media (max-width: 1100px) {
+  .rail {
+    position: static;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-3);
+  margin-block-end: var(--bp-space-3);
+}
+
+.toolbarSpacer {
+  flex: 1;
+}
+
+.stageWrap {
+  /* The sheet never grows past a size where 1 mm is a comfortable drag. */
+  max-inline-size: 720px;
+  margin-inline: auto;
+}
+
+.stage {
+  position: relative;
+  inline-size: 100%;
+  aspect-ratio: 210 / 297;
+  background: #ffffff;
+  border: 1px solid var(--bp-hairline);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  /* A drag must not scroll the page or select the labels. */
+  touch-action: none;
+  user-select: none;
+}
+
+/* What is not the flow region: the margins, hatched so the bottom band reads as reserved. */
+.margin {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(26, 58, 95, 0.05) 0,
+    rgba(26, 58, 95, 0.05) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  pointer-events: none;
+}
+
+.region {
+  position: absolute;
+  border: 1px dashed rgba(26, 58, 95, 0.35);
+  pointer-events: none;
+}
+
+.block {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  padding: 2px 4px;
+  border: 1px solid rgba(26, 58, 95, 0.55);
+  background: rgba(26, 58, 95, 0.1);
+  color: #1a3a5f;
+  font: 600 0.625rem/1.2 var(--bp-font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.block[data-mode="flow"] {
+  border-color: rgba(200, 110, 0, 0.6);
+  background: rgba(242, 145, 0, 0.12);
+  color: #8a4b00;
+}
+
+.block[data-overlay] {
+  background: transparent;
+  border-style: dashed;
+}
+
+.block[data-selected] {
+  outline: 2px solid var(--bp-orange-500);
+  outline-offset: 1px;
+  z-index: 2;
+}
+
+.block[data-invalid] {
+  border-color: var(--bp-danger);
+  background: rgba(192, 57, 43, 0.12);
+  color: var(--bp-danger);
+}
+
+.block:focus-visible {
+  outline: 2px solid var(--bp-orange-700);
+  outline-offset: 1px;
+}
+
+.block[data-dragging] {
+  cursor: grabbing;
+}
+
+/*
+ * The resize handle: a 48px touch target, of which only the corner mark
+ * shows. It hangs off the block's end corner — bottom right, or bottom left
+ * when the sheet is mirrored — and is clipped by the stage, not the block.
+ */
+.handle {
+  position: absolute;
+  inline-size: 48px;
+  block-size: 48px;
+  z-index: 3;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.handle[data-mirrored] {
+  cursor: nesw-resize;
+}
+
+.handle::after {
+  content: "";
+  position: absolute;
+  inset: 17px;
+  border-radius: 3px;
+  background: var(--bp-orange-500);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2) var(--bp-space-4);
+  margin-block-start: var(--bp-space-3);
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.swatch {
+  display: inline-block;
+  inline-size: 12px;
+  block-size: 12px;
+  margin-inline-end: var(--bp-space-1);
+  vertical-align: -1px;
+  border: 1px solid rgba(26, 58, 95, 0.55);
+  background: rgba(26, 58, 95, 0.1);
+}
+
+.swatch[data-mode="flow"] {
+  border-color: rgba(200, 110, 0, 0.6);
+  background: rgba(242, 145, 0, 0.12);
+}
+
+.inspectorName {
+  font: 600 1rem/1.3 var(--bp-font-display);
+  margin: 0 0 var(--bp-space-3);
+}

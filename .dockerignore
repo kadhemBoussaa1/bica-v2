@@ -1,0 +1,25 @@
+# Build context for Dockerfile.prod. Everything the images need is rebuilt
+# inside the build, so local build output never goes in; neither do secrets.
+
+.git
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/*.tsbuildinfo
+apps/api/src/generated
+
+# Secrets. The examples hold none.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Working notes, local tooling, server state.
+docs
+.claude
+.github
+.deploy-history
+docker/certbot
+docker/nginx/state
+backups
+*.dump

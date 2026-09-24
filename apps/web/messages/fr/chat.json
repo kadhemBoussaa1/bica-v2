@@ -1,0 +1,58 @@
+{
+  "title": "Messagerie",
+  "launcher": {
+    "open": "Ouvrir la messagerie",
+    "close": "Réduire la messagerie",
+    "dismiss": "Masquer la messagerie"
+  },
+  "panel": {
+    "everyone": "Tous sur la plateforme",
+    "visibleToAll": "Visible par tous les utilisateurs connectés"
+  },
+  "composer": {
+    "label": "Rédiger une note",
+    "placeholder": "Une machine est arrêtée, une livraison a glissé, un prix a changé…",
+    "send": "Publier",
+    "sending": "Publication…",
+    "hint": "Toute personne connectée voit ce message, et une note ne peut pas être retirée. Joignez des photos, PDF, tableurs et documents, jusqu'à 25 Mo.",
+    "attachmentsFull": "Six pièces jointes au maximum par note.",
+    "remove": "Retirer {filename}",
+    "tooMany": "Trop de pièces jointes",
+    "failed": "La note n'a pas été publiée. Réessayez.",
+    "short": "Aa",
+    "mention": "@ Mentionner",
+    "document": "# Document"
+  },
+  "upload": {
+    "label": "Joindre un fichier",
+    "choose": "Joindre",
+    "replace": "Remplacer",
+    "remove": "Retirer",
+    "uploading": "Téléversement…",
+    "failed": "Le téléversement a échoué. Vérifiez la connexion et réessayez.",
+    "tooLarge": "Ce fichier dépasse 25 Mo.",
+    "wrongType": "Joignez une photo, un PDF, un tableur ou un document."
+  },
+  "pinned": {
+    "title": "Épinglé",
+    "empty": "Rien n'est épinglé.",
+    "pin": "Épingler",
+    "unpin": "Désépingler",
+    "pinnedBy": "Épinglé {when}",
+    "hide": "Masquer les épinglés",
+    "show": "Afficher les épinglés"
+  },
+  "feed": {
+    "loading": "Chargement du fil…",
+    "empty": "Aucune note pour le moment.",
+    "emptyText": "La première note apparaîtra ici pour toute personne connectée.",
+    "loadOlder": "Charger les plus anciennes",
+    "loadingOlder": "Chargement…",
+    "start": "Début du fil",
+    "new": "{count, plural, =1 {1 nouvelle note} other {# nouvelles notes}}",
+    "jumpToLatest": "Aller au plus récent",
+    "you": "Vous",
+    "attachment": "{filename} ({size})",
+    "error": "Le fil n'a pas pu être chargé."
+  }
+}

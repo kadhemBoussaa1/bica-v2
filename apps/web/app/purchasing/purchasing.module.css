@@ -1,0 +1,354 @@
+/*
+ * Purchasing detail: only what a receipt's lines table needs beyond the
+ * invoice module's table styles it reuses.
+ */
+
+/* A received figure below the ordered one — a short delivery, worth a glance. */
+.short {
+  color: var(--bp-warning-text);
+}
+
+/*
+ * The document preview: a PDF in an iframe on the detail page.
+ *
+ * A fixed viewport height rather than an aspect ratio — an A4 page at full
+ * width would be taller than most screens, and the browser's own viewer
+ * scrolls and zooms inside the frame. Under 900px it shortens rather than
+ * disappearing: a phone still benefits from seeing the header.
+ */
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+.previewActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--bp-space-2);
+}
+
+.previewFrame {
+  width: 100%;
+  /* Owns a whole column now, so it takes the viewport rather than a slice of
+     it — capped by `max-height` so the panel's own chrome stays on screen. */
+  height: calc(100vh - 220px);
+  min-height: 520px;
+  max-height: 1000px;
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  /* The viewer paints its own white; a transparent frame would show the wash
+     through the page and read as a rendering fault. */
+  background: #ffffff;
+}
+
+@media (max-width: 1100px) {
+  .previewFrame {
+    /* Stacked under the record, where a full-height frame would be a wall. */
+    height: 60vh;
+    min-height: 380px;
+  }
+}
+
+@media (max-width: 600px) {
+  .previewFrame {
+    height: 52vh;
+    min-height: 320px;
+  }
+}
+
+/*
+ * Purchase orders list, from `Purchasing v3.dc.html`.
+ *
+ * Translated, not transcribed: the handoff is inline-styled with literal hex
+ * (#EFE9E0, #F29100, rgba(255,255,255,0.62), 24px) and every one of those
+ * values is already a v3 token, so a literal port would fork the palette.
+ * Physical `text-align:right` in the handoff becomes `end` so Arabic mirrors.
+ */
+
+/* The order cell: a status dot beside the number, category and dates. */
+.orderCell {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Reception at a glance, before the badge in the next column is read. */
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bp-neutral-400);
+}
+
+.dotPending {
+  background: var(--bp-orange-500);
+}
+
+.dotPartial {
+  background: var(--bp-warning);
+}
+
+.dotReceived {
+  background: var(--bp-success);
+}
+
+.orderText {
+  min-width: 0;
+}
+
+.orderTop {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.orderNo {
+  font: 600 0.875rem/1.3 var(--bp-font-mono);
+  letter-spacing: -0.01em;
+}
+
+/* "Issued 27 Jul · due 28 Jul", or "no date given" when expectedAt is null. */
+.orderDates {
+  display: block;
+  font: 400 0.71875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* A due date that has passed while the order is still awaiting delivery. */
+.late {
+  display: block;
+  margin-top: 3px;
+  font: 400 0.6875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-danger-text);
+}
+
+/* The money cell: figure over its currency, both end-aligned. */
+.amount {
+  display: block;
+  font: 600 0.875rem/1.3 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.amountUnit {
+  display: block;
+  font: 400 0.6875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* The detail layout (`.detailLayout`, `.detailMain`, `.detailRail`) lives in
+   records.module.css: the sales invoice draft uses the same arrangement. */
+
+/* The lines total, banded in orange tint as the handoff has it. */
+.linesTotal {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 0 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--bp-tint-strong);
+}
+
+.linesTotalLabel {
+  flex: 1;
+  min-width: 0;
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.linesTotalValue {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.linesTotalFigure {
+  font: 700 1.5rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nothing received yet: a dashed well, not a second glass surface. */
+.emptyWell {
+  border: 1px dashed var(--bp-tint-strong);
+  border-radius: var(--bp-radius-card);
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.emptyWellTitle {
+  font: 600 1rem/1.3 var(--bp-font-display);
+  margin-bottom: 4px;
+}
+
+.emptyWellBody {
+  font: 400 0.8125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  max-width: 36em;
+  margin: 0 auto;
+}
+
+/* The rail's facts list: label at the start, value at the end. */
+.facts {
+  display: flex;
+  flex-direction: column;
+}
+
+.fact {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.fact:last-child {
+  border-bottom: 0;
+}
+
+.factLabel {
+  flex: none;
+  font: 600 0.625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.factValue {
+  flex: 1;
+  min-width: 0;
+  text-align: end;
+  font: 400 0.8125rem/1.5 var(--bp-font-mono);
+  word-break: break-word;
+}
+
+/* The onward link to the supplier, as a row at the foot of the facts card. */
+.railLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  margin-top: 16px;
+  padding: 0 16px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-veil-bg);
+  font: 600 0.84375rem/1 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.railLink:hover {
+  border-color: var(--bp-orange-500);
+  color: var(--bp-orange-700);
+  text-decoration: none;
+}
+
+.railLinkArrow {
+  color: var(--bp-ink-muted);
+}
+
+/* Arabic: the arrow points the other way. Bare selector, not :global(). */
+[dir="rtl"] .railLinkArrow {
+  transform: rotate(180deg);
+}
+
+/* The detail's status badges, start-aligned above the end-justified actions. */
+.detailBadges {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-2);
+}
+
+/*
+ * Goods receipt lines, from `Goods receipts v3.dc.html`: each line shows what
+ * was ordered against what arrived, with a bar for the fraction.
+ *
+ * The handoff's per-line unit ("in sacks", "in rolls") is not built — no line
+ * carries a unit column, on either the receipt or the order — so the meta row
+ * holds the dimensions the category actually measures instead.
+ */
+.progress {
+  min-width: 0;
+}
+
+.progressHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.progressLeft {
+  font: 400 0.6875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.progressPct {
+  font: 600 0.71875rem/1.4 var(--bp-font-mono);
+}
+
+.progressTrack {
+  display: block;
+  height: 6px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint);
+  overflow: hidden;
+}
+
+.progressBar {
+  display: block;
+  height: 100%;
+  border-radius: var(--bp-radius-pill);
+  background: linear-gradient(90deg, var(--bp-orange-500) 0%, var(--bp-orange-600) 100%);
+}
+
+/* A line that is fully delivered reads green rather than orange. */
+.progressBarDone {
+  background: linear-gradient(90deg, var(--bp-success) 0%, var(--bp-success-text) 100%);
+}
+
+/* Received figure, coloured by how it stands against the order. */
+.recNone {
+  color: var(--bp-ink-muted);
+}
+
+.recShort {
+  color: var(--bp-warning-text);
+}
+
+.recDone {
+  color: var(--bp-success-text);
+}
+
+/*
+ * The lines footer: what is still outstanding, or a confirmation when
+ * nothing is. Tinted to match — orange while something is owed, green once
+ * the order is met.
+ */
+.linesFoot {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 0 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--bp-tint-strong);
+}
+
+.linesFootShort {
+  color: var(--bp-orange-800);
+}
+
+.linesFootDone {
+  color: var(--bp-success-text);
+}

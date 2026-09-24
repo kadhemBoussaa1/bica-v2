@@ -1,0 +1,21 @@
+{
+  "metaTitle": "Ajustes · Bicapack ERP",
+  "eyebrow": "Preferencias",
+  "title": "Ajustes",
+  "pagesAria": "Páginas de ajustes",
+  "railNote": "Solo administración. Cada sección indica el rol que exige.",
+  "sectionEyebrow": "Ajustes · {group}",
+  "groups": {
+    "access": "Acceso",
+    "documents": "Documentos"
+  },
+  "hints": {
+    "users": "Cuentas, roles y accesos",
+    "activity": "Quién hizo qué y cuándo",
+    "templates": "Aspecto de las facturas emitidas"
+  },
+  "counts": {
+    "errors": "{count} err.",
+    "version": "v{version}"
+  }
+}

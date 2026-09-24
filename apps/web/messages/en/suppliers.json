@@ -1,0 +1,126 @@
+{
+  "eyebrow": "Contact",
+  "title": "Suppliers",
+  "subtitle": "Suppliers migrated from the previous system, with contact details and VAT rates intact. Filter by family, or search across name, email, tax ID and address; open a row to see its record, edit it, or archive it.",
+  "newSupplier": "New supplier",
+  "supplierFamilies": "Supplier families",
+  "backToList": "← Suppliers",
+  "editTitle": "Edit supplier",
+  "editSubtitle": "Blank fields stay blank rather than being stored as empty text.",
+  "newTitle": "New supplier",
+  "newSubtitle": "Only the name is required, and it is checked against the book as you type. Family drives the filter chips on the list, so setting it is worth the extra second.",
+  "loadingSupplier": "Loading supplier…",
+  "noun": "suppliers",
+  "archivedTag": "ARCHIVED",
+  "columns": {
+    "name": "Supplier",
+    "contact": "Contact",
+    "family": "Family",
+    "taxId": "Tax ID",
+    "contactOnFile": "Contact on file",
+    "vat": "VAT"
+  },
+  "vatCheck": "check",
+  "vatUnparsed": "Unparsed legacy value: {value}",
+  "vatNotSingleRate": "Not a single rate — enter the real one",
+  "filters": {
+    "unassigned": "Unassigned",
+    "duplicates": "Duplicates",
+    "archived": "Archived"
+  },
+  "searchPlaceholder": "Search name, email, tax ID…",
+  "emptyMessage": "No suppliers match these filters.",
+  "archiveDialog": {
+    "title": "Archive supplier?",
+    "body": "<strong>{name}</strong> will be hidden from the default list and from future pickers. Nothing is deleted — past purchase invoices keep naming it, and you can restore it at any time."
+  },
+  "restoreDialog": {
+    "title": "Restore supplier?",
+    "body": "<strong>{name}</strong> will appear in the list again."
+  },
+  "fields": {
+    "email": "Email",
+    "phone": "Phone",
+    "phone2": "Second phone",
+    "fax": "Fax",
+    "website": "Website",
+    "address": "Address",
+    "family": "Family",
+    "taxId": "Tax ID",
+    "vatRate": "VAT rate",
+    "status": "Status"
+  },
+  "status": {
+    "archived": "Archived",
+    "reachable": "Reachable",
+    "needsContact": "Needs contact"
+  },
+  "panel": {
+    "aria": "{name} record",
+    "eyebrow": "Supplier record",
+    "close": "Close record",
+    "completeness": "Record completeness",
+    "contactSection": "Contact",
+    "recordSection": "Record"
+  },
+  "form": {
+    "identity": "Identity",
+    "required": "Required",
+    "name": "Supplier name",
+    "namePlaceholder": "e.g. Nord Emballage",
+    "optional": "Optional",
+    "archivedFamily": "(archived family)",
+    "loadingFamilies": "Loading…",
+    "noFamily": "No family",
+    "missingCategory": "Missing a category?",
+    "manageFamilies": "Manage families",
+    "vatPlaceholder": "e.g. 19",
+    "vatNumberError": "VAT rate must be a number, e.g. 19",
+    "vatNoteHint": "The previous system stored “{value}” here, which is not a single rate. Entering one replaces it.",
+    "contact": "Contact",
+    "contactMeta": "Optional — an email or a phone makes the supplier reachable",
+    "emailPlaceholder": "name@company.com",
+    "websitePlaceholder": "company.com",
+    "phonePlaceholder": "+216 …",
+    "addressPlaceholder": "Street, city, country",
+    "blankHint": "Leave a field blank rather than guessing — blanks are counted and can be chased later.",
+    "createSupplier": "Create supplier",
+    "previewAria": "Record preview",
+    "previewLabel": "How this record will look",
+    "untitled": "Untitled supplier",
+    "completeness": "Completeness",
+    "reachableNote": "This supplier will count as reachable.",
+    "unreachableNote": "Blank fields stay blank. This supplier will count as missing contact until an email or phone is added."
+  },
+  "families": {
+    "title": "Supplier families",
+    "subtitle": "Purchasing categories for suppliers. Add one whenever a supplier does not fit the existing set. The code is the stable key the supplier filters use and cannot be changed; rename the label instead.",
+    "loading": "Loading families…",
+    "genericError": "Something went wrong",
+    "checkValues": "Check the values and retry",
+    "newFamily": "New family",
+    "labelPlaceholder": "Emballage",
+    "codePlaceholder": "EMBALLAGE",
+    "columns": {
+      "family": "Family",
+      "code": "Code",
+      "suppliers": "Suppliers"
+    },
+    "rename": "Rename",
+    "codeError": "A-Z, 0-9 and _ only",
+    "adding": "Adding…",
+    "addFamily": "Add family",
+    "deleteDialog": {
+      "title": "Delete family?",
+      "body": "<strong>{name}</strong> will be permanently removed. No supplier uses it, so nothing else changes."
+    },
+    "archiveDialog": {
+      "title": "Archive family?",
+      "body": "<strong>{name}</strong> will stop being offered for new suppliers. The ones already in it keep it and still show it in the list — nothing is uncategorised."
+    },
+    "restoreDialog": {
+      "title": "Restore family?",
+      "body": "<strong>{name}</strong> will be offered again when categorising suppliers."
+    }
+  }
+}

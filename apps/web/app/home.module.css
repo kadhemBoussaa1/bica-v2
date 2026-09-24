@@ -1,0 +1,117 @@
+/* Signed-in landing page. */
+
+.page {
+  max-width: var(--bp-page-max);
+  margin: 0 auto;
+  padding: var(--bp-gutter) var(--bp-gutter) 80px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: clamp(20px, 3vw, 28px) clamp(20px, 3vw, 32px);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eyebrow {
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-orange-700);
+}
+
+.title {
+  margin: 0;
+  font: 700 2rem/1.1 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 46ch;
+  font: 400 0.8125rem/1.6 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+/* --- section scaffolding --- */
+
+.section {
+  margin-top: 36px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font: 600 1rem/1.3 var(--bp-font-display);
+}
+
+.sectionNote {
+  margin: 0;
+  font: 400 0.75rem/1.6 var(--bp-font-body);
+  color: var(--bp-neutral-400);
+}
+
+/* --- module grid --- */
+
+.modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.module {
+  background: var(--bp-glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-card);
+  box-shadow: var(--bp-shadow-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 118px;
+}
+
+.moduleName {
+  font: 600 0.8125rem/1.3 var(--bp-font-display);
+}
+
+.moduleBody {
+  font: 400 0.78125rem/1.6 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+  flex: 1;
+}
+
+/* Modules are not built yet; the tag says so plainly rather than
+   pretending the tile is clickable. */
+.modulePlanned {
+  align-self: flex-start;
+  font: 600 0.59375rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-neutral-400);
+  border: 1px dashed rgb(26 23 20 / 0.3);
+  border-radius: var(--bp-radius-pill);
+  padding: 6px 10px;
+}

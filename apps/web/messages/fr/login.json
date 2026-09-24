@@ -1,0 +1,14 @@
+{
+  "metaTitle": "Connexion · Bicapack ERP",
+  "title": "Connexion",
+  "subtitle": "Utilisez les identifiants fournis par un administrateur.",
+  "email": "E-mail",
+  "password": "Mot de passe",
+  "signIn": "Se connecter",
+  "signingIn": "Connexion…",
+  "failed": "Échec de la connexion. Réessayez.",
+  "note": "Les comptes sont créés par un super administrateur ou un administrateur — il n'y a pas d'inscription publique. Contactez votre administrateur pour obtenir un accès.",
+  "asideMark": "Atelier · Bureau",
+  "asideTitle": "La production de sacs en papier kraft, de bout en bout.",
+  "asideBody": "Commandes, consommation des bobines, stock et expéditions au même endroit. Ce que vous voyez après connexion dépend du rôle attribué par votre administrateur."
+}

@@ -1,0 +1,1238 @@
+/*
+ * Outbound shipments: the draft editor's lines table and the small pieces
+ * the record page needs. Everything else comes from records.module.css;
+ * the lines table borrows the invoice module's classes for the document
+ * look (see export-shipment-draft.tsx).
+ */
+
+/* ---------------------------------------------------------------------------
+ * The draft editor, from "Shipment detail v4.dc.html".
+ *
+ * The handoff's header carries the readiness card; its main column is three
+ * glass sections (the truck, the two documents, what leaves) and its rail an
+ * ink "Ship" card, the onward links, the trail and the discard. As with the
+ * shipped record below, literal hex becomes tokens and physical sides become
+ * logical ones; the handoff's 22px radius snaps to the panel radius and its
+ * 18/14px gaps to the spacing scale.
+ * ------------------------------------------------------------------------- */
+
+.draftHeader {
+  display: flex;
+  gap: var(--bp-space-5);
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding: clamp(20px, 3vw, 28px);
+  margin-bottom: var(--bp-space-5);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.draftHeading {
+  flex: 1 1 340px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+.draftTitleRow {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.draftTitle {
+  margin: 0;
+  font: 700 clamp(1.6875rem, 4.2vw, 2.25rem) / 1.02 var(--bp-font-display);
+  letter-spacing: -0.03em;
+}
+
+.draftLede {
+  margin: 0;
+  max-width: 46em;
+  font: 400 0.90625rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+/* "Ready to ship": the count, the bar, and the four checks. */
+.readiness {
+  flex: 0 1 300px;
+  min-width: 260px;
+  border-radius: var(--bp-radius-card);
+  padding: var(--bp-space-4);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-hairline);
+}
+
+.readinessHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  margin-bottom: var(--bp-space-2);
+}
+
+.readinessLabel {
+  font: 600 0.625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.readinessCount {
+  font: 600 0.8125rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-orange-800);
+}
+
+.readinessCountOk {
+  color: var(--bp-success-text);
+}
+
+.readinessBar {
+  height: 8px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint);
+  overflow: hidden;
+  margin-bottom: var(--bp-space-3);
+}
+
+.readinessFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-gradient-primary);
+  transition: width 0.2s ease;
+}
+
+.readinessFillOk {
+  background: var(--bp-success);
+}
+
+.checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 32px;
+}
+
+/* An empty box until the item is done, then a filled green one. */
+.checkMark {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 0.7);
+  border: 1px solid var(--bp-hairline);
+  color: transparent;
+}
+
+.checkMark > svg {
+  width: 12px;
+  height: 12px;
+}
+
+.checkMarkDone {
+  background: var(--bp-success-text);
+  border-color: var(--bp-success-text);
+  color: #fff;
+}
+
+.checkLabel {
+  flex: 1;
+  min-width: 0;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.checkLabelDone {
+  color: var(--bp-ink);
+}
+
+/* A section's head: the mono title and a meta line at the other end. */
+.sectionHead {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-4);
+}
+
+.sectionTitle {
+  margin: 0;
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.sectionMeta {
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.sectionMetaOk {
+  color: var(--bp-success-text);
+}
+
+.sectionMetaWarn {
+  color: var(--bp-orange-800);
+}
+
+.sectionLede {
+  margin: calc(-1 * var(--bp-space-2)) 0 var(--bp-space-4);
+  max-width: 52em;
+  font: 400 0.8125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* The four facts about the truck, as small tiles. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--bp-space-3);
+  margin-bottom: var(--bp-space-4);
+}
+
+.fact {
+  border-radius: var(--bp-radius-block);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-hairline);
+}
+
+.factLabel {
+  display: block;
+  font: 600 0.59375rem/1.6 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.factValue {
+  display: block;
+  font: 600 0.90625rem/1.4 var(--bp-font-mono);
+  word-break: break-word;
+}
+
+.factMuted {
+  font-weight: 400;
+  color: var(--bp-ink-muted);
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--bp-space-3);
+}
+
+.fieldNote {
+  margin-top: var(--bp-space-3);
+}
+
+/* --- the two document cards, in the editor --- */
+
+.docCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--bp-space-4);
+}
+
+/* A flex column, so the two cards' drop zones fill to the same bottom
+   edge; the head reserves two note lines, so they start level too. */
+.docCard {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--bp-radius-card);
+  padding: var(--bp-space-4);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-hairline);
+}
+
+.docBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.docBody > * {
+  flex: 1;
+}
+
+/* Tinted green once its scan is attached. */
+.docCardOk {
+  background: rgb(46 125 79 / 0.07);
+  border-color: rgb(32 96 59 / 0.28);
+}
+
+.docCardHead {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: flex-start;
+  min-height: 58px;
+  margin-bottom: var(--bp-space-3);
+}
+
+.docIcon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: rgb(89 128 166 / 0.16);
+  border: 1px solid rgb(34 88 124 / 0.28);
+  color: var(--bp-info-text);
+}
+
+.docIcon > svg {
+  width: 19px;
+  height: 19px;
+}
+
+.docIconOk {
+  background: rgb(46 125 79 / 0.16);
+  border-color: rgb(32 96 59 / 0.3);
+  color: var(--bp-success-text);
+}
+
+.docCardText {
+  flex: 1;
+  min-width: 0;
+}
+
+.docCardTitle {
+  display: block;
+  font: 600 0.96875rem/1.25 var(--bp-font-display);
+}
+
+.docCardNote {
+  display: block;
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* "Required": the chip tone the list has no need for. */
+.docChipRequired {
+  background: rgb(242 145 0 / 0.18);
+  border-color: rgb(217 124 0 / 0.34);
+  color: var(--bp-orange-800);
+}
+
+/* --- what leaves: the lines as rows, over a near-solid body --- */
+
+.cargo {
+  padding: 0;
+  overflow: hidden;
+}
+
+.cargoHead {
+  padding: var(--bp-space-5) var(--bp-space-5) var(--bp-space-3);
+  margin-bottom: 0;
+}
+
+.cargoBody {
+  background: rgb(255 255 255 / 0.88);
+}
+
+.cargoCols,
+.cargoRow,
+.cargoTotal {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  padding-inline: var(--bp-space-5);
+}
+
+.cargoCols {
+  padding-block: 10px;
+  border-top: 1px solid var(--bp-hairline-soft);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.cargoRow {
+  min-height: 70px;
+  padding-block: var(--bp-space-3);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.cargoMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+}
+
+.cargoIndex {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--bp-tint);
+  border: 1px solid var(--bp-hairline);
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.cargoText {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The designation is editable in place, as the old table's cell was. */
+.cargoName {
+  font-weight: 600;
+  font-size: 0.84375rem;
+  min-width: 0;
+}
+
+.cargoMeta {
+  display: block;
+  padding-inline-start: var(--bp-space-2);
+  font: 400 0.6875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.cargoOver {
+  color: var(--bp-danger-text);
+}
+
+.cargoParcels {
+  flex: none;
+  width: 92px;
+  text-align: end;
+}
+
+.cargoUnits {
+  flex: none;
+  width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: end;
+}
+
+.cargoFigure {
+  font: 600 0.875rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.cargoUnitLabel {
+  font: 400 0.65625rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.cargoTotal {
+  padding-block: 15px;
+  border-top: 1px solid var(--bp-hairline);
+  background: rgb(242 145 0 / 0.08);
+}
+
+.cargoTotalLabel {
+  flex: 1;
+  min-width: 0;
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.cargoTotalFigures {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.cargoTotalValue {
+  font: 700 1.375rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.cargoTotalUnit {
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+@media (max-width: 560px) {
+  .cargoCols {
+    display: none;
+  }
+
+  .cargoRow {
+    flex-wrap: wrap;
+  }
+
+  .cargoMain {
+    flex-basis: 100%;
+  }
+
+  .cargoParcels,
+  .cargoUnits,
+  .cargoSolde {
+    flex: 1 1 auto;
+    width: auto;
+  }
+}
+
+/* The paper's references above its file, on the record. */
+.docRefs {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-3);
+}
+
+.docRef {
+  flex: 1 1 130px;
+  min-width: 118px;
+  border-radius: var(--bp-radius-dense);
+  padding: 10px 12px;
+  background: rgb(255 255 255 / 0.7);
+  border: 1px solid var(--bp-hairline);
+}
+
+.docRefLabel {
+  display: block;
+  font: 600 0.59375rem/1.6 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.docRefValue {
+  display: block;
+  font: 600 0.84375rem/1.5 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The declaration's form, opened in its card: an orange edge on the card,
+   a rule above the fields, Save then Cancel. */
+.docCardEditing {
+  border-color: var(--bp-orange-300);
+}
+
+.docEditButton {
+  flex: 1 1 auto;
+  color: var(--bp-orange-800);
+  border-color: var(--bp-orange-300);
+}
+
+.docEditRow {
+  flex: none;
+  margin-top: var(--bp-space-3);
+}
+
+.docEditRow > button {
+  width: 100%;
+}
+
+.docEdit {
+  flex: none;
+  margin-top: var(--bp-space-4);
+  padding-top: var(--bp-space-4);
+  border-top: 1px solid var(--bp-hairline);
+}
+
+.docEditFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--bp-space-3);
+}
+
+.docEditActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: var(--bp-space-4);
+}
+
+.docEditSave {
+  flex: 1 1 auto;
+}
+
+/* The record's header carries the four tiles under the heading. */
+.headerTiles {
+  flex: 1 1 100%;
+  margin-top: 0;
+}
+
+/* The line's balance, at the row's end. */
+.cargoSolde {
+  flex: none;
+  width: 112px;
+}
+
+/* The record's designation is text, not an input; same metrics as the input. */
+.cargoStatic {
+  display: block;
+  padding: 0 var(--bp-space-2);
+  font: 600 0.84375rem/36px var(--bp-font-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The rail's facts, as label / value rows. */
+.factRow {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: var(--bp-space-2) 0;
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.factRowLabel {
+  flex: none;
+  font: 600 0.625rem/1.6 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.factRowValue {
+  flex: 1;
+  min-width: 0;
+  text-align: end;
+  font: 600 0.8125rem/1.5 var(--bp-font-mono);
+  word-break: break-word;
+}
+
+/* "Frozen": a quiet notice where the draft has its discard card. */
+.frozenCard {
+  border-radius: var(--bp-radius-panel);
+  padding: var(--bp-space-5);
+  background: rgb(255 255 255 / 0.5);
+  border: 1px solid var(--bp-hairline);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.frozenTitle {
+  margin: 0 0 6px;
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.frozenBody {
+  margin: 0;
+  font: 400 0.78125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the rail --- */
+
+/* Not sticky, unlike the record's: four cards run taller than a laptop
+   viewport, and a stuck column that long can never scroll to its foot. */
+.draftRail {
+  flex: 1 1 300px;
+  min-width: 280px;
+  max-width: 370px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-5);
+}
+
+@media (max-width: 900px) {
+  .draftRail {
+    max-width: none;
+  }
+}
+
+/* The ink "Ship" card. `data-surface="floor"` in the markup supplies the
+   inverted tokens; here only the surface, and the control height back to
+   touch, since the floor scope would make its buttons 56px. */
+.shipCard[data-surface="floor"] {
+  /* Literal: `--bp-control-h-touch` is an alias of `--bp-control-h`, so
+     pointing one at the other inside this scope would be a cycle. */
+  --bp-control-h: 48px;
+  --bp-control-pad: 22px;
+  border-radius: var(--bp-radius-panel);
+  padding: var(--bp-space-5);
+  background: rgb(26 23 20 / 0.9);
+  border: 1px solid var(--bp-hairline);
+  box-shadow: var(--bp-shadow-panel);
+  color: var(--bp-ink);
+}
+
+.shipCardTitle {
+  margin: 0 0 10px;
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-accent-text);
+}
+
+.shipCardNote {
+  margin: 0 0 var(--bp-space-4);
+  font: 400 0.8125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.shipCardActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shipCardActions > button {
+  width: 100%;
+}
+
+/* The toolkit's disabled recipe is a light wash for light surfaces; on ink
+   it swallows the label, and the label is the point — it says what is
+   still missing. The handoff's blocked button: a faint veil, muted ink. */
+.shipCardActions > button:disabled {
+  background: rgb(255 255 255 / 0.1);
+  border-color: rgb(255 255 255 / 0.12);
+  color: var(--bp-ink-muted);
+}
+
+.shipMissing {
+  list-style: none;
+  margin: var(--bp-space-4) 0 0;
+  padding: var(--bp-space-4) 0 0;
+  border-top: 1px solid var(--bp-hairline);
+}
+
+.shipMissingRow {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 5px 0;
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.shipMissingDot {
+  flex: none;
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bp-accent-text);
+}
+
+.railCard {
+  padding: var(--bp-space-5);
+}
+
+.railTitle {
+  margin: 0 0 10px;
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: var(--bp-space-4);
+}
+
+/* The editor's rail links stack a label over the value; `.railLink` below
+   is the shared box. */
+.railLinkText {
+  flex: 1;
+  min-width: 0;
+}
+
+.railLinkLabel {
+  display: block;
+  font: 600 0.59375rem/1.6 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.railLinkValue {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 0.84375rem/1.4 var(--bp-font-body);
+}
+
+.trailRow {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: flex-start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.trailRow:last-child {
+  border-bottom: none;
+}
+
+/* Square for an event, round for a paper — green when in, orange while
+   owed — the list's dot vocabulary. */
+.trailDot {
+  flex: none;
+  display: block;
+  width: 9px;
+  height: 9px;
+  margin-top: 7px;
+  border-radius: 2px;
+  background: var(--bp-neutral-400);
+}
+
+.trailDotInfo {
+  background: var(--bp-info);
+}
+
+.trailDotOk {
+  border-radius: 50%;
+  background: var(--bp-success);
+}
+
+.trailDotWarn {
+  border-radius: 50%;
+  background: var(--bp-orange-500);
+}
+
+.trailText {
+  flex: 1;
+  min-width: 0;
+}
+
+.trailLabel {
+  display: block;
+  font: 600 0.8125rem/1.5 var(--bp-font-body);
+}
+
+.trailLabelMuted {
+  color: var(--bp-ink-muted);
+}
+
+.trailMeta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 0.6875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* The discard card: a red hairline on a lighter veil, no glass. */
+.discardCard {
+  border-radius: var(--bp-radius-panel);
+  padding: var(--bp-space-5);
+  background: rgb(255 255 255 / 0.5);
+  border: 1px solid rgb(193 53 43 / 0.34);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.discardTitle {
+  margin: 0 0 6px;
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-danger-text);
+}
+
+.discardBody {
+  margin: 0 0 var(--bp-space-4);
+  font: 400 0.78125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.discardButton {
+  width: 100%;
+}
+
+/*
+ * The shipped record shares the editor's classes above — it is the
+ * "Expédiée" phase of the same v4 handoff. Two of its elements are
+ * deliberately absent: "Bon de livraison" (no print route exists) and "Tout
+ * télécharger" (no bundling endpoint; each card has its own Download).
+ */
+
+.layout {
+  display: flex;
+  gap: var(--bp-space-5);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.main {
+  flex: 1 1 420px;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-5);
+}
+
+/* The four figures that summarise the export. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--bp-space-3);
+  margin-top: var(--bp-space-5);
+}
+
+.tile {
+  border-radius: var(--bp-radius-card);
+  padding: var(--bp-space-4);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-veil-border);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.tileLabel {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.tileFigure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-1);
+  margin-top: var(--bp-space-1);
+}
+
+.tileValue {
+  font: 700 1.625rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Drawn in orange when a document is still missing — the one tile that
+   reports a gap rather than a quantity. */
+.tileValueAlert {
+  color: var(--bp-orange-800);
+}
+
+.tileUnit {
+  font: 400 0.71875rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.railLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  min-height: 48px;
+  padding: 0 var(--bp-space-4);
+  border: 1px solid var(--bp-tint-strong);
+  border-radius: var(--bp-radius);
+  background: var(--bp-veil-bg);
+  font: 600 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  text-decoration: none;
+}
+
+.railLink:hover {
+  background: var(--bp-surface);
+  border-color: var(--bp-orange-300);
+  color: var(--bp-orange-800);
+  text-decoration: none;
+}
+
+/* Turns with the writing direction: an arrow pointing "onward" points left
+   in Arabic. Same idiom as the sidebar's collapse chevron. */
+.railLinkArrow {
+  color: var(--bp-ink-muted);
+}
+
+[dir="rtl"] .railLinkArrow {
+  transform: rotate(180deg);
+}
+
+.cellInput {
+  width: 100%;
+  min-width: 90px;
+  height: 36px;
+  padding: 0 var(--bp-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  font: 400 0.8125rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.cellInput:hover {
+  border-color: var(--bp-border);
+}
+
+.cellInput:focus {
+  outline: none;
+  border-color: var(--bp-orange-500);
+  background: var(--bp-surface);
+}
+
+.cellInput:disabled {
+  color: var(--bp-ink-muted);
+}
+
+.cellNum {
+  min-width: 90px;
+  text-align: end;
+  font-family: var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.closeShort {
+  margin-top: var(--bp-space-3);
+  display: grid;
+  gap: var(--bp-space-3);
+}
+
+/* ---------------------------------------------------------------------------
+ * The list, from `Shipments v3.dc.html`.
+ *
+ * Five columns rather than nine: the handoff folds the number, date and
+ * client into one cell, pairs the parcel count with a load badge and the
+ * orders it covers, and turns the two documents into chips — so a row reads
+ * as a sentence and the whole row is the click target.
+ *
+ * Chip borders are literal `rgb(… / α)`, like `records.module.css`'s status
+ * pills: there are no `--bp-success-border` / `-warning-border` / `-info-border`
+ * tokens, only `--bp-danger-border`, so naming them would silently draw no
+ * border at all.
+ * ------------------------------------------------------------------------- */
+
+/* The four header figures. Matches purchasing's and stock's KPI strips. */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--bp-space-3);
+  margin-bottom: var(--bp-space-4);
+}
+
+.kpi {
+  border-radius: var(--bp-radius-card);
+  padding: var(--bp-space-4);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.kpiLabel {
+  font: 600 0.625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.kpiRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.kpiValue {
+  font: 700 1.5rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Missing documents" is the one figure that asks for action. */
+.kpiValueAlert {
+  color: var(--bp-orange-700);
+}
+
+.kpiUnit {
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* The shipment cell: status dot, then number + date over the client. */
+.rowCell {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--bp-neutral-400);
+}
+
+/* Round once it has gone, square while it is still a draft — the shape says
+   the same thing as the badge, for anyone reading the list at a glance. */
+.dotShipped {
+  border-radius: 50%;
+  background: var(--bp-success);
+}
+
+.dotDraft {
+  border-radius: 2px;
+  background: var(--bp-neutral-400);
+}
+
+.rowText {
+  min-width: 0;
+}
+
+.rowTop {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.rowNo {
+  font: 600 0.875rem/1.3 var(--bp-font-mono);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.rowMeta {
+  display: block;
+  font: 400 0.71875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* The client line: one line, ellipsised rather than wrapping the row taller. */
+.rowClient {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* The content cell: parcels + load badge, with the orders beneath. */
+.contentTop {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.parcels {
+  font: 600 0.84375rem/1.3 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Full or part load — `ShipmentKind`, in the handoff's smaller pill. */
+.load {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: var(--bp-radius-pill);
+  border: 1px solid transparent;
+  font: 600 0.59375rem/1 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.loadComplete {
+  background: rgb(89 128 166 / 0.16);
+  border-color: rgb(34 88 124 / 0.28);
+  color: var(--bp-info-text);
+}
+
+.loadPartial {
+  background: rgb(224 161 6 / 0.2);
+  border-color: rgb(224 161 6 / 0.44);
+  color: var(--bp-warning-text);
+}
+
+/* The two document chips, side by side and wrapping when narrow. */
+.docChips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.docChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: var(--bp-radius-pill);
+  border: 1px solid transparent;
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.docChipOk {
+  background: rgb(46 125 79 / 0.16);
+  border-color: rgb(32 96 59 / 0.3);
+  color: var(--bp-success-text);
+}
+
+.docChipPart {
+  background: rgb(224 161 6 / 0.2);
+  border-color: rgb(224 161 6 / 0.44);
+  color: var(--bp-warning-text);
+}
+
+.docChipNone {
+  background: var(--bp-tint);
+  border-color: var(--bp-hairline);
+  color: var(--bp-ink-muted);
+}
+
+/* The chip's own leading dot, inheriting the chip's ink. */
+.docDot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+}
+
+.docDotOk {
+  border-radius: 50%;
+}
+
+.docDotPart {
+  border-radius: 2px;
+}
+
+/* The affordance at the row's end: the row is clickable, so it earns a mark.
+   Logical rotation, so it points the reader's way in Arabic too. */
+.chevron {
+  display: block;
+  text-align: end;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--bp-ink-faint);
+}
+
+[dir="rtl"] .chevron {
+  transform: rotate(180deg);
+}

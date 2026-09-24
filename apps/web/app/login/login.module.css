@@ -1,0 +1,171 @@
+/* Sign-in screen. Uses the toolkit tokens; owns its own light kraft surface
+   so it never inherits the dark-mode body from globals.css. */
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bp-page);
+  color: var(--bp-neutral-900);
+  font-family: var(--bp-font-body);
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 860px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+  .aside {
+    display: none;
+  }
+}
+
+/* --- left: the form --- */
+
+.formSide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+}
+
+.form {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.eyebrow {
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bp-neutral-400);
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font: 700 2rem/1.1 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0;
+  font: 400 0.8125rem/1.6 var(--bp-font-body);
+  color: var(--bp-neutral-600);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Sign-in failures are reported here, above the submit button, and announced
+   to screen readers via role="alert". */
+.alert {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bp-danger-bg);
+  border: 1px solid var(--bp-danger-border);
+  border-radius: var(--bp-radius-block);
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+  color: var(--bp-danger-text);
+}
+
+.alertMark {
+  flex: none;
+  font: 600 0.78125rem/1.5 var(--bp-font-mono);
+}
+
+.submit {
+  width: 100%;
+}
+
+.note {
+  margin: 0;
+  padding-top: 2px;
+  font: 400 0.71875rem/1.6 var(--bp-font-body);
+  color: var(--bp-neutral-400);
+}
+
+/* --- right: brand panel --- */
+
+.aside {
+  background: var(--bp-neutral-900);
+  color: var(--bp-neutral-100);
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.asideMark {
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bp-neutral-400);
+}
+
+.asideTitle {
+  margin: 0;
+  font: 700 2.125rem/1.15 var(--bp-font-display);
+  letter-spacing: -0.02em;
+  max-width: 18ch;
+  color: #fff;
+}
+
+.asideBody {
+  margin: 12px 0 0;
+  max-width: 40ch;
+  font: 400 0.8125rem/1.7 var(--bp-font-body);
+  color: var(--bp-neutral-300);
+}
+
+.asideRoles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roleChip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--bp-neutral-600);
+  border-radius: var(--bp-radius-pill);
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  color: var(--bp-neutral-300);
+}
+
+/* The language list beside the brand: the choice must be reachable before
+   any text the reader may not understand. */
+.language {
+  margin-inline-start: auto;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-muted);
+  font: 600 0.78125rem/1 var(--bp-font-display);
+  cursor: pointer;
+}

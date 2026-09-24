@@ -1,0 +1,21 @@
+{
+  "metaTitle": "الإعدادات · Bicapack ERP",
+  "eyebrow": "التفضيلات",
+  "title": "الإعدادات",
+  "pagesAria": "صفحات الإعدادات",
+  "railNote": "للإدارة فقط. كل قسم يبيّن الدور الذي يتطلبه.",
+  "sectionEyebrow": "الإعدادات · {group}",
+  "groups": {
+    "access": "الصلاحيات",
+    "documents": "الوثائق"
+  },
+  "hints": {
+    "users": "الحسابات والأدوار والصلاحيات",
+    "activity": "من فعل ماذا ومتى",
+    "templates": "مظهر الفواتير الصادرة"
+  },
+  "counts": {
+    "errors": "{count} خطأ",
+    "version": "v{version}"
+  }
+}

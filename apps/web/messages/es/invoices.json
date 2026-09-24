@@ -1,0 +1,270 @@
+{
+  "eyebrow": "Facturación",
+  "open": "Abrir",
+  "yes": "Sí",
+  "no": "No",
+  "loading": "Cargando…",
+  "loadingInvoice": "Cargando factura…",
+  "notSet": "Sin definir",
+  "archived": "Archivado",
+  "archivedTag": "ARCHIVADO",
+  "noClient": "Sin cliente registrado",
+  "noScan": "Ningún documento escaneado.",
+  "noLines": "Esta factura no tiene líneas.",
+  "draftShipment": "Envío en borrador",
+  "activityLink": "Ver en el registro de actividad",
+  "paymentState": {
+    "draft": "Borrador",
+    "open": "Pendiente",
+    "overdue": "Vencida",
+    "paid": "Pagada"
+  },
+  "filters": {
+    "draft": "Borrador",
+    "issued": "Emitidas",
+    "open": "Pendientes",
+    "overdue": "Vencidas",
+    "paid": "Pagadas"
+  },
+  "columns": {
+    "invoice": "Factura",
+    "issued": "Emitida",
+    "supplier": "Proveedor",
+    "client": "Cliente",
+    "due": "Vencimiento",
+    "payment": "Pago",
+    "totalInclVat": "Total con IVA"
+  },
+  "fields": {
+    "number": "Número",
+    "supplier": "Proveedor",
+    "supplierNumber": "N.º de factura del proveedor",
+    "client": "Cliente",
+    "order": "Pedido",
+    "shipment": "Envío",
+    "issued": "Emitida",
+    "issueDate": "Fecha de emisión",
+    "due": "Fecha de vencimiento",
+    "category": "Categoría",
+    "forProduction": "Para producción",
+    "goodsReceipt": "Albarán de recepción",
+    "legacyReceipt": "Recepción (sistema anterior)",
+    "status": "Estado",
+    "paidOn": "Pagada el",
+    "method": "Método",
+    "paymentMethod": "Método de pago",
+    "netPayable": "Neto a pagar",
+    "exclVat": "Base imponible",
+    "vat": "IVA",
+    "inclVat": "Total con IVA",
+    "withholding": "Retención",
+    "withholdingTax": "Retención en origen",
+    "currency": "Moneda",
+    "exchangeRate": "Tipo de cambio",
+    "trace": "Traza",
+    "draftedBy": "Redactada por",
+    "note": "Nota"
+  },
+  "panels": {
+    "invoice": "Factura",
+    "payment": "Pago",
+    "amounts": "Importes",
+    "documents": "Documentos escaneados ({count})",
+    "lines": "Líneas ({count})",
+    "actions": "Acciones",
+    "scan": "Documento escaneado",
+    "preview": "Vista previa",
+    "pdf": "Factura PDF"
+  },
+  "lines": {
+    "product": "Producto",
+    "description": "Descripción",
+    "qty": "Cant.",
+    "unitPrice": "Precio unitario",
+    "discount": "Descuento",
+    "vat": "IVA",
+    "discountPct": "Descuento %",
+    "vatPct": "IVA %",
+    "total": "Total",
+    "sum": "Suma de líneas",
+    "sumCurrency": "Suma de líneas ({currency})",
+    "add": "Añadir línea",
+    "remove": "Quitar",
+    "billsOrder": "Factura el pedido",
+    "aria": {
+      "product": "Producto de la línea {n}",
+      "description": "Descripción de la línea {n}",
+      "quantity": "Cantidad de la línea {n}",
+      "unitPrice": "Precio unitario de la línea {n}",
+      "discount": "Descuento % de la línea {n}",
+      "vat": "IVA % de la línea {n}",
+      "mention": "Mención del producto de la línea {n}"
+    }
+  },
+  "purchases": {
+    "title": "Facturas de compra",
+    "subtitle": "Lo que nos facturaron los proveedores. Abre una para ver sus importes, líneas y documentos escaneados.",
+    "new": "Nueva factura de compra",
+    "newSubtitle": "Registra la factura de un proveedor tal como se recibió: número, fechas, importes y líneas. El albarán de recepción que factura puede vincularse una vez elegido el proveedor.",
+    "back": "← Facturas de compra",
+    "backToInvoice": "← Factura",
+    "detailTitle": "Factura de compra",
+    "detailSubtitle": "La factura de un proveedor tal como se registró: importes, pago, líneas y el albarán de recepción que factura.",
+    "editTitle": "Editar factura de compra",
+    "editSubtitle": "Cada campo se escribe al guardar, así que un campo vacío borra su valor. Los documentos escaneados se conservan tal cual.",
+    "searchPlaceholder": "Buscar n.º de factura, proveedor, pedido…",
+    "deleted": "Factura de compra eliminada",
+    "deleteTitle": "¿Eliminar la factura {numero}?",
+    "deleteBody": "La factura y {count, plural, =0 {sus líneas} one {su línea} other {sus # líneas}} se eliminan definitivamente. El albarán de recepción que factura no se ve afectado.",
+    "recorded": "Factura {numero} registrada",
+    "saved": "Factura {numero} guardada",
+    "form": {
+      "mustBeNumber": "{label} debe ser un número",
+      "archivedOption": "{name} (archivado)",
+      "chooseSupplier": "Elige un proveedor",
+      "supplierHint": "¿El proveedor no aparece? <link>Créalo</link> primero.",
+      "chooseSupplierFirst": "Elige primero un proveedor",
+      "noReceipt": "Ningún albarán de recepción para este proveedor",
+      "none": "Ninguno",
+      "receiptHint": "La entrega que factura esta factura, si se registró. Solo se ofrecen las recepciones del proveedor elegido.",
+      "amountsSection": "Importes y pago",
+      "linesSection": "Líneas",
+      "submit": "Registrar factura",
+      "totals": {
+        "exclVat": "Base imponible: {amount}",
+        "vat": "IVA: {amount}",
+        "inclVat": "Total con IVA: {amount}",
+        "netPayable": "Neto a pagar: {amount}"
+      }
+    },
+    "kpis": {
+      "billed": "Facturado · {currency}",
+      "invoices": "{count, plural, one {# factura} other {# facturas}}",
+      "invoiceUnit": "{count, plural, one {factura} other {facturas}}",
+      "unpaid": "Por pagar",
+      "unpaidMeta": "pendientes de pago",
+      "overdue": "Vencidas",
+      "overdueMeta": "plazo superado",
+      "nothingOverdue": "nada atrasado",
+      "noCurrency": "Sin moneda",
+      "noCurrencyShort": "moneda ausente",
+      "noCurrencyMeta": "moneda por indicar"
+    },
+    "period": {
+      "label": "Emitida",
+      "inRange": "{count, plural, one {# factura} other {# facturas}} en este periodo"
+    },
+    "segments": {
+      "all": "Todas",
+      "unpaid": "Por pagar",
+      "overdue": "Vencidas",
+      "paid": "Pagadas"
+    },
+    "state": {
+      "paid": "Pagada",
+      "due": "Por pagar",
+      "late": "Vencida",
+      "nodate": "Sin plazo"
+    },
+    "row": {
+      "receivedOn": "recibida el {date}",
+      "noDate": "sin fecha",
+      "archivedSupplier": "Proveedor archivado",
+      "settled": "liquidada",
+      "noTerm": "plazo no indicado",
+      "dueToday": "vence hoy",
+      "dueIn": "en {count} d",
+      "late": "{count} d de retraso"
+    },
+    "groups": {
+      "noDate": "Sin fecha de emisión"
+    },
+    "empty": {
+      "title": "Ninguna factura de compra",
+      "text": "Nada coincide con estos filtros a la vez.",
+      "reset": "Restablecer"
+    }
+  },
+  "sales": {
+    "title": "Facturas de venta",
+    "subtitle": "Lo que hemos facturado a los clientes, y los borradores pendientes de emitir. Crea una aquí, o desde la página de un pedido facturable.",
+    "back": "← Facturas de venta",
+    "detailTitle": "Factura de venta",
+    "detailSubtitle": "Una factura a un cliente: importes, pago, líneas, y el pedido y el envío a los que pertenece. Un borrador aún puede editarse; una factura emitida es definitiva.",
+    "searchPlaceholder": "Buscar n.º de factura, cliente, pedido…",
+    "emptyMessage": "Ninguna factura de venta coincide con estos filtros.",
+    "draftBanner": "<strong>Borrador</strong> — aún sin numerar. Recibirá el siguiente número F{yy} al emitirse, y quedará congelada.",
+    "currencyRequired": "Se necesita una moneda para emitir la factura.",
+    "issue": "Emitir factura",
+    "issueConfirm": "Emitir",
+    "issueBody": "La factura recibe el siguiente número de {year} y ya no podrá editarse.",
+    "unsavedSavedFirst": "Tus cambios sin guardar se guardan primero.",
+    "saveDraft": "Guardar borrador",
+    "savedState": "Guardado",
+    "refresh": "Actualizar desde embalaje",
+    "saveBeforeRefresh": "Guarda el borrador antes de actualizar las cantidades desde embalaje.",
+    "discard": "Descartar borrador",
+    "discardTitle": "Descartar factura en borrador",
+    "discardConfirm": "Descartar",
+    "discardBody": "El borrador se elimina, y cualquier pedido que facture vuelve a ser facturable. Aún no se ha numerado nada, así que solo se pierden las ediciones. La nota se escribe en el historial del pedido.",
+    "issuedToast": "Factura {numero} emitida",
+    "discardedToast": "Factura en borrador descartada",
+    "nothingToRefresh": "Las cantidades ya coinciden con el embalaje",
+    "quantityUpdated": "Cantidades actualizadas desde embalaje",
+    "hints": {
+      "alreadyInvoiced": "{invoiced} de {planned} bultos ya facturados; quedan {remaining}",
+      "packedPlanned": "{packed} bultos embalados de {planned} previstos",
+      "packed": "{packed} bultos embalados",
+      "mismatch": "Embalaje cuenta {packed}, la línea factura {quantity}",
+      "noPackagingPlanned": "Aún no hay nada embalado — la cantidad toma los {planned} bultos previstos",
+      "noPackaging": "Aún no hay nada embalado ni un número de bultos previsto",
+      "priceChanged": "El precio del pedido ahora es {price} — ajusta el precio unitario si la factura debe seguirlo"
+    },
+    "new": "Nueva factura de venta",
+    "newSubtitle": "Factura a un cliente por algo que no es un pedido: un servicio, una venta puntual, un gasto refacturado. Escribe tú las líneas; el borrador toma su número al emitirse.",
+    "draftCreated": "Borrador de factura creado para {client}",
+    "form": {
+      "chooseClient": "Elegir un cliente",
+      "clientHint": "¿El cliente no aparece? <link>Créalo</link> primero.",
+      "linesSection": "Líneas",
+      "submit": "Crear borrador"
+    },
+    "previewPage": "Vista previa de la factura, página {page}",
+    "previewError": "No se pudo mostrar la vista previa.",
+    "previewHint": "La factura tal como se imprimirá, redibujada mientras escribe. Nada se guarda hasta guardar el borrador.",
+    "pdfHint": "Impresa a partir de la factura tal como se emitió y luego almacenada: cada consulta sirve el mismo archivo.",
+    "period": {
+      "label": "Emitida",
+      "inRange": "{count, plural, one {# factura} other {# facturas}} en este periodo"
+    },
+    "kpis": {
+      "billed": "Facturado · {currency}",
+      "invoices": "{count, plural, one {# factura} other {# facturas}}",
+      "overdue": "Vencidas",
+      "overdueUnit": "{count, plural, one {factura} other {facturas}}",
+      "toChase": "por reclamar",
+      "nothingOverdue": "nada atrasado"
+    },
+    "groups": {
+      "drafts": "Borradores, aún sin emitir"
+    },
+    "row": {
+      "issuedOn": "emitida el {date}",
+      "notIssued": "sin emitir",
+      "noDue": "sin vencimiento",
+      "dueToday": "vence hoy",
+      "dueIn": "en {count} d",
+      "late": "{count} d de retraso",
+      "paidOn": "pagada el {date}"
+    },
+    "empty": {
+      "title": "Ninguna factura",
+      "text": "Nada coincide con este filtro y esta búsqueda a la vez.",
+      "reset": "Restablecer"
+    }
+  },
+  "mention": {
+    "label": "Mención del producto",
+    "none": "Ninguna"
+  }
+}

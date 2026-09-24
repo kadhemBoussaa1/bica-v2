@@ -1,0 +1,96 @@
+/*
+ * Reel labels, 10 × 10 cm self-adhesive, one per sheet.
+ *
+ * Sized in millimetres throughout: this is the rare page whose output is
+ * physical, and a label printed at 96 mm does not sit on a 100 mm sheet.
+ * `@page { size: 100mm 100mm }` is declared inline in page.tsx — see the note
+ * there for why it cannot live in this file.
+ */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-3);
+  margin-block-end: var(--bp-space-5);
+}
+
+.note {
+  font-size: 0.9rem;
+  color: var(--bp-ink-muted);
+}
+
+.sheet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-4);
+}
+
+/* One physical label. */
+.label {
+  inline-size: 100mm;
+  block-size: 100mm;
+  padding: 6mm;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 3mm;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
+  /* On screen only — the printed sheet has no border of its own. */
+  border: 1px solid var(--bp-tint-strong);
+  border-radius: var(--bp-radius-block);
+}
+
+.numero {
+  font-family: var(--bp-font-mono);
+  font-size: 8mm;
+  font-weight: 700;
+  line-height: 1.1;
+  word-break: break-all;
+}
+
+.qr {
+  display: grid;
+  place-items: center;
+}
+
+.spec {
+  font-size: 4mm;
+  line-height: 1.35;
+}
+
+.provenance {
+  font-size: 3.4mm;
+  color: #333;
+}
+
+/* The id in full: the fallback when the QR is scuffed past reading. */
+.id {
+  font-family: var(--bp-font-mono);
+  font-size: 2.6mm;
+  color: #666;
+  word-break: break-all;
+}
+
+@media print {
+  .toolbar {
+    display: none;
+  }
+
+  .sheet {
+    display: block;
+    gap: 0;
+  }
+
+  .label {
+    border: none;
+    border-radius: 0;
+    /* One label per sheet, as the stock is die-cut. */
+    break-after: page;
+  }
+
+  .label:last-child {
+    break-after: auto;
+  }
+}

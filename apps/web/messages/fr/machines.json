@@ -1,0 +1,80 @@
+{
+  "eyebrow": "Production",
+  "title": "Machines",
+  "subtitle": "Le parc machines de l'atelier repris de l'ancien système, avec les laizes et grammages que chaque machine peut travailler. Filtrez par type, ou cherchez par nom, code et marque.",
+  "newMachine": "Nouvelle machine",
+  "editMachine": "Modifier la machine",
+  "back": "← Machines",
+  "loadingMachine": "Chargement de la machine…",
+  "columns": {
+    "machine": "Machine",
+    "code": "Code",
+    "type": "Type",
+    "laize": "Laize (mm)",
+    "grammage": "Grammage",
+    "supplier": "Fournisseur"
+  },
+  "archivedTag": "ARCHIVÉE",
+  "filters": {
+    "archived": "Archivées"
+  },
+  "searchPlaceholder": "Rechercher nom, code, marque…",
+  "emptyMessage": "Aucune machine ne correspond à ces filtres.",
+  "archiveTitle": "Archiver la machine ?",
+  "restoreTitle": "Restaurer la machine ?",
+  "archiveBody": "<strong>{name}</strong> sera masquée de la liste par défaut. Rien n'est supprimé : les commandes passées qui ont tourné dessus continuent de la mentionner.",
+  "restoreBody": "<strong>{name}</strong> réapparaîtra dans la liste.",
+  "form": {
+    "code": "Code",
+    "type": "Type",
+    "selectType": "Choisir un type",
+    "name": "Nom",
+    "brand": "Marque",
+    "supplier": "Fournisseur",
+    "noSupplier": "Aucun fournisseur",
+    "price": "Prix",
+    "purchaseDate": "Date d'achat",
+    "capabilities": "Capacités",
+    "capabilitiesHint": "Les mesures applicables dépendent de la machine. Laissez vide ce que la machine n'indique pas plutôt que de saisir un zéro.",
+    "documents": "Documents",
+    "imageUrl": "URL de l'image",
+    "invoiceUrl": "URL de la facture",
+    "createMachine": "Créer la machine",
+    "mustBeNumber": "{field} doit être un nombre",
+    "priceMustBeNumber": "Le prix doit être un nombre"
+  },
+  "measures": {
+    "laize": "Laize",
+    "grammage": "Grammage",
+    "laizeMin": "Laize min",
+    "laizeMax": "Laize max",
+    "grammageMin": "Grammage min",
+    "grammageMax": "Grammage max",
+    "grammageMinWithoutHandle": "Grammage min, sans poignée",
+    "grammageMaxWithoutHandle": "Grammage max, sans poignée",
+    "grammageMinWithHandle": "Grammage min, avec poignée",
+    "grammageMaxWithHandle": "Grammage max, avec poignée",
+    "grammageMinKraft": "Grammage min, kraft",
+    "grammageMaxKraft": "Grammage max, kraft",
+    "grammageMinLaminatedKraft": "Grammage min, kraft contrecollé",
+    "grammageMaxLaminatedKraft": "Grammage max, kraft contrecollé",
+    "lengthMin": "Longueur min",
+    "lengthMax": "Longueur max",
+    "widthMin": "Largeur min",
+    "widthMax": "Largeur max"
+  },
+  "kpis": {
+    "machines": "Machines",
+    "onFloor": "à l'atelier",
+    "machinesUnit": "machines",
+    "archived": "Archivées"
+  },
+  "view": {
+    "label": "Affichage",
+    "grid": "Vue cartes",
+    "list": "Vue liste"
+  },
+  "cards": {
+    "notSet": "Non renseigné"
+  }
+}

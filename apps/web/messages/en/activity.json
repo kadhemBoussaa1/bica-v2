@@ -1,0 +1,164 @@
+{
+  "eyebrow": "Settings",
+  "title": "Activity",
+  "metaTitle": "Activity · Bicapack ERP",
+  "columns": {
+    "when": "When",
+    "user": "User",
+    "action": "Action",
+    "entity": "Entity",
+    "outcome": "Outcome",
+    "time": "Time"
+  },
+  "anonymous": "Anonymous",
+  "filters": {
+    "reads": "Reads",
+    "writes": "Writes",
+    "signIns": "Sign-ins",
+    "errors": "Errors"
+  },
+  "searchPlaceholder": "Search action, user, entity, error…",
+  "emptyMessage": "No activity matches these filters.",
+  "showingByActor": "Showing activity by <strong>{actor}</strong>",
+  "showingForEntity": "Showing activity for <strong>{entity}</strong> (including records raised from it)",
+  "clear": "Clear",
+  "kind": {
+    "QUERY": "READ",
+    "MUTATION": "WRITE",
+    "AUTH": "AUTH"
+  },
+  "outcome": {
+    "OK": "OK",
+    "ERROR": "ERROR"
+  },
+  "duration": "{ms} ms",
+  "panel": {
+    "ariaLabel": "Activity detail",
+    "loading": "Loading…",
+    "who": "Who",
+    "what": "What",
+    "input": "Input",
+    "client": "Client",
+    "user": "User",
+    "email": "Email",
+    "role": "Role",
+    "impersonatedBy": "Impersonated by",
+    "trace": "Trace",
+    "traceLink": "All activity by this user",
+    "when": "When",
+    "entity": "Entity",
+    "from": "From",
+    "duration": "Duration",
+    "error": "Error",
+    "message": "Message",
+    "ip": "IP",
+    "browser": "Browser",
+    "noInput": "No input.",
+    "truncated": "Truncated: {bytes} bytes submitted, the first 16 KB kept."
+  },
+  "actions": {
+    "auth": {
+      "signIn": "Signed in",
+      "signOut": "Signed out"
+    },
+    "order": {
+      "create": "Created order",
+      "update": "Edited order",
+      "transition": "Moved order status",
+      "acceptQuote": "Accepted quote",
+      "setColours": "Set order colours",
+      "setActive": "Archived / restored order"
+    },
+    "production": {
+      "create": "Recorded production run",
+      "update": "Edited production run",
+      "remove": "Deleted production run"
+    },
+    "shipment": {
+      "createFromOrder": "Drafted shipment",
+      "updateDraft": "Edited shipment draft",
+      "createPackingListUpload": "Packing list upload requested",
+      "createCustomsUpload": "Customs scan upload requested",
+      "updateCustoms": "Edited shipment customs",
+      "ship": "Shipped",
+      "discardDraft": "Discarded shipment draft"
+    },
+    "salesInvoice": {
+      "createFromOrder": "Drafted sales invoice",
+      "updateDraft": "Edited invoice draft",
+      "refreshFromPackaging": "Refreshed invoice from packaging",
+      "issue": "Issued sales invoice",
+      "discardDraft": "Discarded invoice draft"
+    },
+    "purchaseInvoice": {
+      "create": "Recorded purchase invoice",
+      "update": "Edited purchase invoice",
+      "remove": "Deleted purchase invoice"
+    },
+    "stock": {
+      "createRoll": "Added paper roll",
+      "updateRoll": "Edited paper roll",
+      "setRollArchived": "Archived / restored roll",
+      "removeRoll": "Deleted paper roll",
+      "createShipment": "Recorded paper shipment",
+      "updateShipment": "Edited paper shipment",
+      "setShipmentActive": "Archived / restored paper shipment",
+      "removeShipment": "Deleted paper shipment",
+      "setShipmentRolls": "Set paper shipment rolls"
+    },
+    "client": {
+      "create": "Created client",
+      "update": "Edited client",
+      "setActive": "Archived / restored client"
+    },
+    "supplier": {
+      "create": "Created supplier",
+      "update": "Edited supplier",
+      "setActive": "Archived / restored supplier"
+    },
+    "supplierFamily": {
+      "create": "Created supplier family",
+      "update": "Edited supplier family",
+      "setActive": "Archived / restored supplier family",
+      "remove": "Deleted supplier family"
+    },
+    "product": {
+      "create": "Created product",
+      "update": "Edited product",
+      "setActive": "Archived / restored product"
+    },
+    "machine": {
+      "create": "Created machine",
+      "update": "Edited machine",
+      "setActive": "Archived / restored machine"
+    },
+    "employee": {
+      "create": "Created employee",
+      "update": "Edited employee",
+      "setActive": "Archived / restored employee"
+    },
+    "user": {
+      "create": "Created user",
+      "setRole": "Changed user role",
+      "setBanned": "Banned / unbanned user",
+      "remove": "Deleted user"
+    },
+    "shift": {
+      "openWeek": "Opened a week",
+      "copyWeek": "Copied a week's roster",
+      "clearWeek": "Cleared a draft week",
+      "publish": "Published a week",
+      "assign": "Assigned people to a shift",
+      "unassign": "Took someone off a shift",
+      "change": "Recorded a roster change",
+      "requestChange": "Requested a shift change",
+      "withdraw": "Withdrew a shift request",
+      "accept": "Accepted a shift request",
+      "reject": "Rejected a shift request",
+      "createTask": "Created a ticket",
+      "updateTask": "Edited a ticket",
+      "removeTask": "Deleted a ticket",
+      "setTaskDone": "Marked a ticket done / reopened it"
+    }
+  }
+}

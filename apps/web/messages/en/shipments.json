@@ -1,0 +1,261 @@
+{
+  "eyebrow": "Operations",
+  "title": "Shipments",
+  "subtitle": "What left the yard, and the drafts waiting for a truck. Search by number, packing list, customs declaration, client, invoice or order. Create one from the order’s page once its invoice is issued.",
+  "back": "← Shipments",
+  "detailTitle": "Shipment",
+  "detailSubtitle": "One export: the truck, the invoice it travels with, the packing list and the customs declaration.",
+  "searchPlaceholder": "Search shipment no., packing list, client, order…",
+  "empty": "No shipments match these filters.",
+  "loading": "Loading shipment…",
+  "open": "Open",
+  "archivedShort": "ARCH",
+  "archived": "ARCHIVED",
+  "draft": "Draft",
+  "draftInvoice": "Draft invoice",
+  "noInvoice": "No invoice attached",
+  "missing": "MISSING",
+  "parcelCount": "{count, plural, one {# parcel} other {# parcels}}",
+  "activityLink": "Activity on this shipment",
+  "editor": {
+    "eyebrow": "Operations · Shipment",
+    "title": "Draft shipment",
+    "lede": "The truck is not yet numbered. It takes the next {prefix} number when shipped, then freezes — only the customs declaration stays editable.",
+    "ready": "Ready to ship",
+    "checks": {
+      "invoice": "Invoice issued",
+      "invoiceNumbered": "Invoice issued · {numero}",
+      "exportDate": "Export date",
+      "packingListNumber": "Packing list number",
+      "packingListDocument": "Packing list attached",
+      "declarationNumber": "Declaration number",
+      "declarationDate": "Declaration date",
+      "declarationDocument": "Declaration attached"
+    },
+    "required": "required",
+    "optional": "optional",
+    "numberPending": "on shipping",
+    "carrierNote": "Note to the carrier",
+    "carrierNotePlaceholder": "Delivery slot, on-site contact…",
+    "truck": {
+      "title": "The truck",
+      "meta": "Frozen when shipped, except customs"
+    },
+    "documents": {
+      "title": "The truck’s two papers",
+      "lede": "Drop the file here, or choose it from your device.",
+      "bothAttached": "Both are attached",
+      "customsMissing": "Customs still missing",
+      "noneAttached": "Neither is attached",
+      "packingNote": "What the driver takes",
+      "customsNote": "Cleared before departure",
+      "required": "Required",
+      "optional": "Optional",
+      "drop": "Drop the PDF here",
+      "choose": "Choose a file",
+      "savedMeta": "saved with the draft",
+      "unsavedMeta": "not saved yet — save the draft",
+      "packingMissing": "Packing list still missing"
+    },
+    "cargo": {
+      "title": "What leaves",
+      "meta": "{lines, plural, one {# line} other {# lines}} · {orders, plural, one {# order} other {# orders}}",
+      "line": "Line",
+      "perParcel": "{count} {unit}/parcel",
+      "total": "Total on the truck",
+      "settled": "Settled",
+      "remaining": "Remaining"
+    },
+    "gate": {
+      "title": "Ship",
+      "blockedNote": "When shipped, the truck takes its number and freezes. Something is still missing before it can go.",
+      "readyNote": "Everything is here. The truck takes the next {prefix} number and freezes.",
+      "shipBlocked": "Ship · {count} to complete",
+      "ship": "Ship the truck"
+    },
+    "links": {
+      "title": "The shipment",
+      "journal": "Journal"
+    },
+    "trail": {
+      "title": "Trail",
+      "created": "Draft created",
+      "packingAttached": "Packing list attached",
+      "packingExpected": "Packing list expected",
+      "requiredBeforeShipping": "required before shipping",
+      "customsAttached": "Declaration attached",
+      "customsExpected": "Declaration expected"
+    },
+    "discard": {
+      "title": "Discard",
+      "body": "The draft disappears and the parcels return to the order's remainder to ship."
+    }
+  },
+  "facets": {
+    "draft": "Draft",
+    "shipped": "Shipped",
+    "missingCustoms": "Missing customs"
+  },
+  "kpis": {
+    "shipped": "Shipped",
+    "shippedUnit": "this period",
+    "drafts": "Drafts waiting",
+    "draftsUnit": "for a truck",
+    "parcelsOut": "Parcels out",
+    "parcelsOutUnit": "parcels",
+    "missingDocs": "Missing documents",
+    "missingDocsUnit": "shipments"
+  },
+  "load": {
+    "COMPLETE": "Full load",
+    "PARTIAL": "Part load"
+  },
+  "docChips": {
+    "packingOk": "Packing ok",
+    "packingNone": "No packing",
+    "customsOk": "Customs ok",
+    "customsPart": "Customs part",
+    "customsNone": "No customs",
+    "packingOkTitle": "Packing list attached",
+    "packingNoneTitle": "Packing list missing",
+    "customsOkTitle": "Customs declaration complete",
+    "customsPartTitle": "Customs declaration started, scan not attached",
+    "customsNoneTitle": "Customs declaration missing"
+  },
+  "content": {
+    "orders": "{count, plural, one {# order} other {# orders}}"
+  },
+  "columns": {
+    "shipment": "Shipment",
+    "exportDate": "Export date",
+    "client": "Client",
+    "orders": "Orders",
+    "invoice": "Invoice",
+    "parcels": "Parcels",
+    "kind": "Kind",
+    "status": "Status",
+    "customs": "Customs"
+  },
+  "units": {
+    "kg": "kg",
+    "pcs": "pcs"
+  },
+  "tiles": {
+    "parcels": "Parcels",
+    "parcel": "parcel",
+    "units": "Units",
+    "exportDate": "Export date",
+    "attached": "attached"
+  },
+  "docs": {
+    "attached": "Attached"
+  },
+  "panels": {
+    "packingList": "Packing list",
+    "customs": "Customs declaration",
+    "actions": "Actions",
+    "lines": "Lines ({count})"
+  },
+  "fields": {
+    "number": "Number",
+    "status": "Status",
+    "client": "Client",
+    "invoice": "Invoice",
+    "exportDate": "Export date",
+    "shippedBy": "Shipped by",
+    "draftedBy": "Drafted by",
+    "trace": "Trace",
+    "note": "Note",
+    "document": "Document",
+    "packingListNumber": "Packing list number",
+    "packingListDocument": "Packing list document",
+    "declarationNumber": "Declaration number",
+    "declarationDate": "Declaration date",
+    "documentUrl": "Document",
+    "noteRequired": "Note (required)"
+  },
+  "lines": {
+    "order": "Order",
+    "description": "Description",
+    "parcels": "Parcels",
+    "units": "Units",
+    "balance": "Balance",
+    "allShipped": "all {planned} shipped",
+    "stillToShip": "{balance} of {planned} still to ship",
+    "descriptionAria": "Line {n} description",
+    "parcelsAria": "Line {n} parcels",
+    "mentionFromInvoice": "Product mention, taken from the invoice"
+  },
+  "customs": {
+    "savedToast": "Customs declaration saved"
+  },
+  "actions": {
+    "saveDraft": "Save draft",
+    "saved": "Saved",
+    "discardDraft": "Discard draft",
+    "askAdmin": "Ask an admin to discard a draft raised by mistake."
+  },
+  "hints": {
+    "invoiceBills": "Invoice {invoice} bills {count, plural, one {# parcel} other {# parcels}}",
+    "takesRest": "this line takes the rest — the order completes when it ships",
+    "willRemain": "{count} will remain after this line",
+    "atMost": "at most {cap} can go on this shipment"
+  },
+  "shipDialog": {
+    "title": "Ship",
+    "confirm": "Ship",
+    "body": "The shipment receives the next number in the {year} series and freezes.",
+    "remain": "{count, plural, one {# parcel remains} other {# parcels remain}}: the order returns to invoicing for the next shipment.",
+    "allOn": "Every parcel is on it: the order is marked exported.",
+    "unsavedFirst": "Your unsaved changes are saved first.",
+    "closeOrder": "Close the order — {parcels} will not ship",
+    "closeOrderHint": "Marks the order exported now instead of returning it to invoicing. Audited with the note.",
+    "closeNoteRequired": "Closing the order short requires a note"
+  },
+  "discardDialog": {
+    "title": "Discard draft shipment",
+    "confirm": "Discard",
+    "body": "The draft is deleted and its order returns to invoiced; the invoice is free to be paired with a new shipment. The note is written to the order’s history."
+  },
+  "toasts": {
+    "shipped": "Shipment {numero} shipped",
+    "exported": "{orders} exported",
+    "backToInvoicing": "{orders} back to invoicing",
+    "remainingLeft": "{numero} ({remaining} left)",
+    "discarded": "Draft shipment discarded"
+  },
+  "upload": {
+    "choose": "Attach file",
+    "replace": "Replace",
+    "remove": "Remove",
+    "uploading": "Uploading…",
+    "failed": "Upload failed — try again.",
+    "tooLarge": "File is larger than 25 MB.",
+    "wrongType": "Attach a PDF or an image.",
+    "open": "Open",
+    "download": "Download"
+  },
+  "record": {
+    "lede": "Left on {date} for {client}, on invoice {invoice}. The truck is frozen; only the customs declaration stays editable.",
+    "ledeNoInvoice": "Left on {date} for {client}. The truck is frozen; only the customs declaration stays editable.",
+    "onTruck": "On the truck",
+    "papers": "Papers",
+    "docsNote": "The packing list left with the truck and no longer changes. The declaration can still be corrected or replaced.",
+    "packingLocked": "Frozen with the shipment",
+    "customsNote": "Editable after departure",
+    "noScan": "No scan — frozen with the shipment",
+    "declaredOn": "Declared on",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "cargoTitle": "What left",
+    "totalLeft": "Total that left",
+    "trailDeclared": "Customs declaration {numero}",
+    "trailDeclaredOn": "declared on {date}",
+    "trailShipped": "Shipped",
+    "trailNumber": "number {numero}",
+    "frozenTitle": "Frozen",
+    "frozenBody": "The truck has left: lines, parcels and invoice no longer change. Only the customs declaration stays editable.",
+    "missing": "Missing"
+  }
+}

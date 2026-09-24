@@ -1,0 +1,14 @@
+{
+  "metaTitle": "Iniciar sesión · Bicapack ERP",
+  "title": "Iniciar sesión",
+  "subtitle": "Usa las credenciales que te entregó un administrador.",
+  "email": "Correo electrónico",
+  "password": "Contraseña",
+  "signIn": "Iniciar sesión",
+  "signingIn": "Iniciando sesión…",
+  "failed": "No se pudo iniciar sesión. Inténtalo de nuevo.",
+  "note": "Las cuentas las crea un superadministrador o un administrador — no hay registro público. Contacta a tu administrador si necesitas acceso.",
+  "asideMark": "Planta de producción · Oficina",
+  "asideTitle": "Producción de bolsas de papel kraft, de principio a fin.",
+  "asideBody": "Órdenes de trabajo, consumo de bobinas, existencias y envíos en un solo lugar. Lo que ves tras iniciar sesión depende del rol que te asignó tu administrador."
+}

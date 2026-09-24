@@ -1,0 +1,24 @@
+name: Setup
+description: Node, pnpm and the workspace install (store cached), plus the one build every check needs first.
+
+runs:
+  using: composite
+  steps:
+    # Reads the exact version from packageManager in package.json.
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: pnpm
+
+    - name: Install
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    # @repo/api-contract compiles to dist/, and check-types depends on
+    # ^check-types, not ^build: on a fresh clone the apps cannot see the
+    # contract's types until it has been built once.
+    - name: Build the shared contract
+      shell: bash
+      run: pnpm turbo run build --filter=@repo/api-contract

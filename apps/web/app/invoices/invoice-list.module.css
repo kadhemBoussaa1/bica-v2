@@ -1,0 +1,51 @@
+/*
+ * The two invoice lists' own columns — due, amount, state — beside the
+ * shared banded-list shell (`records/banded-list.module.css`). Sales and
+ * purchases share the three, so one file. Widths are set from the French
+ * labels, the widest of the four languages, not from the handoffs'.
+ */
+
+/* The figure tiles take a full row of the header panel, under the title. */
+.figures {
+  flex: 1 1 100%;
+}
+
+/* 156px, not the handoff's 132: "payée le 26 mars 2026" in 11px mono is 145px. */
+.due {
+  width: 156px;
+  flex: none;
+}
+
+.amount {
+  width: 140px;
+  flex: none;
+  text-align: end;
+}
+
+.state {
+  width: 124px;
+  flex: none;
+}
+
+/* A draft's placeholder where the number will go. */
+.noDraft {
+  font: 500 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* A missing currency, said in words and in the warning colour. */
+.noCurrency {
+  color: var(--bp-warning-text);
+}
+
+/* Stacked, under 900px: the three columns share one line. Declared here,
+   not only in the shell, so the fixed widths above cannot win on order. */
+@media (max-width: 899px) {
+  .due,
+  .amount,
+  .state {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

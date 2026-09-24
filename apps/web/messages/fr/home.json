@@ -1,0 +1,13 @@
+{
+  "eyebrow": "Bicapack ERP",
+  "welcome": "Bon retour, {name}.",
+  "welcomeAnon": "Bon retour.",
+  "subtitle": "La production de sacs en papier kraft, de bout en bout. Les modules arrivent ici au fur et à mesure.",
+  "modules": "Modules",
+  "plannedScope": "Périmètre prévu",
+  "planned": "Prévu",
+  "productionName": "Production",
+  "productionBody": "Passages machine, arrêts, et production réalisée par rapport au plan.",
+  "stockName": "Stock",
+  "stockBody": "Bobines de papier entrantes, sacs finis sortants, et ce qui est réservé à une commande."
+}

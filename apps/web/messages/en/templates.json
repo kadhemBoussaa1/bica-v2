@@ -1,0 +1,192 @@
+{
+  "eyebrow": "Settings",
+  "title": "Document templates",
+  "metaTitle": "Document templates · Bicapack ERP",
+  "subtitle": "How generated documents look. An issued invoice keeps the version it was printed with; publishing the default changes the invoices issued from then on.",
+  "back": "← Document templates",
+  "loading": "Loading templates…",
+  "superAdminOnly": "Only a super admin can edit document templates.",
+  "kinds": {
+    "SALES_INVOICE": "Sales invoice"
+  },
+  "list": {
+    "default": "Default",
+    "version": "v{version}",
+    "draft": "Draft",
+    "invoices": "{count, plural, =0 {no invoice} one {# invoice} other {# invoices}}",
+    "edit": "Edit",
+    "setDefault": "Make default",
+    "duplicate": "Duplicate",
+    "duplicateTitle": "Duplicate {name}",
+    "duplicateBody": "The copy starts as a draft of the newest layout. Publish it before making it the default.",
+    "name": "Name",
+    "create": "Create",
+    "madeDefault": "{name} is now the default template",
+    "created": "Template created",
+    "versions": "Versions",
+    "defaultTitle": "Make {name} the default?",
+    "defaultBody": "Invoices issued from now on will print with its newest published version. Invoices already issued keep theirs.",
+    "continueDraft": "Continue draft v{version}",
+    "publishedState": "Published",
+    "metaPublishedBy": "{date} · by {name}",
+    "metaPublishedBuiltIn": "{date} · built-in",
+    "metaDraftBy": "edited by {name} · not published yet",
+    "metaDraftBuiltIn": "not published yet",
+    "newTitle": "New template",
+    "newBody": "The new template starts as a draft copy of the default layout. Publish it before making it the default."
+  },
+  "editor": {
+    "title": "Edit template",
+    "metaTitle": "Edit template · Bicapack ERP",
+    "subtitle": "Choose the blocks, the table's columns and the margins; the preview prints the sample invoice with the layout as it stands. Saving writes a draft — nothing prints with it until it is published.",
+    "editingDraft": "Editing draft v{version}",
+    "editingPublished": "v{version} is published and frozen — saving starts draft v{next}",
+    "panels": {
+      "template": "Template",
+      "page": "Page",
+      "blocks": "Blocks",
+      "preview": "Preview"
+    },
+    "name": "Name",
+    "rename": "Rename",
+    "renamed": "Template renamed",
+    "save": "Save draft",
+    "saved": "Saved",
+    "savedToast": "Draft v{version} saved",
+    "publish": "Publish",
+    "publishTitle": "Publish v{version}?",
+    "publishBodyDefault": "This is the default template: every invoice issued from now on will print with this version. It can no longer be edited — a later change becomes a new version.",
+    "publishBody": "The version is frozen once published — a later change becomes a new version.",
+    "publishedToast": "Version {version} published",
+    "invalid": "The layout has problems — fix them to save or preview:",
+    "previewLang": "Language",
+    "previewAs": "Print as",
+    "asIssued": "Issued",
+    "asDraft": "Draft",
+    "previewPage": "Template preview, page {page}",
+    "previewError": "The preview could not be drawn.",
+    "previewHint": "The sample invoice — forty made-up lines, so the second page and the last-page blocks have something to show.",
+    "page": {
+      "top": "Top margin",
+      "bottom": "Bottom margin",
+      "start": "Start margin",
+      "end": "End margin",
+      "firstPageTop": "First page top",
+      "hint": "The bottom margin is reserved on every page: footer, page number and last-page blocks live in it. The first page can start lower, to clear the letterhead."
+    },
+    "block": {
+      "show": "Show",
+      "position": "Position and size",
+      "x": "From start edge",
+      "y": "From top",
+      "w": "Width",
+      "minH": "Min. height",
+      "spaceBefore": "Space above",
+      "align": "Align",
+      "repeat": "Pages",
+      "keepTogether": "Keep on one page",
+      "required": "Always shown"
+    },
+    "blockNames": {
+      "letterhead": "Letterhead",
+      "letterheadCompact": "Compact header",
+      "logoCompany": "Company logo",
+      "logoFsc": "FSC mark",
+      "meta": "Title and details",
+      "parties": "Parties",
+      "lines": "Lines table",
+      "totals": "Totals",
+      "notes": "Notes",
+      "footer": "Footer line",
+      "pageNumber": "Page number",
+      "watermark": "Watermark"
+    },
+    "aligns": {
+      "start": "Start",
+      "center": "Centre",
+      "end": "End"
+    },
+    "repeats": {
+      "all": "Every page",
+      "first": "First page",
+      "notFirst": "Following pages",
+      "last": "Last page"
+    },
+    "meta": {
+      "showTitle": "Show the title",
+      "number": "Number",
+      "issuedAt": "Date",
+      "dueAt": "Due date",
+      "paymentMethod": "Payment method",
+      "orders": "Order"
+    },
+    "parties": {
+      "issuer": "Issuer box",
+      "client": "Client box"
+    },
+    "lines": {
+      "zebra": "Shade alternate rows",
+      "column": "Column",
+      "width": "Width",
+      "hideWhenEmpty": "Hide when empty",
+      "columns": {
+        "position": "No.",
+        "product": "Product",
+        "designation": "Description",
+        "quantity": "Quantity",
+        "unitPrice": "Unit price",
+        "discountPct": "Discount %",
+        "taxPct": "VAT %",
+        "net": "Net",
+        "total": "Total"
+      }
+    },
+    "totals": {
+      "vat": "VAT rows",
+      "vatAuto": "Only when there is VAT",
+      "vatAlways": "Always"
+    },
+    "notes": {
+      "title": "Heading",
+      "text": "Text",
+      "hint": "Printed as typed, in every language: payment terms, bank details."
+    },
+    "footer": {
+      "text": "Footer text",
+      "hint": "Leave empty for the contact line with the tax ID, translated."
+    },
+    "watermark": {
+      "when": "Show",
+      "draft": "On drafts only",
+      "always": "Always"
+    },
+    "openDesigner": "Open the designer"
+  },
+  "designer": {
+    "back": "← Template settings",
+    "title": "Template designer",
+    "metaTitle": "Template designer · Bicapack ERP",
+    "subtitle": "The sheet at scale. Drag a block to move it, its corner to resize it; the preview prints the sample invoice with the result. Saving writes the same draft as the settings form.",
+    "panels": {
+      "stage": "Sheet",
+      "inspector": "Selected block"
+    },
+    "pageTabs": "Page shown",
+    "pages": {
+      "first": "First page",
+      "middle": "Following page",
+      "last": "Last page"
+    },
+    "mirror": "Arabic mirror",
+    "nothingSelected": "Select a block on the sheet to see its position and size.",
+    "blockLabel": "{name}, {x} mm from the start edge, {w} mm wide",
+    "legend": {
+      "fixed": "Fixed: moves and resizes freely",
+      "flow": "Flow: sideways and width only; drag past a neighbour to reorder",
+      "keys": "Arrows nudge 1 mm, 5 mm with Shift"
+    },
+    "previewHint": "Redrawn when a drag ends. Flow blocks are drawn at a nominal height on the sheet — the preview shows the real one.",
+    "unsaved": "Save the draft first"
+  },
+  "newTemplate": "New template"
+}

@@ -1,0 +1,55 @@
+/*
+ * The live PDF preview: the sheet's pages stacked in a scrolling well.
+ *
+ * A solid ground, not glass — these are pages of a document, and the well
+ * scrolls inside the sticky rail, so its height follows the viewport the way
+ * the purchasing `<iframe>` preview does.
+ */
+.pages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-3);
+  height: calc(100vh - 220px);
+  min-height: 520px;
+  max-height: 1000px;
+  overflow-y: auto;
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-tint);
+  transition: opacity 160ms ease;
+}
+
+/* A newer render is coming: the old frame stays, dimmed, rather than blanking. */
+.pages[data-stale] {
+  opacity: 0.55;
+}
+
+.page {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+.error {
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-danger);
+  margin-block-end: var(--bp-space-2);
+}
+
+@media (max-width: 1100px) {
+  .pages {
+    /* Stacked under the record, where a full-height well would be a wall. */
+    height: 70vh;
+    min-height: 380px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pages {
+    transition: none;
+  }
+}

@@ -1,0 +1,261 @@
+{
+  "eyebrow": "العمليات",
+  "title": "الشحنات",
+  "subtitle": "ما غادر المستودع، والمسودات في انتظار شاحنة. ابحث بالرقم أو قائمة التعبئة أو التصريح الجمركي أو العميل أو الفاتورة أو الطلبية. أنشئ شحنة من صفحة الطلبية بعد إصدار فاتورتها.",
+  "back": "→ الشحنات",
+  "detailTitle": "الشحنة",
+  "detailSubtitle": "عملية تصدير واحدة: الشاحنة، والفاتورة المرافقة لها، وقائمة التعبئة، والتصريح الجمركي.",
+  "searchPlaceholder": "ابحث برقم الشحنة أو قائمة التعبئة أو العميل أو الطلبية…",
+  "empty": "لا توجد شحنات تطابق هذه المرشحات.",
+  "loading": "جارٍ تحميل الشحنة…",
+  "open": "فتح",
+  "archivedShort": "مؤرشف",
+  "archived": "مؤرشف",
+  "draft": "مسودة",
+  "draftInvoice": "فاتورة مسودة",
+  "noInvoice": "لا توجد فاتورة مرفقة",
+  "missing": "ناقص",
+  "parcelCount": "{count, plural, one {طرد واحد} two {طردان} few {# طرود} many {# طردًا} other {# طرد}}",
+  "activityLink": "النشاط على هذه الشحنة",
+  "editor": {
+    "eyebrow": "التشغيل · شحنة",
+    "title": "مسودة شحنة",
+    "lede": "لم تُرقَّم الشاحنة بعد. تأخذ رقم {prefix} التالي عند الشحن ثم تُجمَّد — يبقى التصريح الجمركي وحده قابلًا للتعديل.",
+    "ready": "جاهزة للشحن",
+    "checks": {
+      "invoice": "الفاتورة صادرة",
+      "invoiceNumbered": "الفاتورة صادرة · {numero}",
+      "exportDate": "تاريخ التصدير",
+      "packingListNumber": "رقم قائمة التعبئة",
+      "packingListDocument": "قائمة التعبئة مرفقة",
+      "declarationNumber": "رقم التصريح",
+      "declarationDate": "تاريخ التصريح",
+      "declarationDocument": "التصريح مرفق"
+    },
+    "required": "مطلوب",
+    "optional": "اختياري",
+    "numberPending": "عند الشحن",
+    "carrierNote": "ملاحظة للناقل",
+    "carrierNotePlaceholder": "موعد التسليم، جهة الاتصال في الموقع…",
+    "truck": {
+      "title": "الشاحنة",
+      "meta": "تُجمَّد عند الشحن، ما عدا الجمارك"
+    },
+    "documents": {
+      "title": "ورقتا الشاحنة",
+      "lede": "أسقط الملف هنا، أو اختره من جهازك.",
+      "bothAttached": "كلاهما مرفق",
+      "customsMissing": "التصريح الجمركي ما زال ناقصًا",
+      "noneAttached": "لم يُرفق أي منهما",
+      "packingNote": "ما يحمله السائق",
+      "customsNote": "مختومة قبل المغادرة",
+      "required": "مطلوب",
+      "optional": "اختياري",
+      "drop": "أسقط ملف PDF هنا",
+      "choose": "اختيار ملف",
+      "savedMeta": "محفوظ مع المسودة",
+      "unsavedMeta": "لم يُحفظ بعد — احفظ المسودة",
+      "packingMissing": "قائمة التعبئة ما زالت ناقصة"
+    },
+    "cargo": {
+      "title": "ما يغادر",
+      "meta": "{lines, plural, one {بند واحد} two {بندان} few {# بنود} many {# بندًا} other {# بند}} · {orders, plural, one {طلبية واحدة} two {طلبيتان} few {# طلبيات} many {# طلبية} other {# طلبية}}",
+      "line": "البند",
+      "perParcel": "{count} {unit}/طرد",
+      "total": "الإجمالي على الشاحنة",
+      "settled": "مسدَّدة",
+      "remaining": "متبقٍ"
+    },
+    "gate": {
+      "title": "شحن",
+      "blockedNote": "عند الشحن تأخذ الشاحنة رقمها وتُجمَّد. ما زال ينقص شيء قبل إصدارها.",
+      "readyNote": "كل شيء جاهز. ستأخذ الشاحنة الرقم {prefix} وتُجمَّد.",
+      "shipBlocked": "شحن · {count} لاستكماله",
+      "ship": "شحن الشاحنة"
+    },
+    "links": {
+      "title": "الشحنة",
+      "journal": "السجل"
+    },
+    "trail": {
+      "title": "التتبع",
+      "created": "أُنشئت المسودة",
+      "packingAttached": "قائمة التعبئة مرفقة",
+      "packingExpected": "قائمة التعبئة منتظرة",
+      "requiredBeforeShipping": "مطلوبة قبل الشحن",
+      "customsAttached": "التصريح مرفق",
+      "customsExpected": "التصريح منتظر"
+    },
+    "discard": {
+      "title": "إلغاء",
+      "body": "تختفي المسودة وتعود الطرود إلى المتبقي للشحن في الطلبية."
+    }
+  },
+  "facets": {
+    "draft": "مسودة",
+    "shipped": "تم الشحن",
+    "missingCustoms": "بدون جمارك"
+  },
+  "kpis": {
+    "shipped": "المشحونة",
+    "shippedUnit": "في هذه الفترة",
+    "drafts": "مسودات منتظرة",
+    "draftsUnit": "شاحنة",
+    "parcelsOut": "الطرود المرسلة",
+    "parcelsOutUnit": "طرد",
+    "missingDocs": "مستندات ناقصة",
+    "missingDocsUnit": "شحنة"
+  },
+  "load": {
+    "COMPLETE": "حمولة كاملة",
+    "PARTIAL": "حمولة جزئية"
+  },
+  "docChips": {
+    "packingOk": "التعبئة مكتملة",
+    "packingNone": "بلا تعبئة",
+    "customsOk": "الجمارك مكتملة",
+    "customsPart": "الجمارك جزئية",
+    "customsNone": "بلا جمارك",
+    "packingOkTitle": "قائمة التعبئة مرفقة",
+    "packingNoneTitle": "قائمة التعبئة ناقصة",
+    "customsOkTitle": "التصريح الجمركي مكتمل",
+    "customsPartTitle": "التصريح الجمركي مبدوء، النسخة غير مرفقة",
+    "customsNoneTitle": "التصريح الجمركي ناقص"
+  },
+  "content": {
+    "orders": "{count, plural, one {طلبية واحدة} other {# طلبيات}}"
+  },
+  "columns": {
+    "shipment": "الشحنة",
+    "exportDate": "تاريخ التصدير",
+    "client": "العميل",
+    "orders": "الطلبيات",
+    "invoice": "الفاتورة",
+    "parcels": "الطرود",
+    "kind": "النوع",
+    "status": "الحالة",
+    "customs": "الجمارك"
+  },
+  "units": {
+    "kg": "كغ",
+    "pcs": "قطعة"
+  },
+  "tiles": {
+    "parcels": "الطرود",
+    "parcel": "طرد",
+    "units": "الوحدات",
+    "exportDate": "تاريخ التصدير",
+    "attached": "مرفقة"
+  },
+  "docs": {
+    "attached": "مرفق"
+  },
+  "panels": {
+    "packingList": "قائمة التعبئة",
+    "customs": "التصريح الجمركي",
+    "actions": "الإجراءات",
+    "lines": "البنود ({count})"
+  },
+  "fields": {
+    "number": "الرقم",
+    "status": "الحالة",
+    "client": "العميل",
+    "invoice": "الفاتورة",
+    "exportDate": "تاريخ التصدير",
+    "shippedBy": "شحنها",
+    "draftedBy": "أعدّها",
+    "trace": "التتبع",
+    "note": "ملاحظة",
+    "document": "المستند",
+    "packingListNumber": "رقم قائمة التعبئة",
+    "packingListDocument": "مستند قائمة التعبئة",
+    "declarationNumber": "رقم التصريح",
+    "declarationDate": "تاريخ التصريح",
+    "documentUrl": "المستند",
+    "noteRequired": "ملاحظة (إلزامية)"
+  },
+  "lines": {
+    "order": "الطلبية",
+    "description": "الوصف",
+    "parcels": "الطرود",
+    "units": "الوحدات",
+    "balance": "المتبقي",
+    "allShipped": "شُحنت كلها ({planned})",
+    "stillToShip": "{balance} من {planned} لم تُشحن بعد",
+    "descriptionAria": "وصف البند {n}",
+    "parcelsAria": "طرود البند {n}",
+    "mentionFromInvoice": "إشارة المنتج، مأخوذة من الفاتورة"
+  },
+  "customs": {
+    "savedToast": "تم حفظ التصريح الجمركي"
+  },
+  "actions": {
+    "saveDraft": "حفظ المسودة",
+    "saved": "تم الحفظ",
+    "discardDraft": "إلغاء المسودة",
+    "askAdmin": "اطلب من مسؤول إلغاء مسودة أُنشئت بالخطأ."
+  },
+  "hints": {
+    "invoiceBills": "الفاتورة {invoice} تفوتر {count, plural, one {طردًا واحدًا} two {طردين} few {# طرود} many {# طردًا} other {# طرد}}",
+    "takesRest": "هذا البند يأخذ الباقي — تكتمل الطلبية عند شحنه",
+    "willRemain": "سيتبقى {count} بعد هذا البند",
+    "atMost": "يمكن شحن {cap} على الأكثر في هذه الشحنة"
+  },
+  "shipDialog": {
+    "title": "شحن",
+    "confirm": "شحن",
+    "body": "تحصل الشحنة على الرقم التالي في سلسلة {year} وتُجمَّد.",
+    "remain": "{count, plural, one {يتبقى طرد واحد} two {يتبقى طردان} few {تتبقى # طرود} many {يتبقى # طردًا} other {يتبقى # طرد}}: تعود الطلبية إلى الفوترة للشحنة التالية.",
+    "allOn": "كل الطرود فيها: تُعلَّم الطلبية كمصدَّرة.",
+    "unsavedFirst": "تُحفظ تغييراتك غير المحفوظة أولًا.",
+    "closeOrder": "إغلاق الطلبية — {parcels} لن تُشحن",
+    "closeOrderHint": "يعلّم الطلبية كمصدَّرة الآن بدلًا من إعادتها إلى الفوترة. يُدوَّن في سجل التدقيق مع الملاحظة.",
+    "closeNoteRequired": "إغلاق الطلبية ناقصة يتطلب ملاحظة"
+  },
+  "discardDialog": {
+    "title": "إلغاء مسودة الشحنة",
+    "confirm": "إلغاء",
+    "body": "تُحذف المسودة وتعود طلبيتها إلى حالة مفوترة؛ تصبح الفاتورة متاحة للاقتران بشحنة جديدة. تُكتب الملاحظة في سجل الطلبية."
+  },
+  "toasts": {
+    "shipped": "تم شحن الشحنة {numero}",
+    "exported": "تم تصدير {orders}",
+    "backToInvoicing": "{orders} عادت إلى الفوترة",
+    "remainingLeft": "{numero} (متبقٍ {remaining})",
+    "discarded": "تم إلغاء مسودة الشحنة"
+  },
+  "upload": {
+    "choose": "إرفاق ملف",
+    "replace": "استبدال",
+    "remove": "إزالة",
+    "uploading": "جارٍ الرفع…",
+    "failed": "فشل الرفع — أعد المحاولة.",
+    "tooLarge": "حجم الملف يتجاوز 25 ميغابايت.",
+    "wrongType": "أرفق ملف PDF أو صورة.",
+    "open": "فتح",
+    "download": "تنزيل"
+  },
+  "record": {
+    "lede": "غادرت في {date} إلى {client}، بالفاتورة {invoice}. الشاحنة مجمَّدة؛ يبقى التصريح الجمركي وحده قابلًا للتعديل.",
+    "ledeNoInvoice": "غادرت في {date} إلى {client}. الشاحنة مجمَّدة؛ يبقى التصريح الجمركي وحده قابلًا للتعديل.",
+    "onTruck": "على الشاحنة",
+    "papers": "الأوراق",
+    "docsNote": "غادرت قائمة التعبئة مع الشاحنة ولم تعد تتغير. ما زال يمكن تصحيح التصريح أو استبداله.",
+    "packingLocked": "مجمَّدة مع الشحنة",
+    "customsNote": "قابل للتعديل بعد المغادرة",
+    "noScan": "لا نسخة ممسوحة — مجمَّدة مع الشحنة",
+    "declaredOn": "أُعلن في",
+    "edit": "تعديل",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "cargoTitle": "ما غادر",
+    "totalLeft": "إجمالي ما غادر",
+    "trailDeclared": "التصريح الجمركي {numero}",
+    "trailDeclaredOn": "أُعلن في {date}",
+    "trailShipped": "شُحنت",
+    "trailNumber": "الرقم {numero}",
+    "frozenTitle": "مجمَّدة",
+    "frozenBody": "غادرت الشاحنة: البنود والطرود والفاتورة لم تعد تتغير. يبقى التصريح الجمركي وحده قابلًا للتعديل.",
+    "missing": "مفقود"
+  }
+}

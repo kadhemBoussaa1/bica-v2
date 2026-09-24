@@ -1,0 +1,14 @@
+# IP mode: DOMAIN is a bare IP, so there is no certificate and everything is
+# plain HTTP. Meant for a first boot before DNS exists, nothing more: the
+# session cookie crosses the network unencrypted, and browsers refuse the
+# receiving screen's camera (getUserMedia) outside HTTPS.
+server {
+    listen 80 default_server;
+    server_name _;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    include /etc/nginx/snippets/locations.conf;
+}

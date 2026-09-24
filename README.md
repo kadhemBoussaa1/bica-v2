@@ -16,9 +16,10 @@ This Turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `docs`: a [Next.js](https://nextjs.org/) app
+- `api`: a [NestJS](https://nestjs.com/) backend serving [tRPC](https://trpc.io/) at `/trpc`, with [Prisma](https://www.prisma.io/) as the ORM
 - `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
+- `@repo/api-contract`: [Zod](https://zod.dev/) schemas shared by `api` and `web`
+- `@repo/ui`: a stub React component library shared by the `web` application
 - `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 
@@ -57,15 +58,15 @@ You can build a specific package by using a [filter](https://turborepo.dev/docs/
 With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
 
 ```sh
-turbo build --filter=docs
+turbo build --filter=api
 ```
 
 Without global `turbo`:
 
 ```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+npx turbo build --filter=api
+pnpm exec turbo build --filter=api
+pnpm exec turbo build --filter=api
 ```
 
 ### Develop
@@ -157,3 +158,79 @@ Learn more about the power of Turborepo:
 - [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
 - [Configuration Options](https://turborepo.dev/docs/reference/configuration)
 - [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+
+### First-time setup
+
+Start Postgres and apply migrations:
+
+```sh
+docker compose up -d          # Postgres on host port 5433
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
+pnpm --filter api db:migrate  # generates the client and applies migrations
+```
+
+> Host port **5433** is used to avoid colliding with a local Postgres already on 5432.
+
+Then `pnpm dev` runs `web` on :3000 and `api` on :3001.
+
+Prisma commands (all in `apps/api`):
+
+| Command | Purpose |
+| --- | --- |
+| `pnpm --filter api db:generate` | Regenerate the Prisma client |
+| `pnpm --filter api db:migrate` | Create + apply a migration in dev |
+| `pnpm --filter api db:deploy` | Apply migrations in CI/production |
+| `pnpm --filter api db:studio` | Browse data in Prisma Studio |
+
+### Roles and permissions
+
+Strict hierarchy, defined in `packages/api-contract/src/roles.ts`:
+
+```
+SUPER_ADMIN (100)  >  ADMIN (75)  >  PRODUCTION (50) == MAGASINIER (50)
+```
+
+PRODUCTION and MAGASINIER are **siblings** — equal rank, so neither inherits the
+other. ADMIN and SUPER_ADMIN inherit everything below them.
+
+| Rule | Function | Behaviour |
+| --- | --- | --- |
+| Feature access | `canAccess(role, required)` | Higher rank passes; at equal rank the role must match exactly (sibling isolation) |
+| Account creation | `canCreateRole(actor, target)` | Strictly **below** the actor's rank — blocks escalation *and* lateral expansion |
+| Managing a user | `canManageUser(actor, target)` | Strictly below; you also cannot act on your own account |
+
+Who may create whom:
+
+| Actor | May create |
+| --- | --- |
+| SUPER_ADMIN | ADMIN, PRODUCTION, MAGASINIER |
+| ADMIN | PRODUCTION, MAGASINIER |
+| PRODUCTION / MAGASINIER | nobody |
+
+There is **no self-registration**. The first SUPER_ADMIN comes from the seed
+script; every other account is created by someone ranked above it.
+
+```sh
+pnpm --filter api db:seed   # creates SUPER_ADMIN from SUPER_ADMIN_* env vars
+```
+
+Procedure helpers in `apps/api/src/trpc/trpc.ts`:
+
+- `publicProcedure` — no auth
+- `protectedProcedure` — signed in and not banned; narrows `ctx.user` to non-null
+- `roleProcedure(role)` / `adminProcedure` / `superAdminProcedure` — role-gated
+
+Row-level ownership is enforced separately in the services (e.g. non-admins see
+only their own posts), because a role check alone cannot answer "is this *their*
+record?".
+
+
+### Adding an endpoint
+
+1. Add/extend a Zod schema in `packages/api-contract/src/schemas.ts`
+2. Add the business logic to a service in `apps/api/src/`
+3. Add the procedure to `apps/api/src/trpc/trpc.router.ts`, choosing the right
+   procedure base (`protectedProcedure`, `adminProcedure`, …)
+4. Call it from `web` with `useTRPC()` — the types flow through automatically
+

@@ -1,0 +1,261 @@
+/*
+ * The activity trace: the list beside its detail panel, the JSON block, and
+ * the prefilter bar. The split/panel rules are the partners pattern
+ * (records/partners.module.css) applied to a read-only row.
+ */
+
+/* --- list + panel --- */
+
+/* Fills the page column so the table inside it can own the scrolling; the
+   detail panel stretches beside it and scrolls its own contents. */
+.split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bp-space-4);
+  align-items: stretch;
+}
+
+.splitOpen {
+  grid-template-columns: minmax(0, 1fr) 400px;
+}
+
+.panel {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+  border-color: rgb(242 145 0 / 0.6);
+  animation: panelIn 180ms ease-out;
+}
+
+@media (max-width: 1240px) {
+  .splitOpen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel {
+    position: fixed;
+    top: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    width: min(440px, 100vw);
+    z-index: 30;
+    overflow-y: auto;
+    border-radius: 0;
+    box-shadow: -12px 0 32px rgb(26 23 20 / 0.18);
+  }
+}
+
+@media (max-width: 600px) {
+  .panel {
+    width: 100vw;
+    border-inline-start: 0;
+  }
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}
+
+.panelHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-4);
+  border-bottom: 1px solid var(--bp-border);
+}
+
+.panelHeading {
+  flex: 1;
+  min-width: 0;
+}
+
+.panelName {
+  margin-top: var(--bp-space-1);
+  font: 600 1.125rem/1.2 var(--bp-font-display);
+  overflow-wrap: anywhere;
+}
+
+.panelClose {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.panelSection {
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.panelSection:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  margin: 0 0 var(--bp-space-2);
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-orange-700);
+}
+
+/* Label / value rows; the value wraps rather than pushing the panel wider. */
+.kv {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: var(--bp-space-1) var(--bp-space-3);
+  padding: var(--bp-space-1) 0;
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+}
+
+.kvLabel {
+  color: var(--bp-neutral-600);
+}
+
+.kvValue {
+  font: 500 0.78125rem/1.5 var(--bp-font-mono);
+  overflow-wrap: anywhere;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+}
+
+/* The submitted input, pretty-printed. Capped so a 16 KB payload scrolls. */
+.json {
+  margin: 0;
+  padding: var(--bp-space-3);
+  max-height: 360px;
+  overflow: auto;
+  background: var(--bp-neutral-100);
+  font: 400 0.75rem/1.5 var(--bp-font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.truncated {
+  margin: 0 0 var(--bp-space-2);
+  font: 400 0.75rem/1.5 var(--bp-font-body);
+  color: var(--bp-warning-text);
+}
+
+/* --- prefilter bar --- */
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--bp-space-3);
+  margin: 0 0 var(--bp-space-4);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border: 1px solid var(--bp-orange-500);
+  background: var(--bp-orange-100);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-orange-800);
+}
+
+.filterBar strong {
+  font-weight: 600;
+}
+
+/* --- table cells --- */
+
+.actor {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.actorName {
+  font: 600 0.8125rem/1.3 var(--bp-font-display);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actorEmail {
+  font: 400 0.71875rem/1.3 var(--bp-font-mono);
+  color: var(--bp-neutral-600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-width: 0;
+}
+
+.actionLabel {
+  font: 500 0.8125rem/1.3 var(--bp-font-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The bare tRPC path under a labelled action, or instead of one. */
+.path {
+  font: 400 0.71875rem/1.3 var(--bp-font-mono);
+  color: var(--bp-neutral-600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outcome {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-width: 0;
+}
+
+.code {
+  font: 500 0.6875rem/1.3 var(--bp-font-mono);
+  color: var(--bp-neutral-600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  color: var(--bp-neutral-400);
+  text-align: end;
+}
+
+/* A row's entity: often a label, but an id when the record has no name, and
+   a cuid is wider than the column. `records.mono` carries the ellipsis but
+   is inline, where overflow does nothing — this makes the cell clip. */
+.entity {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+

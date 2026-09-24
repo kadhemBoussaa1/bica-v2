@@ -1,0 +1,164 @@
+{
+  "eyebrow": "الإعدادات",
+  "title": "سجل النشاط",
+  "metaTitle": "سجل النشاط · Bicapack ERP",
+  "columns": {
+    "when": "التاريخ",
+    "user": "المستخدم",
+    "action": "الإجراء",
+    "entity": "الكيان",
+    "outcome": "النتيجة",
+    "time": "المدة"
+  },
+  "anonymous": "مجهول",
+  "filters": {
+    "reads": "قراءات",
+    "writes": "كتابات",
+    "signIns": "تسجيلات الدخول",
+    "errors": "أخطاء"
+  },
+  "searchPlaceholder": "ابحث عن إجراء أو مستخدم أو كيان أو خطأ…",
+  "emptyMessage": "لا يوجد نشاط يطابق هذه المرشحات.",
+  "showingByActor": "عرض نشاط <strong>{actor}</strong>",
+  "showingForEntity": "عرض النشاط المتعلق بـ <strong>{entity}</strong> (بما في ذلك السجلات المشتقة منه)",
+  "clear": "مسح",
+  "kind": {
+    "QUERY": "قراءة",
+    "MUTATION": "كتابة",
+    "AUTH": "دخول"
+  },
+  "outcome": {
+    "OK": "ناجح",
+    "ERROR": "خطأ"
+  },
+  "duration": "{ms} م.ث",
+  "panel": {
+    "ariaLabel": "تفاصيل النشاط",
+    "loading": "جارٍ التحميل…",
+    "who": "مَن",
+    "what": "ماذا",
+    "input": "البيانات المُرسلة",
+    "client": "جهاز العميل",
+    "user": "المستخدم",
+    "email": "البريد الإلكتروني",
+    "role": "الدور",
+    "impersonatedBy": "بانتحال الهوية من قِبل",
+    "trace": "التتبع",
+    "traceLink": "كل نشاط هذا المستخدم",
+    "when": "التاريخ والوقت",
+    "entity": "الكيان",
+    "from": "المصدر",
+    "duration": "المدة",
+    "error": "الخطأ",
+    "message": "الرسالة",
+    "ip": "عنوان IP",
+    "browser": "المتصفح",
+    "noInput": "لا توجد بيانات مُرسلة.",
+    "truncated": "مقتطع: أُرسل {bytes} بايت، واحتُفظ بأول 16 كيلوبايت فقط."
+  },
+  "actions": {
+    "auth": {
+      "signIn": "تسجيل دخول",
+      "signOut": "تسجيل خروج"
+    },
+    "order": {
+      "create": "إنشاء طلبية",
+      "update": "تعديل طلبية",
+      "transition": "تغيير حالة الطلبية",
+      "acceptQuote": "قبول عرض سعر",
+      "setColours": "تحديد ألوان الطلبية",
+      "setActive": "أرشفة / استعادة طلبية"
+    },
+    "production": {
+      "create": "تسجيل إنتاج",
+      "update": "تعديل إنتاج",
+      "remove": "حذف إنتاج"
+    },
+    "shipment": {
+      "createFromOrder": "إنشاء مسودة شحنة",
+      "updateDraft": "تعديل مسودة شحنة",
+      "createPackingListUpload": "طلب رفع قائمة التعبئة",
+      "createCustomsUpload": "طلب رفع نسخة التصريح الجمركي",
+      "updateCustoms": "تعديل بيانات جمارك الشحنة",
+      "ship": "شحن",
+      "discardDraft": "إلغاء مسودة شحنة"
+    },
+    "salesInvoice": {
+      "createFromOrder": "إنشاء مسودة فاتورة بيع",
+      "updateDraft": "تعديل مسودة فاتورة",
+      "refreshFromPackaging": "تحديث الفاتورة من التعبئة",
+      "issue": "إصدار فاتورة بيع",
+      "discardDraft": "إلغاء مسودة فاتورة"
+    },
+    "purchaseInvoice": {
+      "create": "تسجيل فاتورة شراء",
+      "update": "تعديل فاتورة شراء",
+      "remove": "حذف فاتورة شراء"
+    },
+    "stock": {
+      "createRoll": "إضافة بكرة ورق",
+      "updateRoll": "تعديل بكرة ورق",
+      "setRollArchived": "أرشفة / استعادة بكرة",
+      "removeRoll": "حذف بكرة ورق",
+      "createShipment": "تسجيل توريد ورق",
+      "updateShipment": "تعديل توريد ورق",
+      "setShipmentActive": "أرشفة / استعادة توريد ورق",
+      "removeShipment": "حذف توريد ورق",
+      "setShipmentRolls": "تحديد بكرات توريد الورق"
+    },
+    "client": {
+      "create": "إنشاء عميل",
+      "update": "تعديل عميل",
+      "setActive": "أرشفة / استعادة عميل"
+    },
+    "supplier": {
+      "create": "إنشاء مورّد",
+      "update": "تعديل مورّد",
+      "setActive": "أرشفة / استعادة مورّد"
+    },
+    "supplierFamily": {
+      "create": "إنشاء عائلة مورّدين",
+      "update": "تعديل عائلة مورّدين",
+      "setActive": "أرشفة / استعادة عائلة مورّدين",
+      "remove": "حذف عائلة مورّدين"
+    },
+    "product": {
+      "create": "إنشاء منتج",
+      "update": "تعديل منتج",
+      "setActive": "أرشفة / استعادة منتج"
+    },
+    "machine": {
+      "create": "إنشاء آلة",
+      "update": "تعديل آلة",
+      "setActive": "أرشفة / استعادة آلة"
+    },
+    "employee": {
+      "create": "إنشاء موظف",
+      "update": "تعديل موظف",
+      "setActive": "أرشفة / استعادة موظف"
+    },
+    "user": {
+      "create": "إنشاء مستخدم",
+      "setRole": "تغيير دور مستخدم",
+      "setBanned": "حظر / إلغاء حظر مستخدم",
+      "remove": "حذف مستخدم"
+    },
+    "shift": {
+      "openWeek": "فتح أسبوع",
+      "copyWeek": "نسخ طاقم أسبوع",
+      "clearWeek": "إفراغ أسبوع مسودة",
+      "publish": "نشر أسبوع",
+      "assign": "تعيين أشخاص على وردية",
+      "unassign": "إزالة شخص من وردية",
+      "change": "تسجيل تغيير في الطاقم",
+      "requestChange": "طلب تغيير وردية",
+      "withdraw": "سحب طلب تغيير",
+      "accept": "قبول طلب تغيير",
+      "reject": "رفض طلب تغيير",
+      "createTask": "إنشاء تذكرة",
+      "updateTask": "تعديل تذكرة",
+      "removeTask": "حذف تذكرة",
+      "setTaskDone": "تعليم تذكرة كمنجزة / إعادة فتحها"
+    }
+  }
+}

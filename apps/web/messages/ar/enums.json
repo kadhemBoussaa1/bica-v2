@@ -1,0 +1,141 @@
+{
+  "machineType": {
+    "SAC_V": "آلة أكياس بقاع V",
+    "CORDON": "آلة الحبال",
+    "IMPRESSION": "آلة طباعة",
+    "SAC_POIGNE_TORSADE": "آلة أكياس بمقبض مجدول",
+    "SAC_POIGNE_PLATE": "آلة أكياس بمقبض مسطح",
+    "COUPE": "آلة قص",
+    "COUPE_SOUS_PLAT": "آلة قص القاع المسطح",
+    "SAC_LUXE": "آلة أكياس فاخرة"
+  },
+  "workshopStage": {
+    "PRINTING": "الطباعة",
+    "PRODUCER": "التصنيع",
+    "QUALITY_CONTROL": "مراقبة الجودة",
+    "PACKAGING": "التغليف"
+  },
+  "inkUnit": {
+    "KG": "كغ",
+    "L": "ل"
+  },
+  "typeSac": {
+    "FOND_V": "قاع V",
+    "FOND_CARRE": "قاع مربع",
+    "SOUS_PLAT": "قاع مسطح"
+  },
+  "paperType": {
+    "PAPIER_KRAFT": "ورق كرافت",
+    "PAPIER_BLANC": "ورق أبيض"
+  },
+  "typeImpression": {
+    "IMPRESSION_SUR_ROULEAU": "طباعة على البكرة",
+    "IMPRESSION_SUR_SAC": "طباعة على الكيس"
+  },
+  "exportStatus": {
+    "PREPARATION": "قيد التحضير",
+    "EXPORTED": "تم التصدير"
+  },
+  "orderKind": {
+    "QUOTE": "عرض سعر",
+    "ORDER": "طلب"
+  },
+  "orderStatus": {
+    "DRAFT": "مسودة",
+    "IN_PRODUCTION": "قيد الإنتاج",
+    "PRODUCED": "تم الإنتاج",
+    "INVOICEABLE": "جاهز للفوترة",
+    "INVOICED": "تمت الفوترة",
+    "READY_FOR_EXPORT": "جاهز للتصدير",
+    "COMPLETED": "مكتمل",
+    "CANCELLED": "ملغى"
+  },
+  "quantityUnit": {
+    "PIECES": "قطع",
+    "KILOGRAMS": "كيلوغرام"
+  },
+  "pricingSource": {
+    "LEGACY": "مسجّل في النظام السابق",
+    "COMPUTED": "محسوب"
+  },
+  "salesInvoiceStatus": {
+    "DRAFT": "مسودة",
+    "ISSUED": "صادرة"
+  },
+  "paymentMethod": {
+    "VIREMENT": "تحويل بنكي",
+    "CHEQUE": "شيك",
+    "ESPECES": "نقدًا"
+  },
+  "role": {
+    "SUPER_ADMIN": "مسؤول أعلى",
+    "ADMIN": "مسؤول",
+    "PRODUCTION": "الإنتاج",
+    "MAGASINIER": "أمين المخزن"
+  },
+  "productionUnit": {
+    "PIECE": "قطع",
+    "METER": "أمتار"
+  },
+  "shipmentStatus": {
+    "DRAFT": "مسودة",
+    "SHIPPED": "تم الشحن"
+  },
+  "shipmentKind": {
+    "COMPLETE": "كامل",
+    "PARTIAL": "جزئي"
+  },
+  "purchaseCategory": {
+    "PAPER": "ورق",
+    "INK": "حبر",
+    "PLATE": "كليشيهات",
+    "GLUE": "غراء",
+    "BOXES": "صناديق",
+    "PALLETS": "منصات",
+    "STRETCH_FILM": "فيلم تغليف",
+    "TRANSPORT": "نقل",
+    "MISC": "متنوع"
+  },
+  "receiptStatus": {
+    "PENDING": "قيد الانتظار",
+    "PARTIAL": "استُلم جزئيًا",
+    "COMPLETE": "تم الاستلام"
+  },
+  "allocationState": {
+    "RESERVED": "محجوز",
+    "CONSUMED": "مستهلك",
+    "CANCELED": "ملغى"
+  },
+  "shiftType": {
+    "NIGHT": "ليلية",
+    "MORNING": "صباحية",
+    "AFTERNOON": "مسائية"
+  },
+  "shiftTaskType": {
+    "SETTING": "ضبط",
+    "PRODUCTION": "إنتاج",
+    "PRINTING": "طباعة",
+    "CLEANING": "تنظيف"
+  },
+  "shiftWeekStatus": {
+    "DRAFT": "مسودة",
+    "PUBLISHED": "منشور"
+  },
+  "shiftChangeKind": {
+    "MOVE": "نقل",
+    "SWAP": "تبديل",
+    "REPLACE": "استبدال",
+    "REMOVE": "إزالة",
+    "ADD": "إضافة"
+  },
+  "shiftChangeStatus": {
+    "PENDING": "بانتظار القرار",
+    "ACCEPTED": "مقبول",
+    "REJECTED": "مرفوض",
+    "WITHDRAWN": "مسحوب"
+  },
+  "shiftTaskStatus": {
+    "OPEN": "مفتوحة",
+    "DONE": "منجزة"
+  }
+}

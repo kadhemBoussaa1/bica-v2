@@ -1,0 +1,789 @@
+/*
+ * The shared notice stream — docs/chat-plan.md §6.
+ *
+ * Its own file rather than more of records.module.css: a feed is not a
+ * records page. The furniture here (a scrolling column that pins to its
+ * bottom, message rows, a composer docked under them, a pinned strip above)
+ * has no counterpart in the table modules, and only the page header is
+ * borrowed from records.
+ *
+ * Logical properties throughout — Arabic is RTL, so `margin-inline-start`,
+ * `inset-inline-*` and `text-align: end`, never a physical side. Every gap
+ * comes off the --bp-space-* scale and every corner off the radius scale.
+ */
+
+/* --- layout ---
+   The page owns the viewport height so the feed scrolls inside itself rather
+   than scrolling the document: a composer that slides off the bottom of a
+   long stream is the one thing a chat screen must not do. */
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  /* The shell's own header and page padding sit above this. */
+  height: calc(100vh - 220px);
+  min-height: 420px;
+}
+
+/* --- pinned strip --- */
+
+.pinned {
+  flex: 0 0 auto;
+  border-radius: var(--bp-radius-panel);
+  padding: var(--bp-space-4);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.pinnedHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+}
+
+.pinnedTitle {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.pinnedList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  margin-top: var(--bp-space-3);
+}
+
+/* A pinned notice is a block inside a glass panel, so it takes the veil
+   recipe rather than a second layer of glass. */
+.pinnedItem {
+  border-radius: var(--bp-radius-block);
+  padding: var(--bp-space-3);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-veil-border);
+}
+
+.pinnedMeta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+/* --- the scrolling feed --- */
+
+.feed {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--bp-radius-panel);
+  padding: var(--bp-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  /* Near-solid, not glass: a dense stream of rows over a translucent ground
+     is unreadable, and the toolkit keeps glass off dense bodies. */
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline);
+}
+
+.feedStart {
+  align-self: center;
+  font: 500 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+  padding-block: var(--bp-space-2);
+}
+
+.older {
+  align-self: center;
+  padding-block-end: var(--bp-space-2);
+}
+
+/* --- one message --- */
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-hairline-soft);
+}
+
+/* The reader's own notices take the warm tint, so a glance separates "what I
+   said" from "what I was told" without a second column or an avatar rail. */
+.messageMine {
+  background: var(--bp-orange-50);
+  border-color: var(--bp-orange-300);
+}
+
+.messagePinned {
+  border-color: var(--bp-orange-300);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.author {
+  font: 600 0.8125rem/1.2 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.when {
+  font: 400 0.6875rem/1.2 var(--bp-font-mono);
+  color: var(--bp-ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.pinFlag {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-orange-800);
+  background: var(--bp-orange-100);
+  border: 1px solid var(--bp-orange-300);
+  border-radius: var(--bp-radius-pill);
+  padding: 3px var(--bp-space-2);
+}
+
+.headActions {
+  margin-inline-start: auto;
+}
+
+/*
+ * Untrusted text from every role: rendered as a plain string in JSX, never
+ * through dangerouslySetInnerHTML and never as markdown. `pre-wrap` keeps the
+ * newlines someone typed, and `anywhere` stops a pasted URL or token from
+ * blowing the column width open.
+ */
+.body {
+  font: 400 0.875rem/1.55 var(--bp-font-body);
+  color: var(--bp-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* --- attachments --- */
+
+.attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+  margin-top: var(--bp-space-1);
+}
+
+.files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  margin-top: var(--bp-space-1);
+}
+
+/* --- the "N new" affordance ---
+   Sits over the feed's bottom edge rather than in the flow, so appearing does
+   not reflow the stream under the reader's eyes. */
+.newBar {
+  position: relative;
+  align-self: center;
+  /* Pulled up over the composer's gap; inset-* is logical, so this mirrors. */
+  inset-block-end: 0;
+  margin-block-start: calc(-1 * var(--bp-space-2));
+}
+
+/* --- composer --- */
+
+.composer {
+  flex: 0 0 auto;
+  border-radius: var(--bp-radius-panel);
+  padding: var(--bp-space-4);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+}
+
+.hint {
+  font: 400 0.6875rem/1.45 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  max-width: 62ch;
+}
+
+/* Confirmed attachments, above the upload field. Chips rather than a second
+   list, because they are pending state the user can still undo. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  max-width: 100%;
+  border-radius: var(--bp-radius-pill);
+  padding: 4px var(--bp-space-2) 4px var(--bp-space-3);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-veil-border);
+  font: 500 0.75rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.chipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 22ch;
+}
+
+.chipRemove {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: var(--bp-radius-pill);
+  background: transparent;
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+  font: 600 0.875rem/1 var(--bp-font-body);
+}
+
+.chipRemove:hover {
+  background: var(--bp-tint);
+  color: var(--bp-ink);
+}
+
+/* --- states --- */
+
+.empty {
+  margin: auto;
+  padding: var(--bp-space-5);
+}
+
+.error {
+  color: var(--bp-danger-text);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+}
+
+/* The stream is the whole screen on a tablet; give the viewport back to it. */
+@media (max-width: 900px) {
+  .room {
+    height: calc(100vh - 170px);
+  }
+}
+
+/* --- the corner launcher and its panel ---
+ *
+ * Chat is reachable from every page rather than from a sidebar row, so the
+ * button is fixed and the panel floats over the content. Stacking, against
+ * the app's existing order (top bar 20, sidebar 30, mobile scrim 39, mobile
+ * drawer 40, FormDialog 50): the launcher sits at 35 and the panel at 36 —
+ * above the shell and the sidebar rail, below the mobile drawer that would
+ * cover the screen anyway, and well below a modal form, which must always win.
+ */
+
+/* The button and its dismiss chip travel together, so the chip is positioned
+   against this dock rather than against the viewport. */
+.launcherDock {
+  position: fixed;
+  /* Logical, so Arabic puts the whole dock bottom-LEFT without a second rule. */
+  inset-inline-end: var(--bp-space-5);
+  inset-block-end: var(--bp-space-5);
+  z-index: 35;
+  display: grid;
+  justify-items: center;
+  gap: var(--bp-space-2);
+}
+
+/*
+ * Ink, not the warm gradient.
+ *
+ * The primary orange is the toolkit's "commit this form" colour and appears
+ * at most once on a page; a permanent floating button wearing it would
+ * outrank every real action on every screen. The rail is already ink, so a
+ * dark circle reads as app furniture instead — and it is the one place in the
+ * app that is deliberately a circle rather than a squircle, because it is a
+ * floating control and not a surface.
+ */
+.launcher {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: var(--bp-radius-pill);
+  cursor: pointer;
+  background: var(--bp-neutral-900);
+  color: var(--bp-neutral-50);
+  box-shadow: var(--bp-shadow-float);
+  transition:
+    transform 140ms ease-out,
+    box-shadow 140ms ease-out,
+    background 140ms ease-out;
+}
+
+.launcher:hover {
+  transform: translateY(-2px);
+  background: var(--bp-neutral-800);
+  box-shadow: var(--bp-shadow-lift);
+}
+
+.launcher:active {
+  transform: translateY(0);
+}
+
+.launcher:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 3px;
+}
+
+/* Small, quiet, and above the button — a way to get the bubble out of the way
+   on a screen someone stares at all shift, not a primary control. */
+.launcherDismiss {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--bp-page);
+  border-radius: var(--bp-radius-pill);
+  /* Ink, not white: on the pale wash a white chip with a hairline is
+     invisible, and this sits directly above an ink button it belongs to. The
+     page-coloured ring separates the two without a shadow. */
+  background: var(--bp-neutral-800);
+  color: var(--bp-neutral-50);
+  cursor: pointer;
+}
+
+.launcherDismiss:hover {
+  background: var(--bp-neutral-900);
+}
+
+.launcherDismiss:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* The count rides the button's top-inline-end corner. Tabular figures so a
+   badge going 9 -> 10 does not visibly jiggle. */
+.launcherBadge {
+  position: absolute;
+  inset-block-start: -2px;
+  inset-inline-end: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-danger);
+  border: 2px solid var(--bp-page);
+  color: #fff;
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.launcherWrap {
+  position: fixed;
+  inset: 0;
+  z-index: 36;
+  /* The wrapper is only a positioning context: clicks must reach the page
+     underneath, which is the whole point of a panel over a modal. */
+  pointer-events: none;
+}
+
+.panel {
+  position: absolute;
+  inset-inline-end: var(--bp-space-5);
+  /* Clear of the dock: button, its gap, the dismiss chip, and one more gap. */
+  inset-block-end: calc(52px + 22px + 2 * var(--bp-space-2) + var(--bp-space-5));
+  pointer-events: auto;
+  width: min(420px, calc(100vw - 2 * var(--bp-space-5)));
+  height: min(620px, calc(100vh - 190px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* The house popover recipe, at panel radius: near-opaque white over the
+     glass blur, so a dense stream stays readable on any background. */
+  background: rgb(255 255 255 / 0.94);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-float);
+  animation: panelIn 160ms ease-out;
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+
+  .launcher {
+    transition: none;
+  }
+}
+
+/* --- panel header --- */
+
+.panelHead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-block-end: 1px solid var(--bp-hairline);
+}
+
+/* The launcher's own glyph, repeated small: the panel and the button it came
+   from should be recognisably the same thing. */
+.panelMark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--bp-neutral-900);
+  color: var(--bp-neutral-50);
+}
+
+.panelMark svg {
+  width: 17px;
+  height: 17px;
+}
+
+.panelHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin-inline-end: auto;
+}
+
+.panelTitle {
+  font: 600 0.84375rem/1.15 var(--bp-font-display);
+  color: var(--bp-ink-strong);
+}
+
+.panelSub {
+  font: 400 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  color: var(--bp-ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Squircle like every other avatar in the app — the launcher is the one
+   circle, and that is deliberate. */
+.panelAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--bp-orange-100), var(--bp-orange-300));
+  color: var(--bp-orange-800);
+  font: 600 0.625rem/1 var(--bp-font-mono);
+}
+
+.panelClose {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+}
+
+.panelClose:hover {
+  background: var(--bp-tint);
+  color: var(--bp-ink);
+}
+
+.panelClose:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+}
+
+/* Who can see this, stated once under the header rather than only in the
+   composer hint: it is the thing people most need to know before posting. */
+.panelNotice {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-2) var(--bp-space-4);
+  border-block-end: 1px solid var(--bp-hairline-soft);
+  color: var(--bp-ink-muted);
+  font: 400 0.6875rem/1.3 var(--bp-font-body);
+}
+
+.panelNotice svg {
+  flex: none;
+}
+
+/* --- day separators --- */
+
+.daySeparator {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding-block: var(--bp-space-1);
+}
+
+/* Hairlines either side, drawn with pseudo-elements so the label can sit in
+   the middle without a fixed width. */
+.daySeparator::before,
+.daySeparator::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--bp-hairline);
+}
+
+.dayLabel {
+  flex: none;
+  font: 500 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+/* --- composer bar --- */
+
+.composerAffordances {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  font: 400 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.04em;
+  color: var(--bp-ink-faint);
+}
+
+.affordance {
+  white-space: nowrap;
+}
+
+.affordanceSep {
+  opacity: 0.6;
+}
+
+/* The input and the send control on one line, bottom-aligned so a growing
+   textarea pushes the arrow down with it rather than centring it. */
+.composerBar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--bp-space-2);
+}
+
+.composerBar > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.sendButton {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: var(--bp-radius-pill);
+  cursor: pointer;
+  background: var(--bp-neutral-900);
+  color: var(--bp-neutral-50);
+  transition:
+    background 120ms ease-out,
+    opacity 120ms ease-out;
+}
+
+.sendButton:hover:not(:disabled) {
+  background: var(--bp-neutral-800);
+}
+
+.sendButton:disabled {
+  background: var(--bp-tint-strong);
+  color: var(--bp-ink-faint);
+  cursor: default;
+}
+
+.sendButton:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.sendSpinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--bp-radius-pill);
+  animation: sendSpin 700ms linear infinite;
+}
+
+@keyframes sendSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sendSpinner {
+    animation-duration: 2s;
+  }
+}
+
+/*
+ * The room inside the panel. Height comes from the panel, not the viewport —
+ * `.room`'s `calc(100vh - 220px)` is measured against a page header the panel
+ * does not have.
+ */
+.roomPanel {
+  height: 100%;
+  min-height: 0;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-3);
+}
+
+/* Inside 420px the feed needs its gutters back, and the nested panels drop
+   their own glass and shadow: they are already inside one. */
+.roomPanel .feed {
+  padding: var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+}
+
+.roomPanel .composer {
+  padding: var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+  box-shadow: none;
+}
+
+.roomPanel .pinned {
+  padding: var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+  box-shadow: none;
+}
+
+/* The hint is three lines of prose at this width, and the panel now states
+   who can see a notice in its own header. The composer keeps the attachment
+   limit warning, which is the half that is not already said. */
+.roomPanel .hint {
+  display: none;
+}
+
+/*
+ * Field labels go visually hidden inside the panel — kept for screen readers,
+ * since "Aa" and a paperclip are not names. At 420px the two uppercase
+ * labels ("WRITE A NOTICE", "ATTACH A FILE") cost ~60px of feed and repeat
+ * what the placeholder and the icon already say. The full-width variant keeps
+ * them.
+ */
+/*
+ * `FileUploadField` renders its label as a <span class=fieldLabel>, not a
+ * <label> — so a `label` selector alone misses it and "ATTACH A FILE" stayed
+ * on screen. Matched on the hashed module class by substring, because the
+ * emitted name is not knowable from this file.
+ *
+ * Hidden visually, kept for screen readers: "Aa" and a paperclip are not
+ * names. At 420px the two uppercase labels cost ~60px of feed and repeat what
+ * the placeholder and the icon already say. The full-width variant keeps them.
+ */
+.roomPanel .composerBar label,
+.roomPanel .composerBar [class*="fieldLabel"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
+}
+
+/* Composer, tightened: the affordance line, then one bar. */
+.roomPanel .composer {
+  gap: var(--bp-space-2);
+}
+
+/*
+ * Attach is a real flex item on the bar, sized to its button.
+ *
+ * It used to sit in a row below and get dragged up with a negative margin,
+ * which drew the button across the textarea's lower corner in both
+ * directions. Layout belongs to flex, not to a margin guess.
+ */
+.attachSlot {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* The field wrapper adds a label gap this slot no longer needs. */
+.attachSlot [class*="field"] {
+  gap: 0;
+}
+
+.panelScrim {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* At phone width the panel is the screen, so it gets a scrim and full
+     bleed — and the dock tucks in to clear a thumb. */
+  .panelScrim {
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: auto;
+    background: rgb(26 23 20 / 0.5);
+    animation: fade 160ms ease-out;
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .panel {
+    inset-inline: var(--bp-space-3);
+    inset-block-end: calc(52px + 22px + 2 * var(--bp-space-2) + var(--bp-space-4));
+    width: auto;
+    height: min(560px, calc(100vh - 170px));
+  }
+
+  .launcherDock {
+    inset-inline-end: var(--bp-space-4);
+    inset-block-end: var(--bp-space-4);
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "eyebrow": "Ajustes",
+  "title": "Actividad",
+  "metaTitle": "Actividad · Bicapack ERP",
+  "columns": {
+    "when": "Fecha",
+    "user": "Usuario",
+    "action": "Acción",
+    "entity": "Entidad",
+    "outcome": "Resultado",
+    "time": "Duración"
+  },
+  "anonymous": "Anónimo",
+  "filters": {
+    "reads": "Lecturas",
+    "writes": "Escrituras",
+    "signIns": "Inicios de sesión",
+    "errors": "Errores"
+  },
+  "searchPlaceholder": "Buscar acción, usuario, entidad, error…",
+  "emptyMessage": "Ninguna actividad coincide con estos filtros.",
+  "showingByActor": "Mostrando la actividad de <strong>{actor}</strong>",
+  "showingForEntity": "Mostrando la actividad de <strong>{entity}</strong> (incluidos los registros derivados)",
+  "clear": "Quitar",
+  "kind": {
+    "QUERY": "LECTURA",
+    "MUTATION": "ESCRITURA",
+    "AUTH": "AUTH"
+  },
+  "outcome": {
+    "OK": "OK",
+    "ERROR": "ERROR"
+  },
+  "duration": "{ms} ms",
+  "panel": {
+    "ariaLabel": "Detalle de la actividad",
+    "loading": "Cargando…",
+    "who": "Quién",
+    "what": "Qué",
+    "input": "Datos enviados",
+    "client": "Cliente",
+    "user": "Usuario",
+    "email": "Correo electrónico",
+    "role": "Rol",
+    "impersonatedBy": "Suplantado por",
+    "trace": "Historial",
+    "traceLink": "Toda la actividad de este usuario",
+    "when": "Fecha y hora",
+    "entity": "Entidad",
+    "from": "Origen",
+    "duration": "Duración",
+    "error": "Error",
+    "message": "Mensaje",
+    "ip": "Dirección IP",
+    "browser": "Navegador",
+    "noInput": "Sin datos enviados.",
+    "truncated": "Truncado: se enviaron {bytes} bytes, se conservan los primeros 16 KB."
+  },
+  "actions": {
+    "auth": {
+      "signIn": "Inició sesión",
+      "signOut": "Cerró sesión"
+    },
+    "order": {
+      "create": "Pedido creado",
+      "update": "Pedido editado",
+      "transition": "Estado del pedido cambiado",
+      "acceptQuote": "Presupuesto aceptado",
+      "setColours": "Colores del pedido definidos",
+      "setActive": "Pedido archivado / restaurado"
+    },
+    "production": {
+      "create": "Producción registrada",
+      "update": "Producción editada",
+      "remove": "Producción eliminada"
+    },
+    "shipment": {
+      "createFromOrder": "Borrador de envío creado",
+      "updateDraft": "Borrador de envío editado",
+      "createPackingListUpload": "Subida de la lista de embalaje solicitada",
+      "createCustomsUpload": "Subida del escaneo de aduana solicitada",
+      "updateCustoms": "Aduana del envío editada",
+      "ship": "Enviado",
+      "discardDraft": "Borrador de envío descartado"
+    },
+    "salesInvoice": {
+      "createFromOrder": "Borrador de factura de venta creado",
+      "updateDraft": "Borrador de factura editado",
+      "refreshFromPackaging": "Factura actualizada desde el embalaje",
+      "issue": "Factura de venta emitida",
+      "discardDraft": "Borrador de factura descartado"
+    },
+    "purchaseInvoice": {
+      "create": "Factura de compra registrada",
+      "update": "Factura de compra editada",
+      "remove": "Factura de compra eliminada"
+    },
+    "stock": {
+      "createRoll": "Bobina añadida",
+      "updateRoll": "Bobina editada",
+      "setRollArchived": "Bobina archivada / restaurada",
+      "removeRoll": "Bobina eliminada",
+      "createShipment": "Entrega de papel registrada",
+      "updateShipment": "Entrega de papel editada",
+      "setShipmentActive": "Entrega de papel archivada / restaurada",
+      "removeShipment": "Entrega de papel eliminada",
+      "setShipmentRolls": "Bobinas de la entrega definidas"
+    },
+    "client": {
+      "create": "Cliente creado",
+      "update": "Cliente editado",
+      "setActive": "Cliente archivado / restaurado"
+    },
+    "supplier": {
+      "create": "Proveedor creado",
+      "update": "Proveedor editado",
+      "setActive": "Proveedor archivado / restaurado"
+    },
+    "supplierFamily": {
+      "create": "Familia de proveedores creada",
+      "update": "Familia de proveedores editada",
+      "setActive": "Familia de proveedores archivada / restaurada",
+      "remove": "Familia de proveedores eliminada"
+    },
+    "product": {
+      "create": "Producto creado",
+      "update": "Producto editado",
+      "setActive": "Producto archivado / restaurado"
+    },
+    "machine": {
+      "create": "Máquina creada",
+      "update": "Máquina editada",
+      "setActive": "Máquina archivada / restaurada"
+    },
+    "employee": {
+      "create": "Empleado creado",
+      "update": "Empleado editado",
+      "setActive": "Empleado archivado / restaurado"
+    },
+    "user": {
+      "create": "Usuario creado",
+      "setRole": "Rol de usuario cambiado",
+      "setBanned": "Usuario bloqueado / desbloqueado",
+      "remove": "Usuario eliminado"
+    },
+    "shift": {
+      "openWeek": "Semana abierta",
+      "copyWeek": "Plantilla de una semana copiada",
+      "clearWeek": "Semana borrador vaciada",
+      "publish": "Semana publicada",
+      "assign": "Personas asignadas a un turno",
+      "unassign": "Persona retirada de un turno",
+      "change": "Cambio de plantilla registrado",
+      "requestChange": "Cambio de turno solicitado",
+      "withdraw": "Solicitud de cambio retirada",
+      "accept": "Solicitud de cambio aceptada",
+      "reject": "Solicitud de cambio rechazada",
+      "createTask": "Ticket creado",
+      "updateTask": "Ticket editado",
+      "removeTask": "Ticket eliminado",
+      "setTaskDone": "Ticket marcado hecho / reabierto"
+    }
+  }
+}

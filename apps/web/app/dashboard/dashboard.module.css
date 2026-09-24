@@ -1,0 +1,888 @@
+/*
+ * The super admin's home, from `Dashboard v3.dc.html` (docs/dashboard-plan.md).
+ *
+ * The header sits bare on the wash; everything below is a glass panel with
+ * solid white blocks inside it — the handoff's "cards on glass". Radii and
+ * gaps are snapped to the toolkit scales (the handoff's 18/22px become
+ * space-4/space-5, its 14/18px radii the block radius). Logical properties
+ * throughout, so Arabic mirrors it; font sizes are rem against the one
+ * type knob.
+ */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+/* --- header: the date, a greeting, one sentence; the clock and the range --- */
+
+.header {
+  display: flex;
+  gap: var(--bp-space-5);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: var(--bp-space-1) var(--bp-space-1) 0;
+}
+
+.headerText {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.date {
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bp-orange-800);
+}
+
+.title {
+  margin: var(--bp-space-2) 0;
+  font: 700 clamp(1.75rem, 3.6vw, 2.25rem) / 1.04 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  color: var(--bp-ink);
+}
+
+.lede {
+  margin: 0;
+  max-width: 52em;
+  font: 400 0.9375rem/1.55 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  text-wrap: pretty;
+}
+
+.headerSide {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.updated {
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the glass panel every section sits in --- */
+
+.panel {
+  min-width: 0;
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.panelHead {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-4);
+}
+
+.panelTitle {
+  margin: 0;
+  font: 700 1.1875rem/1.2 var(--bp-font-display);
+  letter-spacing: -0.02em;
+  color: var(--bp-ink);
+}
+
+.panelSub {
+  flex: 1 1 16rem;
+  min-width: 0;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* Under the title in the narrow panels, where beside it would wrap into the link. */
+.panelSubBelow {
+  margin: calc(-1 * var(--bp-space-2)) 0 var(--bp-space-3);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.panelCount {
+  margin-inline-start: auto;
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.panelLinks {
+  display: flex;
+  gap: var(--bp-space-4);
+  margin-inline-start: auto;
+}
+
+.panelLink,
+.inlineLink {
+  font: 600 0.84375rem/1.3 var(--bp-font-body);
+  color: var(--bp-accent-text);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.panelLink:hover,
+.inlineLink:hover {
+  text-decoration: underline;
+}
+
+.arrow {
+  display: inline-block;
+}
+
+[dir="rtl"] .arrow {
+  transform: scaleX(-1);
+}
+
+.muted {
+  color: var(--bp-ink-muted);
+}
+
+/* A mark before a label: colour AND shape carry the tone. */
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  display: block;
+  border-radius: var(--dot-shape, 50%);
+  background: var(--dot, var(--bp-neutral-400));
+}
+
+.dotLive {
+  --dot: var(--bp-orange-500);
+  --dot-shape: 50%;
+}
+
+.dotOk {
+  --dot: var(--bp-success);
+  --dot-shape: 50%;
+}
+
+.dotDanger {
+  --dot: var(--bp-danger);
+  --dot-shape: 0;
+}
+
+.dotWarn {
+  --dot: var(--bp-warning);
+  --dot-shape: 2px;
+}
+
+.dotInfo {
+  --dot: #5980a6;
+  --dot-shape: 2px;
+}
+
+.dotMuted {
+  --dot: var(--bp-neutral-400);
+  --dot-shape: 0;
+}
+
+/* --- à traiter: one white card per point, its count in the point's tone --- */
+
+.todoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: var(--bp-space-3);
+}
+
+.todo {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-surface);
+  border: 1px solid var(--todo-line);
+  color: var(--bp-ink);
+  text-decoration: none;
+}
+
+.todo:hover {
+  border-color: var(--bp-orange-500);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.todoDanger {
+  --todo-tint: rgb(193 53 43 / 0.12);
+  --todo-fg: var(--bp-danger-text);
+  --todo-line: rgb(143 37 30 / 0.3);
+}
+
+.todoAttention {
+  --todo-tint: rgb(242 145 0 / 0.16);
+  --todo-fg: var(--bp-orange-800);
+  --todo-line: rgb(217 124 0 / 0.3);
+}
+
+.todoInfo {
+  --todo-tint: rgb(89 128 166 / 0.16);
+  --todo-fg: var(--bp-info-text);
+  --todo-line: rgb(34 88 124 / 0.25);
+}
+
+.todoCount {
+  flex: none;
+  min-width: 48px;
+  height: 48px;
+  padding: 0 var(--bp-space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--bp-radius);
+  background: var(--todo-tint);
+  color: var(--todo-fg);
+  font: 700 1.375rem/1 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.todoText {
+  flex: 1;
+  min-width: 0;
+}
+
+.todoTitle {
+  display: block;
+  font: 600 0.90625rem/1.3 var(--bp-font-body);
+}
+
+.todoMeta {
+  display: block;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.todoArrow {
+  flex: none;
+  color: var(--bp-accent-text);
+}
+
+.todoClear {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  margin: 0;
+  font: 500 0.875rem/1.5 var(--bp-font-body);
+  color: var(--bp-success-text);
+}
+
+/* --- the four headline figures --- */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: var(--bp-space-4);
+}
+
+.kpi {
+  min-width: 0;
+  padding: var(--bp-space-4) var(--bp-space-5);
+  border-radius: var(--bp-radius-card);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-card);
+}
+
+.kpiLabel {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  font: 600 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.kpiFigure {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: baseline;
+  margin-top: var(--bp-space-1);
+}
+
+.kpiValue {
+  font: 700 2.125rem/1.1 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+}
+
+.kpiUnit {
+  font: 400 0.875rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.kpiMeta {
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* --- production: one card per station, then the quality breakdown --- */
+
+.stages {
+  display: grid;
+  /* 200px, not the handoff's 220: beside the 280px sidebar at 1280 the
+     panel is ~890px wide, and at 220 the four cards break three and one. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: var(--bp-space-3);
+}
+
+.stage,
+.quality,
+.financeCard {
+  min-width: 0;
+  padding: var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-tint-strong);
+}
+
+.stageHead {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+}
+
+/* The station's step in the flow, on its tint (`--st-*` from stageClass). */
+.step {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--st-tint);
+  color: var(--st-fg);
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+}
+
+.stageLabel {
+  font: 600 0.84375rem/1.3 var(--bp-font-body);
+}
+
+.stageFigure {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: baseline;
+  margin-top: var(--bp-space-2);
+}
+
+.stageValue {
+  font: 700 1.875rem/1.1 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stageUnit {
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* Twelve bars from one baseline; the 3px between them keeps neighbours apart. */
+.bars {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 44px;
+  margin-top: var(--bp-space-3);
+}
+
+.bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 3px;
+  background: rgb(26 23 20 / 0.22);
+}
+
+.barInRange {
+  background: var(--st-dot);
+}
+
+.barEmpty {
+  background: var(--bp-hairline);
+}
+
+.barMonths {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--bp-space-1);
+  font: 400 0.65625rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.stageNote {
+  margin-top: var(--bp-space-2);
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.noteWarn {
+  color: var(--bp-warning-text);
+}
+
+.quality {
+  margin-top: var(--bp-space-4);
+}
+
+.qualityHead {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-3);
+}
+
+.qualityTitle {
+  font: 600 0.875rem/1.3 var(--bp-font-body);
+}
+
+.qualityBase {
+  flex: 1 1 auto;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.qualityRate {
+  font: 700 1.125rem/1.2 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+.qualityRateGood {
+  color: var(--bp-success-text);
+}
+
+.qualityBar {
+  display: flex;
+  height: 14px;
+  border-radius: var(--bp-radius-pill);
+  overflow: hidden;
+  background: var(--bp-hairline);
+}
+
+.partGood {
+  background: var(--bp-success);
+}
+
+.partFix {
+  background: var(--bp-orange-500);
+}
+
+.partGap {
+  background: var(--bp-neutral-300);
+}
+
+.legend {
+  display: flex;
+  gap: var(--bp-space-2) var(--bp-space-5);
+  flex-wrap: wrap;
+  margin-top: var(--bp-space-3);
+}
+
+.legendItem {
+  display: inline-flex;
+  gap: var(--bp-space-2);
+  align-items: baseline;
+  font: 400 0.84375rem/1.4 var(--bp-font-body);
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  align-self: center;
+  display: block;
+  border-radius: 3px;
+}
+
+.legendValue,
+.legendValueInk {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.legendValueInk {
+  color: var(--bp-ink);
+}
+
+.callout {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: flex-start;
+  margin: var(--bp-space-3) 0 0;
+  padding: var(--bp-space-3);
+  border-radius: var(--bp-radius-dense);
+  background: rgb(224 161 6 / 0.12);
+  border: 1px solid rgb(224 161 6 / 0.4);
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-warning-text);
+}
+
+.callout strong {
+  flex: none;
+}
+
+/* --- orders, teams and paper, side by side --- */
+
+.columns {
+  display: grid;
+  /* 300px, not the handoff's 340: three across beside the sidebar at 1280. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: var(--bp-space-4);
+  align-items: start;
+}
+
+/* One subgrid track for the labels, so every bar starts on the same line
+   however long the longest status is in the reader's language. */
+.statusRows {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
+}
+
+.statusRow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  column-gap: var(--bp-space-3);
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--bp-space-2);
+  border-radius: var(--bp-radius-dense);
+  color: var(--bp-ink);
+  text-decoration: none;
+}
+
+.statusRow:hover {
+  background: rgb(242 145 0 / 0.08);
+}
+
+.statusLabel {
+  display: inline-flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  font: 500 0.84375rem/1.3 var(--bp-font-body);
+  white-space: nowrap;
+}
+
+.statusLabelLive {
+  font-weight: 600;
+}
+
+.statusTrack {
+  height: 8px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-hairline-soft);
+  overflow: hidden;
+}
+
+.statusFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dot);
+}
+
+.statusCount {
+  min-width: 2.5rem;
+  text-align: end;
+  font: 600 0.84375rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusCountZero {
+  color: var(--bp-ink-faint);
+}
+
+.statusDraft {
+  --dot: var(--bp-neutral-400);
+  --dot-shape: 2px;
+}
+
+.statusInProduction {
+  --dot: var(--bp-orange-500);
+  --dot-shape: 50%;
+}
+
+.statusProduced {
+  --dot: var(--bp-orange-600);
+  --dot-shape: 50%;
+}
+
+.statusInvoiceable {
+  --dot: var(--bp-warning);
+  --dot-shape: 2px;
+}
+
+.statusInvoiced {
+  --dot: #5980a6;
+  --dot-shape: 2px;
+}
+
+.statusReady {
+  --dot: #5980a6;
+  --dot-shape: 50%;
+}
+
+.statusCompleted {
+  --dot: var(--bp-success);
+  --dot-shape: 50%;
+}
+
+.statusCancelled {
+  --dot: var(--bp-danger);
+  --dot-shape: 0;
+}
+
+.weekLine {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  flex-wrap: wrap;
+  margin: calc(-1 * var(--bp-space-2)) 0 var(--bp-space-4);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.shiftRows,
+.linkRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+.shiftRow,
+.linkRow {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  padding: var(--bp-space-2) var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-tint-strong);
+  color: var(--bp-ink);
+  text-decoration: none;
+}
+
+.shiftRowEmpty {
+  --shift-fg: var(--bp-danger-text);
+  border-color: rgb(143 37 30 / 0.35);
+}
+
+.shiftName,
+.linkRowText {
+  flex: 1;
+  min-width: 0;
+}
+
+.shiftLabel,
+.linkRowLabel {
+  display: block;
+  font: 600 0.875rem/1.35 var(--bp-font-body);
+}
+
+.shiftHours {
+  display: block;
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.shiftCount {
+  font: 700 1.375rem/1.1 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--shift-fg, var(--bp-ink));
+}
+
+.shiftUnit {
+  min-width: 4.5rem;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--shift-fg, var(--bp-ink));
+}
+
+.miniStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+  gap: var(--bp-space-3);
+  margin-top: var(--bp-space-3);
+}
+
+.miniStat {
+  display: flex;
+  flex-direction: column;
+  padding: var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+  background: rgb(26 23 20 / 0.04);
+  border: 1px solid transparent;
+  color: var(--bp-ink);
+  text-decoration: none;
+}
+
+.miniStatLink:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.miniLabel {
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.miniValue {
+  font: 700 1.25rem/1.2 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.miniMeta {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.tonnage {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.tonnageValue {
+  font: 700 2.125rem/1.05 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tonnageMeta {
+  font: 400 0.875rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.split {
+  display: flex;
+  height: 12px;
+  margin-top: var(--bp-space-3);
+  border-radius: var(--bp-radius-pill);
+  overflow: hidden;
+  background: var(--bp-hairline);
+}
+
+.splitFree {
+  background: var(--bp-success);
+}
+
+.splitReserved {
+  background: #5980a6;
+}
+
+.splitLegend {
+  display: flex;
+  gap: var(--bp-space-2) var(--bp-space-4);
+  flex-wrap: wrap;
+  margin-top: var(--bp-space-2);
+}
+
+.linkRows {
+  margin-top: var(--bp-space-4);
+}
+
+a.linkRow:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.linkRowMeta {
+  display: block;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.linkRowValue {
+  font: 600 0.875rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- finances: two white cards, one line per figure, amounts per currency --- */
+
+.financeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: var(--bp-space-4);
+}
+
+.financeHead {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-2);
+}
+
+.financeTitle {
+  margin: 0;
+  font: 600 0.9375rem/1.3 var(--bp-font-body);
+}
+
+.financeLinks {
+  display: flex;
+  gap: var(--bp-space-4);
+  flex-wrap: wrap;
+}
+
+.financeLinks .inlineLink {
+  font-size: 0.8125rem;
+}
+
+.financeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--bp-space-1) var(--bp-space-4);
+  padding: var(--bp-space-3) 0;
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.financeLabel {
+  font: 400 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.amounts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--bp-space-1);
+}
+
+.amount {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.amountValue {
+  font: 600 0.875rem/1.3 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+}
+
+.amountCurrency {
+  font: 400 0.75rem/1.3 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.amountUnknown .amountValue,
+.amountUnknown .amountCurrency {
+  color: var(--bp-warning-text);
+}
+
+.financeMeta {
+  grid-column: 1 / -1;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.metaWarn {
+  color: var(--bp-warning-text);
+}
+
+.metaDanger {
+  color: var(--bp-danger-text);
+}

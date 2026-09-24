@@ -1,0 +1,192 @@
+{
+  "eyebrow": "Ajustes",
+  "title": "Plantillas de documentos",
+  "metaTitle": "Plantillas de documentos · Bicapack ERP",
+  "subtitle": "El aspecto de los documentos generados. Una factura emitida conserva la versión con la que se imprimió; publicar la plantilla predeterminada cambia las facturas emitidas a partir de entonces.",
+  "back": "← Plantillas de documentos",
+  "loading": "Cargando plantillas…",
+  "superAdminOnly": "Solo un superadministrador puede editar las plantillas de documentos.",
+  "kinds": {
+    "SALES_INVOICE": "Factura de venta"
+  },
+  "list": {
+    "default": "Predeterminada",
+    "version": "v{version}",
+    "draft": "Borrador",
+    "invoices": "{count, plural, =0 {ninguna factura} one {# factura} other {# facturas}}",
+    "edit": "Editar",
+    "setDefault": "Hacer predeterminada",
+    "duplicate": "Duplicar",
+    "duplicateTitle": "Duplicar {name}",
+    "duplicateBody": "La copia empieza como borrador del diseño más reciente. Publíquela antes de hacerla predeterminada.",
+    "name": "Nombre",
+    "create": "Crear",
+    "madeDefault": "{name} es ahora la plantilla predeterminada",
+    "created": "Plantilla creada",
+    "versions": "Versiones",
+    "defaultTitle": "¿Hacer de {name} la predeterminada?",
+    "defaultBody": "Las facturas emitidas a partir de ahora se imprimirán con su versión publicada más reciente. Las ya emitidas conservan la suya.",
+    "continueDraft": "Continuar el borrador v{version}",
+    "publishedState": "Publicada",
+    "metaPublishedBy": "{date} · por {name}",
+    "metaPublishedBuiltIn": "{date} · plantilla integrada",
+    "metaDraftBy": "editada por {name} · aún sin publicar",
+    "metaDraftBuiltIn": "aún sin publicar",
+    "newTitle": "Nueva plantilla",
+    "newBody": "La nueva plantilla empieza como un borrador copiado del diseño predeterminado. Publícala antes de hacerla predeterminada."
+  },
+  "editor": {
+    "title": "Editar plantilla",
+    "metaTitle": "Editar plantilla · Bicapack ERP",
+    "subtitle": "Elija los bloques, las columnas de la tabla y los márgenes; la vista previa imprime la factura de muestra con el diseño actual. Guardar escribe un borrador — nada se imprime con él hasta publicarlo.",
+    "editingDraft": "Editando el borrador v{version}",
+    "editingPublished": "La v{version} está publicada y congelada — guardar inicia el borrador v{next}",
+    "panels": {
+      "template": "Plantilla",
+      "page": "Página",
+      "blocks": "Bloques",
+      "preview": "Vista previa"
+    },
+    "name": "Nombre",
+    "rename": "Renombrar",
+    "renamed": "Plantilla renombrada",
+    "save": "Guardar borrador",
+    "saved": "Guardado",
+    "savedToast": "Borrador v{version} guardado",
+    "publish": "Publicar",
+    "publishTitle": "¿Publicar la v{version}?",
+    "publishBodyDefault": "Es la plantilla predeterminada: toda factura emitida a partir de ahora se imprimirá con esta versión. Ya no podrá editarse — un cambio posterior será una versión nueva.",
+    "publishBody": "La versión queda congelada al publicarse — un cambio posterior será una versión nueva.",
+    "publishedToast": "Versión {version} publicada",
+    "invalid": "El diseño tiene problemas — corríjalos para guardar o previsualizar:",
+    "previewLang": "Idioma",
+    "previewAs": "Imprimir como",
+    "asIssued": "Emitida",
+    "asDraft": "Borrador",
+    "previewPage": "Vista previa de la plantilla, página {page}",
+    "previewError": "No se pudo mostrar la vista previa.",
+    "previewHint": "La factura de muestra — cuarenta líneas inventadas, para que la segunda página y los bloques de última página tengan algo que mostrar.",
+    "page": {
+      "top": "Margen superior",
+      "bottom": "Margen inferior",
+      "start": "Margen inicial",
+      "end": "Margen final",
+      "firstPageTop": "Inicio de la primera página",
+      "hint": "El margen inferior se reserva en todas las páginas: el pie, el número de página y los bloques de última página viven en él. La primera página puede empezar más abajo, para dejar sitio al membrete."
+    },
+    "block": {
+      "show": "Mostrar",
+      "position": "Posición y tamaño",
+      "x": "Desde el borde inicial",
+      "y": "Desde arriba",
+      "w": "Ancho",
+      "minH": "Alto mín.",
+      "spaceBefore": "Espacio encima",
+      "align": "Alineación",
+      "repeat": "Páginas",
+      "keepTogether": "Mantener en una página",
+      "required": "Siempre visible"
+    },
+    "blockNames": {
+      "letterhead": "Membrete",
+      "letterheadCompact": "Cabecera compacta",
+      "logoCompany": "Logotipo",
+      "logoFsc": "Marca FSC",
+      "meta": "Título y detalles",
+      "parties": "Partes",
+      "lines": "Tabla de líneas",
+      "totals": "Totales",
+      "notes": "Notas",
+      "footer": "Línea de pie",
+      "pageNumber": "Número de página",
+      "watermark": "Marca de agua"
+    },
+    "aligns": {
+      "start": "Inicio",
+      "center": "Centro",
+      "end": "Fin"
+    },
+    "repeats": {
+      "all": "Todas las páginas",
+      "first": "Primera página",
+      "notFirst": "Páginas siguientes",
+      "last": "Última página"
+    },
+    "meta": {
+      "showTitle": "Mostrar el título",
+      "number": "Número",
+      "issuedAt": "Fecha",
+      "dueAt": "Vencimiento",
+      "paymentMethod": "Forma de pago",
+      "orders": "Pedido"
+    },
+    "parties": {
+      "issuer": "Recuadro del emisor",
+      "client": "Recuadro del cliente"
+    },
+    "lines": {
+      "zebra": "Sombrear filas alternas",
+      "column": "Columna",
+      "width": "Ancho",
+      "hideWhenEmpty": "Ocultar si está vacía",
+      "columns": {
+        "position": "N.º",
+        "product": "Producto",
+        "designation": "Descripción",
+        "quantity": "Cantidad",
+        "unitPrice": "Precio unitario",
+        "discountPct": "Dto. %",
+        "taxPct": "IVA %",
+        "net": "Neto",
+        "total": "Total"
+      }
+    },
+    "totals": {
+      "vat": "Filas de IVA",
+      "vatAuto": "Solo cuando hay IVA",
+      "vatAlways": "Siempre"
+    },
+    "notes": {
+      "title": "Encabezado",
+      "text": "Texto",
+      "hint": "Se imprime tal como se escribe, en todos los idiomas: condiciones de pago, datos bancarios."
+    },
+    "footer": {
+      "text": "Texto del pie",
+      "hint": "Déjelo vacío para la línea de contacto con el n.º fiscal, traducida."
+    },
+    "watermark": {
+      "when": "Mostrar",
+      "draft": "Solo en borradores",
+      "always": "Siempre"
+    },
+    "openDesigner": "Abrir el diseñador"
+  },
+  "designer": {
+    "back": "← Ajustes de la plantilla",
+    "title": "Diseñador de plantillas",
+    "metaTitle": "Diseñador de plantillas · Bicapack ERP",
+    "subtitle": "La hoja a escala. Arrastre un bloque para moverlo, su esquina para cambiar su tamaño; la vista previa imprime la factura de muestra con el resultado. Guardar escribe el mismo borrador que el formulario de ajustes.",
+    "panels": {
+      "stage": "Hoja",
+      "inspector": "Bloque seleccionado"
+    },
+    "pageTabs": "Página mostrada",
+    "pages": {
+      "first": "Primera página",
+      "middle": "Página siguiente",
+      "last": "Última página"
+    },
+    "mirror": "Espejo árabe",
+    "nothingSelected": "Seleccione un bloque en la hoja para ver su posición y tamaño.",
+    "blockLabel": "{name}, a {x} mm del borde inicial, {w} mm de ancho",
+    "legend": {
+      "fixed": "Fijo: se mueve y redimensiona libremente",
+      "flow": "Flujo: solo lateralmente y en ancho; arrastre más allá de un vecino para reordenar",
+      "keys": "Las flechas mueven 1 mm, 5 mm con Mayús"
+    },
+    "previewHint": "Se redibuja al terminar de arrastrar. Los bloques de flujo se dibujan con una altura nominal en la hoja — la vista previa muestra la real.",
+    "unsaved": "Guarde primero el borrador"
+  },
+  "newTemplate": "Nueva plantilla"
+}

@@ -1,0 +1,289 @@
+/*
+ * Machines — from "Machines v3.dc.html" (the same Claude Design project as
+ * the products, stock and order handoffs). Translated to v3 tokens rather
+ * than transcribed from the handoff's literal hex, for the reason
+ * stock.module.css gives: a literal port would fork the palette and break
+ * Arabic on its physical sides.
+ *
+ * Dropped from the handoff by decision:
+ *
+ *   - Its "Running / Idle / Maintenance" state, and the "Needs attention"
+ *     chip and KPI tile built on it. Nothing in this app records whether a
+ *     machine is running: `Machine` has `active` (archived or not) and
+ *     nothing else. Inventing a state would mean showing every machine as
+ *     "Idle" for good, or making one up from production runs, which is a
+ *     different claim than the handoff's.
+ *   - The per-card "jobs queued" figure, for the same reason: there is no
+ *     scheduling model here, so there is no queue to count.
+ *
+ * What survives is what the data supports: the photo, the type, the
+ * capability ranges and the supplier.
+ */
+
+/* --- the KPI row, the products module's shape --- */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--bp-space-3);
+  margin-bottom: var(--bp-space-5);
+}
+
+.kpi {
+  border-radius: var(--bp-radius-card);
+  padding: var(--bp-space-4);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.kpiLabel {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.kpiFigure {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.kpiValue {
+  font: 700 1.625rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiUnit {
+  font: 400 0.71875rem/1.2 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.kpiWidth {
+  color: var(--bp-info-text);
+}
+
+/* --- the card / list view switch --- */
+
+.viewBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--bp-space-3);
+}
+
+.viewSwitch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--bp-radius);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-hairline);
+}
+
+.viewBtn {
+  width: 40px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+}
+
+.viewBtn:hover {
+  background: var(--bp-orange-50);
+  color: var(--bp-orange-800);
+}
+
+.viewBtnOn,
+.viewBtnOn:hover {
+  background: var(--bp-neutral-900);
+  color: var(--bp-neutral-50);
+}
+
+/* --- the card grid --- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+  gap: var(--bp-space-4);
+  margin-bottom: var(--bp-space-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--bp-radius-card);
+  overflow: hidden;
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-card);
+}
+
+.card:hover {
+  border-color: var(--bp-orange-500);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+/* 16:10, as the handoff frames a machine — wider than the product card's
+   4:3, because a machine photo is a wide object in a workshop. */
+.cardMedia {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--bp-tint);
+  overflow: hidden;
+}
+
+.cardMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardMediaEmpty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 1.625rem/1 var(--bp-font-display);
+  color: var(--bp-ink-faint);
+}
+
+/*
+ * The type badge sits on the photo, top-start — logical, so it flips in
+ * Arabic. Machine photos are workshop shots and often busy, so the badge
+ * carries its own light backdrop rather than relying on the tint alone.
+ */
+.cardType {
+  position: absolute;
+  top: 10px;
+  inset-inline-start: 10px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 100px rgb(255 255 255 / 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.cardBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-4);
+}
+
+.cardName {
+  font: 600 1.03125rem/1.24 var(--bp-font-display);
+  letter-spacing: -0.01em;
+}
+
+.cardMeta {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 0.78125rem;
+  color: var(--bp-ink-muted);
+}
+
+.cardCode {
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+}
+
+.cardSupplier {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- the capability ranges, with the handoff's span bars --- */
+
+.ranges {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.rangeHead {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.rangeLabel {
+  font: 600 0.59375rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.rangeValue {
+  font: 600 0.78125rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.rangeUnit {
+  font-weight: 400;
+  font-size: 0.65625rem;
+  color: var(--bp-ink-muted);
+}
+
+.rangeUnset {
+  color: var(--bp-ink-muted);
+  font-weight: 400;
+}
+
+/*
+ * The bar is a SPAN, not a fill: it starts at the range's lower bound and
+ * ends at its upper one, so two machines' bars can be compared at a glance
+ * against the same scale. A machine with no range recorded draws an empty
+ * track rather than a full one, which would read as "handles everything".
+ */
+.rangeTrack {
+  display: block;
+  position: relative;
+  height: 6px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint);
+  overflow: hidden;
+}
+
+.rangeSpan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: var(--bp-radius-pill);
+}
+
+.rangeSpanWidth {
+  background: linear-gradient(90deg, var(--bp-info) 0%, var(--bp-info-text) 100%);
+}
+
+.rangeSpanGsm {
+  background: linear-gradient(90deg, var(--bp-orange-500) 0%, var(--bp-orange-600) 100%);
+}
+
+.cardFoot {
+  margin-top: auto;
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: var(--bp-space-3);
+  border-top: 1px solid var(--bp-hairline);
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+}

@@ -1,3 +1,10 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# Prisma's postinstall must run to fetch/prepare query engines.
+allowBuilds:
+  '@parcel/watcher': false
+  "@prisma/engines": true
+  '@swc/core': false
+  prisma: true

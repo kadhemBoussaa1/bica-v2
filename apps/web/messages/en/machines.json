@@ -1,0 +1,80 @@
+{
+  "eyebrow": "Production",
+  "title": "Machines",
+  "subtitle": "Shop-floor equipment migrated from the previous system, with the paper widths and grammages each machine can run. Filter by type, or search name, code and brand.",
+  "newMachine": "New machine",
+  "editMachine": "Edit machine",
+  "back": "← Machines",
+  "loadingMachine": "Loading machine…",
+  "columns": {
+    "machine": "Machine",
+    "code": "Code",
+    "type": "Type",
+    "laize": "Laize (mm)",
+    "grammage": "Grammage",
+    "supplier": "Supplier"
+  },
+  "archivedTag": "ARCHIVED",
+  "filters": {
+    "archived": "Archived"
+  },
+  "searchPlaceholder": "Search name, code, brand…",
+  "emptyMessage": "No machines match these filters.",
+  "archiveTitle": "Archive machine?",
+  "restoreTitle": "Restore machine?",
+  "archiveBody": "<strong>{name}</strong> will be hidden from the default list. Nothing is deleted — historical orders that ran on it keep naming it.",
+  "restoreBody": "<strong>{name}</strong> will appear in the list again.",
+  "form": {
+    "code": "Code",
+    "type": "Type",
+    "selectType": "Select a type",
+    "name": "Name",
+    "brand": "Brand",
+    "supplier": "Supplier",
+    "noSupplier": "No supplier",
+    "price": "Price",
+    "purchaseDate": "Purchase date",
+    "capabilities": "Capabilities",
+    "capabilitiesHint": "Which of these apply depends on the machine. Leave anything the machine does not state blank rather than entering a zero.",
+    "documents": "Documents",
+    "imageUrl": "Image URL",
+    "invoiceUrl": "Invoice URL",
+    "createMachine": "Create machine",
+    "mustBeNumber": "{field} must be a number",
+    "priceMustBeNumber": "Price must be a number"
+  },
+  "measures": {
+    "laize": "Laize",
+    "grammage": "Grammage",
+    "laizeMin": "Laize min",
+    "laizeMax": "Laize max",
+    "grammageMin": "Grammage min",
+    "grammageMax": "Grammage max",
+    "grammageMinWithoutHandle": "Grammage min, no handle",
+    "grammageMaxWithoutHandle": "Grammage max, no handle",
+    "grammageMinWithHandle": "Grammage min, handle",
+    "grammageMaxWithHandle": "Grammage max, handle",
+    "grammageMinKraft": "Grammage min, kraft",
+    "grammageMaxKraft": "Grammage max, kraft",
+    "grammageMinLaminatedKraft": "Grammage min, laminated",
+    "grammageMaxLaminatedKraft": "Grammage max, laminated",
+    "lengthMin": "Length min",
+    "lengthMax": "Length max",
+    "widthMin": "Width min",
+    "widthMax": "Width max"
+  },
+  "kpis": {
+    "machines": "Machines",
+    "onFloor": "on the floor",
+    "machinesUnit": "machines",
+    "archived": "Archived"
+  },
+  "view": {
+    "label": "View",
+    "grid": "Card view",
+    "list": "List view"
+  },
+  "cards": {
+    "notSet": "Not set"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "metaTitle": "Sign in · Bicapack ERP",
+  "title": "Sign in",
+  "subtitle": "Use the credentials issued to you by an administrator.",
+  "email": "Email",
+  "password": "Password",
+  "signIn": "Sign in",
+  "signingIn": "Signing in…",
+  "failed": "Sign-in failed. Try again.",
+  "note": "Accounts are created by a super admin or admin — there is no public sign-up. Contact your administrator if you need access.",
+  "asideMark": "Production floor · Office",
+  "asideTitle": "Kraft paper bag production, end to end.",
+  "asideBody": "Job orders, roll consumption, stock and shipments in one place. What you see after signing in depends on the role your administrator assigned."
+}

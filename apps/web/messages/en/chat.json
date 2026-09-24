@@ -1,0 +1,58 @@
+{
+  "title": "Chat",
+  "launcher": {
+    "open": "Open chat",
+    "close": "Minimise chat",
+    "dismiss": "Hide chat"
+  },
+  "panel": {
+    "everyone": "Everyone on the platform",
+    "visibleToAll": "Visible to everyone signed in"
+  },
+  "composer": {
+    "label": "Write a notice",
+    "placeholder": "A machine is down, a delivery has slipped, a price has changed…",
+    "send": "Post",
+    "sending": "Posting…",
+    "hint": "Everyone signed in sees this, and a notice cannot be taken back. Attach photos, PDFs, spreadsheets and documents, up to 25 MB.",
+    "attachmentsFull": "Six attachments is the limit for one notice.",
+    "remove": "Remove {filename}",
+    "tooMany": "Too many attachments",
+    "failed": "The notice was not posted. Try again.",
+    "short": "Aa",
+    "mention": "@ Mention",
+    "document": "# Document"
+  },
+  "upload": {
+    "label": "Attach a file",
+    "choose": "Attach",
+    "replace": "Replace",
+    "remove": "Remove",
+    "uploading": "Uploading…",
+    "failed": "The upload failed. Check the connection and try again.",
+    "tooLarge": "That file is larger than 25 MB.",
+    "wrongType": "Attach a photo, PDF, spreadsheet or document."
+  },
+  "pinned": {
+    "title": "Pinned",
+    "empty": "Nothing is pinned.",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinnedBy": "Pinned {when}",
+    "hide": "Hide pinned",
+    "show": "Show pinned"
+  },
+  "feed": {
+    "loading": "Loading the stream…",
+    "empty": "Nothing has been posted yet.",
+    "emptyText": "The first notice will appear here for everyone signed in.",
+    "loadOlder": "Load older",
+    "loadingOlder": "Loading…",
+    "start": "The beginning of the stream",
+    "new": "{count, plural, =1 {1 new notice} other {# new notices}}",
+    "jumpToLatest": "Jump to latest",
+    "you": "You",
+    "attachment": "{filename} ({size})",
+    "error": "The stream could not be loaded."
+  }
+}

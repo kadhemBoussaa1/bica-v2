@@ -1,0 +1,363 @@
+/*
+ * Stocktake — docs/inventory-plan.md §6.
+ *
+ * The scan-screen half is lifted from `receiving.module.css` rather than
+ * imported across route folders, and it carries that file's two hard-won
+ * fixes: `.status` pins its own dark ink (the success/danger tints are fixed
+ * light values with no `data-surface="floor"` override, so inheriting the ink
+ * ground's near-white `--bp-ink` would render the outcome pale-on-pale), and
+ * the armed state is signalled by border STYLE, not colour alone.
+ */
+
+/* --- session list --------------------------------------------------------- */
+
+.openPanel {
+  display: grid;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-panel);
+  border: 1px solid var(--bp-hairline);
+  background: var(--bp-veil-bg);
+  margin-block-end: var(--bp-space-5);
+}
+
+.openPanelHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+}
+
+.openPanelTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--bp-ink-strong);
+}
+
+.openPanelMeta {
+  font-size: 0.9rem;
+  color: var(--bp-ink-muted);
+}
+
+.openPanelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-3);
+}
+
+/* The unlabelled-reel warning: Step 0 is a prerequisite, so say so loudly. */
+.warning {
+  display: grid;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  border: 1px solid var(--bp-warning);
+  background: var(--bp-warning-bg);
+  color: var(--bp-neutral-900);
+  font-size: 0.9rem;
+  margin-block-end: var(--bp-space-5);
+}
+
+.progressCell {
+  display: grid;
+  gap: 2px;
+}
+
+.progressBar {
+  inline-size: 100%;
+  block-size: 6px;
+  border-radius: 999px;
+  background: var(--bp-tint);
+  overflow: hidden;
+}
+
+.progressFill {
+  block-size: 100%;
+  border-radius: 999px;
+  background: var(--bp-orange-500);
+}
+
+.progressFillDone {
+  background: var(--bp-success);
+}
+
+/* --- scan screen ---------------------------------------------------------- */
+
+.scan {
+  display: grid;
+  gap: var(--bp-space-5);
+}
+
+.scanHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  flex: 1 1 240px;
+  min-inline-size: 200px;
+  max-inline-size: 340px;
+}
+
+.scanProgress {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--bp-ink);
+}
+
+.scanNote {
+  font-size: 0.85rem;
+  color: var(--bp-ink-muted);
+}
+
+/*
+ * The scan target. Focusable so a tap gives the page keyboard focus back
+ * after an app switch — the wedge types into the focused document — but it is
+ * deliberately not an input, so no soft keyboard opens.
+ */
+.zone {
+  display: grid;
+  place-items: center;
+  gap: var(--bp-space-3);
+  min-height: 240px;
+  padding: var(--bp-space-6);
+  text-align: center;
+  border-radius: var(--bp-radius-panel);
+  border: 2px dashed var(--bp-tint-strong);
+  background: var(--bp-veil-bg);
+  cursor: pointer;
+}
+
+.zone:focus-visible {
+  outline: 2px solid var(--bp-orange-500);
+  outline-offset: 2px;
+}
+
+.zoneArmed {
+  border-style: solid;
+  border-color: var(--bp-orange-500);
+}
+
+.zoneHint {
+  font-size: 1rem;
+  color: var(--bp-ink-muted);
+}
+
+.zoneBuffer {
+  font-family: var(--bp-font-mono);
+  font-size: 0.9rem;
+  color: var(--bp-ink-faint);
+  word-break: break-all;
+}
+
+/* The scan result — the one thing read from across a pallet. See the note
+   at the top of this file about the pinned ink. */
+.status {
+  display: grid;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-panel);
+  border: 1px solid var(--bp-hairline);
+  color: var(--bp-neutral-900);
+}
+
+.statusCounted {
+  background: var(--bp-success-bg);
+  border-color: var(--bp-success);
+}
+
+.statusCounted .statusOutcome {
+  color: var(--bp-success-text);
+}
+
+/* Neither good nor bad: the ink scope's own tint, so this one keeps the
+   inverted ink the rest of the screen uses. */
+.statusAlready {
+  background: var(--bp-tint);
+  border-color: var(--bp-tint-strong);
+  color: var(--bp-ink);
+}
+
+/* A finding, not a failure: the reel is here but the system wrote it off. */
+.statusUnexpected {
+  background: var(--bp-warning-bg);
+  border-color: var(--bp-warning);
+}
+
+.statusRefused {
+  background: var(--bp-danger-bg);
+  border-color: var(--bp-danger);
+}
+
+.statusRefused .statusOutcome {
+  color: var(--bp-danger-text);
+}
+
+.statusOutcome {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.statusReel {
+  font-family: var(--bp-font-mono);
+  font-size: 1.1rem;
+  color: inherit;
+  word-break: break-all;
+}
+
+.statusSpec {
+  font-size: 0.9rem;
+  color: inherit;
+  opacity: 0.78;
+}
+
+.recent {
+  display: grid;
+  gap: var(--bp-space-2);
+}
+
+.recentTitle {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bp-ink-faint);
+}
+
+.recentRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  padding-block: var(--bp-space-1);
+  border-block-end: 1px solid var(--bp-hairline);
+  font-size: 0.9rem;
+}
+
+.recentReel {
+  font-family: var(--bp-font-mono);
+  color: var(--bp-ink-strong);
+}
+
+.video {
+  inline-size: 100%;
+  max-inline-size: 420px;
+  border-radius: var(--bp-radius-block);
+  background: #000;
+}
+
+.scanActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-3);
+}
+
+/*
+ * Typing a code by hand, for a torn label. The one real `<input>` on this
+ * screen, and so the one place the soft keyboard is wanted — behind a toggle
+ * for exactly that reason. `useScanCapture` is disabled while it is open so
+ * the wedge cannot fight the field for the same keystrokes.
+ */
+.manual {
+  display: grid;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-panel);
+  border: 1px solid var(--bp-hairline);
+  background: var(--bp-veil-bg);
+}
+
+.manualLabel {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bp-ink-faint);
+}
+
+.manualRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-3);
+}
+
+.manualInput {
+  flex: 1 1 200px;
+  min-inline-size: 0;
+  min-block-size: var(--bp-control-h-floor);
+  padding-inline: var(--bp-space-4);
+  border-radius: var(--bp-radius);
+  border: 1px solid var(--bp-tint-strong);
+  background: var(--bp-veil-bg);
+  color: var(--bp-ink);
+  font-family: var(--bp-font-mono);
+  font-size: 1.05rem;
+}
+
+.manualInput:focus-visible {
+  outline: 2px solid var(--bp-orange-500);
+  outline-offset: 2px;
+}
+
+.manualHint {
+  font-size: 0.85rem;
+  color: var(--bp-ink-muted);
+}
+
+/* --- variance report ------------------------------------------------------ */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--bp-space-4);
+  margin-block-end: var(--bp-space-5);
+}
+
+.tile {
+  display: grid;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-4);
+  border-radius: var(--bp-radius-card);
+  border: 1px solid var(--bp-hairline);
+  background: var(--bp-veil-bg);
+}
+
+.tileLabel {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bp-ink-faint);
+}
+
+.tileValue {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--bp-ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.tileValueWarn {
+  color: var(--bp-warning-text);
+}
+
+.tileValueDone {
+  color: var(--bp-success-text);
+}
+
+.sideNote {
+  font-size: 0.9rem;
+  color: var(--bp-ink-muted);
+  margin-block-end: var(--bp-space-4);
+}
+
+.reelCell {
+  display: grid;
+  gap: 2px;
+}
+
+.reelNumero {
+  font-family: var(--bp-font-mono);
+  color: var(--bp-ink-strong);
+}
+
+.reelMeta {
+  font-size: 0.85rem;
+  color: var(--bp-ink-muted);
+}

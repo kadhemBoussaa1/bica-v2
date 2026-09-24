@@ -1,0 +1,270 @@
+{
+  "eyebrow": "Invoicing",
+  "open": "Open",
+  "yes": "Yes",
+  "no": "No",
+  "loading": "Loading…",
+  "loadingInvoice": "Loading invoice…",
+  "notSet": "Not set",
+  "archived": "Archived",
+  "archivedTag": "ARCHIVED",
+  "noClient": "No client recorded",
+  "noScan": "No scanned document.",
+  "noLines": "This invoice has no lines.",
+  "draftShipment": "Draft shipment",
+  "activityLink": "View in the activity log",
+  "paymentState": {
+    "draft": "Draft",
+    "open": "Open",
+    "overdue": "Overdue",
+    "paid": "Paid"
+  },
+  "filters": {
+    "draft": "Draft",
+    "issued": "Issued",
+    "open": "Open",
+    "overdue": "Overdue",
+    "paid": "Paid"
+  },
+  "columns": {
+    "invoice": "Invoice",
+    "issued": "Issued",
+    "supplier": "Supplier",
+    "client": "Client",
+    "due": "Due",
+    "payment": "Payment",
+    "totalInclVat": "Total incl. VAT"
+  },
+  "fields": {
+    "number": "Number",
+    "supplier": "Supplier",
+    "supplierNumber": "Supplier's invoice no.",
+    "client": "Client",
+    "order": "Order",
+    "shipment": "Shipment",
+    "issued": "Issued",
+    "issueDate": "Issue date",
+    "due": "Due date",
+    "category": "Category",
+    "forProduction": "For production",
+    "goodsReceipt": "Goods receipt",
+    "legacyReceipt": "Legacy receipt",
+    "status": "Status",
+    "paidOn": "Paid on",
+    "method": "Method",
+    "paymentMethod": "Payment method",
+    "netPayable": "Net payable",
+    "exclVat": "Excl. VAT",
+    "vat": "VAT",
+    "inclVat": "Incl. VAT",
+    "withholding": "Withholding",
+    "withholdingTax": "Withholding tax",
+    "currency": "Currency",
+    "exchangeRate": "Exchange rate",
+    "trace": "Trace",
+    "draftedBy": "Drafted by",
+    "note": "Note"
+  },
+  "panels": {
+    "invoice": "Invoice",
+    "payment": "Payment",
+    "amounts": "Amounts",
+    "documents": "Scanned documents ({count})",
+    "lines": "Lines ({count})",
+    "actions": "Actions",
+    "scan": "Scanned document",
+    "preview": "Preview",
+    "pdf": "Invoice PDF"
+  },
+  "lines": {
+    "product": "Product",
+    "description": "Designation",
+    "qty": "Qty",
+    "unitPrice": "Unit price",
+    "discount": "Discount",
+    "vat": "VAT",
+    "discountPct": "Discount %",
+    "vatPct": "VAT %",
+    "total": "Total",
+    "sum": "Sum of lines",
+    "sumCurrency": "Sum of lines ({currency})",
+    "add": "Add line",
+    "remove": "Remove",
+    "billsOrder": "Bills the order",
+    "aria": {
+      "product": "Line {n} product",
+      "description": "Line {n} designation",
+      "quantity": "Line {n} quantity",
+      "unitPrice": "Line {n} unit price",
+      "discount": "Line {n} discount %",
+      "vat": "Line {n} VAT %",
+      "mention": "Line {n} product mention"
+    }
+  },
+  "purchases": {
+    "title": "Purchase invoices",
+    "subtitle": "What suppliers billed us. Open one for its amounts, lines and scanned documents.",
+    "new": "New purchase invoice",
+    "newSubtitle": "Record a supplier's invoice as it was received: its number, dates, amounts and lines. The goods receipt it bills can be attached once the supplier is chosen.",
+    "back": "← Purchase invoices",
+    "backToInvoice": "← Invoice",
+    "detailTitle": "Purchase invoice",
+    "detailSubtitle": "A supplier's invoice as recorded: its amounts, payment, lines and the goods receipt it bills.",
+    "editTitle": "Edit purchase invoice",
+    "editSubtitle": "Every field is written on save, so a blank clears it. The scanned documents are kept as they are.",
+    "searchPlaceholder": "Search invoice no., supplier, order…",
+    "deleted": "Purchase invoice deleted",
+    "deleteTitle": "Delete invoice {numero}?",
+    "deleteBody": "The invoice and its {count, plural, =0 {lines} one {# line} other {# lines}} are deleted permanently. The goods receipt it bills is not affected.",
+    "recorded": "Invoice {numero} recorded",
+    "saved": "Invoice {numero} saved",
+    "form": {
+      "mustBeNumber": "{label} must be a number",
+      "archivedOption": "{name} (archived)",
+      "chooseSupplier": "Choose a supplier",
+      "supplierHint": "Supplier not listed? <link>Create it</link> first.",
+      "chooseSupplierFirst": "Choose a supplier first",
+      "noReceipt": "No goods receipt for this supplier",
+      "none": "None",
+      "receiptHint": "The delivery this invoice bills, if it was recorded. Only receipts from the chosen supplier are offered.",
+      "amountsSection": "Amounts and payment",
+      "linesSection": "Lines",
+      "submit": "Record invoice",
+      "totals": {
+        "exclVat": "Excl. VAT: {amount}",
+        "vat": "VAT: {amount}",
+        "inclVat": "Incl. VAT: {amount}",
+        "netPayable": "Net payable: {amount}"
+      }
+    },
+    "kpis": {
+      "billed": "Billed · {currency}",
+      "invoices": "{count, plural, one {# invoice} other {# invoices}}",
+      "invoiceUnit": "{count, plural, one {invoice} other {invoices}}",
+      "unpaid": "To pay",
+      "unpaidMeta": "awaiting settlement",
+      "overdue": "Overdue",
+      "overdueMeta": "past their term",
+      "nothingOverdue": "nothing late",
+      "noCurrency": "No currency",
+      "noCurrencyShort": "currency missing",
+      "noCurrencyMeta": "currency to fill in"
+    },
+    "period": {
+      "label": "Issued",
+      "inRange": "{count, plural, one {# invoice} other {# invoices}} in this period"
+    },
+    "segments": {
+      "all": "All",
+      "unpaid": "To pay",
+      "overdue": "Overdue",
+      "paid": "Paid"
+    },
+    "state": {
+      "paid": "Paid",
+      "due": "To pay",
+      "late": "Overdue",
+      "nodate": "No term"
+    },
+    "row": {
+      "receivedOn": "received {date}",
+      "noDate": "no date",
+      "archivedSupplier": "Archived supplier",
+      "settled": "settled",
+      "noTerm": "no term recorded",
+      "dueToday": "due today",
+      "dueIn": "in {count, plural, one {# day} other {# days}}",
+      "late": "{count, plural, one {# day} other {# days}} late"
+    },
+    "groups": {
+      "noDate": "No issue date"
+    },
+    "empty": {
+      "title": "No purchase invoices",
+      "text": "Nothing matches these filters at once.",
+      "reset": "Reset"
+    }
+  },
+  "sales": {
+    "title": "Sales invoices",
+    "subtitle": "What we billed clients, and the drafts waiting to be issued. Create one here, or from an invoiceable order's page.",
+    "back": "← Sales invoices",
+    "detailTitle": "Sales invoice",
+    "detailSubtitle": "An invoice to a client: its amounts, payment, lines, and the order and shipment it belongs to. A draft can still be edited; an issued invoice is final.",
+    "searchPlaceholder": "Search invoice no., client, order…",
+    "emptyMessage": "No sales invoices match these filters.",
+    "draftBanner": "<strong>Draft</strong> — not yet numbered. It receives the next F{yy} number when issued, and freezes.",
+    "currencyRequired": "A currency is required to issue the invoice.",
+    "issue": "Issue invoice",
+    "issueConfirm": "Issue",
+    "issueBody": "The invoice receives the next number of {year} and can no longer be edited.",
+    "unsavedSavedFirst": "Your unsaved changes are saved first.",
+    "saveDraft": "Save draft",
+    "savedState": "Saved",
+    "refresh": "Refresh from packaging",
+    "saveBeforeRefresh": "Save the draft before refreshing quantities from packaging.",
+    "discard": "Discard draft",
+    "discardTitle": "Discard draft invoice",
+    "discardConfirm": "Discard",
+    "discardBody": "The draft is deleted, and any order it bills returns to invoiceable. Nothing has been numbered yet, so nothing is lost but the edits. The note is written to the order's history.",
+    "issuedToast": "Invoice {numero} issued",
+    "discardedToast": "Draft invoice discarded",
+    "nothingToRefresh": "Quantities already match packaging",
+    "quantityUpdated": "Quantities updated from packaging",
+    "hints": {
+      "alreadyInvoiced": "{invoiced} of {planned} parcels already invoiced; {remaining} remaining",
+      "packedPlanned": "{packed} parcels packed of {planned} planned",
+      "packed": "{packed} parcels packed",
+      "mismatch": "Packaging counts {packed}, the line bills {quantity}",
+      "noPackagingPlanned": "Nothing packed yet — the quantity falls back to the {planned} planned parcels",
+      "noPackaging": "Nothing packed yet and no parcel count planned",
+      "priceChanged": "The order's price is now {price} — adjust the unit price if the invoice should follow it"
+    },
+    "new": "New sales invoice",
+    "newSubtitle": "Bill a client for anything that is not a job order — a service, a one-off sale, a re-invoiced cost. Type the lines yourself; the draft takes its number when you issue it.",
+    "draftCreated": "Draft invoice created for {client}",
+    "form": {
+      "chooseClient": "Choose a client",
+      "clientHint": "Client not listed? <link>Create it</link> first.",
+      "linesSection": "Lines",
+      "submit": "Create draft"
+    },
+    "previewPage": "Invoice preview, page {page}",
+    "previewError": "The preview could not be drawn.",
+    "previewHint": "The invoice as it will print, redrawn as you type. Nothing is saved until you save the draft.",
+    "pdfHint": "Printed from the invoice as it was issued, then stored: every later view serves the same file.",
+    "period": {
+      "label": "Issued",
+      "inRange": "{count, plural, one {# invoice} other {# invoices}} in this period"
+    },
+    "kpis": {
+      "billed": "Billed · {currency}",
+      "invoices": "{count, plural, one {# invoice} other {# invoices}}",
+      "overdue": "Overdue",
+      "overdueUnit": "{count, plural, one {invoice} other {invoices}}",
+      "toChase": "to chase",
+      "nothingOverdue": "nothing late"
+    },
+    "groups": {
+      "drafts": "Drafts, not yet issued"
+    },
+    "row": {
+      "issuedOn": "issued {date}",
+      "notIssued": "not issued",
+      "noDue": "no due date",
+      "dueToday": "due today",
+      "dueIn": "in {count, plural, one {# day} other {# days}}",
+      "late": "{count, plural, one {# day} other {# days}} late",
+      "paidOn": "paid {date}"
+    },
+    "empty": {
+      "title": "No invoices",
+      "text": "Nothing matches this filter and this search at once.",
+      "reset": "Reset"
+    }
+  },
+  "mention": {
+    "label": "Product mention",
+    "none": "None"
+  }
+}

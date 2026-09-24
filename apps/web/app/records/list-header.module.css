@@ -1,0 +1,214 @@
+/*
+ * The furniture above a list: a row of figures and the date window that
+ * narrows them. Shared by purchase orders and sales invoices, which both
+ * report "what the listed rows come to, per currency" over the same
+ * server-side window. Tiles and pills from `Sales invoices v3.dc.html`.
+ */
+
+/* One tile per currency; a currency with nothing in it renders no tile. */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--bp-space-3);
+}
+
+/* A veil inside the header's glass: the handoff's white-at-52% on the panel. */
+.kpi {
+  --kpi-dot: var(--bp-info);
+  --kpi-dot-radius: 2px;
+  --kpi-value: var(--bp-ink);
+  border-radius: var(--bp-radius-block);
+  padding: var(--bp-space-4);
+  background: rgb(255 255 255 / 0.52);
+  border: 1px solid rgb(255 255 255 / 0.7);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.kpiDanger {
+  --kpi-dot: var(--bp-danger);
+  --kpi-dot-radius: 0;
+  --kpi-value: var(--bp-danger-text);
+  background: rgb(193 53 43 / 0.08);
+  border-color: rgb(143 37 30 / 0.3);
+}
+
+.kpiSuccess {
+  --kpi-dot: var(--bp-success);
+  --kpi-dot-radius: 50%;
+  --kpi-value: var(--bp-success-text);
+}
+
+.kpiLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  font: 600 0.625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.kpiDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  display: block;
+  border-radius: var(--kpi-dot-radius);
+  background: var(--kpi-dot);
+}
+
+.kpiRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.kpiValue {
+  font: 700 clamp(1.375rem, 2.6vw, 1.6875rem) / 1.15 var(--bp-font-display);
+  letter-spacing: -0.025em;
+  color: var(--kpi-value);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiUnit,
+.kpiMeta {
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.kpiMeta {
+  font-size: 0.6875rem;
+}
+
+/*
+ * The period pills, in the list toolbar between the chips and the search:
+ * a mono label, then one pill per window, then the two date fields a
+ * custom range needs.
+ */
+.periods {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.periodLabel {
+  font: 600 0.59375rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.pill {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgb(26 23 20 / 0.14);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-strong);
+  font: 500 0.8125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.pill:hover {
+  border-color: rgb(242 145 0 / 0.6);
+}
+
+.pill:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* The chosen window: the orange tint, with orange-800 text for contrast. */
+.pillActive,
+.pillActive:hover {
+  background: rgb(242 145 0 / 0.18);
+  border-color: rgb(217 124 0 / 0.5);
+  color: var(--bp-orange-800);
+}
+
+.periodRange {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex: 1 1 280px;
+  min-width: 240px;
+}
+
+.periodRange > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/*
+ * The segmented control: a handful of exclusive answers on one veil, the
+ * chosen one in ink. Sits in the list toolbar before the period pills.
+ */
+.segmented {
+  display: flex;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-1);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg-soft);
+  border: 1px solid rgb(26 23 20 / 0.12);
+  flex: none;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-ink-muted);
+  font: 600 0.84375rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.segment:hover {
+  background: rgb(242 145 0 / 0.16);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.segmentActive,
+.segmentActive:hover {
+  background: var(--bp-neutral-900);
+  color: #fff;
+}
+
+.segmentCount {
+  font: 500 0.75rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.68;
+}
+
+/* A line after the custom range's dates: what the window holds, or how to leave a bound open. */
+.periodNote {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* The awaiting tile: brand orange, round — live, not wrong. */
+.kpiPending {
+  --kpi-dot: var(--bp-orange-500);
+  --kpi-dot-radius: 50%;
+  --kpi-value: var(--bp-orange-800);
+}
+
+/* The "fill this in" tile: amber, softly squared — a gap, not a fault. */
+.kpiWarning {
+  --kpi-dot: var(--bp-warning);
+  --kpi-dot-radius: 2px;
+  --kpi-value: var(--bp-warning-text);
+  background: rgb(224 161 6 / 0.1);
+  border-color: rgb(224 161 6 / 0.4);
+}

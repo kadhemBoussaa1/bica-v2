@@ -1,0 +1,79 @@
+{
+  "eyebrow": "Contact",
+  "title": "Clients",
+  "subtitle": "Clients migrés depuis l'ancien système, la plupart avec seulement un nom. Les chiffres montrent ce qui reste à compléter ; ouvrez une ligne pour voir sa fiche, la modifier ou l'archiver.",
+  "newClient": "Nouveau client",
+  "backToList": "← Clients",
+  "editTitle": "Modifier le client",
+  "editSubtitle": "Complétez les informations que l'ancien système n'avait jamais enregistrées. Les champs vides restent vides au lieu d'être stockés comme texte vide.",
+  "newTitle": "Nouveau client",
+  "newSubtitle": "Seul le nom est obligatoire ; il est vérifié dans le fichier au fur et à mesure de la saisie. L'aperçu à droite est la fiche telle que la liste l'affichera.",
+  "loadingClient": "Chargement du client…",
+  "noun": "clients",
+  "archivedTag": "ARCHIVÉ",
+  "columns": {
+    "name": "Client",
+    "contact": "Contact",
+    "taxId": "Matricule fiscal",
+    "contactOnFile": "Contact enregistré",
+    "since": "Client depuis"
+  },
+  "filters": {
+    "withContact": "Avec contact",
+    "withoutContact": "Sans contact",
+    "duplicates": "Doublons",
+    "archived": "Archivés"
+  },
+  "searchPlaceholder": "Rechercher nom, matricule fiscal, e-mail…",
+  "emptyMessage": "Aucun client ne correspond à ces filtres.",
+  "archiveDialog": {
+    "title": "Archiver le client ?",
+    "body": "<strong>{name}</strong> sera masqué de la liste par défaut et des sélecteurs à venir. Rien n'est supprimé — son historique reste intact et vous pouvez le restaurer à tout moment."
+  },
+  "restoreDialog": {
+    "title": "Restaurer le client ?",
+    "body": "<strong>{name}</strong> apparaîtra de nouveau dans la liste."
+  },
+  "fields": {
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "taxId": "Matricule fiscal",
+    "since": "Client depuis",
+    "sinceShort": "Depuis",
+    "status": "Statut"
+  },
+  "status": {
+    "archived": "Archivé",
+    "reachable": "Joignable",
+    "needsContact": "Sans contact"
+  },
+  "panel": {
+    "aria": "Fiche de {name}",
+    "eyebrow": "Fiche client",
+    "close": "Fermer la fiche",
+    "completeness": "Complétude de la fiche",
+    "contactSection": "Contact",
+    "recordSection": "Fiche"
+  },
+  "form": {
+    "identity": "Identité",
+    "required": "Obligatoire",
+    "name": "Nom du client",
+    "namePlaceholder": "ex. Boulangerie Monteil",
+    "optional": "Facultatif",
+    "contact": "Contact",
+    "contactMeta": "Facultatif, mais c'est ce qui manque à la liste",
+    "emailPlaceholder": "nom@societe.com",
+    "phonePlaceholder": "+216 …",
+    "addressPlaceholder": "Rue, ville, pays",
+    "blankHint": "Laissez un champ vide plutôt que de deviner — les vides sont comptés et pourront être complétés plus tard.",
+    "createClient": "Créer le client",
+    "previewAria": "Aperçu de la fiche",
+    "previewLabel": "Aperçu de la fiche",
+    "untitled": "Client sans nom",
+    "completeness": "Complétude",
+    "reachableNote": "Ce client sera compté comme joignable.",
+    "unreachableNote": "Les champs vides restent vides. Ce client apparaîtra sous « Sans contact » tant qu'un e-mail ou un téléphone n'est pas ajouté."
+  }
+}

@@ -1,0 +1,306 @@
+/*
+ * Settings module ("Settings v3" handoff, rail approach): the frame that
+ * puts the module's own rail beside its pages, the rail itself, the section
+ * header above each page, and the glass sections the users and templates
+ * pages draw. Furniture shared with the rest of the app (notices, status
+ * badges, row actions) still comes from records.module.css.
+ *
+ * The frame is a size container: the rail folds into a strip above the
+ * page when the content column, not the viewport, gets narrow — the app
+ * sidebar takes 280px or 72px of the same screen.
+ */
+
+.frame {
+  container: settings / inline-size;
+  /* The module fills what the top bar leaves, edge to edge: the block is the
+     screen here, not a card on a page. Nothing outside it scrolls. */
+  height: calc(100dvh - var(--bp-topbar-h));
+  display: flex;
+}
+
+/*
+ * One block: the rail and the page share a single surface, divided by a
+ * hairline rather than a gap, and it touches the sidebar and the top bar on
+ * every side. The rail sits on the panel's glass; the page column is
+ * near-solid, because a dense table must not have blur behind it (the
+ * toolkit's own rule, which is why `.table` drops its chrome here and
+ * inherits this ground instead).
+ */
+.columns {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  overflow: hidden;
+}
+
+/*
+ * The page column. It scrolls only when its content cannot be made to fit —
+ * the templates list and the creation form do, a table does not: the table
+ * fills this column and scrolls its own rows, so the heading, the chips and
+ * the pager stay put.
+ */
+.main {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--bp-space-5);
+  background: rgb(255 255 255 / 0.9);
+}
+
+/* --- rail --- */
+
+/* Fixed beside the page: the module list never scrolls with the rows, and
+   scrolls inside itself only if it ever outgrows the screen. */
+.rail {
+  flex: 0 0 248px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--bp-space-5) var(--bp-space-3) var(--bp-space-4);
+  border-inline-end: 1px solid var(--bp-hairline);
+  overflow-y: auto;
+}
+
+.railHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--bp-space-2) var(--bp-space-4);
+}
+
+.railEyebrow {
+  font: 600 0.625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bp-orange-800);
+}
+
+.railTitle {
+  font: 700 1.5rem/1.1 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  color: var(--bp-ink);
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+}
+
+.groupLabel {
+  padding: var(--bp-space-1) var(--bp-space-2);
+  font: 600 0.59375rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+/* A page in the rail: icon squircle, name with its figure, one line on what
+   is inside. The open page sits on a near-solid card with a warm border;
+   the others are flat until hovered. */
+.item {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: flex-start;
+  text-align: start;
+  padding: var(--bp-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--bp-radius-block);
+  color: var(--bp-ink);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.item:hover {
+  background: rgb(255 255 255 / 0.9);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.itemActive,
+.itemActive:hover {
+  background: rgb(255 255 255 / 0.96);
+  border-color: rgb(217 124 0 / 0.45);
+  box-shadow: var(--bp-shadow-card);
+}
+
+.itemIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+  color: var(--bp-ink);
+}
+
+.itemIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.itemActive .itemIcon {
+  background: var(--bp-gradient-primary);
+}
+
+.itemText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemTop {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.itemLabel {
+  font: 600 0.875rem/1.3 var(--bp-font-body);
+}
+
+.itemCount {
+  flex: none;
+  font: 600 0.6875rem/1.3 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink-muted);
+}
+
+.itemCountWarn {
+  color: var(--bp-danger-text);
+}
+
+.itemHint {
+  font: 400 0.75rem/1.45 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.railNote {
+  /* `auto` above: sits at the foot of the column, not under the last section. */
+  margin: auto var(--bp-space-2) 0;
+  padding-top: var(--bp-space-3);
+  border-top: 1px solid var(--bp-hairline);
+  font: 400 0.71875rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* The content column too narrow for a rail beside it: the rail becomes a
+   strip of compact pages across the top of the same block. */
+@container settings (max-width: 920px) {
+  .columns {
+    flex-direction: column;
+  }
+
+  .rail {
+    flex: none;
+    padding: var(--bp-space-2);
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--bp-hairline);
+    overflow: visible;
+  }
+
+  .railHead,
+  .groupLabel,
+  .itemHint,
+  .railNote {
+    display: none;
+  }
+
+  .groups,
+  .group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--bp-space-1);
+  }
+
+  .item {
+    align-items: center;
+    padding: var(--bp-space-1) var(--bp-space-3) var(--bp-space-1) var(--bp-space-1);
+    border-radius: var(--bp-radius-pill);
+  }
+
+  .itemIcon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--bp-radius-pill);
+  }
+
+  .itemTop {
+    gap: var(--bp-space-2);
+  }
+}
+
+/* --- section header --- */
+
+.header {
+  display: flex;
+  gap: var(--bp-space-5);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin: 0 0 var(--bp-space-4);
+}
+
+.headerText {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.eyebrow {
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.title {
+  margin: var(--bp-space-1) 0;
+  font: 700 clamp(1.625rem, 3.6vw, 2.125rem)/1.05 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  color: var(--bp-ink);
+}
+
+.intro {
+  margin: 0;
+  max-width: 48em;
+  font: 400 0.875rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+/* --- sections --- */
+
+/* Inside the block these are sections of the panel, not cards floating on
+   it: a hairline and the block radius, no second surface and no shadow. */
+.section {
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  padding: var(--bp-space-5);
+}
+
+.section + .section {
+  margin-top: var(--bp-space-4);
+}
+
+/* One mono line under a list: where an action lives, what a figure counts. */
+.sectionFoot {
+  margin: var(--bp-space-3) 0 0;
+  font: 400 0.75rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}

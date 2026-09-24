@@ -1,0 +1,439 @@
+/*
+ * Order detail: a main column that runs specification → production →
+ * history in reading order, and a sticky rail that pins status, actions,
+ * money and artwork while the detail scrolls.
+ *
+ * Source: "Order detail B - Main column and rail.dc.html" in the Claude
+ * Design project "ERP client module redesign", on the toolkit v2 tokens.
+ */
+
+.layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.main {
+  flex: 1 1 520px;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+.rail {
+  flex: 0 1 320px;
+  min-width: 270px;
+  position: sticky;
+  top: calc(var(--bp-topbar-h) + 20px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+@media (max-width: 900px) {
+  .rail {
+    position: static;
+    flex: 1 1 auto;
+  }
+}
+
+.card {
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+  padding: 20px;
+}
+
+.cardTitle {
+  margin: 0 0 10px;
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.sectionHead {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.sectionHead .cardTitle {
+  margin: 0;
+}
+
+/* --- header card --- */
+
+.headRow {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-4);
+}
+
+.thumb {
+  width: 92px;
+  height: 92px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  overflow: hidden;
+  background: var(--bp-tint);
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+.thumb img,
+.artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.headMeta {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.noRow {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.no {
+  font: 600 0.8125rem/1 var(--bp-font-mono);
+  color: var(--bp-accent-text);
+}
+
+.productName {
+  margin-top: 2px;
+  font: 700 1.5rem/1.2 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+.clientName {
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.lastEntry {
+  margin-top: 8px;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.k {
+  margin-inline-end: 6px;
+  font: 400 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+/* Figure tiles with their own surface and a gap between them (v3): an empty
+   grid cell shows the panel, never a grey slab. */
+.headline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.headlineCell {
+  background: var(--bp-veil-bg);
+  backdrop-filter: var(--bp-veil-blur);
+  border: 1px solid var(--bp-veil-border);
+  border-radius: var(--bp-radius-block);
+  box-shadow: var(--bp-shadow-veil);
+  padding: 12px 14px;
+}
+
+.headlineLabel {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+.headlineFigure {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.headlineValue {
+  font: 700 1.25rem/1.2 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font: 400 0.6875rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-faint);
+}
+
+/* --- spec blocks --- */
+
+.specGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0 var(--bp-space-5);
+}
+
+.specRow {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.specLabel {
+  flex: 1;
+  min-width: 0;
+  font: 400 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.specValue {
+  flex: none;
+  font: 600 0.8125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.specValue .unit {
+  font-size: 0.71875rem;
+}
+
+.absent {
+  color: var(--bp-ink-faint);
+  font-weight: 400;
+}
+
+.inks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+  margin-top: 10px;
+}
+
+.hint {
+  margin: 10px 0 0;
+  font: 400 0.75rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+}
+
+/* --- production entries and lifecycle --- */
+
+.row {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: baseline;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.rowStation {
+  flex: 0 0 130px;
+  font: 600 0.6875rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-accent-text);
+}
+
+.rowDate {
+  flex: 0 0 90px;
+  font: 400 0.78125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.rowValue {
+  flex: 1 1 180px;
+  min-width: 0;
+  font: 600 0.9375rem/1.4 var(--bp-font-display);
+}
+
+.rowMeta {
+  flex: 1 1 180px;
+  min-width: 0;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.rowMove {
+  flex: 1 1 200px;
+  min-width: 0;
+  font: 400 0.84375rem/1.4 var(--bp-font-body);
+}
+
+.rowBy {
+  flex: none;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+}
+
+.description {
+  margin: 12px 0 0;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.quiet {
+  margin: 0;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+}
+
+/* --- rail: status --- */
+
+.statusCard {
+  border-color: rgb(242 145 0 / 0.6);
+}
+
+.statusLine {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  margin: 6px 0 14px;
+}
+
+.statusDot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--dot, var(--bp-neutral-400));
+}
+
+.statusText {
+  font: 700 1.25rem/1.2 var(--bp-font-display);
+}
+
+.meterRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-2);
+  margin-bottom: 6px;
+}
+
+.meterValue {
+  font: 600 0.8125rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter {
+  height: 8px;
+  background: var(--bp-tint-strong);
+  border-radius: var(--bp-radius-pill);
+  overflow: hidden;
+  margin-bottom: var(--bp-space-4);
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-gradient-primary);
+}
+
+.railActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Buttons and links only — the transitions' <dialog> is a child here too,
+   and stretching it would pin a full-width modal to the viewport. */
+.railActions > button,
+.railActions > a,
+.railActions a > button {
+  width: 100%;
+}
+
+.railActions a {
+  display: flex;
+}
+
+/* --- rail: invoice --- */
+
+.invoiceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  margin-bottom: var(--bp-space-2);
+  font: 600 0.875rem/1.3 var(--bp-font-display);
+}
+
+/* --- rail: money --- */
+
+.total {
+  margin-bottom: 12px;
+  font: 700 2rem/1.1 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.moneyRow {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.moneyLabel {
+  flex: 1;
+  min-width: 0;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.moneyValue {
+  flex: none;
+  font: 600 0.78125rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- rail: artwork --- */
+
+.artwork {
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  overflow: hidden;
+  background: var(--bp-tint);
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+.artworkMore {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+  margin-top: 10px;
+}

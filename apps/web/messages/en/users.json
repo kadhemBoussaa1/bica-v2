@@ -1,0 +1,53 @@
+{
+  "eyebrow": "Settings",
+  "title": "Users",
+  "listMetaTitle": "Users · Bicapack ERP",
+  "subtitle": "You can see and manage accounts ranked below your own, and super admins can manage each other. Accounts are created here — there is no public sign-up.",
+  "newUser": "New user",
+  "metaTitle": "New user · Bicapack ERP",
+  "backToUsers": "‹ Back to users",
+  "newUserSubtitle": "You can only create roles you are permitted to assign.",
+  "youTag": "YOU",
+  "active": "Active",
+  "banned": "Banned",
+  "activity": "Activity",
+  "ban": "Ban",
+  "unban": "Unban",
+  "filters": {
+    "active": "Active",
+    "banned": "Banned"
+  },
+  "searchPlaceholder": "Search users",
+  "emptyMessage": "No users match these filters.",
+  "deleteTitle": "Delete user?",
+  "banTitle": "Ban user?",
+  "unbanTitle": "Unban user?",
+  "deleteBody": "<strong>{email}</strong> will be permanently removed, along with their sessions and sign-in credentials. This cannot be undone.",
+  "banBody": "<strong>{email}</strong> will be signed out and blocked from signing in. You can undo this at any time.",
+  "unbanBody": "<strong>{email}</strong> will be able to sign in again.",
+  "somethingWentWrong": "Something went wrong",
+  "form": {
+    "name": "Name",
+    "email": "Email",
+    "temporaryPassword": "Temporary password",
+    "passwordHint": "At least 12 characters. Share it with the user directly — they can change it after signing in.",
+    "role": "Role",
+    "loadingRoles": "Loading roles…",
+    "selectRole": "Select a role",
+    "creating": "Creating…",
+    "createUser": "Create user"
+  },
+  "edit": "Edit",
+  "editHint": "Ban and delete live in Edit, next to the role.",
+  "createdOn": "created {date}",
+  "editor": {
+    "title": "Edit {name}",
+    "role": "Role",
+    "status": "Status",
+    "activeHint": "Can sign in.",
+    "bannedHint": "Signed out and blocked from signing in.",
+    "deleteTitle": "Delete account",
+    "deleteHint": "Removes the account with its sessions and credentials. This cannot be undone.",
+    "save": "Save role"
+  }
+}

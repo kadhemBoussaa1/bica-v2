@@ -1,0 +1,54 @@
+/*
+ * The purchase order list's own columns, beside the shared banded-list
+ * shell (`records/banded-list.module.css`). Widths from the French labels:
+ * "attendu le 28 juil. 2026 · 12 j" in 11px mono is ~200px.
+ */
+
+/* The figure tiles take a full row of the header panel, under the title. */
+.figures {
+  flex: 1 1 100%;
+}
+
+.supplier {
+  width: 160px;
+  flex: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reception {
+  width: 210px;
+  flex: none;
+}
+
+.reception > * + * {
+  margin-top: 3px;
+}
+
+.total {
+  width: 130px;
+  flex: none;
+  text-align: end;
+}
+
+/*
+ * Stacked, under 900px: the supplier reads as a line of its own under the
+ * designation, then the reception and the amount share one. Declared here,
+ * not only in the shell: a module's fixed width would otherwise win or
+ * lose against the shell's `.col` on stylesheet order alone.
+ */
+@media (max-width: 899px) {
+  .supplier {
+    width: auto;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .reception,
+  .total {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "eyebrow": "Contacto",
+  "title": "Proveedores",
+  "subtitle": "Proveedores migrados del sistema anterior, con datos de contacto y tipos de IVA intactos. Filtra por familia, o busca por nombre, correo, NIF y dirección; abre una fila para ver su ficha, editarla o archivarla.",
+  "newSupplier": "Nuevo proveedor",
+  "supplierFamilies": "Familias de proveedores",
+  "backToList": "← Proveedores",
+  "editTitle": "Editar proveedor",
+  "editSubtitle": "Los campos vacíos se quedan vacíos en lugar de guardarse como texto vacío.",
+  "newTitle": "Nuevo proveedor",
+  "newSubtitle": "Solo el nombre es obligatorio, y se comprueba en el fichero mientras escribes. La familia alimenta los filtros de la lista, así que merece la pena el segundo extra.",
+  "loadingSupplier": "Cargando proveedor…",
+  "noun": "proveedores",
+  "archivedTag": "ARCHIVADO",
+  "columns": {
+    "name": "Proveedor",
+    "contact": "Contacto",
+    "family": "Familia",
+    "taxId": "NIF",
+    "contactOnFile": "Contacto registrado",
+    "vat": "IVA"
+  },
+  "vatCheck": "revisar",
+  "vatUnparsed": "Valor heredado sin interpretar: {value}",
+  "vatNotSingleRate": "No es un tipo único — introduce el real",
+  "filters": {
+    "unassigned": "Sin familia",
+    "duplicates": "Duplicados",
+    "archived": "Archivados"
+  },
+  "searchPlaceholder": "Buscar nombre, correo, NIF…",
+  "emptyMessage": "Ningún proveedor coincide con estos filtros.",
+  "archiveDialog": {
+    "title": "¿Archivar proveedor?",
+    "body": "<strong>{name}</strong> se ocultará de la lista predeterminada y de los selectores futuros. No se elimina nada — las facturas de compra anteriores siguen nombrándolo, y puedes restaurarlo en cualquier momento."
+  },
+  "restoreDialog": {
+    "title": "¿Restaurar proveedor?",
+    "body": "<strong>{name}</strong> volverá a aparecer en la lista."
+  },
+  "fields": {
+    "email": "Correo",
+    "phone": "Teléfono",
+    "phone2": "Segundo teléfono",
+    "fax": "Fax",
+    "website": "Sitio web",
+    "address": "Dirección",
+    "family": "Familia",
+    "taxId": "NIF",
+    "vatRate": "Tipo de IVA",
+    "status": "Estado"
+  },
+  "status": {
+    "archived": "Archivado",
+    "reachable": "Localizable",
+    "needsContact": "Sin contacto"
+  },
+  "panel": {
+    "aria": "Ficha de {name}",
+    "eyebrow": "Ficha de proveedor",
+    "close": "Cerrar ficha",
+    "completeness": "Completitud de la ficha",
+    "contactSection": "Contacto",
+    "recordSection": "Ficha"
+  },
+  "form": {
+    "identity": "Identidad",
+    "required": "Obligatorio",
+    "name": "Nombre del proveedor",
+    "namePlaceholder": "p. ej. Nord Emballage",
+    "optional": "Opcional",
+    "archivedFamily": "(familia archivada)",
+    "loadingFamilies": "Cargando…",
+    "noFamily": "Sin familia",
+    "missingCategory": "¿Falta una categoría?",
+    "manageFamilies": "Gestionar familias",
+    "vatPlaceholder": "p. ej. 19",
+    "vatNumberError": "El tipo de IVA debe ser un número, p. ej. 19",
+    "vatNoteHint": "El sistema anterior guardaba aquí «{value}», que no es un tipo único. Introducir uno lo sustituye.",
+    "contact": "Contacto",
+    "contactMeta": "Opcional — un correo o un teléfono hace localizable al proveedor",
+    "emailPlaceholder": "nombre@empresa.com",
+    "websitePlaceholder": "empresa.com",
+    "phonePlaceholder": "+216 …",
+    "addressPlaceholder": "Calle, ciudad, país",
+    "blankHint": "Deja el campo vacío en lugar de adivinar — los vacíos se cuentan y pueden completarse más tarde.",
+    "createSupplier": "Crear proveedor",
+    "previewAria": "Vista previa de la ficha",
+    "previewLabel": "Así se verá esta ficha",
+    "untitled": "Proveedor sin nombre",
+    "completeness": "Completitud",
+    "reachableNote": "Este proveedor contará como localizable.",
+    "unreachableNote": "Los campos vacíos se quedan vacíos. Este proveedor contará como sin contacto hasta que se añada un correo o un teléfono."
+  },
+  "families": {
+    "title": "Familias de proveedores",
+    "subtitle": "Categorías de compra de los proveedores. Añade una cuando un proveedor no encaje en las existentes. El código es la clave estable que usan los filtros de proveedores y no puede cambiarse; renombra la etiqueta en su lugar.",
+    "loading": "Cargando familias…",
+    "genericError": "Algo ha fallado",
+    "checkValues": "Revisa los valores e inténtalo de nuevo",
+    "newFamily": "Nueva familia",
+    "labelPlaceholder": "Emballage",
+    "codePlaceholder": "EMBALLAGE",
+    "columns": {
+      "family": "Familia",
+      "code": "Código",
+      "suppliers": "Proveedores"
+    },
+    "rename": "Renombrar",
+    "codeError": "Solo A-Z, 0-9 y _",
+    "adding": "Añadiendo…",
+    "addFamily": "Añadir familia",
+    "deleteDialog": {
+      "title": "¿Eliminar familia?",
+      "body": "<strong>{name}</strong> se eliminará definitivamente. Ningún proveedor la usa, así que nada más cambia."
+    },
+    "archiveDialog": {
+      "title": "¿Archivar familia?",
+      "body": "<strong>{name}</strong> dejará de ofrecerse para nuevos proveedores. Los que ya la tienen la conservan y siguen mostrándola en la lista — nada queda sin categoría."
+    },
+    "restoreDialog": {
+      "title": "¿Restaurar familia?",
+      "body": "<strong>{name}</strong> volverá a ofrecerse al clasificar proveedores."
+    }
+  }
+}

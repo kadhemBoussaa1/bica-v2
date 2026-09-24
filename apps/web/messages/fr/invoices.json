@@ -1,0 +1,270 @@
+{
+  "eyebrow": "Facturation",
+  "open": "Ouvrir",
+  "yes": "Oui",
+  "no": "Non",
+  "loading": "Chargement…",
+  "loadingInvoice": "Chargement de la facture…",
+  "notSet": "Non renseigné",
+  "archived": "Archivé",
+  "archivedTag": "ARCHIVÉ",
+  "noClient": "Aucun client renseigné",
+  "noScan": "Aucun document scanné.",
+  "noLines": "Cette facture n'a aucune ligne.",
+  "draftShipment": "Expédition brouillon",
+  "activityLink": "Voir dans le journal d'activité",
+  "paymentState": {
+    "draft": "Brouillon",
+    "open": "En cours",
+    "overdue": "En retard",
+    "paid": "Payée"
+  },
+  "filters": {
+    "draft": "Brouillon",
+    "issued": "Émises",
+    "open": "En cours",
+    "overdue": "En retard",
+    "paid": "Payées"
+  },
+  "columns": {
+    "invoice": "Facture",
+    "issued": "Émise le",
+    "supplier": "Fournisseur",
+    "client": "Client",
+    "due": "Échéance",
+    "payment": "Paiement",
+    "totalInclVat": "Total TTC"
+  },
+  "fields": {
+    "number": "Numéro",
+    "supplier": "Fournisseur",
+    "supplierNumber": "N° de facture fournisseur",
+    "client": "Client",
+    "order": "Commande",
+    "shipment": "Expédition",
+    "issued": "Émise le",
+    "issueDate": "Date d'émission",
+    "due": "Échéance",
+    "category": "Catégorie",
+    "forProduction": "Pour la production",
+    "goodsReceipt": "Bon de réception",
+    "legacyReceipt": "Réception (ancien système)",
+    "status": "Statut",
+    "paidOn": "Payée le",
+    "method": "Mode",
+    "paymentMethod": "Mode de paiement",
+    "netPayable": "Net à payer",
+    "exclVat": "Total HT",
+    "vat": "TVA",
+    "inclVat": "Total TTC",
+    "withholding": "Retenue à la source",
+    "withholdingTax": "Retenue à la source",
+    "currency": "Devise",
+    "exchangeRate": "Taux de change",
+    "trace": "Trace",
+    "draftedBy": "Rédigée par",
+    "note": "Note"
+  },
+  "panels": {
+    "invoice": "Facture",
+    "payment": "Paiement",
+    "amounts": "Montants",
+    "documents": "Documents scannés ({count})",
+    "lines": "Lignes ({count})",
+    "actions": "Actions",
+    "scan": "Document scanné",
+    "preview": "Aperçu",
+    "pdf": "Facture PDF"
+  },
+  "lines": {
+    "product": "Produit",
+    "description": "Désignation",
+    "qty": "Qté",
+    "unitPrice": "Prix unitaire",
+    "discount": "Remise",
+    "vat": "TVA",
+    "discountPct": "Remise %",
+    "vatPct": "TVA %",
+    "total": "Total",
+    "sum": "Somme des lignes",
+    "sumCurrency": "Somme des lignes ({currency})",
+    "add": "Ajouter une ligne",
+    "remove": "Retirer",
+    "billsOrder": "Facture la commande",
+    "aria": {
+      "product": "Produit de la ligne {n}",
+      "description": "Désignation de la ligne {n}",
+      "quantity": "Quantité de la ligne {n}",
+      "unitPrice": "Prix unitaire de la ligne {n}",
+      "discount": "Remise % de la ligne {n}",
+      "vat": "TVA % de la ligne {n}",
+      "mention": "Mention produit de la ligne {n}"
+    }
+  },
+  "purchases": {
+    "title": "Factures d'achat",
+    "subtitle": "Ce que les fournisseurs nous ont facturé. Ouvrez-en une pour ses montants, ses lignes et ses documents scannés.",
+    "new": "Nouvelle facture d'achat",
+    "newSubtitle": "Enregistrez la facture d'un fournisseur telle qu'elle a été reçue : numéro, dates, montants et lignes. Le bon de réception qu'elle facture peut être rattaché une fois le fournisseur choisi.",
+    "back": "← Factures d'achat",
+    "backToInvoice": "← Facture",
+    "detailTitle": "Facture d'achat",
+    "detailSubtitle": "La facture d'un fournisseur telle qu'enregistrée : montants, paiement, lignes et bon de réception facturé.",
+    "editTitle": "Modifier la facture d'achat",
+    "editSubtitle": "Chaque champ est écrit à l'enregistrement : un champ vide efface la valeur. Les documents scannés sont conservés tels quels.",
+    "searchPlaceholder": "Rechercher n° de facture, fournisseur, bon…",
+    "deleted": "Facture d'achat supprimée",
+    "deleteTitle": "Supprimer la facture {numero} ?",
+    "deleteBody": "La facture et {count, plural, =0 {ses lignes} one {sa ligne} other {ses # lignes}} sont supprimées définitivement. Le bon de réception qu'elle facture n'est pas modifié.",
+    "recorded": "Facture {numero} enregistrée",
+    "saved": "Facture {numero} enregistrée",
+    "form": {
+      "mustBeNumber": "{label} doit être un nombre",
+      "archivedOption": "{name} (archivé)",
+      "chooseSupplier": "Choisir un fournisseur",
+      "supplierHint": "Fournisseur absent de la liste ? <link>Créez-le</link> d'abord.",
+      "chooseSupplierFirst": "Choisissez d'abord un fournisseur",
+      "noReceipt": "Aucun bon de réception pour ce fournisseur",
+      "none": "Aucun",
+      "receiptHint": "La livraison que cette facture facture, si elle a été enregistrée. Seules les réceptions du fournisseur choisi sont proposées.",
+      "amountsSection": "Montants et paiement",
+      "linesSection": "Lignes",
+      "submit": "Enregistrer la facture",
+      "totals": {
+        "exclVat": "Total HT : {amount}",
+        "vat": "TVA : {amount}",
+        "inclVat": "Total TTC : {amount}",
+        "netPayable": "Net à payer : {amount}"
+      }
+    },
+    "kpis": {
+      "billed": "Facturé · {currency}",
+      "invoices": "{count, plural, one {# facture} other {# factures}}",
+      "invoiceUnit": "{count, plural, one {facture} other {factures}}",
+      "unpaid": "À payer",
+      "unpaidMeta": "en attente de règlement",
+      "overdue": "Échues",
+      "overdueMeta": "terme dépassé",
+      "nothingOverdue": "rien en retard",
+      "noCurrency": "Sans devise",
+      "noCurrencyShort": "devise manquante",
+      "noCurrencyMeta": "devise à renseigner"
+    },
+    "period": {
+      "label": "Émise",
+      "inRange": "{count, plural, one {# facture} other {# factures}} dans cette période"
+    },
+    "segments": {
+      "all": "Toutes",
+      "unpaid": "À payer",
+      "overdue": "Échues",
+      "paid": "Payées"
+    },
+    "state": {
+      "paid": "Payée",
+      "due": "À payer",
+      "late": "Échue",
+      "nodate": "Sans terme"
+    },
+    "row": {
+      "receivedOn": "reçue le {date}",
+      "noDate": "sans date",
+      "archivedSupplier": "Fournisseur archivé",
+      "settled": "réglée",
+      "noTerm": "terme non renseigné",
+      "dueToday": "aujourd’hui",
+      "dueIn": "dans {count} j",
+      "late": "{count} j de retard"
+    },
+    "groups": {
+      "noDate": "Sans date d’émission"
+    },
+    "empty": {
+      "title": "Aucune facture d’achat",
+      "text": "Rien ne correspond à ces filtres à la fois.",
+      "reset": "Réinitialiser"
+    }
+  },
+  "sales": {
+    "title": "Factures de vente",
+    "subtitle": "Ce que nous avons facturé aux clients, et les brouillons en attente d’émission. Créez-en une ici, ou depuis la page d’une commande facturable.",
+    "back": "← Factures de vente",
+    "detailTitle": "Facture de vente",
+    "detailSubtitle": "Une facture adressée à un client : montants, paiement, lignes, et la commande et l'expédition auxquelles elle se rattache. Un brouillon reste modifiable ; une facture émise est définitive.",
+    "searchPlaceholder": "Rechercher n° de facture, client, commande…",
+    "emptyMessage": "Aucune facture de vente ne correspond à ces filtres.",
+    "draftBanner": "<strong>Brouillon</strong> — pas encore numérotée. Elle recevra le prochain numéro F{yy} à l'émission, puis sera figée.",
+    "currencyRequired": "Une devise est requise pour émettre la facture.",
+    "issue": "Émettre la facture",
+    "issueConfirm": "Émettre",
+    "issueBody": "La facture reçoit le prochain numéro de {year} et ne pourra plus être modifiée.",
+    "unsavedSavedFirst": "Vos modifications non enregistrées sont d'abord enregistrées.",
+    "saveDraft": "Enregistrer le brouillon",
+    "savedState": "Enregistré",
+    "refresh": "Actualiser depuis l'emballage",
+    "saveBeforeRefresh": "Enregistrez le brouillon avant d'actualiser les quantités depuis l'emballage.",
+    "discard": "Abandonner le brouillon",
+    "discardTitle": "Abandonner la facture brouillon",
+    "discardConfirm": "Abandonner",
+    "discardBody": "Le brouillon est supprimé, et toute commande qu'il facture redevient facturable. Rien n'a encore été numéroté : seules les modifications sont perdues. La note est inscrite dans l'historique de la commande.",
+    "issuedToast": "Facture {numero} émise",
+    "discardedToast": "Facture brouillon abandonnée",
+    "nothingToRefresh": "Les quantités correspondent déjà à l'emballage",
+    "quantityUpdated": "Quantités actualisées depuis l'emballage",
+    "hints": {
+      "alreadyInvoiced": "{invoiced} colis sur {planned} déjà facturés ; {remaining} restants",
+      "packedPlanned": "{packed} colis emballés sur {planned} prévus",
+      "packed": "{packed} colis emballés",
+      "mismatch": "L'emballage compte {packed}, la ligne en facture {quantity}",
+      "noPackagingPlanned": "Rien d'emballé pour l'instant — la quantité reprend les {planned} colis prévus",
+      "noPackaging": "Rien d'emballé pour l'instant et aucun nombre de colis prévu",
+      "priceChanged": "Le prix de la commande est désormais {price} — ajustez le prix unitaire si la facture doit le suivre"
+    },
+    "new": "Nouvelle facture de vente",
+    "newSubtitle": "Facturez un client pour autre chose qu'une commande : une prestation, une vente ponctuelle, un frais refacturé. Saisissez les lignes vous-même ; le brouillon prend son numéro à l'émission.",
+    "draftCreated": "Brouillon de facture créé pour {client}",
+    "form": {
+      "chooseClient": "Choisir un client",
+      "clientHint": "Client absent de la liste ? <link>Créez-le</link> d'abord.",
+      "linesSection": "Lignes",
+      "submit": "Créer le brouillon"
+    },
+    "previewPage": "Aperçu de la facture, page {page}",
+    "previewError": "L'aperçu n'a pas pu être affiché.",
+    "previewHint": "La facture telle qu'elle sera imprimée, redessinée à mesure que vous saisissez. Rien n'est enregistré tant que le brouillon ne l'est pas.",
+    "pdfHint": "Imprimée à partir de la facture telle qu'émise, puis conservée : chaque consultation sert le même fichier.",
+    "period": {
+      "label": "Émise",
+      "inRange": "{count, plural, one {# facture} other {# factures}} dans cette période"
+    },
+    "kpis": {
+      "billed": "Facturé · {currency}",
+      "invoices": "{count, plural, one {# facture} other {# factures}}",
+      "overdue": "Échues",
+      "overdueUnit": "{count, plural, one {facture} other {factures}}",
+      "toChase": "à relancer",
+      "nothingOverdue": "rien en retard"
+    },
+    "groups": {
+      "drafts": "Brouillons, pas encore émis"
+    },
+    "row": {
+      "issuedOn": "émise le {date}",
+      "notIssued": "non émise",
+      "noDue": "sans échéance",
+      "dueToday": "aujourd’hui",
+      "dueIn": "dans {count} j",
+      "late": "{count} j de retard",
+      "paidOn": "payée le {date}"
+    },
+    "empty": {
+      "title": "Aucune facture",
+      "text": "Rien ne correspond à ce filtre et cette recherche à la fois.",
+      "reset": "Réinitialiser"
+    }
+  },
+  "mention": {
+    "label": "Mention produit",
+    "none": "Aucune"
+  }
+}

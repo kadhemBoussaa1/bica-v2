@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
+    "./styles/*.css": "./src/styles/*.css",
     "./*": "./src/*.tsx"
   },
   "scripts": {
@@ -20,6 +21,7 @@
     "typescript": "7.0.2"
   },
   "dependencies": {
+    "@repo/api-contract": "workspace:*",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   }

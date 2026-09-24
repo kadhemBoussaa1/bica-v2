@@ -3,19 +3,66 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
+      "dependsOn": [
+        "^build",
+        "db:generate"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "!.next/dev/**",
+        "dist/**"
+      ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": [
+        "^check-types",
+        "db:generate"
+      ]
     },
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "db:generate": {
+      "cache": true,
+      "inputs": [
+        "prisma/schema.prisma",
+        "prisma.config.ts"
+      ],
+      "outputs": [
+        "src/generated/**"
+      ]
     }
-  }
+  },
+  "globalEnv": [
+    "NODE_ENV",
+    "PORT",
+    "DATABASE_URL",
+    "CORS_ORIGIN",
+    "TRUST_PROXY",
+    "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "DEV_ORIGIN",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "SUPER_ADMIN_EMAIL",
+    "SUPER_ADMIN_PASSWORD",
+    "SUPER_ADMIN_NAME",
+    "LEGACY_DATABASE_URL",
+    "AUDIT_PURGE_DAYS",
+    "AWS_REGION",
+    "AWS_S3_BUCKET",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY"
+  ]
 }

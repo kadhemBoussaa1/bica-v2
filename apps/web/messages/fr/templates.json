@@ -1,0 +1,192 @@
+{
+  "eyebrow": "Paramètres",
+  "title": "Modèles de documents",
+  "metaTitle": "Modèles de documents · Bicapack ERP",
+  "subtitle": "L'apparence des documents générés. Une facture émise garde la version avec laquelle elle a été imprimée ; publier le modèle par défaut change les factures émises à partir de là.",
+  "back": "← Modèles de documents",
+  "loading": "Chargement des modèles…",
+  "superAdminOnly": "Seul un super administrateur peut modifier les modèles de documents.",
+  "kinds": {
+    "SALES_INVOICE": "Facture de vente"
+  },
+  "list": {
+    "default": "Par défaut",
+    "version": "v{version}",
+    "draft": "Brouillon",
+    "invoices": "{count, plural, =0 {aucune facture} one {# facture} other {# factures}}",
+    "edit": "Modifier",
+    "setDefault": "Définir par défaut",
+    "duplicate": "Dupliquer",
+    "duplicateTitle": "Dupliquer {name}",
+    "duplicateBody": "La copie démarre comme brouillon de la mise en page la plus récente. Publiez-la avant d'en faire le modèle par défaut.",
+    "name": "Nom",
+    "create": "Créer",
+    "madeDefault": "{name} est maintenant le modèle par défaut",
+    "created": "Modèle créé",
+    "versions": "Versions",
+    "defaultTitle": "Faire de {name} le modèle par défaut ?",
+    "defaultBody": "Les factures émises désormais seront imprimées avec sa dernière version publiée. Les factures déjà émises gardent la leur.",
+    "continueDraft": "Continuer le brouillon v{version}",
+    "publishedState": "Publiée",
+    "metaPublishedBy": "{date} · par {name}",
+    "metaPublishedBuiltIn": "{date} · modèle intégré",
+    "metaDraftBy": "modifié par {name} · pas encore publié",
+    "metaDraftBuiltIn": "pas encore publié",
+    "newTitle": "Nouveau modèle",
+    "newBody": "Le nouveau modèle commence comme un brouillon copié de la mise en page par défaut. Publiez-le avant d’en faire le modèle par défaut."
+  },
+  "editor": {
+    "title": "Modifier le modèle",
+    "metaTitle": "Modifier le modèle · Bicapack ERP",
+    "subtitle": "Choisissez les blocs, les colonnes du tableau et les marges ; l'aperçu imprime la facture d'exemple avec la mise en page actuelle. Enregistrer écrit un brouillon — rien ne s'imprime avec tant qu'il n'est pas publié.",
+    "editingDraft": "Brouillon v{version} en cours",
+    "editingPublished": "La v{version} est publiée et figée — enregistrer démarre le brouillon v{next}",
+    "panels": {
+      "template": "Modèle",
+      "page": "Page",
+      "blocks": "Blocs",
+      "preview": "Aperçu"
+    },
+    "name": "Nom",
+    "rename": "Renommer",
+    "renamed": "Modèle renommé",
+    "save": "Enregistrer le brouillon",
+    "saved": "Enregistré",
+    "savedToast": "Brouillon v{version} enregistré",
+    "publish": "Publier",
+    "publishTitle": "Publier la v{version} ?",
+    "publishBodyDefault": "C'est le modèle par défaut : toute facture émise désormais sera imprimée avec cette version. Elle ne pourra plus être modifiée — un changement ultérieur devient une nouvelle version.",
+    "publishBody": "La version est figée une fois publiée — un changement ultérieur devient une nouvelle version.",
+    "publishedToast": "Version {version} publiée",
+    "invalid": "La mise en page a des problèmes — corrigez-les pour enregistrer ou prévisualiser :",
+    "previewLang": "Langue",
+    "previewAs": "Imprimer comme",
+    "asIssued": "Émise",
+    "asDraft": "Brouillon",
+    "previewPage": "Aperçu du modèle, page {page}",
+    "previewError": "L'aperçu n'a pas pu être affiché.",
+    "previewHint": "La facture d'exemple — quarante lignes fictives, pour que la deuxième page et les blocs de dernière page aient quelque chose à montrer.",
+    "page": {
+      "top": "Marge haute",
+      "bottom": "Marge basse",
+      "start": "Marge de début",
+      "end": "Marge de fin",
+      "firstPageTop": "Haut de la première page",
+      "hint": "La marge basse est réservée sur chaque page : pied de page, numéro de page et blocs de dernière page s'y trouvent. La première page peut commencer plus bas, pour dégager l'en-tête."
+    },
+    "block": {
+      "show": "Afficher",
+      "position": "Position et taille",
+      "x": "Depuis le bord de début",
+      "y": "Depuis le haut",
+      "w": "Largeur",
+      "minH": "Hauteur min.",
+      "spaceBefore": "Espace au-dessus",
+      "align": "Alignement",
+      "repeat": "Pages",
+      "keepTogether": "Garder sur une page",
+      "required": "Toujours affiché"
+    },
+    "blockNames": {
+      "letterhead": "En-tête",
+      "letterheadCompact": "En-tête compact",
+      "logoCompany": "Logo de la société",
+      "logoFsc": "Marque FSC",
+      "meta": "Titre et détails",
+      "parties": "Parties",
+      "lines": "Tableau des lignes",
+      "totals": "Totaux",
+      "notes": "Notes",
+      "footer": "Ligne de pied de page",
+      "pageNumber": "Numéro de page",
+      "watermark": "Filigrane"
+    },
+    "aligns": {
+      "start": "Début",
+      "center": "Centre",
+      "end": "Fin"
+    },
+    "repeats": {
+      "all": "Toutes les pages",
+      "first": "Première page",
+      "notFirst": "Pages suivantes",
+      "last": "Dernière page"
+    },
+    "meta": {
+      "showTitle": "Afficher le titre",
+      "number": "Numéro",
+      "issuedAt": "Date",
+      "dueAt": "Échéance",
+      "paymentMethod": "Mode de règlement",
+      "orders": "Commande"
+    },
+    "parties": {
+      "issuer": "Encadré émetteur",
+      "client": "Encadré client"
+    },
+    "lines": {
+      "zebra": "Griser une ligne sur deux",
+      "column": "Colonne",
+      "width": "Largeur",
+      "hideWhenEmpty": "Masquer si vide",
+      "columns": {
+        "position": "N°",
+        "product": "Produit",
+        "designation": "Désignation",
+        "quantity": "Quantité",
+        "unitPrice": "Prix unitaire",
+        "discountPct": "Remise %",
+        "taxPct": "TVA %",
+        "net": "Net HT",
+        "total": "Total"
+      }
+    },
+    "totals": {
+      "vat": "Lignes de TVA",
+      "vatAuto": "Seulement s'il y a de la TVA",
+      "vatAlways": "Toujours"
+    },
+    "notes": {
+      "title": "Intitulé",
+      "text": "Texte",
+      "hint": "Imprimé tel que saisi, dans toutes les langues : conditions de règlement, coordonnées bancaires."
+    },
+    "footer": {
+      "text": "Texte du pied de page",
+      "hint": "Laisser vide pour la ligne de contact avec le matricule fiscal, traduite."
+    },
+    "watermark": {
+      "when": "Afficher",
+      "draft": "Sur les brouillons seulement",
+      "always": "Toujours"
+    },
+    "openDesigner": "Ouvrir le concepteur"
+  },
+  "designer": {
+    "back": "← Réglages du modèle",
+    "title": "Concepteur de modèle",
+    "metaTitle": "Concepteur de modèle · Bicapack ERP",
+    "subtitle": "La feuille à l'échelle. Faites glisser un bloc pour le déplacer, son coin pour le redimensionner ; l'aperçu imprime la facture d'exemple avec le résultat. Enregistrer écrit le même brouillon que le formulaire de réglages.",
+    "panels": {
+      "stage": "Feuille",
+      "inspector": "Bloc sélectionné"
+    },
+    "pageTabs": "Page affichée",
+    "pages": {
+      "first": "Première page",
+      "middle": "Page suivante",
+      "last": "Dernière page"
+    },
+    "mirror": "Miroir arabe",
+    "nothingSelected": "Sélectionnez un bloc sur la feuille pour voir sa position et sa taille.",
+    "blockLabel": "{name}, à {x} mm du bord de début, {w} mm de large",
+    "legend": {
+      "fixed": "Fixe : se déplace et se redimensionne librement",
+      "flow": "Flux : latéralement et en largeur seulement ; glisser au-delà d'un voisin pour réordonner",
+      "keys": "Les flèches déplacent de 1 mm, 5 mm avec Maj"
+    },
+    "previewHint": "Redessiné à la fin d'un glissement. Les blocs de flux sont dessinés à une hauteur nominale sur la feuille — l'aperçu montre la vraie.",
+    "unsaved": "Enregistrez d'abord le brouillon"
+  },
+  "newTemplate": "Nouveau modèle"
+}

@@ -1,0 +1,21 @@
+{
+  "metaTitle": "Settings · Bicapack ERP",
+  "eyebrow": "Preferences",
+  "title": "Settings",
+  "pagesAria": "Settings pages",
+  "railNote": "Administration only. Each section states the role it requires.",
+  "sectionEyebrow": "Settings · {group}",
+  "groups": {
+    "access": "Access",
+    "documents": "Documents"
+  },
+  "hints": {
+    "users": "Accounts, roles and access",
+    "activity": "Who did what, and when",
+    "templates": "How issued invoices look"
+  },
+  "counts": {
+    "errors": "{count} err.",
+    "version": "v{version}"
+  }
+}

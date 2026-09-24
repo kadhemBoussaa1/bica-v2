@@ -36,3 +36,18 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# env
+.env
+!.env.example
+.env.local
+
+# Generated docs / working notes (not tracked)
+# Leading slash: root-level only, so a nested apps/*/docs stays trackable.
+/docs/
+
+# Production deploy (deploy/, docker/): the filled-in secrets and server state
+.env.production
+.deploy-history
+/docker/certbot/
+/docker/nginx/state/

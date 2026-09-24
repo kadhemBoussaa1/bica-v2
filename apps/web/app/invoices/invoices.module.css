@@ -1,0 +1,215 @@
+/*
+ * Invoice detail: the document list and the lines table. Everything else on
+ * these pages comes from records.module.css, so this file only holds what a
+ * record with an ordered list of priced lines needs and nothing else has.
+ */
+
+.documents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+/* Wide content scrolls inside its own box; the page never scrolls sideways. */
+.linesScroll {
+  overflow-x: auto;
+}
+
+.lines {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  color: var(--bp-ink);
+}
+
+.lines th {
+  text-align: start;
+  padding: var(--bp-space-2) var(--bp-space-3);
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+  border-bottom: 1px solid var(--bp-border-strong);
+  white-space: nowrap;
+}
+
+.lines td {
+  padding: var(--bp-space-2) var(--bp-space-3);
+  border-bottom: 1px solid var(--bp-border);
+  vertical-align: top;
+}
+
+.lines tbody tr:last-child td {
+  border-bottom: 1px solid var(--bp-border-strong);
+}
+
+.lines tfoot td {
+  border-bottom: none;
+  padding-top: var(--bp-space-3);
+}
+
+/* Figures right-aligned with tabular numerals so the column lines up on scan. */
+.num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.product {
+  font-family: var(--bp-font-mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.description {
+  min-width: 220px;
+}
+
+.total {
+  font-weight: 600;
+  color: var(--bp-ink-strong);
+}
+
+.footLabel {
+  text-align: end;
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+/* --- draft editor (docs/sales-invoice-plan.md §7) --- */
+
+.draftBanner {
+  border: 1px solid rgb(26 23 20 / 0.14);
+  border-radius: var(--bp-radius-block);
+  background: rgb(255 255 255 / 0.44);
+  color: var(--bp-ink);
+}
+
+.headerFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bp-space-3) var(--bp-space-4);
+  margin-top: var(--bp-space-4);
+}
+
+.draftActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+.draftActions > button {
+  width: 100%;
+}
+
+.editLines td {
+  vertical-align: middle;
+}
+
+/* Wide enough for the text beside the product-mention select of an order
+   line; the table scrolls sideways inside `.linesScroll` when it must. */
+.editLines .description {
+  min-width: 360px;
+}
+
+/* Cell controls: the dense 36px control, borderless until focused, so the
+   table still reads as a document rather than a form. */
+.cellInput {
+  width: 100%;
+  min-width: 90px;
+  height: 36px;
+  padding: 0 var(--bp-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  font: 400 0.8125rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.cellInput:hover {
+  border-color: var(--bp-border);
+}
+
+.cellInput:focus {
+  outline: none;
+  border-color: var(--bp-orange-500);
+  background: var(--bp-surface);
+}
+
+.cellInput:disabled {
+  color: var(--bp-ink-muted);
+}
+
+.cellNum {
+  min-width: 100px;
+  text-align: end;
+  font-family: var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The designation and, on a line billing an order, its product mention:
+   one cell, the text taking the room and the select its own width. */
+.descriptionCell {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+}
+
+.cellMention {
+  flex: none;
+  width: auto;
+  min-width: 96px;
+  border-color: var(--bp-border);
+  font-family: var(--bp-font-mono);
+}
+
+.cellPct {
+  min-width: 60px;
+  width: 60px;
+  text-align: end;
+  font-family: var(--bp-font-mono);
+}
+
+.linesFoot {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: var(--bp-space-3);
+}
+
+.hints {
+  margin: var(--bp-space-3) 0 0;
+  padding: 0 0 0 var(--bp-space-4);
+  font: 400 0.78125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* --- purchase invoice form and detail actions --- */
+
+.detailActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--bp-space-3);
+  margin-bottom: var(--bp-space-4);
+}
+
+.formTotals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--bp-space-3) var(--bp-space-5);
+  padding-top: var(--bp-space-3);
+  border-top: 1px solid var(--bp-border);
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.formTotals strong {
+  color: var(--bp-ink-strong);
+}

@@ -1,0 +1,261 @@
+{
+  "eyebrow": "Operaciones",
+  "title": "Envíos",
+  "subtitle": "Lo que salió del almacén, y los borradores a la espera de un camión. Busca por número, lista de embalaje, declaración aduanera, cliente, factura o pedido. Crea uno desde la página del pedido una vez emitida su factura.",
+  "back": "← Envíos",
+  "detailTitle": "Envío",
+  "detailSubtitle": "Una exportación: el camión, la factura con la que viaja, la lista de embalaje y la declaración aduanera.",
+  "searchPlaceholder": "Buscar n.º de envío, lista de embalaje, cliente, pedido…",
+  "empty": "Ningún envío coincide con estos filtros.",
+  "loading": "Cargando envío…",
+  "open": "Abrir",
+  "archivedShort": "ARCH",
+  "archived": "ARCHIVADO",
+  "draft": "Borrador",
+  "draftInvoice": "Factura borrador",
+  "noInvoice": "Sin factura adjunta",
+  "missing": "FALTA",
+  "parcelCount": "{count, plural, one {# bulto} other {# bultos}}",
+  "activityLink": "Actividad de este envío",
+  "editor": {
+    "eyebrow": "Operaciones · Envío",
+    "title": "Borrador de envío",
+    "lede": "El camión aún no tiene número. Toma el siguiente número {prefix} al enviarse y queda congelado; solo la declaración aduanera sigue siendo editable.",
+    "ready": "Listo para enviar",
+    "checks": {
+      "invoice": "Factura emitida",
+      "invoiceNumbered": "Factura emitida · {numero}",
+      "exportDate": "Fecha de exportación",
+      "packingListNumber": "N.º de lista de embalaje",
+      "packingListDocument": "Lista de embalaje adjunta",
+      "declarationNumber": "N.º de declaración",
+      "declarationDate": "Fecha de declaración",
+      "declarationDocument": "Declaración adjunta"
+    },
+    "required": "obligatorio",
+    "optional": "opcional",
+    "numberPending": "al enviar",
+    "carrierNote": "Nota al transportista",
+    "carrierNotePlaceholder": "Franja de entrega, contacto en destino…",
+    "truck": {
+      "title": "El camión",
+      "meta": "Congelado al enviar, salvo la aduana"
+    },
+    "documents": {
+      "title": "Los dos papeles del camión",
+      "lede": "Suelta el archivo aquí, o elígelo desde tu dispositivo.",
+      "bothAttached": "Los dos están adjuntos",
+      "customsMissing": "Falta aún la aduana",
+      "noneAttached": "Ninguno está adjunto",
+      "packingNote": "Lo que se lleva el conductor",
+      "customsNote": "Visada antes de la salida",
+      "required": "Obligatorio",
+      "optional": "Opcional",
+      "drop": "Suelta el PDF aquí",
+      "choose": "Elegir un archivo",
+      "savedMeta": "guardado con el borrador",
+      "unsavedMeta": "sin guardar todavía — guarda el borrador",
+      "packingMissing": "Falta aún la lista de embalaje"
+    },
+    "cargo": {
+      "title": "Lo que sale",
+      "meta": "{lines, plural, one {# línea} other {# líneas}} · {orders, plural, one {# pedido} other {# pedidos}}",
+      "line": "Línea",
+      "perParcel": "{count} {unit}/bulto",
+      "total": "Total en el camión",
+      "settled": "Saldada",
+      "remaining": "Resta"
+    },
+    "gate": {
+      "title": "Enviar",
+      "blockedNote": "Al enviarse, el camión toma su número y queda congelado. Aún falta algo para poder emitirlo.",
+      "readyNote": "Todo está listo. El camión tomará el número {prefix} y quedará congelado.",
+      "shipBlocked": "Enviar · {count} por completar",
+      "ship": "Enviar el camión"
+    },
+    "links": {
+      "title": "El envío",
+      "journal": "Registro"
+    },
+    "trail": {
+      "title": "Seguimiento",
+      "created": "Borrador creado",
+      "packingAttached": "Lista de embalaje adjunta",
+      "packingExpected": "Lista de embalaje pendiente",
+      "requiredBeforeShipping": "obligatoria antes de enviar",
+      "customsAttached": "Declaración adjunta",
+      "customsExpected": "Declaración pendiente"
+    },
+    "discard": {
+      "title": "Descartar",
+      "body": "El borrador desaparece y los bultos vuelven al pendiente de envío del pedido."
+    }
+  },
+  "facets": {
+    "draft": "Borrador",
+    "shipped": "Enviado",
+    "missingCustoms": "Sin aduana"
+  },
+  "kpis": {
+    "shipped": "Enviados",
+    "shippedUnit": "en el periodo",
+    "drafts": "Borradores en espera",
+    "draftsUnit": "de un camión",
+    "parcelsOut": "Bultos salidos",
+    "parcelsOutUnit": "bultos",
+    "missingDocs": "Documentos que faltan",
+    "missingDocsUnit": "envíos"
+  },
+  "load": {
+    "COMPLETE": "Carga completa",
+    "PARTIAL": "Carga parcial"
+  },
+  "docChips": {
+    "packingOk": "Embalaje ok",
+    "packingNone": "Sin embalaje",
+    "customsOk": "Aduana ok",
+    "customsPart": "Aduana parcial",
+    "customsNone": "Sin aduana",
+    "packingOkTitle": "Lista de embalaje adjunta",
+    "packingNoneTitle": "Falta la lista de embalaje",
+    "customsOkTitle": "Declaración aduanera completa",
+    "customsPartTitle": "Declaración aduanera iniciada, escaneo sin adjuntar",
+    "customsNoneTitle": "Falta la declaración aduanera"
+  },
+  "content": {
+    "orders": "{count, plural, one {# pedido} other {# pedidos}}"
+  },
+  "columns": {
+    "shipment": "Envío",
+    "exportDate": "Fecha de exportación",
+    "client": "Cliente",
+    "orders": "Pedidos",
+    "invoice": "Factura",
+    "parcels": "Bultos",
+    "kind": "Tipo",
+    "status": "Estado",
+    "customs": "Aduana"
+  },
+  "units": {
+    "kg": "kg",
+    "pcs": "uds"
+  },
+  "tiles": {
+    "parcels": "Bultos",
+    "parcel": "bulto",
+    "units": "Unidades",
+    "exportDate": "Fecha de export.",
+    "attached": "adjuntos"
+  },
+  "docs": {
+    "attached": "Adjunto"
+  },
+  "panels": {
+    "packingList": "Lista de embalaje",
+    "customs": "Declaración aduanera",
+    "actions": "Acciones",
+    "lines": "Líneas ({count})"
+  },
+  "fields": {
+    "number": "Número",
+    "status": "Estado",
+    "client": "Cliente",
+    "invoice": "Factura",
+    "exportDate": "Fecha de exportación",
+    "shippedBy": "Enviado por",
+    "draftedBy": "Preparado por",
+    "trace": "Trazabilidad",
+    "note": "Nota",
+    "document": "Documento",
+    "packingListNumber": "N.º de lista de embalaje",
+    "packingListDocument": "Documento de lista de embalaje",
+    "declarationNumber": "N.º de declaración",
+    "declarationDate": "Fecha de declaración",
+    "documentUrl": "Documento",
+    "noteRequired": "Nota (obligatoria)"
+  },
+  "lines": {
+    "order": "Pedido",
+    "description": "Descripción",
+    "parcels": "Bultos",
+    "units": "Unidades",
+    "balance": "Saldo",
+    "allShipped": "los {planned} enviados",
+    "stillToShip": "{balance} de {planned} pendientes de envío",
+    "descriptionAria": "Descripción de la línea {n}",
+    "parcelsAria": "Bultos de la línea {n}",
+    "mentionFromInvoice": "Mención del producto, tomada de la factura"
+  },
+  "customs": {
+    "savedToast": "Declaración aduanera guardada"
+  },
+  "actions": {
+    "saveDraft": "Guardar borrador",
+    "saved": "Guardado",
+    "discardDraft": "Descartar borrador",
+    "askAdmin": "Pide a un administrador que descarte un borrador creado por error."
+  },
+  "hints": {
+    "invoiceBills": "La factura {invoice} factura {count, plural, one {# bulto} other {# bultos}}",
+    "takesRest": "esta línea se lleva el resto: el pedido se completa al enviarse",
+    "willRemain": "quedarán {count} después de esta línea",
+    "atMost": "como máximo {cap} pueden ir en este envío"
+  },
+  "shipDialog": {
+    "title": "Enviar",
+    "confirm": "Enviar",
+    "body": "El envío recibe el siguiente número de la serie {year} y queda congelado.",
+    "remain": "{count, plural, one {Queda # bulto} other {Quedan # bultos}}: el pedido vuelve a facturación para el siguiente envío.",
+    "allOn": "Todos los bultos van en él: el pedido se marca como exportado.",
+    "unsavedFirst": "Tus cambios sin guardar se guardan primero.",
+    "closeOrder": "Cerrar el pedido — {parcels} no se enviarán",
+    "closeOrderHint": "Marca el pedido como exportado ahora en lugar de devolverlo a facturación. Se audita con la nota.",
+    "closeNoteRequired": "Cerrar el pedido incompleto requiere una nota"
+  },
+  "discardDialog": {
+    "title": "Descartar envío borrador",
+    "confirm": "Descartar",
+    "body": "El borrador se elimina y su pedido vuelve a facturado; la factura queda libre para asociarse a un nuevo envío. La nota se escribe en el historial del pedido."
+  },
+  "toasts": {
+    "shipped": "Envío {numero} enviado",
+    "exported": "{orders} exportado(s)",
+    "backToInvoicing": "{orders} de vuelta a facturación",
+    "remainingLeft": "{numero} ({remaining} pendientes)",
+    "discarded": "Envío borrador descartado"
+  },
+  "upload": {
+    "choose": "Adjuntar archivo",
+    "replace": "Reemplazar",
+    "remove": "Quitar",
+    "uploading": "Subiendo…",
+    "failed": "Error al subir: inténtalo de nuevo.",
+    "tooLarge": "El archivo supera los 25 MB.",
+    "wrongType": "Adjunta un PDF o una imagen.",
+    "open": "Abrir",
+    "download": "Descargar"
+  },
+  "record": {
+    "lede": "Salió el {date} para {client}, con la factura {invoice}. El camión está congelado; solo la declaración aduanera sigue siendo editable.",
+    "ledeNoInvoice": "Salió el {date} para {client}. El camión está congelado; solo la declaración aduanera sigue siendo editable.",
+    "onTruck": "En el camión",
+    "papers": "Papeles",
+    "docsNote": "La lista de embalaje salió con el camión y ya no cambia. La declaración aún puede corregirse o reemplazarse.",
+    "packingLocked": "Congelada con el envío",
+    "customsNote": "Editable tras la salida",
+    "noScan": "Sin escaneo — congelada con el envío",
+    "declaredOn": "Declarada el",
+    "edit": "Modificar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "cargoTitle": "Lo que salió",
+    "totalLeft": "Total salido",
+    "trailDeclared": "Declaración aduanera {numero}",
+    "trailDeclaredOn": "declarada el {date}",
+    "trailShipped": "Enviado",
+    "trailNumber": "número {numero}",
+    "frozenTitle": "Congelado",
+    "frozenBody": "El camión ya salió: líneas, bultos y factura no cambian. Solo la declaración aduanera sigue siendo editable.",
+    "missing": "Falta"
+  }
+}

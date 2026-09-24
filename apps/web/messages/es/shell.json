@@ -1,0 +1,12 @@
+{
+  "goTo": "Ir a…",
+  "goToModule": "Ir a un módulo",
+  "modules": "Módulos",
+  "noModuleMatches": "Ningún módulo coincide",
+  "signOut": "Cerrar sesión",
+  "signingOut": "Cerrando sesión…",
+  "breadcrumb": "Ruta de navegación",
+  "new": "Nuevo",
+  "edit": "Editar",
+  "detail": "Detalle"
+}

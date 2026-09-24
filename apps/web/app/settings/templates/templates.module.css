@@ -1,0 +1,345 @@
+/*
+ * Document templates: the list of templates and the layout editor.
+ *
+ * Blocks nested in a panel are veils, not a second glass surface, and every
+ * gap is on the --bp-space scale. Logical properties throughout: the editor
+ * is used in Arabic too, even though the sheet it edits is physical geometry.
+ */
+
+/* --- the list: one section per template --- */
+
+.template {
+  display: flex;
+  gap: var(--bp-space-5);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* A sketch of an A4 sheet: the letterhead mark, address lines, the table
+   band in the invoice's own navy (pdf.identity INK.navy — the document's
+   ink, deliberately not a UI token), the total at the inline end. */
+.sheet {
+  flex: 0 0 170px;
+  aspect-ratio: 1 / 1.414;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-3);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-border);
+  border-radius: var(--bp-radius);
+  box-shadow: var(--bp-shadow-card);
+}
+
+.sheetLogo {
+  width: 40px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--bp-orange-500);
+}
+
+.sheetLine {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bp-tint);
+}
+
+.sheetLineLong {
+  width: 60%;
+  background: var(--bp-tint-strong);
+}
+
+.sheetLineShort {
+  width: 45%;
+  background: var(--bp-tint-strong);
+}
+
+.sheetBand {
+  height: 8px;
+  margin-top: var(--bp-space-1);
+  border-radius: 2px;
+  background: #1a3a5f;
+}
+
+.sheetFill {
+  flex: 1;
+}
+
+.sheetTotal {
+  height: 7px;
+  width: 48%;
+  margin-inline-start: auto;
+  border-radius: 2px;
+  background: #1a3a5f;
+}
+
+.templateBody {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.kind {
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-orange-800);
+}
+
+.nameRow {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 2px 0 var(--bp-space-3);
+}
+
+.name {
+  margin: 0;
+  font: 700 1.375rem/1.2 var(--bp-font-display);
+  letter-spacing: -0.02em;
+  color: var(--bp-ink);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-orange-800);
+  background: var(--bp-orange-100);
+  border: 1px solid rgb(217 124 0 / 0.34);
+  border-radius: var(--bp-radius-pill);
+}
+
+.versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.version {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  padding: var(--bp-space-3) 0;
+  border-top: 1px solid var(--bp-hairline);
+}
+
+/* The version number on a tinted tile: warm while it is a draft, green once published. */
+.versionBadge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 30px;
+  border-radius: var(--bp-radius-dense);
+  font: 600 0.75rem/1 var(--bp-font-mono);
+}
+
+.versionDraft {
+  background: var(--bp-orange-100);
+  color: var(--bp-orange-800);
+}
+
+.versionPublished {
+  background: var(--bp-success-bg);
+  color: var(--bp-success-text);
+}
+
+.versionText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.versionState {
+  font: 600 0.84375rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.versionMeta {
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.versionUses {
+  flex: none;
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+  margin-top: var(--bp-space-4);
+}
+
+/* ---- editor ---- */
+
+.status {
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  margin: 0 0 var(--bp-space-3);
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--bp-space-3);
+  align-items: end;
+}
+
+.blockList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+}
+
+.block {
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-veil-border);
+  border-radius: var(--bp-radius-block);
+  padding: var(--bp-space-3) var(--bp-space-4);
+}
+
+.block[data-off] {
+  opacity: 0.62;
+}
+
+.block[data-invalid] {
+  border-color: var(--bp-danger);
+}
+
+.blockHead {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+}
+
+.blockName {
+  flex: 1;
+  min-width: 0;
+  font: 600 0.875rem/1.3 var(--bp-font-body);
+  margin: 0;
+}
+
+.blockMeta {
+  font: 400 0.6875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* A bare switch-like checkbox: the 48px CheckboxField row is too tall for a list header. */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  font: 500 0.8125rem/1 var(--bp-font-body);
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.toggle input {
+  inline-size: 18px;
+  block-size: 18px;
+  accent-color: var(--bp-orange-500);
+}
+
+.blockBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  margin-block-start: var(--bp-space-3);
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-1) var(--bp-space-4);
+}
+
+.position {
+  border-block-start: 1px solid var(--bp-hairline);
+  padding-block-start: var(--bp-space-2);
+}
+
+.position > summary {
+  cursor: pointer;
+  font: 500 0.75rem/1 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+  padding-block: var(--bp-space-2);
+}
+
+.position[open] > summary {
+  margin-block-end: var(--bp-space-2);
+}
+
+.columns {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+}
+
+.columns th {
+  text-align: start;
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+  padding-block-end: var(--bp-space-2);
+}
+
+.columns td {
+  padding-block: var(--bp-space-1);
+  padding-inline-end: var(--bp-space-3);
+  border-block-start: 1px solid var(--bp-hairline);
+  vertical-align: middle;
+}
+
+.columnWidth {
+  inline-size: 84px;
+  min-height: 36px;
+  padding-inline: var(--bp-space-2);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-surface, #ffffff);
+  color: var(--bp-ink);
+  font: 400 0.8125rem/1 var(--bp-font-mono);
+}
+
+.issues {
+  margin: 0 0 var(--bp-space-3);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border: 1px solid var(--bp-danger);
+  border-radius: var(--bp-radius-block);
+  color: var(--bp-danger);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+}
+
+.issues ul {
+  margin: var(--bp-space-1) 0 0;
+  padding-inline-start: var(--bp-space-4);
+}
+
+.previewControls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--bp-space-3);
+  margin-block-end: var(--bp-space-3);
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+  margin-block-start: var(--bp-space-3);
+}

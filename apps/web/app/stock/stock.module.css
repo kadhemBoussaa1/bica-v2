@@ -1,0 +1,596 @@
+/*
+ * Paper stock — from "Stock v3.dc.html" (docs/toolkit-v3.md names the same
+ * Claude Design project). The handoff is inline-styled with literal hex for
+ * the canvas; every value in it is already a v3 token, so it is translated
+ * rather than transcribed — a literal port would fork the palette and break
+ * Arabic on its physical `text-align:right`.
+ *
+ * Dropped from the handoff by decision: the "value in stock" figure (a new
+ * computed money total) and its lineage timeline (the existing Split history
+ * panel is the honest version — `byId` has no event history, and
+ * `consumedByNote` is documented as unstructured free text).
+ *
+ * The module's other pages keep borrowing records.module.css; this file holds
+ * only what the reels list and the reel detail add.
+ */
+
+/* --- the KPI row above the table --- */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--bp-space-3);
+  margin-bottom: var(--bp-space-5);
+}
+
+.kpi {
+  border-radius: var(--bp-radius-card);
+  padding: var(--bp-space-4);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.kpiLabel {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.kpiFigure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-1);
+  margin-top: var(--bp-space-1);
+  flex-wrap: wrap;
+}
+
+.kpiValue {
+  font: 700 1.625rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The state KPIs take the colour of the chip they mirror, so the header and
+   the filter row read as one set rather than two vocabularies. */
+.kpiAvailable {
+  color: var(--bp-success-text);
+}
+
+.kpiReserved {
+  color: var(--bp-info-text);
+}
+
+.kpiArchived {
+  color: var(--bp-ink-muted);
+}
+
+.kpiUnit {
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the advanced filter, above the table --- */
+
+/*
+ * Four independent dimensions, combinable — not facets. The chips below stay
+ * a partition (their counts sum to "all"); this bar narrows whatever the
+ * chips selected, exactly as the audit module's prefilters narrow its own.
+ */
+.filterBar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-3);
+  padding: var(--bp-space-4);
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.filterField {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+
+/* Min and max read as one control, so they share a field's width. */
+.filterRange {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+
+/*
+ * Copies `.fieldLabel` (and `.field`'s 7px gap) verbatim, because this label
+ * sits in a row with three real `SelectField`s: body text at 12px/1.4 with a
+ * 6px margin measured 23px higher than their mono 10.5px/1 labels, and read
+ * as a different kind of thing — sentence case, lighter, larger. Keep these
+ * in step with the toolkit if it ever re-cuts its field labels.
+ */
+.filterRangeLabel {
+  display: block;
+  margin-bottom: 7px;
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.filterRangeRow {
+  display: flex;
+  gap: var(--bp-space-2);
+}
+
+.filterRangeRow > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Pushed to the end of the bar, which follows the writing direction. */
+.filterTail {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+}
+
+.filterCount {
+  font: 400 0.78125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the export control, above the table --- */
+
+.listActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--bp-space-2);
+  margin-bottom: var(--bp-space-3);
+  flex-wrap: wrap;
+}
+
+/* --- remaining-on-the-reel, in a list row --- */
+
+.remainingCell {
+  min-width: 0;
+}
+
+.remainingFigures {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-1);
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.remainingValue {
+  font: 600 0.84375rem/1.2 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.remainingOf {
+  font: 400 0.71875rem/1.2 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pushed to the end of the row, which follows the writing direction. */
+.remainingPct {
+  margin-inline-start: auto;
+  font: 600 0.71875rem/1.2 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.pctFull {
+  color: var(--bp-success-text);
+}
+
+.pctPart {
+  color: var(--bp-orange-800);
+}
+
+.pctEmpty {
+  color: var(--bp-ink-muted);
+}
+
+/* --- the bar itself, shared by the row and the detail hero --- */
+
+.bar {
+  display: block;
+  height: 6px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint-strong);
+  overflow: hidden;
+}
+
+.barTall {
+  height: 12px;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-gradient-primary);
+}
+
+/* A full reel reads as "nothing taken", not "in progress". The handoff draws
+   this as a green gradient, but the toolkit has no success gradient token
+   (only -primary, -warm and -banner), and adding one to the shared design
+   system for a single 6px bar is not worth the coupling — a flat success fill
+   is indistinguishable at this height. */
+.barFillFull {
+  background: var(--bp-success-text);
+}
+
+.barFillEmpty {
+  background: var(--bp-ink-faint);
+}
+
+/* --- the reel detail's hero panel --- */
+
+.hero {
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+  padding: var(--bp-space-5);
+  margin-bottom: var(--bp-space-5);
+}
+
+.heroLabel {
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.heroFigures {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  margin: var(--bp-space-2) 0 var(--bp-space-1);
+}
+
+.heroValue {
+  font: 700 clamp(2.125rem, 5vw, 2.875rem) / 1 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroUnit {
+  font: 400 0.9375rem/1.2 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.heroOf {
+  font: 400 0.875rem/1.2 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.heroPct {
+  margin-inline-start: auto;
+  font: 600 0.9375rem/1.2 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.heroBar {
+  margin-bottom: var(--bp-space-4);
+}
+
+/* The four figures under the bar: length left, reserved, free, already cut. */
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--bp-space-3);
+}
+
+.figure {
+  border-radius: var(--bp-radius-card);
+  padding: var(--bp-space-4);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-hairline);
+}
+
+.figureLabel {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.figureFigure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-1);
+  margin-top: var(--bp-space-1);
+}
+
+.figureValue {
+  font: 700 1.375rem/1.2 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.figureFree {
+  color: var(--bp-success-text);
+}
+
+.figureCut {
+  color: var(--bp-orange-800);
+}
+
+.figureUnit {
+  font: 400 0.71875rem/1.2 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the reel's identity line above the hero --- */
+
+/*
+ * The handoff leads the reel detail with its number and a status pill. The
+ * page's own <h1> is the generic "Paper roll" — a server component, which
+ * cannot know the state — so this line carries which reel this is and what
+ * condition it is in.
+ */
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-4);
+}
+
+.identityNo {
+  font: 700 clamp(1.375rem, 3vw, 1.75rem) / 1.05 var(--bp-font-display);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.identitySpec {
+  font: 400 0.8125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- the "nothing holds this reel" note in the reservations panel --- */
+
+.emptyNote {
+  margin: 0;
+  padding: var(--bp-space-4);
+  border: 1px dashed var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  text-align: center;
+  font-size: 0.78125rem;
+  color: var(--bp-ink-muted);
+}
+
+.emptyNoteTitle {
+  display: block;
+  margin-bottom: var(--bp-space-1);
+  font-size: 0.875rem;
+  color: var(--bp-ink);
+}
+
+/* --- the reel detail's two-column body, from the handoff --- */
+
+/*
+ * A main column and a narrower rail, as "Stock v3.dc.html" lays the reel
+ * detail out: the reel's own story on the left (what is left, what it is,
+ * who holds it, where it came from) and the things you act on or look up on
+ * the right (the purchase, the state at a glance, taking it out of stock).
+ *
+ * Collapses to one column under 900px — the rail's content is not secondary
+ * on a phone, it is just further down.
+ */
+.detailBody {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: var(--bp-space-4);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .detailBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.detailMain,
+.detailRail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  min-width: 0;
+}
+
+/*
+ * The dark "State" card in the rail — the one inverted surface on the page.
+ *
+ * Carries `data-surface="floor"` in the markup rather than hand-picked light
+ * colours: that scope already redefines every ink, hairline and veil token
+ * for an ink ground (tokens.css), so the card inherits the same inversion
+ * the shop-floor screens use instead of forking the palette here.
+ */
+.statePanel {
+  border-radius: var(--bp-radius-panel);
+  padding: var(--bp-space-4);
+  background: var(--bp-neutral-900);
+  border: 1px solid var(--bp-hairline);
+  box-shadow: var(--bp-shadow-panel);
+  color: var(--bp-ink);
+}
+
+.statePanelTitle {
+  margin: 0 0 var(--bp-space-2);
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-accent-text);
+}
+
+.stateRow {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.stateDot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  display: block;
+  border-radius: 50%;
+}
+
+.stateLabel {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 0.84375rem;
+}
+
+.stateValue {
+  flex: none;
+  font: 400 0.75rem/1.3 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stateNote {
+  margin: var(--bp-space-3) 0 0;
+  font-size: 0.78125rem;
+  color: var(--bp-ink-muted);
+}
+
+/* The receive button under the state note. */
+.stateAction {
+  margin-block-start: var(--bp-space-3);
+}
+
+/* The "Take out of stock" card: a danger-tinted panel, not loose buttons. */
+.dangerPanel {
+  border-radius: var(--bp-radius-panel);
+  padding: var(--bp-space-4);
+  background: var(--bp-glass-bg);
+  border: 1px solid var(--bp-danger-border);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.dangerTitle {
+  margin: 0 0 var(--bp-space-1);
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-danger-text);
+}
+
+.dangerNote {
+  margin: 0 0 var(--bp-space-3);
+  font-size: 0.78125rem;
+  color: var(--bp-ink-muted);
+}
+
+.dangerActions {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.dangerActions > * {
+  flex: 1 1 auto;
+}
+
+/* The "Shipment SA ... →" link at the foot of the Purchase card. */
+.shipmentLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  min-height: 48px;
+  margin-top: var(--bp-space-3);
+  padding: 0 var(--bp-space-3);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius);
+  background: var(--bp-veil-bg);
+  font-weight: 600;
+  font-size: 0.84375rem;
+  color: var(--bp-ink);
+  text-decoration: none;
+}
+
+.shipmentLink:hover {
+  border-color: var(--bp-orange-500);
+  color: var(--bp-orange-800);
+  text-decoration: none;
+}
+
+/* Arabic: the arrow points the other way. Bare selector, not :global(). */
+[dir="rtl"] .shipmentArrow {
+  transform: rotate(180deg);
+}
+
+/* --- the Lineage panel --- */
+
+.lineageRow {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: flex-start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.lineageRow:last-child {
+  border-bottom: 0;
+}
+
+.lineageDot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  margin-top: 7px;
+  display: block;
+  border-radius: 50%;
+}
+
+.lineageText {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.lineageLabel {
+  display: block;
+  font-weight: 600;
+  font-size: 0.84375rem;
+}
+
+.lineageMeta {
+  display: block;
+  font: 400 0.71875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.lineageValue {
+  flex: none;
+  font: 600 0.8125rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dot tones shared by the state rows and the lineage rows. */
+.dotSuccess { background: var(--bp-success); }
+.dotInfo { background: var(--bp-info); }
+.dotWarn { background: var(--bp-orange-500); }
+.dotMuted { background: var(--bp-neutral-500); }
+
+/* The admin's link to this reel's activity, under the detail body. */
+.activityLink {
+  margin-block-start: var(--bp-space-4);
+}

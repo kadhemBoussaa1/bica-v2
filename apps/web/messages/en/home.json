@@ -1,0 +1,13 @@
+{
+  "eyebrow": "Bicapack ERP",
+  "welcome": "Welcome back, {name}.",
+  "welcomeAnon": "Welcome back.",
+  "subtitle": "Kraft paper bag production, end to end. Modules arrive here as they are built.",
+  "modules": "Modules",
+  "plannedScope": "Planned scope",
+  "planned": "Planned",
+  "productionName": "Production",
+  "productionBody": "Machine runs, downtime logging, and output against the plan.",
+  "stockName": "Stock",
+  "stockBody": "Paper rolls in, finished bags out, and what is reserved for a job."
+}

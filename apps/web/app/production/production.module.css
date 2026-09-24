@@ -1,0 +1,921 @@
+/*
+ * The production page: a day, station by station, or a month — its flow, a
+ * year of trend, and who did the work.
+ *
+ * Source: "Production v3.dc.html" in the Claude Design project "ERP client
+ * module redesign", on the toolkit v3 (Glass) tokens. The handoff's radii and
+ * gaps are snapped to the toolkit scales (22px -> panel, 18px -> space-4);
+ * its physical sides are logical here, for Arabic. Page furniture (header,
+ * form grid) comes from records.module.css.
+ */
+
+/* --- the four stations: a colour AND a dot shape each, so they survive a
+       grayscale print. Tints are alpha so they sit on glass. --- */
+
+.stPrinting {
+  --st-dot: var(--bp-orange-500);
+  --st-fg: var(--bp-orange-800);
+  --st-tint: rgb(242 145 0 / 0.16);
+  --st-line: rgb(217 124 0 / 0.32);
+  --st-head: rgb(242 145 0 / 0.1);
+  --st-shape: 50%;
+}
+
+.stProducer {
+  --st-dot: #5980a6;
+  --st-fg: var(--bp-info-text);
+  --st-tint: rgb(89 128 166 / 0.16);
+  --st-line: rgb(34 88 124 / 0.3);
+  --st-head: rgb(89 128 166 / 0.1);
+  --st-shape: 2px;
+}
+
+.stControl {
+  --st-dot: var(--bp-success);
+  --st-fg: var(--bp-success-text);
+  --st-tint: rgb(46 125 79 / 0.14);
+  --st-line: rgb(32 96 59 / 0.28);
+  --st-head: rgb(46 125 79 / 0.1);
+  --st-shape: 50%;
+}
+
+.stPackaging {
+  --st-dot: var(--bp-warning-text);
+  --st-fg: var(--bp-warning-text);
+  --st-tint: rgb(224 161 6 / 0.16);
+  --st-line: rgb(224 161 6 / 0.4);
+  --st-head: rgb(224 161 6 / 0.12);
+  --st-shape: 0;
+}
+
+.dot {
+  display: block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--st-shape);
+  background: var(--st-dot);
+}
+
+/* --- toolbar: view switch and period navigation on one row --- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-4);
+}
+
+.segmented {
+  display: flex;
+  flex: none;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-1);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg-soft);
+}
+
+.segment {
+  min-height: 40px;
+  padding: 0 var(--bp-space-4);
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-ink-muted);
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.segment:hover {
+  background: rgb(242 145 0 / 0.16);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.segmentActive,
+.segmentActive:hover {
+  background: var(--bp-ink);
+  color: var(--bp-surface);
+}
+
+.dayNav {
+  display: flex;
+  flex: 1 1 300px;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.dayBtn {
+  height: 44px;
+  padding: 0 16px;
+  font-size: 0.84375rem;
+}
+
+/* The period itself: the handoff's label chip, kept a real input so the
+   day (or month) can still be picked directly. */
+.dayInput {
+  height: 44px;
+  padding: 0 var(--bp-space-4);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg);
+  color: var(--bp-ink);
+  font: 600 0.90625rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dayInput:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+}
+
+.periodMeta {
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the recording form, opened from the header or an empty station --- */
+
+.recordPanel {
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+  border-color: rgb(242 145 0 / 0.6);
+  padding: var(--bp-space-5);
+  margin-bottom: var(--bp-space-4);
+}
+
+.recordTitle {
+  margin: 0 0 var(--bp-space-4);
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-accent-text);
+}
+
+/* --- shared pieces --- */
+
+.panel {
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+  padding: var(--bp-space-5);
+  margin-bottom: var(--bp-space-4);
+}
+
+.stations .panel {
+  margin-bottom: 0;
+}
+
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-4);
+}
+
+.eyebrow {
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.panel > .eyebrow {
+  margin-bottom: var(--bp-space-3);
+}
+
+.unit {
+  font: 400 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- the period's flow through the four stations --- */
+
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+}
+
+.flowTile {
+  display: flex;
+  flex: 1 1 150px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 132px;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border: 1px solid var(--st-line);
+  border-radius: var(--bp-radius-block);
+  background: var(--st-tint);
+}
+
+/* Nothing entered: the tile steps back, its station still named by the dot. */
+.flowTileEmpty {
+  border-color: var(--bp-hairline);
+  background: var(--bp-veil-bg);
+}
+
+.flowLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-width: 0;
+  font: 600 0.59375rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.flowFigure {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.flowValue {
+  font: 700 clamp(1.4375rem, 3vw, 1.8125rem) / 1.1 var(--bp-font-display);
+  letter-spacing: -0.025em;
+  color: var(--bp-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.flowTileEmpty .flowValue {
+  color: var(--bp-ink-muted);
+}
+
+.flowMeta {
+  font: 400 0.6875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- how the produced pieces broke down --- */
+
+.quality {
+  margin-top: var(--bp-space-4);
+  border-top: 1px solid var(--bp-hairline);
+  padding-top: var(--bp-space-4);
+}
+
+.qualityHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-2);
+}
+
+.qualityRate {
+  font: 400 0.78125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-orange-800);
+}
+
+.qualityRateGood {
+  color: var(--bp-success-text);
+}
+
+.qualityBar,
+.splitBar {
+  display: flex;
+  height: 14px;
+  border-radius: var(--bp-radius-pill);
+  overflow: hidden;
+  background: var(--bp-tint);
+}
+
+.splitBar {
+  height: 9px;
+}
+
+.qualitySeg {
+  display: block;
+  background: var(--seg);
+}
+
+/* Colour plus shape: round is good, soft-cornered is to fix (and what was
+   never broken down), square is waste. */
+.good {
+  --seg: linear-gradient(90deg, #3f9160 0%, var(--bp-success) 100%);
+  --shape: 50%;
+}
+.fix {
+  --seg: linear-gradient(90deg, var(--bp-orange-500) 0%, var(--bp-orange-600) 100%);
+  --shape: 2px;
+}
+.waste {
+  --seg: linear-gradient(90deg, var(--bp-danger) 0%, var(--bp-danger-text) 100%);
+  --shape: 0;
+}
+.gap {
+  --seg: var(--bp-neutral-300);
+  --shape: 2px;
+}
+
+.qualityLegend,
+.splitLegend {
+  display: flex;
+  gap: var(--bp-space-4);
+  flex-wrap: wrap;
+  margin-top: var(--bp-space-2);
+}
+
+.legendItem {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-2);
+}
+
+.legendDot {
+  display: block;
+  flex: none;
+  align-self: center;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--shape);
+  background: var(--seg);
+}
+
+.legendLabel {
+  font: 600 0.59375rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.legendValue {
+  font: 600 0.8125rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Waste sits apart from the split: it is counted beside the produced
+   figure, not inside it. */
+.legendApart {
+  border-inline-start: 1px solid var(--bp-hairline);
+  padding-inline-start: var(--bp-space-4);
+}
+
+.qualityNote {
+  margin: var(--bp-space-2) 0 0;
+  font: 400 0.71875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-orange-800);
+}
+
+/* --- one station, and the stack of them --- */
+
+.stations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+.station,
+.ranking {
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  overflow: hidden;
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.stationHead {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  padding: var(--bp-space-3) var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-hairline);
+  background: var(--st-head);
+}
+
+.stationHead .dot {
+  width: 9px;
+  height: 9px;
+}
+
+.stationName {
+  flex: 1 1 180px;
+  min-width: 140px;
+  margin: 0;
+  font: 600 1.0625rem/1.3 var(--bp-font-display);
+  letter-spacing: -0.01em;
+  color: var(--bp-ink);
+}
+
+.stationFigure {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.stationTotal {
+  font: 600 1rem/1.3 var(--bp-font-mono);
+  color: var(--st-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.stationEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-4);
+  flex-wrap: wrap;
+  padding: var(--bp-space-4) var(--bp-space-5);
+  background: var(--bp-veil-bg);
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* --- one entry --- */
+
+.entry {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bp-space-4);
+  flex-wrap: wrap;
+  padding: var(--bp-space-4) var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+  background: var(--bp-control-bg-soft);
+}
+
+.entry:last-child {
+  border-bottom: 0;
+}
+
+.entryPhoto {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 128px;
+  height: 84px;
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius);
+  overflow: hidden;
+  background: var(--bp-tint);
+  font: 600 0.59375rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--bp-ink-faint);
+}
+
+.entryPhoto img,
+.mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A squircle in the station's colour: the person behind an entry with no
+   machine, or a row of a ranking. */
+.mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--st-line);
+  border-radius: var(--bp-radius);
+  overflow: hidden;
+  background: var(--st-tint);
+  color: var(--st-fg);
+  font: 700 1rem/1 var(--bp-font-display);
+}
+
+.entryBody {
+  display: flex;
+  flex: 1 1 280px;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  min-width: 220px;
+}
+
+.entryWho {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+}
+
+.operator {
+  font: 600 0.9375rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.time {
+  margin-inline-start: auto;
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.entryMachine {
+  overflow: hidden;
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entryMachine span {
+  color: var(--bp-ink-muted);
+}
+
+.qtyRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+}
+
+.qty {
+  font: 700 clamp(1.625rem, 3.4vw, 2rem) / 1.05 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.qtyUnit {
+  font: 400 0.8125rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* Short of the planned quantity reads amber, met reads green. */
+.target {
+  font: 400 0.78125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-orange-800);
+}
+
+.targetMet {
+  color: var(--bp-success-text);
+}
+
+.note {
+  margin: 0;
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+/* The order this entry was recorded against, as one link. */
+.job {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-height: 30px;
+  padding: 0 var(--bp-space-3);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+  color: inherit;
+  text-decoration: none;
+}
+
+.job:hover {
+  border-color: rgb(242 145 0 / 0.6);
+  background: var(--bp-orange-100);
+}
+
+.jobNumber {
+  font: 600 0.78125rem/1 var(--bp-font-mono);
+  color: var(--bp-ink);
+}
+
+.jobClient {
+  font: 400 0.75rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* --- month view: a year of trend, a card per station. Each has its own
+       scale — the four count in different units. --- */
+
+.trend {
+  display: grid;
+  /* 240px, not the handoff's 270: the app's page is narrower than its
+     canvas, and at 270 the four cards break three and one. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--bp-space-4);
+}
+
+.trendCard {
+  padding: var(--bp-space-4);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-veil-bg);
+}
+
+.trendHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.trendFigure {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.trendValue {
+  font: 700 1.3125rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bars grow from one baseline; the 3px between slots is the gap that keeps
+   neighbours apart. Rounded at the data end, square on the baseline. */
+.trendBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 76px;
+  margin: var(--bp-space-3) 0 var(--bp-space-1);
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.trendSlot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+  height: 100%;
+  cursor: default;
+}
+
+.trendBar {
+  display: block;
+  width: min(24px, 100%);
+  border-radius: 3px 3px 0 0;
+  background: var(--bp-neutral-300);
+}
+
+.trendBarSelected {
+  background: var(--st-dot);
+}
+
+.trendBarPicked {
+  background: var(--bp-ink-muted);
+}
+
+.trendMonths {
+  display: flex;
+  gap: 3px;
+}
+
+.trendMonth {
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
+  font: 400 0.53125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-faint);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.trendMonthSelected {
+  color: var(--bp-ink);
+}
+
+.trendNote {
+  margin-top: var(--bp-space-2);
+  font: 400 0.6875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* --- month view: who did the month's work --- */
+
+.rankingHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  padding: var(--bp-space-4) var(--bp-space-5) var(--bp-space-3);
+}
+
+/* Near-solid under the rows, as `DataTable` does: figures in a list read
+   badly over a blurred wash. */
+.rankingRows {
+  background: var(--bp-control-bg);
+}
+
+.rankEmpty {
+  margin: 0;
+  padding: var(--bp-space-4) var(--bp-space-5);
+  border-top: 1px solid var(--bp-hairline-soft);
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  min-height: 68px;
+  padding: var(--bp-space-3) var(--bp-space-5);
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.rankRow .mark {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--bp-radius-dense);
+  font-size: 0.875rem;
+}
+
+.rankWho {
+  flex: 1 1 200px;
+  min-width: 150px;
+}
+
+.rankName {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.rankName .operator {
+  font-size: 0.90625rem;
+}
+
+.stationPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--bp-space-2);
+  border: 1px solid var(--st-line);
+  border-radius: var(--bp-radius-pill);
+  background: var(--st-tint);
+  color: var(--st-fg);
+  font: 600 0.59375rem/1 var(--bp-font-mono);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rankMeta {
+  display: block;
+  font: 400 0.6875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.rankShare {
+  flex: 1 1 170px;
+  min-width: 130px;
+  max-width: 280px;
+}
+
+.rankShareHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-2);
+  margin-bottom: var(--bp-space-1);
+}
+
+.rankSharePct {
+  font: 600 0.71875rem/1.4 var(--bp-font-mono);
+  color: var(--st-fg);
+}
+
+.rankTrack {
+  display: block;
+  height: 7px;
+  border-radius: var(--bp-radius-pill);
+  overflow: hidden;
+  background: var(--bp-tint-strong);
+}
+
+.rankFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--bp-radius-pill);
+  background: var(--st-dot);
+}
+
+.rankValue {
+  flex: 1 1 92px;
+  min-width: 76px;
+  max-width: 120px;
+  font: 600 0.9375rem/1.3 var(--bp-font-mono);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- month view: the migrated volume, counted apart --- */
+
+.apart {
+  padding: var(--bp-space-5);
+  border: 1px solid rgb(224 161 6 / 0.44);
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-veil-bg);
+  box-shadow: var(--bp-shadow-veil);
+}
+
+.apartRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bp-space-4);
+  flex-wrap: wrap;
+}
+
+.apartIcon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgb(224 161 6 / 0.5);
+  border-radius: var(--bp-radius-dense);
+  background: rgb(224 161 6 / 0.2);
+  color: var(--bp-warning-text);
+}
+
+.apartIcon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.apartText {
+  flex: 1 1 300px;
+  min-width: 240px;
+}
+
+.apartEyebrow {
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-warning-text);
+}
+
+.apartTitle {
+  margin-top: 2px;
+  font: 600 1rem/1.3 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+.apartBody {
+  max-width: 52em;
+  margin: var(--bp-space-1) 0 0;
+  font: 400 0.8125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.apartDetail {
+  margin-top: var(--bp-space-4);
+  border-top: 1px solid var(--bp-hairline);
+}
+
+.apartLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  padding: var(--bp-space-2) 0;
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.apartMonth {
+  flex: 1 1 140px;
+  font: 600 0.84375rem/1.4 var(--bp-font-body);
+}
+
+.apartLine .rankMeta {
+  flex: 1 1 180px;
+}
+
+.apartValue {
+  flex: 1 1 120px;
+  font: 600 0.84375rem/1.4 var(--bp-font-mono);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

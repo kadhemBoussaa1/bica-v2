@@ -1,0 +1,1522 @@
+/* Shared component styles for the Bicapack toolkit — v3 "Glass".
+   Sizes and gaps come from the tokens' spacing scale; radii from the radius
+   scale; surfaces from the glass recipes; text colours from the --bp-ink*
+   roles so the shop-floor scope can invert them. */
+
+/* ---------- Button ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bp-space-2);
+  height: var(--bp-control-h);
+  padding: 0 var(--bp-control-pad);
+  border: 1px solid transparent;
+  border-radius: var(--bp-radius);
+  font: 600 0.9375rem/1 var(--bp-font-display);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 120ms ease-out,
+    border-color 120ms ease-out,
+    box-shadow 160ms ease-out,
+    transform 160ms ease-out;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 3px;
+}
+
+/* Desktop toolbars and table-row controls only, never a primary action. */
+.btnDense {
+  height: var(--bp-control-h-dense);
+  padding: 0 var(--bp-control-pad-dense);
+  border-radius: var(--bp-radius-dense);
+  font-size: 0.8125rem;
+}
+
+/* The machine-side tablet, tapped at arm's length. */
+.btnFloor {
+  height: var(--bp-control-h-floor);
+  padding: 0 var(--bp-control-pad-floor);
+  border-radius: var(--bp-radius-block);
+  font: 700 1rem/1 var(--bp-font-display);
+}
+
+/* The warm gradient and a coloured shadow — the only element that lifts on
+   hover. Dense primaries stay flat orange: a gradient on a 36px row button
+   would shout in a table. */
+.btnPrimary {
+  background: var(--bp-gradient-primary);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--bp-shadow-primary);
+}
+.btnPrimary:hover:not(:disabled) {
+  box-shadow: var(--bp-shadow-primary-hover);
+  transform: translateY(-1px);
+}
+.btnPrimary:active:not(:disabled) {
+  box-shadow: var(--bp-shadow-primary-active);
+  transform: translateY(0);
+}
+.btnDense.btnPrimary {
+  background: var(--bp-orange-500);
+  box-shadow: var(--bp-shadow-primary-dense);
+}
+.btnDense.btnPrimary:hover:not(:disabled) {
+  background: var(--bp-orange-600);
+  transform: none;
+  box-shadow: var(--bp-shadow-primary-dense);
+}
+/* On ink the fill carries ink text — white on orange-500 fails there too. */
+[data-surface="floor"] .btnPrimary {
+  color: var(--bp-neutral-900);
+}
+[data-surface="floor"] .btnPrimary:hover:not(:disabled) {
+  background: var(--bp-orange-300);
+}
+
+.btnSecondary {
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-strong);
+  border-color: var(--bp-control-border);
+}
+.btnSecondary:hover:not(:disabled) {
+  border-color: var(--bp-control-border-hover);
+  background: var(--bp-surface);
+}
+[data-surface="floor"] .btnSecondary:hover:not(:disabled) {
+  background: var(--bp-tint-strong);
+}
+
+.btnGhost {
+  background: transparent;
+  color: var(--bp-orange-800);
+}
+.btnGhost:hover:not(:disabled) {
+  background: rgb(242 145 0 / 0.14);
+}
+[data-surface="floor"] .btnGhost {
+  color: var(--bp-orange-300);
+}
+
+.btnDanger {
+  background: rgb(255 255 255 / 0.6);
+  color: var(--bp-danger-text);
+  border-color: rgb(193 53 43 / 0.5);
+}
+.btnDanger:hover:not(:disabled) {
+  background: var(--bp-danger);
+  border-color: var(--bp-danger);
+  color: #fff;
+}
+
+.btnDark {
+  background: var(--bp-neutral-900);
+  border-color: var(--bp-neutral-900);
+  color: #fff;
+  box-shadow: 0 8px 20px rgb(26 23 20 / 0.28);
+}
+.btnDark:hover:not(:disabled) {
+  background: var(--bp-neutral-800);
+  border-color: var(--bp-neutral-800);
+}
+
+.btn:disabled {
+  background: rgb(255 255 255 / 0.4);
+  color: var(--bp-neutral-400);
+  border-color: rgb(26 23 20 / 0.12);
+  box-shadow: none;
+  transform: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* A working button keeps its look, shows a ring and refuses clicks. */
+.btnBusy,
+.btnBusy:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+.btnBusy.btnPrimary:disabled {
+  background: var(--bp-gradient-primary);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--bp-shadow-primary);
+}
+.btnBusy.btnDense.btnPrimary:disabled {
+  background: var(--bp-orange-500);
+  box-shadow: var(--bp-shadow-primary-dense);
+}
+
+.btnSpinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border: 2px solid color-mix(in srgb, currentColor 40%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Field ---------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.fieldLabel {
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.fieldLabelError {
+  color: var(--bp-danger);
+}
+
+.fieldUnit {
+  color: var(--bp-ink-faint);
+  letter-spacing: 0;
+}
+
+.control {
+  height: var(--bp-control-h);
+  padding: 0 16px;
+  width: 100%;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  font: 400 0.875rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+  background: var(--bp-control-bg);
+}
+
+.controlDense {
+  height: var(--bp-control-h-dense);
+  padding: 0 12px;
+  border-radius: var(--bp-radius-dense);
+  font-size: 0.8125rem;
+}
+
+.control:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+}
+
+/* Quantities, GSM, roll widths and money use fixed-width figures
+   so columns align on scan. */
+.controlNumeric {
+  font: 500 0.875rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.controlMono {
+  font: 500 0.875rem/1 var(--bp-font-mono);
+}
+
+.controlDense.controlNumeric,
+.controlDense.controlMono {
+  font-size: 0.8125rem;
+}
+
+.controlError {
+  border-color: var(--bp-danger);
+}
+
+.controlTextarea {
+  height: auto;
+  padding: 12px 16px;
+  font: 400 0.875rem/1.55 var(--bp-font-body);
+  resize: vertical;
+}
+
+.fieldError {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-danger-text);
+}
+
+/* The whole row is the target — a 48px box, not a 16px square. */
+.checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bp-space-3);
+  min-height: var(--bp-control-h);
+  padding: 14px;
+  border: 1px solid rgb(26 23 20 / 0.1);
+  border-radius: var(--bp-radius-block);
+  background: rgb(255 255 255 / 0.44);
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.checkboxRow:hover {
+  background: rgb(242 145 0 / 0.12);
+  border-color: rgb(242 145 0 / 0.5);
+}
+
+.checkboxRow:focus-within {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.checkboxControl {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin: 2px 0 0;
+  accent-color: var(--bp-orange-500);
+}
+
+.checkboxLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: 600 0.875rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.checkboxHint {
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* ---------- Badge ---------- */
+
+/* Pills now, but still colour + dot shape + label: all three carry the
+   meaning, so the set survives a grayscale print and a colour-blind reader.
+   Fills are alpha tints with a matching border, so they sit on glass. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  height: 30px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: var(--bp-radius-pill);
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badgeCompact {
+  height: 24px;
+  padding: 0 10px;
+  gap: 6px;
+  font-size: 0.625rem;
+}
+
+.badgeDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: currentColor;
+}
+
+.badgeDotRound {
+  border-radius: 50%;
+}
+
+.badgeDotSoft {
+  border-radius: 2px;
+}
+
+.badgeDraft {
+  background: rgb(26 23 20 / 0.06);
+  color: var(--bp-neutral-800);
+  border-color: rgb(26 23 20 / 0.12);
+}
+.badgePlanned {
+  background: rgb(89 128 166 / 0.16);
+  color: var(--bp-info-text);
+  border-color: rgb(34 88 124 / 0.28);
+}
+.badgeInRun {
+  background: rgb(242 145 0 / 0.18);
+  color: var(--bp-orange-800);
+  border-color: rgb(217 124 0 / 0.34);
+}
+.badgeOnHold {
+  background: rgb(224 161 6 / 0.18);
+  color: var(--bp-warning-text);
+  border-color: rgb(224 161 6 / 0.34);
+}
+.badgeDone {
+  background: rgb(46 125 79 / 0.16);
+  color: var(--bp-success-text);
+  border-color: rgb(32 96 59 / 0.3);
+}
+.badgeScrapped {
+  background: rgb(193 53 43 / 0.14);
+  color: var(--bp-danger-text);
+  border-color: rgb(143 37 30 / 0.3);
+}
+.badgeQcPending {
+  background: rgb(89 128 166 / 0.16);
+  color: var(--bp-info-text);
+  border-color: rgb(34 88 124 / 0.28);
+}
+
+/* ---------- Role badge ---------- */
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: var(--bp-radius-pill);
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.roleSuperAdmin {
+  background: rgb(242 145 0 / 0.18);
+  color: var(--bp-orange-800);
+  border-color: rgb(217 124 0 / 0.34);
+}
+
+.roleAdmin {
+  background: rgb(26 23 20 / 0.06);
+  color: var(--bp-neutral-800);
+  border-color: rgb(26 23 20 / 0.12);
+}
+
+.roleStaff {
+  background: rgb(255 255 255 / 0.5);
+  color: var(--bp-neutral-600);
+  border-color: rgb(26 23 20 / 0.12);
+}
+
+/* ---------- Data table ---------- */
+
+/* The frame is a rounded panel with the panel shadow, but its body stays
+   near-solid: the handoff's rule is no glass behind a dense table, where
+   the blur would cost the figures their edge. */
+.table {
+  background: rgb(255 255 255 / 0.9);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+  overflow: hidden;
+}
+
+/* Already on a panel (a page that wraps its content in `data-surface="panel"`):
+   the frame drops its card chrome and the table reads as a section of that
+   panel. The ground it needs stays the wrapper's job — a dense body must not
+   have blur behind it, so the wrapper supplies a near-solid surface. */
+[data-surface="panel"] .table {
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  /* Fills the column it was given and becomes the scroll boundary: the
+     toolbar and the pager stay put while only the rows move, which is what
+     makes a long list usable without the page itself scrolling. */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* The rows are the only thing that scrolls. `.tableScroll` already scrolls
+   sideways for a grid wider than the column; here it takes the vertical axis
+   too, which is also what finally makes the sticky column header stick. */
+[data-surface="panel"] .tableScroll,
+[data-surface="panel"] .customBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* The wrapper already insets the column, so every band lines up with the
+   heading above it instead of being indented twice. That also buys the grid
+   back the width its own padding was taking. The footer's tint would read as
+   a stray band once it no longer spans a card, so it becomes a rule. */
+[data-surface="panel"] .tableToolbar,
+[data-surface="panel"] .tableFooter,
+[data-surface="panel"] .tableHead,
+[data-surface="panel"] .tableRow {
+  padding-inline: 0;
+}
+
+[data-surface="panel"] .tableFooter {
+  background: transparent;
+  border-top: 1px solid var(--bp-hairline);
+  /* A panel page pins the pager to the bottom of the screen, which is where
+     the app's fixed corner dock sits (52px plus its own inset). The buttons
+     stop short of it rather than disappearing under it; logical, so the
+     Arabic layout mirrors both together. */
+  padding-inline-end: calc(52px + var(--bp-space-5) + var(--bp-space-3));
+}
+
+.tableToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3) var(--bp-space-4);
+  flex-wrap: wrap;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+/* Chips scroll sideways; they never wrap into a wall. */
+.tableFilters {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+
+/* Fully round: v3's filter chips are pills. */
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 40px;
+  padding: 0 16px;
+  background: var(--bp-control-bg-soft);
+  border: 1px solid rgb(26 23 20 / 0.14);
+  color: var(--bp-ink-strong);
+  font: 500 0.8125rem/1 var(--bp-font-body);
+  border-radius: var(--bp-radius-pill);
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.filterChip:hover {
+  background: var(--bp-surface);
+  border-color: var(--bp-control-border-hover);
+}
+
+.filterChip:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.filterChipActive,
+.filterChipActive:hover {
+  background: var(--bp-neutral-900);
+  border-color: var(--bp-neutral-900);
+  color: #fff;
+}
+
+/* The glyph before a chip's label: slightly faded, and inherits the chip's colour. */
+.filterChipIcon {
+  display: inline-flex;
+  flex: none;
+  margin-inline-end: 1px;
+  opacity: 0.78;
+}
+
+.filterChipActive .filterChipIcon {
+  opacity: 1;
+}
+
+.filterChipCount {
+  font: 500 0.75rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+/* The caller's extra controls; they take the room the chips leave. */
+.tableToolbarExtra {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.tableSearch {
+  height: 40px;
+  width: 220px;
+  max-width: 100%;
+  padding: 0 14px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  font: 400 0.8125rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+  background: var(--bp-control-bg);
+}
+
+.tableSearch:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.tableGrid {
+  min-width: 720px;
+}
+
+.tableHead {
+  display: grid;
+  grid-template-columns: var(--bp-table-cols);
+  /* Must match .tableRow's gap, or header and cells drift out of alignment. */
+  column-gap: var(--bp-space-4);
+  padding: 0 var(--bp-space-4);
+  background: rgb(26 23 20 / 0.035);
+  border-bottom: 1px solid var(--bp-hairline);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.th {
+  padding: 12px 0;
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.thNumeric {
+  text-align: end;
+}
+
+/* Sortable headers are real buttons; the cell keeps its own alignment so a
+   numeric column still pushes its button to the right edge. */
+.thButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.thButton:hover {
+  color: var(--bp-ink);
+}
+
+.thButton:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.thSort {
+  font-size: 0.5625rem;
+  color: var(--bp-neutral-300);
+}
+
+.thSortActive {
+  color: var(--bp-accent-text);
+}
+
+/* A refetch dims the rows in place; a first load draws skeletons instead. */
+.tableBodyLoading {
+  opacity: 0.55;
+  transition: opacity 120ms ease-out;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: var(--bp-table-cols);
+  column-gap: var(--bp-space-4);
+  min-height: var(--bp-row-h);
+  padding: 0 var(--bp-space-4);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+  align-items: center;
+}
+
+.tableRow:hover {
+  background: var(--bp-orange-50);
+}
+
+.tableRowClickable {
+  cursor: pointer;
+}
+
+.tableRowClickable:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+}
+
+/* The open record. The inset bar, not just the tint, is what separates it
+   from a hovered row, since both share the orange-50 wash. */
+.tableRowSelected,
+.tableRowSelected:hover {
+  background: var(--bp-orange-50);
+  box-shadow: inset 3px 0 0 var(--bp-orange-500);
+}
+
+[dir="rtl"] .tableRowSelected,
+[dir="rtl"] .tableRowSelected:hover {
+  box-shadow: inset -3px 0 0 var(--bp-orange-500);
+}
+
+.td {
+  min-width: 0;
+  padding: 10px 0;
+}
+
+/* Column header repeated inside the cell; only shown in card mode. */
+.tdLabel {
+  display: none;
+}
+
+.tdJob {
+  font: 500 0.78125rem/1.3 var(--bp-font-mono);
+  color: var(--bp-accent-text);
+}
+
+.tdCustomer {
+  font: 600 0.84375rem/1.3 var(--bp-font-display);
+}
+
+.tdSpec {
+  font: 400 0.71875rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+}
+
+.tdNumeric {
+  text-align: end;
+  font: 400 0.78125rem/1.3 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tdQty {
+  font-weight: 500;
+}
+
+.tdDue {
+  font: 400 0.78125rem/1.3 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.tdDueLate {
+  font-weight: 600;
+  color: var(--bp-danger);
+}
+
+.tableEmpty {
+  padding: var(--bp-space-4);
+}
+
+.tableFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-4);
+  flex-wrap: wrap;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  background: rgb(26 23 20 / 0.035);
+}
+
+/* The range and the rows-per-page picker read together: both answer "how
+   much of the list am I looking at". The pager keeps the other end. */
+.tableFooterStart {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-4);
+  flex-wrap: wrap;
+}
+
+.tableCount {
+  font: 500 0.78125rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink-muted);
+}
+
+.pageSize {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+}
+
+.pageSizeLabel {
+  font: 500 0.78125rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.pageSizeSelect {
+  height: var(--bp-control-h-dense);
+  padding-inline: var(--bp-space-2);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-control-bg-soft);
+  font: 600 0.78125rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink-strong);
+  cursor: pointer;
+}
+
+.pageSizeSelect:hover {
+  background: var(--bp-surface);
+  border-color: var(--bp-control-border-hover);
+}
+
+.pageSizeSelect:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.tablePager {
+  display: flex;
+  gap: var(--bp-space-2);
+}
+
+.pagerBtn {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--bp-control-border);
+  background: var(--bp-control-bg-soft);
+  border-radius: var(--bp-radius-dense);
+  font: 600 0.8125rem/1 var(--bp-font-display);
+  color: var(--bp-ink-strong);
+  cursor: pointer;
+}
+
+.pagerBtn:hover:not(:disabled) {
+  background: var(--bp-surface);
+  border-color: var(--bp-control-border-hover);
+}
+
+.pagerBtn:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.pagerBtn:disabled {
+  background: transparent;
+  border-color: rgb(26 23 20 / 0.1);
+  color: var(--bp-neutral-300);
+  cursor: not-allowed;
+}
+
+/* A caller-rendered body (a card grid) in place of the row grid. On glass,
+   so the cards inside keep their own gaps against the wash. */
+.customBody {
+  padding: var(--bp-space-4);
+  background: rgb(26 23 20 / 0.03);
+}
+
+/* Full-width rows with their own separators sit on the panel, not in a well. */
+.customBodyFlush {
+  padding: 0;
+  background: transparent;
+}
+
+/* Dense: desktop lists driven by a mouse. */
+.tableDense .tableRow {
+  min-height: var(--bp-row-h-dense);
+}
+.tableDense .td {
+  padding: 8px 0;
+}
+.tableDense .th {
+  padding: 10px 0;
+}
+.tableDense .filterChip {
+  height: 32px;
+  padding: 0 13px;
+  font-size: 0.78125rem;
+}
+.tableDense .tableSearch {
+  height: 32px;
+  border-radius: var(--bp-radius-dense);
+}
+.tableDense .pagerBtn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 0.75rem;
+}
+
+/* Under 900px the row is a card: a horizontally scrolling table is
+   unusable with a glove on. Same markup, the header is hidden and each cell
+   carries its column name. */
+@media (max-width: 900px) {
+  .tableCards .tableGrid {
+    min-width: 0;
+  }
+  .tableCards .tableHead {
+    display: none;
+  }
+  .tableCards .tableRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bp-space-2) var(--bp-space-4);
+    padding: 14px var(--bp-space-4);
+  }
+  .tableCards .td {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0;
+  }
+  .tableCards .tdPrimary {
+    flex: 1 1 100%;
+  }
+  .tableCards .tdLabel {
+    display: block;
+    font: 600 0.65625rem/1 var(--bp-font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bp-ink-faint);
+  }
+  .tableCards .tdNumeric {
+    text-align: start;
+  }
+}
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-hairline);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tab {
+  flex: none;
+  border: 0;
+  background: transparent;
+  padding: 0 0 12px;
+  white-space: nowrap;
+  font: 600 0.875rem/1.2 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  box-shadow: inset 0 -2px 0 transparent;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--bp-ink);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.tabActive {
+  color: var(--bp-ink);
+  box-shadow: inset 0 -2px 0 var(--bp-orange-500);
+}
+
+/* ---------- Toast ---------- */
+
+.toastStack {
+  position: fixed;
+  inset-inline-end: var(--bp-space-4);
+  bottom: var(--bp-space-4);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  width: min(380px, calc(100vw - 32px));
+}
+
+.toast {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: flex-start;
+  border: 1px solid var(--bp-glass-border);
+  border-inline-start: 3px solid var(--bp-info);
+  background: rgb(255 255 255 / 0.9);
+  backdrop-filter: var(--bp-glass-blur);
+  border-radius: var(--bp-radius-block);
+  padding: 14px 16px;
+  box-shadow: var(--bp-shadow-lift);
+  animation: toastIn 220ms ease-out;
+}
+
+.toastSuccess {
+  border-inline-start-color: var(--bp-success);
+}
+.toastWarning {
+  border-inline-start-color: var(--bp-warning);
+}
+.toastError {
+  border-inline-start-color: var(--bp-danger);
+}
+
+.toastBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.toastTitle {
+  display: block;
+  font: 600 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.toastText {
+  display: block;
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.toastClose {
+  border: 0;
+  background: transparent;
+  color: var(--bp-ink-faint);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px;
+}
+
+.toastClose:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Empty state ---------- */
+
+.empty {
+  border: 1px dashed rgb(26 23 20 / 0.18);
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-veil-bg);
+  padding: var(--bp-space-6) var(--bp-space-5);
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0 0 6px;
+  font: 600 1.0625rem/1.3 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+.emptyText {
+  margin: 0 auto;
+  max-width: 320px;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.emptyActions {
+  display: flex;
+  gap: var(--bp-space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+/* ---------- Tooltip ---------- */
+
+.tipWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 6px 10px;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-neutral-900);
+  color: #fff;
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgb(26 23 20 / 0.28);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.tipWrap:hover .tip,
+.tipWrap:focus-within .tip {
+  opacity: 1;
+}
+
+/* ---------- Skeleton ---------- */
+
+.skeleton {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgb(26 23 20 / 0.08) 0%,
+    rgb(26 23 20 / 0.03) 50%,
+    rgb(26 23 20 / 0.08) 100%
+  );
+  background-size: 420px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.skeletonRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  padding: var(--bp-space-4);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.skeletonRow {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: center;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -420px 0;
+  }
+  to {
+    background-position: 420px 0;
+  }
+}
+
+/* ---------- Dialog ---------- */
+
+.dialog {
+  /* The browser centres a modal dialog with `margin: auto`; the app's global
+     reset zeroes every margin, which pinned it to the top-left corner. */
+  margin: auto;
+  width: min(440px, calc(100vw - 32px));
+  padding: var(--bp-space-5);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  background: rgb(255 255 255 / 0.92);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-float);
+  color: var(--bp-ink);
+  font-family: var(--bp-font-body);
+}
+
+.dialog::backdrop {
+  background: rgb(26 23 20 / 0.4);
+  backdrop-filter: blur(6px);
+}
+
+.dialogTitle {
+  margin: 0 0 10px;
+  font: 600 1.125rem/1.3 var(--bp-font-display);
+}
+
+.dialogBody {
+  font: 400 0.84375rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--bp-space-3);
+  margin-top: 20px;
+}
+
+/* ---------- Asset thumbnails and file links ---------- */
+
+/*
+ * Previews of legacy S3 assets. Two fixed sizes rather than a free-form one:
+ * `md` (92px) is the artwork grid on an order, `sm` (44px) sits in an editable
+ * URL row on a form, where the preview is what makes a mistyped or dead link
+ * obvious without opening a tab.
+ */
+.thumb {
+  object-fit: cover;
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+}
+
+.thumbSm {
+  width: 44px;
+  height: 44px;
+}
+
+.thumbMd {
+  width: 92px;
+  height: 92px;
+  border-radius: var(--bp-radius-block);
+}
+
+/*
+ * Stands in for an image that failed to load. The bucket is someone else's and
+ * the rows are migrated, so dead links are expected: a quiet empty box reads as
+ * "nothing here", where the browser's broken-image icon reads as a bug.
+ */
+.thumbEmpty {
+  display: inline-block;
+  border: 1px dashed rgb(26 23 20 / 0.18);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+}
+
+.fileLink {
+  color: var(--bp-accent-text);
+  font: 400 0.8125rem/1.6 var(--bp-font-body);
+  word-break: break-all;
+}
+
+.fileLinkEmpty {
+  color: var(--bp-ink-faint);
+}
+
+/* FileUploadField: the attached file, then the actions. Wraps on a narrow
+   screen rather than squeezing the link, which is a long bucket path. */
+.fileUploadRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-2);
+}
+
+/* The real input is driven by the buttons beside it: a native file control
+   cannot be restyled to match the toolkit, and its text is browser-supplied
+   and so unlocalisable. Clipped rather than `display: none`, which would take
+   it out of the accessibility tree along with its label and error. */
+.fileUploadInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fileUploadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+  margin-inline-start: auto;
+}
+
+/*
+ * FileDropzone: the empty slot is a dashed box that takes a drop; the
+ * attached file is a row with a small page glyph. Dashed edges are alpha ink
+ * so they read the same on a veil or a tinted card; the required tone borrows
+ * orange-300, the hairline the toolkit already uses for "this needs you".
+ */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+/* Grows when its parent stretches it, so cards side by side end level. */
+.dropzoneEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-5) var(--bp-space-4);
+  border: 1px dashed rgb(26 23 20 / 0.22);
+  border-radius: var(--bp-radius);
+  background: rgb(255 255 255 / 0.5);
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dropzoneRequired {
+  border-color: var(--bp-orange-300);
+}
+
+.dropzoneOver {
+  border-style: solid;
+  border-color: var(--bp-orange-500);
+  background: var(--bp-orange-50);
+}
+
+.dropzoneIcon {
+  width: 22px;
+  height: 22px;
+  color: var(--bp-info-text);
+}
+
+.dropzoneText {
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  margin-bottom: var(--bp-space-1);
+}
+
+.dropzoneFile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius);
+  background: rgb(255 255 255 / 0.86);
+}
+
+.dropzoneFileRow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+}
+
+/* A sheet of paper, drawn: two rules and a coloured foot. */
+.dropzonePage {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 3px;
+  width: 34px;
+  height: 44px;
+  padding: 5px;
+  border: 1px solid rgb(26 23 20 / 0.16);
+  border-radius: 6px;
+  background: var(--bp-surface);
+}
+
+.dropzonePageLine {
+  display: block;
+  height: 2px;
+  border-radius: 1px;
+  background: rgb(26 23 20 / 0.18);
+}
+
+.dropzonePageLineShort {
+  width: 70%;
+}
+
+.dropzonePageFoot {
+  display: block;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--bp-success);
+}
+
+.dropzoneFileText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropzoneFileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.dropzoneFileMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 0.6875rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* Open · Download · (Edit) · Remove, sharing the row; anchors dressed as
+   dense secondary buttons so the three read alike. */
+.dropzoneActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.dropzoneAction {
+  flex: 1 1 auto;
+  min-height: 42px;
+  text-decoration: none;
+}
+
+.dropzoneAction:hover {
+  text-decoration: none;
+  color: var(--bp-orange-800);
+  border-color: var(--bp-orange-300);
+}
+
+.dropzoneRemove {
+  color: var(--bp-ink-muted);
+}
+
+.dropzoneRemove:hover:not(:disabled) {
+  border-color: rgb(193 53 43 / 0.5);
+  color: var(--bp-danger-text);
+}
+
+/* A locked, empty slot: a quiet hairline box instead of an invitation. */
+.dropzoneLocked {
+  border-style: solid;
+  border-color: var(--bp-hairline);
+  background: var(--bp-tint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .checkboxRow,
+  .filterChip {
+    transition: none;
+  }
+  .btnPrimary:hover:not(:disabled) {
+    transform: none;
+  }
+  .btnSpinner,
+  .skeleton {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+  .toast {
+    animation: none;
+  }
+  .tip {
+    transition: none;
+  }
+}
+
+/* ---------- Form dialog ---------- */
+
+/* Hosts a whole form; the dialog IS the panel, so a form's own glass panel
+   is dropped inside it (`[data-embedded]` in the page modules). */
+.formDialog {
+  margin: auto;
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  /* Near-solid, not the panel's 62%: a form is a wall of fields and labels,
+     and the page must not ghost through them. The blur handles what is
+     left; the veil behind is a shade darker than the confirm dialog's so the
+     big surface still separates from the page. */
+  background: rgb(255 255 255 / 0.96);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-float);
+  color: var(--bp-ink);
+  font-family: var(--bp-font-body);
+  overflow: hidden;
+}
+
+.formDialog::backdrop {
+  background: rgb(26 23 20 / 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.formDialogWide {
+  width: min(1180px, calc(100vw - 32px));
+}
+
+.formDialogHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bp-space-4);
+  flex: none;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.formDialogEyebrow {
+  display: block;
+  margin-bottom: 6px;
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-orange-700);
+}
+
+.formDialogTitle {
+  margin: 0;
+  font: 700 1.5rem/1.15 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+.formDialogClose {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.formDialogClose:hover {
+  background: var(--bp-surface);
+  color: var(--bp-ink);
+}
+
+.formDialogClose:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* The form scrolls inside the dialog; the head stays put. */
+.formDialogBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px 24px;
+}
+
+@media (max-width: 600px) {
+  .formDialog,
+  .formDialogWide {
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    max-width: none;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}

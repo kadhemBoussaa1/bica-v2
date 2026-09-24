@@ -1,0 +1,21 @@
+{
+  "channels": {
+    "email": "Correo",
+    "phone": "Teléfono",
+    "address": "Dirección"
+  },
+  "channelValue": "{label}: {value}",
+  "channelMissing": "{label}: sin registrar",
+  "stats": {
+    "total": "Total de {noun}",
+    "reachable": "Localizables",
+    "missingContact": "Sin contacto",
+    "possibleDuplicates": "Posibles duplicados"
+  },
+  "possibleDuplicate": "Posible duplicado",
+  "duplicateNotice": "Existe un nombre casi idéntico: <strong>{name}</strong>. Fusiona los dos a mano, o archiva uno.",
+  "nameClash": "Ya existe una ficha llamada <strong>{name}</strong>. Los nombres deben ser únicos — se rechazará.",
+  "nameClashArchived": "Ya existe una ficha llamada <strong>{name}</strong> (archivada). Los nombres deben ser únicos — se rechazará.",
+  "nameNear": "<strong>{name}</strong> se parece mucho a este nombre. Compruébalo antes de crear una segunda ficha.",
+  "nameHint": "Los nombres deben ser únicos. La lista rechaza un duplicado en lugar de crear una segunda ficha."
+}

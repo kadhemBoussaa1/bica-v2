@@ -1,0 +1,474 @@
+/*
+ * Receiving: the inbox of deliveries and the scan screen.
+ *
+ * The scan screen is the shop-floor tablet's, wrapped in `data-surface="floor"`
+ * — the first consumer of that scope in the app. Everything here is sized for
+ * a device held at arm's length: the status card is readable across a pallet,
+ * and the only tap targets are `size="floor"` buttons.
+ *
+ * Logical properties throughout, as everywhere else: Arabic is right-to-left.
+ */
+
+/* --- inbox ---------------------------------------------------------------- */
+
+/* The headline figures, above the cards. */
+.tiles {
+  display: grid;
+  gap: var(--bp-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-block-end: var(--bp-space-5);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--bp-space-4);
+  border-radius: var(--bp-radius-card);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-veil-border);
+}
+
+.tileLabel {
+  font: 600 0.625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.tileValue {
+  font: 700 1.625rem/1.15 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+}
+
+.tileValueWarn {
+  color: var(--bp-orange-700);
+}
+
+.tileValueDone {
+  color: var(--bp-success-text);
+}
+
+.inbox {
+  display: grid;
+  gap: var(--bp-space-4);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-card);
+  background: var(--bp-glass-bg);
+  border: 1px solid var(--bp-glass-border);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+/* Left too long: the border is the whole signal, no extra badge. */
+.cardStale {
+  border-color: var(--bp-orange-500);
+}
+
+/*
+ * Finished: a receipt rather than a job. It stays on the screen for a few
+ * days so a just-scanned pallet does not vanish under the operator, but it
+ * recedes — no orange anywhere, and the whole card sits back a step.
+ */
+.cardDone {
+  border-color: var(--bp-success);
+  box-shadow: none;
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-2);
+}
+
+.cardNumber {
+  font-family: var(--bp-font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--bp-ink);
+}
+
+/* Not started / in progress, as a pill. */
+.state {
+  padding: 2px 10px;
+  border-radius: var(--bp-radius-pill);
+  border: 1px solid var(--bp-tint-strong);
+  background: var(--bp-tint);
+  font: 600 0.625rem/1.6 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+  white-space: nowrap;
+}
+
+.stateStarted {
+  border-color: var(--bp-orange-300);
+  background: var(--bp-orange-100);
+  color: var(--bp-orange-800);
+}
+
+.stateDone {
+  border-color: var(--bp-success);
+  background: var(--bp-success-bg);
+  color: var(--bp-success-text);
+}
+
+.cardDate {
+  font-size: 0.85rem;
+  color: var(--bp-ink-muted);
+}
+
+.cardSupplier {
+  font: 600 1.15rem/1.25 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+.cardBody {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-4);
+  margin-block-start: var(--bp-space-2);
+}
+
+/*
+ * The progress ring. A conic gradient rather than an SVG: one element, no
+ * viewBox arithmetic, and it inherits the ink scope's colours like anything
+ * else. `--pct` is set per card from the row.
+ */
+.ring {
+  flex: none;
+  inline-size: 66px;
+  block-size: 66px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--bp-orange-500) var(--pct, 0%),
+    var(--bp-tint-strong) 0
+  );
+}
+
+/* Complete: the ring is a tick in colour form, not a progress reading. */
+.ringDone {
+  background: conic-gradient(var(--bp-success) 100%, var(--bp-success) 0);
+}
+
+.ringHole {
+  inline-size: 50px;
+  block-size: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  /* Opaque, not the card's translucent glass: the ring behind it must not
+     show through the hole. */
+  background: var(--bp-page);
+  font: 700 0.85rem/1 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+}
+
+.counts {
+  flex: 1;
+  display: flex;
+  gap: var(--bp-space-3);
+  min-inline-size: 0;
+}
+
+.count {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--bp-space-2) var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+  border: 1px solid var(--bp-hairline);
+  background: var(--bp-veil-bg);
+}
+
+/* What is left is the number the operator is walking to the pallet for. */
+.countLeft {
+  border-color: var(--bp-orange-300);
+  background: var(--bp-orange-100);
+}
+
+.countLabel {
+  font: 600 0.59375rem/1.5 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+  /* Two words on one line: wrapping pushes the figure out of the tile. */
+  white-space: nowrap;
+}
+
+.countLeft .countLabel,
+.countLeft .countValue {
+  color: var(--bp-orange-800);
+}
+
+.countValue {
+  font: 700 1.25rem/1.2 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+}
+
+/* The link wraps a full-width floor button; it must not shrink it. */
+.cardAction {
+  display: block;
+  margin-block-start: var(--bp-space-2);
+}
+
+.cardAction > button {
+  inline-size: 100%;
+}
+
+/* --- scan screen ---------------------------------------------------------- */
+
+.scan {
+  display: grid;
+  gap: var(--bp-space-5);
+}
+
+.scanHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  /* The bar is a block child, so the column needs a width of its own —
+     inside the header's flex row it would otherwise shrink to the text. */
+  flex: 1 1 240px;
+  min-inline-size: 200px;
+  max-inline-size: 340px;
+}
+
+.scanProgress {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--bp-ink);
+}
+
+/*
+ * The scan target. Focusable so a tap gives the page keyboard focus back
+ * after an app switch — the wedge types into the focused document — but it is
+ * deliberately not an input, so no soft keyboard opens.
+ */
+.zone {
+  display: grid;
+  place-items: center;
+  gap: var(--bp-space-3);
+  min-height: 240px;
+  padding: var(--bp-space-6);
+  text-align: center;
+  border-radius: var(--bp-radius-panel);
+  border: 2px dashed var(--bp-tint-strong);
+  background: var(--bp-veil-bg);
+  cursor: pointer;
+}
+
+.zone:focus-visible {
+  outline: 2px solid var(--bp-orange-500);
+  outline-offset: 2px;
+}
+
+.zoneArmed {
+  border-style: solid;
+  border-color: var(--bp-orange-500);
+}
+
+.zoneHint {
+  font-size: 1rem;
+  color: var(--bp-ink-muted);
+}
+
+/* What the wedge has typed so far — reassurance that keys are arriving. */
+.zoneBuffer {
+  font-family: var(--bp-font-mono);
+  font-size: 0.9rem;
+  color: var(--bp-ink-faint);
+  word-break: break-all;
+}
+
+/*
+ * The scan result, and the one thing on this screen read from across a
+ * pallet.
+ *
+ * The success/danger tints are fixed light values with no floor-scope
+ * override, so this block pins dark ink of its own instead of inheriting the
+ * near-white `--bp-ink` the ink ground sets — otherwise the outcome is pale
+ * text on a pale card, which is exactly the state the operator must not have
+ * to squint at.
+ */
+.status {
+  display: grid;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-panel);
+  border: 1px solid var(--bp-hairline);
+  color: var(--bp-neutral-900);
+}
+
+.statusReceived {
+  background: var(--bp-success-bg);
+  border-color: var(--bp-success);
+}
+
+.statusReceived .statusOutcome {
+  color: var(--bp-success-text);
+}
+
+/* Neither good nor bad: the ink scope's own tint, so this one keeps the
+   inverted ink the rest of the screen uses. */
+.statusAlready {
+  background: var(--bp-tint);
+  border-color: var(--bp-tint-strong);
+  color: var(--bp-ink);
+}
+
+.statusRefused {
+  background: var(--bp-danger-bg);
+  border-color: var(--bp-danger);
+}
+
+.statusRefused .statusOutcome {
+  color: var(--bp-danger-text);
+}
+
+.statusOutcome {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.statusReel {
+  font-family: var(--bp-font-mono);
+  font-size: 1.1rem;
+  color: inherit;
+  word-break: break-all;
+}
+
+.statusSpec {
+  font-size: 0.9rem;
+  color: inherit;
+  opacity: 0.78;
+}
+
+.recent {
+  display: grid;
+  gap: var(--bp-space-2);
+}
+
+.recentTitle {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bp-ink-faint);
+}
+
+.recentRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  padding-block: var(--bp-space-1);
+  border-block-end: 1px solid var(--bp-hairline);
+  font-size: 0.9rem;
+}
+
+.recentReel {
+  font-family: var(--bp-font-mono);
+  color: var(--bp-ink-strong);
+}
+
+.video {
+  inline-size: 100%;
+  max-inline-size: 420px;
+  border-radius: var(--bp-radius-block);
+  background: #000;
+}
+
+/* The row of secondary actions under the zone: camera, manual entry. */
+.scanActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-3);
+}
+
+/*
+ * Typing a code by hand, for a torn label.
+ *
+ * This is the one place on the screen with a real `<input>`, and so the one
+ * place the soft keyboard is wanted — it is behind a toggle for exactly that
+ * reason. `useScanCapture` is disabled while it is open, so the wedge cannot
+ * fight the field for the same keystrokes.
+ */
+.manual {
+  display: grid;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-panel);
+  border: 1px solid var(--bp-hairline);
+  background: var(--bp-veil-bg);
+}
+
+.manualLabel {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bp-ink-faint);
+}
+
+.manualRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-3);
+}
+
+.manualInput {
+  flex: 1 1 200px;
+  min-inline-size: 0;
+  min-block-size: var(--bp-control-h-floor);
+  padding-inline: var(--bp-space-4);
+  border-radius: var(--bp-radius);
+  border: 1px solid var(--bp-tint-strong);
+  background: var(--bp-veil-bg);
+  color: var(--bp-ink);
+  font-family: var(--bp-font-mono);
+  font-size: 1.05rem;
+}
+
+.manualInput:focus-visible {
+  outline: 2px solid var(--bp-orange-500);
+  outline-offset: 2px;
+}
+
+.manualHint {
+  font-size: 0.85rem;
+  color: var(--bp-ink-muted);
+}
+
+/* The delivery's reels, ticked off as they are scanned. */
+.reels {
+  display: grid;
+  gap: var(--bp-space-2);
+}
+
+.reelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  padding-block: var(--bp-space-2);
+  border-block-end: 1px solid var(--bp-hairline);
+  font-size: 0.95rem;
+}
+
+.reelMeta {
+  font-size: 0.85rem;
+  color: var(--bp-ink-muted);
+}
