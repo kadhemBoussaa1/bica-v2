@@ -7,7 +7,10 @@
 # Needs a GitHub Environment named `production` holding:
 #   secrets  SSH_HOST, SSH_USER (the deploy user), SSH_KEY (its private key),
 #            SSH_FINGERPRINT (the server's host key, so CI never trusts an
-#            impostor: ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub | cut -d' ' -f2)
+#            impostor). The ECDSA key, not ED25519: the Go client behind
+#            ssh-action negotiates ECDSA first, and any other fingerprint fails
+#            with "host key fingerprint mismatch":
+#              ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub | cut -d' ' -f2
 #   vars     PUBLIC_URL, e.g. https://erp.example.com. Baked into the web
 #            image, so it must match DOMAIN in the server's .env.production.
 

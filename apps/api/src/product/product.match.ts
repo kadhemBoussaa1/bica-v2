@@ -82,6 +82,10 @@ export async function findOrCreateProduct<TSelect extends Prisma.ProductSelect>(
       paperType: key.paperType,
       hasHandle: key.hasHandle,
       handleWeightG: key.handleWeightG,
+      // NOT NULL with no database default (the product_images migration
+      // dropped it), and Prisma does not fill an omitted list: without this
+      // every product created here fails.
+      images: [],
     },
     select,
   });
