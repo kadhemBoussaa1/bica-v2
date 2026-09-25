@@ -1,0 +1,28 @@
+{
+  "bell": "Notifications",
+  "bellUnread": "Notifications, {count, plural, one {# unread} other {# unread}}",
+  "title": "Notifications",
+  "filter": "Show",
+  "all": "All",
+  "unread": "Unread",
+  "markAllRead": "Mark all as read",
+  "empty": "Nothing yet",
+  "emptyHint": "New orders, published schedules and your tickets show up here.",
+  "caughtUp": "You're all caught up",
+  "caughtUpHint": "Nothing unread.",
+  "older": "Show older",
+  "loadError": "Could not load notifications.",
+  "open": "Open",
+  "noClient": "No client",
+  "shiftOn": "{shift} shift · {day} {date}",
+  "kinds": {
+    "ORDER_CREATED": "New order {numero}",
+    "QUOTE_CREATED": "New quote {numero}",
+    "ORDER_IN_PRODUCTION": "Order {numero} released to production",
+    "SHIFT_WEEK_PUBLISHED": "Shift schedule published",
+    "TASK_ASSIGNED": "New ticket: {type}",
+    "TASK_REASSIGNED_AWAY": "Ticket given to someone else: {type}",
+    "TASK_REOPENED": "Ticket reopened: {type}",
+    "TASK_DONE": "Ticket done: {type}"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "bell": "Notificaciones",
+  "bellUnread": "Notificaciones, {count, plural, one {# sin leer} other {# sin leer}}",
+  "title": "Notificaciones",
+  "filter": "Mostrar",
+  "all": "Todas",
+  "unread": "Sin leer",
+  "markAllRead": "Marcar todo como leído",
+  "empty": "Nada por ahora",
+  "emptyHint": "Aquí aparecen los pedidos nuevos, los turnos publicados y tus tickets.",
+  "caughtUp": "Estás al día",
+  "caughtUpHint": "No hay nada sin leer.",
+  "older": "Ver anteriores",
+  "loadError": "No se pudieron cargar las notificaciones.",
+  "open": "Abrir",
+  "noClient": "Sin cliente",
+  "shiftOn": "Turno {shift} · {day} {date}",
+  "kinds": {
+    "ORDER_CREATED": "Nuevo pedido {numero}",
+    "QUOTE_CREATED": "Nuevo presupuesto {numero}",
+    "ORDER_IN_PRODUCTION": "Pedido {numero} enviado a producción",
+    "SHIFT_WEEK_PUBLISHED": "Planificación de turnos publicada",
+    "TASK_ASSIGNED": "Nuevo ticket: {type}",
+    "TASK_REASSIGNED_AWAY": "Ticket asignado a otra persona: {type}",
+    "TASK_REOPENED": "Ticket reabierto: {type}",
+    "TASK_DONE": "Ticket terminado: {type}"
+  }
+}

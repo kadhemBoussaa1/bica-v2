@@ -10,6 +10,7 @@ import { InkService } from "./ink/ink.service";
 import { InventoryService } from "./inventory/inventory.service";
 import { InvoiceService } from "./invoice/invoice.service";
 import { MachineService } from "./machine/machine.service";
+import { NotificationService } from "./notification/notification.service";
 import { OrderService } from "./order/order.service";
 import { PdfService } from "./pdf/pdf.service";
 import { TemplateService } from "./template/template.service";
@@ -51,6 +52,7 @@ import { UserService } from "./user/user.service";
     ChatService,
     ShiftService,
     DashboardService,
+    NotificationService,
     TrpcRouter,
   ],
 })

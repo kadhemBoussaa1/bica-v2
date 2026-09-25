@@ -1,0 +1,28 @@
+{
+  "bell": "الإشعارات",
+  "bellUnread": "الإشعارات، غير المقروءة: {count}",
+  "title": "الإشعارات",
+  "filter": "عرض",
+  "all": "الكل",
+  "unread": "غير المقروءة",
+  "markAllRead": "تعليم الكل كمقروء",
+  "empty": "لا شيء بعد",
+  "emptyHint": "تظهر هنا الطلبات الجديدة وجداول الورديات المنشورة وتذاكرك.",
+  "caughtUp": "لا جديد",
+  "caughtUpHint": "لا توجد إشعارات غير مقروءة.",
+  "older": "عرض الأقدم",
+  "loadError": "تعذّر تحميل الإشعارات.",
+  "open": "فتح",
+  "noClient": "بدون عميل",
+  "shiftOn": "وردية {shift} · {day} {date}",
+  "kinds": {
+    "ORDER_CREATED": "طلب جديد {numero}",
+    "QUOTE_CREATED": "عرض سعر جديد {numero}",
+    "ORDER_IN_PRODUCTION": "أُطلق الطلب {numero} للإنتاج",
+    "SHIFT_WEEK_PUBLISHED": "نُشر جدول الورديات",
+    "TASK_ASSIGNED": "تذكرة جديدة: {type}",
+    "TASK_REASSIGNED_AWAY": "أُسندت التذكرة إلى شخص آخر: {type}",
+    "TASK_REOPENED": "أُعيد فتح التذكرة: {type}",
+    "TASK_DONE": "اكتملت التذكرة: {type}"
+  }
+}

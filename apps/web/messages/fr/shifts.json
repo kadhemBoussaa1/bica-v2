@@ -70,7 +70,9 @@
     "placed": "{count, plural, =1 {1 personne placée} other {# personnes placées}} en {shift}",
     "moved": "Passe en {shift}",
     "movedRecorded": "Passe en {shift} — changement enregistré",
-    "removed": "Retiré(e) du planning"
+    "removed": "Retiré(e) du planning",
+    "noAccount": "Sans compte",
+    "noAccountTitle": "Aucun compte lié : ni les tickets ni les plannings ne notifient personne"
   },
   "day": {
     "title": "Tickets par jour",
@@ -188,7 +190,8 @@
     "existing": "Déjà ce jour-là : {list}",
     "existingOn": "{type} sur {machine}",
     "optional": "facultatif",
-    "notePlaceholder": "Quoi exactement, pour qui…"
+    "notePlaceholder": "Quoi exactement, pour qui…",
+    "noAccount": "{name} n'a pas de compte : ce ticket n'envoie aucune notification."
   },
   "me": {
     "title": "Mes postes",

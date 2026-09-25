@@ -70,7 +70,9 @@
     "placed": "وُضع {count, plural, =1 {شخص واحد} other {# أشخاص}} في {shift}",
     "moved": "نُقل إلى {shift}",
     "movedRecorded": "نُقل إلى {shift} — سُجّل التغيير",
-    "removed": "أُزيل من الجدول"
+    "removed": "أُزيل من الجدول",
+    "noAccount": "بدون حساب",
+    "noAccountTitle": "لا حساب مرتبط: لن تصل التذاكر ولا الجداول إلى أحد"
   },
   "day": {
     "title": "التذاكر حسب اليوم",
@@ -188,7 +190,8 @@
     "existing": "موجود في ذلك اليوم: {list}",
     "existingOn": "{type} على {machine}",
     "optional": "اختياري",
-    "notePlaceholder": "ماذا بالضبط، ولمن…"
+    "notePlaceholder": "ماذا بالضبط، ولمن…",
+    "noAccount": "ليس لدى {name} حساب، لذا لن ترسل هذه التذكرة أي إشعار."
   },
   "me": {
     "title": "ورديّاتي",

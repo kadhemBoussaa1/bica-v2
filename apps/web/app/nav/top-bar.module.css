@@ -355,3 +355,25 @@
     justify-content: center;
   }
 }
+
+/*
+ * Narrow phones: the bar held more than 390px before the bell joined it,
+ * and sign-out was the control pushed off the edge. The gaps tighten, the
+ * jump box may shrink to little more than its icon, and the initials chip —
+ * read-only chrome, already reduced to two letters here — gives way, so
+ * every control stays on screen.
+ */
+@media (max-width: 600px) {
+  .bar,
+  .account {
+    gap: var(--bp-space-2);
+  }
+
+  .search {
+    min-width: 0;
+  }
+
+  .accountChip {
+    display: none;
+  }
+}

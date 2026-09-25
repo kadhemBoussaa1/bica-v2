@@ -2,12 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   addDays,
   canWorkerMarkDone,
   daysForShiftType,
   isoDayOf,
+  isSunday,
   SHIFT_HOURS,
   SHIFT_LENGTH_MS,
   type ShiftChangeStatus,
@@ -69,10 +71,31 @@ export function MyWeek() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { push } = useToast();
+  const router = useRouter();
 
-  const [weekStart, setWeekStart] = useState(thisWeekStart);
-  const [dayOffset, setDayOffset] = useState<number>(() => todayOffsetIn(thisWeekStart()) ?? 1);
+  // `?week=YYYY-MM-DD` (a Sunday) opens that week: what a notification
+  // links to — the week just published, or a ticket's week.
+  const requested = useSearchParams().get("week");
+  const linked = requested && isSunday(requested) ? requested : null;
+
+  const [weekStart, setWeekStart] = useState(() => linked ?? thisWeekStart());
+  const [dayOffset, setDayOffset] = useState<number>(
+    () => todayOffsetIn(linked ?? thisWeekStart()) ?? 1,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // A link followed while the page is already open moves it too. State
+  // adjusted during render when the URL changes — React's pattern for
+  // resetting state from a changed input, rather than an effect.
+  const [seenLink, setSeenLink] = useState(linked);
+  if (linked !== seenLink) {
+    setSeenLink(linked);
+    if (linked && linked !== weekStart) {
+      setWeekStart(linked);
+      setDayOffset(todayOffsetIn(linked) ?? 1);
+      setSelectedId(null);
+    }
+  }
   const [requesting, setRequesting] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
@@ -105,6 +128,8 @@ export function MyWeek() {
     setWeekStart(next);
     setDayOffset(todayOffsetIn(next) ?? 1);
     setSelectedId(null);
+    // The URL follows, as on the planner, so the same link works again.
+    router.replace(`/shifts/me?week=${next}`, { scroll: false });
   };
 
   const typeLabel = (type: ShiftType) => `${enums(`shiftType.${type}`)} ${formatShiftHours(type)}`;

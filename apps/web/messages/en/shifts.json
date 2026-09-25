@@ -70,7 +70,9 @@
     "placed": "{count, plural, =1 {1 person} other {# people}} placed on {shift}",
     "moved": "Moved to {shift}",
     "movedRecorded": "Moved to {shift} — change recorded",
-    "removed": "Removed from the roster"
+    "removed": "Removed from the roster",
+    "noAccount": "No account",
+    "noAccountTitle": "No linked account: tickets and schedules notify nobody"
   },
   "day": {
     "title": "Tickets by day",
@@ -188,7 +190,8 @@
     "existing": "Already that day: {list}",
     "existingOn": "{type} on {machine}",
     "optional": "optional",
-    "notePlaceholder": "What exactly, for whom…"
+    "notePlaceholder": "What exactly, for whom…",
+    "noAccount": "{name} has no account, so this ticket sends no notification."
   },
   "me": {
     "title": "My shifts",

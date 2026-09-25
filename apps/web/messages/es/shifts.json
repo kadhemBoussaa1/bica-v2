@@ -70,7 +70,9 @@
     "placed": "{count, plural, =1 {1 persona colocada} other {# personas colocadas}} en {shift}",
     "moved": "Pasa a {shift}",
     "movedRecorded": "Pasa a {shift}: cambio registrado",
-    "removed": "Quitado de la plantilla"
+    "removed": "Quitado de la plantilla",
+    "noAccount": "Sin cuenta",
+    "noAccountTitle": "Sin cuenta vinculada: los tickets y los turnos no notifican a nadie"
   },
   "day": {
     "title": "Tickets por día",
@@ -188,7 +190,8 @@
     "existing": "Ya ese día: {list}",
     "existingOn": "{type} en {machine}",
     "optional": "opcional",
-    "notePlaceholder": "Qué exactamente, para quién…"
+    "notePlaceholder": "Qué exactamente, para quién…",
+    "noAccount": "{name} no tiene cuenta, así que este ticket no envía ninguna notificación."
   },
   "me": {
     "title": "Mis turnos",

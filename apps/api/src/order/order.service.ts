@@ -23,6 +23,7 @@ import {
 import { AllocationService } from "../allocation/allocation.service";
 import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
+import { NotificationService, type NotificationOutbox } from "../notification/notification.service";
 import { PrismaService } from "../prisma.service";
 import { ProductService } from "../product/product.service";
 import type { SessionUser } from "../trpc/trpc";
@@ -94,6 +95,7 @@ export class OrderService {
     private readonly prisma: PrismaService,
     private readonly products: ProductService,
     private readonly allocations: AllocationService,
+    private readonly notifications: NotificationService,
   ) {}
 
   /**
@@ -317,9 +319,14 @@ export class OrderService {
    * cascading into the related table, so it is atomic by construction and
    * needs no interactive transaction. `fromStatus = null` marks it as the
    * start rather than a real transition, matching how the migration backfill
-   * wrote its own rows (plan §4).
+   * wrote its own rows (plan §4). It carries the creator since the actor
+   * reached this method (docs/notifications-plan.md §4.2); the migrated
+   * rows keep their null.
+   *
+   * Every admin but the creator is notified (ORDER_CREATED or
+   * QUOTE_CREATED), on the same transaction, pushed once it commits.
    */
-  async create(input: CreateOrderInput) {
+  async create(actor: SessionUser, input: CreateOrderInput) {
     await this.assertReferencesExist(input.clientId);
     /*
      * The number is allocated here, not sent by the client (2026-09-18).
@@ -330,8 +337,9 @@ export class OrderService {
      * sequence), and a product defined inline for this order is not left
      * behind without one.
      */
+    const outbox = this.notifications.outbox();
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const created = await this.prisma.$transaction(async (tx) => {
         const product = await this.resolveProduct(
           tx,
           input.product,
@@ -339,7 +347,7 @@ export class OrderService {
           null,
         );
         const numero = await this.allocateNumero(tx);
-        return tx.order.create({
+        const order = await tx.order.create({
           data: {
             numero,
             ...this.writable(input),
@@ -352,14 +360,30 @@ export class OrderService {
               create: {
                 fromStatus: null,
                 toStatus: "DRAFT",
-                byUserId: null,
+                byUserId: actor.id,
                 note: input.kind === "QUOTE" ? "quote created" : "order created",
               },
             },
           },
           select: RETURN_SELECT,
         });
+        // `clientId` is optional on the form, so the row may name no client.
+        const client = input.clientId
+          ? await tx.client.findUnique({ where: { id: input.clientId }, select: { name: true } })
+          : null;
+        await this.notifications.emit(tx, outbox, {
+          payload: {
+            kind: input.kind === "QUOTE" ? "QUOTE_CREATED" : "ORDER_CREATED",
+            params: { numero: order.numero, clientName: client?.name ?? null },
+          },
+          recipients: await this.notifications.admins(tx),
+          entityId: order.id,
+          actorId: actor.id,
+        });
+        return order;
       });
+      outbox.flush();
+      return created;
     } catch (cause) {
       // `allocateNumero` skips every taken number under the counter's lock;
       // this is an `update` that saved a hand-typed number in between.
@@ -513,11 +537,27 @@ export class OrderService {
     // Callers already inside an interactive transaction (the invoice
     // service) pass theirs; everyone else gets one here, so the status
     // write and its log row are atomic either way — plan §2.4.
-    if (db) return this.transitionIn(actor, input, db);
-    return this.prisma.$transaction((tx) => this.transitionIn(actor, input, tx));
+    //
+    // Notifications are pushed only on the second branch, the one that owns
+    // the commit (docs/notifications-plan.md §4.1). On a caller's
+    // transaction the rows are written with its commit and the bell's poll
+    // finds them; today no such caller makes a notifying move anyway — the
+    // invoice and shipment services only reach INVOICED and READY_FOR_EXPORT.
+    if (db) return this.transitionIn(actor, input, db, null);
+    const outbox = this.notifications.outbox();
+    const updated = await this.prisma.$transaction((tx) =>
+      this.transitionIn(actor, input, tx, outbox),
+    );
+    outbox.flush();
+    return updated;
   }
 
-  private async transitionIn(actor: SessionUser, input: TransitionOrderInput, db: Db) {
+  private async transitionIn(
+    actor: SessionUser,
+    input: TransitionOrderInput,
+    db: Db,
+    outbox: NotificationOutbox | null,
+  ) {
     const order = await this.assertLifecycleExists(actor, input.orderId, db);
     const transition = findOrderTransition(order.status, input.to);
     if (!transition) {
@@ -634,6 +674,19 @@ export class OrderService {
     // between the release and the status write.
     if (transition.to === "CANCELLED") {
       await this.allocations.releaseForOrder(db, order.id);
+    }
+
+    // Event 2: an order released to the floor tells every production
+    // account. DRAFT -> IN_PRODUCTION only — reopening a PRODUCED order is
+    // a correction, not new work. The number only: nothing commercial goes
+    // to a production account (docs/notifications-plan.md §2).
+    if (transition.from === "DRAFT" && transition.to === "IN_PRODUCTION") {
+      await this.notifications.emit(db, outbox, {
+        payload: { kind: "ORDER_IN_PRODUCTION", params: { numero: updated.numero } },
+        recipients: await this.notifications.production(db),
+        entityId: order.id,
+        actorId: actor.id,
+      });
     }
     return updated;
   }

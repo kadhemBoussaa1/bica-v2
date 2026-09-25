@@ -34,3 +34,4 @@ export * from "./allocation.js";
 export * from "./inventory.js";
 export * from "./chat.js";
 export * from "./shifts.js";
+export * from "./notifications.js";

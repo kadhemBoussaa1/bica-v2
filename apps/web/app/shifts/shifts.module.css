@@ -421,6 +421,21 @@
   white-space: nowrap;
 }
 
+/* The name and, beside it, the "no account" tag; the name gives way first. */
+.personNameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-width: 0;
+}
+
+/* Muted: a fact about the person, not a status of the shift. */
+.noAccount {
+  display: inline-flex;
+  flex: none;
+  color: var(--bp-ink-muted);
+}
+
 .personMeta {
   font: 400 0.78125rem/1.4 var(--bp-font-body);
   color: var(--bp-neutral-600);
@@ -815,6 +830,16 @@
 .ticketWhen {
   font: 400 0.875rem/1.4 var(--bp-font-body);
   color: var(--bp-neutral-800);
+}
+
+/* The same box as the existing-tickets note, in the warning tint. */
+.ticketNoAccount {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--bp-radius);
+  background: var(--bp-warning-bg);
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-warning-text);
 }
 
 .ticketExisting {

@@ -21,6 +21,16 @@ export interface ToastInput {
   tone?: ToastTone;
   /** Milliseconds before it dismisses itself; 0 keeps it until closed. */
   duration?: number;
+  /**
+   * One button under the text — "Open" on a notification. Clicking it runs
+   * `onClick` and dismisses the toast.
+   */
+  action?: ToastAction;
+}
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
 }
 
 interface ToastItem extends ToastInput {
@@ -87,6 +97,7 @@ export function Toast({
   title,
   text,
   tone = "info",
+  action,
   onClose,
 }: ToastInput & { onClose?: () => void }) {
   const ui = useUiStrings();
@@ -98,6 +109,18 @@ export function Toast({
       <span className={styles.toastBody}>
         <span className={styles.toastTitle}>{title}</span>
         {text && <span className={styles.toastText}>{text}</span>}
+        {action && (
+          <button
+            type="button"
+            className={styles.toastAction}
+            onClick={() => {
+              action.onClick();
+              onClose?.();
+            }}
+          >
+            {action.label}
+          </button>
+        )}
       </span>
       {onClose && (
         <button
@@ -129,6 +152,7 @@ function ToastStack({
           title={item.title}
           text={item.text}
           tone={item.tone}
+          action={item.action}
           onClose={() => onDismiss(item.id)}
         />
       ))}

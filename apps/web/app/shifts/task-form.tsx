@@ -30,6 +30,12 @@ interface TaskFormProps {
   existing?: readonly TaskData[];
   /** Editing this ticket; absent for a new one. */
   task?: TaskData;
+  /**
+   * False when the person has no account (or a banned one): the ticket is
+   * saved as usual but notifies nobody, and the form says so
+   * (docs/notifications-plan.md fact 9). Nothing is blocked.
+   */
+  hasAccount?: boolean;
   onClose: () => void;
 }
 
@@ -40,7 +46,14 @@ interface TaskFormProps {
  * (`taskMachineTypes`) and the order list is the floor's (`order.onFloor`),
  * so the form cannot offer anything the call would refuse.
  */
-export function TaskForm({ shift, employee, existing = [], task, onClose }: TaskFormProps) {
+export function TaskForm({
+  shift,
+  employee,
+  existing = [],
+  task,
+  hasAccount = true,
+  onClose,
+}: TaskFormProps) {
   const t = useTranslations("shifts");
   const enums = useTranslations("enums");
   const common = useTranslations("common");
@@ -132,6 +145,7 @@ export function TaskForm({ shift, employee, existing = [], task, onClose }: Task
           <Avatar employee={employee} size="lg" />
           <span className={styles.ticketWhen}>{when}</span>
         </div>
+        {!hasAccount && <p className={styles.ticketNoAccount}>{t("task.noAccount", { name: first })}</p>}
         {others.length > 0 && (
           <p className={styles.ticketExisting}>
             {t("task.existing", {

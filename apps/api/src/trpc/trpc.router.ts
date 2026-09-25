@@ -117,6 +117,8 @@ import {
   updateShiftTaskInput,
   setTaskDoneInput,
   myWeekInput,
+  listNotificationsInput,
+  markNotificationsReadInput,
 } from "@repo/api-contract";
 import { candidatesInput } from "../allocation/allocation.list";
 import { AllocationService } from "../allocation/allocation.service";
@@ -136,6 +138,7 @@ import {
 import { InvoiceService } from "../invoice/invoice.service";
 import { listMachinesInput } from "../machine/machine.list";
 import { MachineService } from "../machine/machine.service";
+import { NotificationService } from "../notification/notification.service";
 import { listOrdersInput } from "../order/order.list";
 import { OrderService } from "../order/order.service";
 import {
@@ -211,6 +214,7 @@ export class TrpcRouter {
     private readonly templateService: TemplateService,
     private readonly shiftService: ShiftService,
     private readonly dashboardService: DashboardService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   readonly appRouter = router({
@@ -231,8 +235,9 @@ export class TrpcRouter {
         const commercial = canAccess(ctx.user.role, "ADMIN");
         const warehouse = canAccessAny(ctx.user.role, ["ADMIN", "MAGASINIER"]);
         // Rank-inclusive, like the nav row's `requires`: an ADMIN gets the
-        // floor's figure too (0 unless linked to an employee).
-        const floor = canAccess(ctx.user.role, "PRODUCTION");
+        // floor's figure too (0 unless linked to an employee). The warehouse
+        // has its own "My shifts" row, so it gets the figure as well.
+        const floor = canAccessAny(ctx.user.role, ["PRODUCTION", "MAGASINIER"]);
         const [clients, suppliers, orders, shipments, receiving, stocktake, shifts, myShifts] =
           await Promise.all([
             commercial ? this.clientService.count() : Promise.resolve(null),
@@ -361,6 +366,35 @@ export class TrpcRouter {
       createAttachmentUpload: protectedProcedure
         .input(chatUploadInput)
         .mutation(({ input }) => this.storageService.createUpload(input)),
+    }),
+
+    /**
+     * The bell — docs/notifications-plan.md §4.3.
+     *
+     * `protectedProcedure` throughout: every role has a bell, and the
+     * service scopes each call to the caller's own rows and to the kinds
+     * their role may read now. All three are out of the activity trace, the
+     * chat reasoning: the count is polled on every page, the list opens
+     * with the bell, and marking read is a read receipt rather than an act
+     * with intent — a mark-on-click would otherwise trace every click.
+     *
+     * The rows are written by the services that make the changes (orders,
+     * shifts); the push is `GET /events` in main.ts, not a procedure.
+     */
+    notification: router({
+      list: protectedProcedure
+        .meta({ audit: false })
+        .input(listNotificationsInput)
+        .query(({ ctx, input }) => this.notificationService.list(ctx.user, input)),
+
+      unreadCount: protectedProcedure
+        .meta({ audit: false })
+        .query(({ ctx }) => this.notificationService.unreadCount(ctx.user)),
+
+      markRead: protectedProcedure
+        .meta({ audit: false })
+        .input(markNotificationsReadInput)
+        .mutation(({ ctx, input }) => this.notificationService.markRead(ctx.user, input)),
     }),
 
     /**
@@ -644,7 +678,7 @@ export class TrpcRouter {
 
       create: adminProcedure
         .input(createOrderInput)
-        .mutation(({ input }) => this.orderService.create(input)),
+        .mutation(({ ctx, input }) => this.orderService.create(ctx.user, input)),
 
       update: adminProcedure
         .input(updateOrderInput)
@@ -1339,12 +1373,18 @@ export class TrpcRouter {
      *
      * Planning (open, copy, clear, publish, assign, unassign), recording a
      * change on a published week, deciding requests, the day view and
-     * writing tickets are ADMIN and above. Reading a week, one's own week,
-     * the running shift, requesting or withdrawing a change and marking a
-     * ticket done are `shopFloorProcedure` — PRODUCTION alongside ADMIN —
-     * and the service scopes each to the caller's own employee record: a
-     * worker sees published weeks only, their own tickets, and can request
-     * or withdraw on their own weekly row only.
+     * writing tickets are ADMIN and above. Reading a week and the running
+     * shift are `shopFloorProcedure` — PRODUCTION alongside ADMIN.
+     *
+     * The four calls behind "My shifts" — one's own week, requesting or
+     * withdrawing a change, marking a ticket done — are `protectedProcedure`
+     * (docs/notifications-plan.md §4.7): the nav has offered that page to
+     * the warehouse since 2026-09-24, and the week-published notification
+     * links every role there. The gate was never what protected them: the
+     * service scopes each to the caller's own employee record, so a worker
+     * of either role sees published weeks only, their own tickets, and can
+     * request or withdraw on their own weekly row only, and an account with
+     * no employee row gets an empty screen.
      */
     shift: router({
       weekByStart: shopFloorProcedure
@@ -1356,7 +1396,7 @@ export class TrpcRouter {
         .input(dayInput)
         .query(({ input }) => this.shiftService.dayView(input)),
 
-      myWeek: shopFloorProcedure
+      myWeek: protectedProcedure
         .input(myWeekInput)
         .query(({ ctx, input }) => this.shiftService.myWeek(ctx.user, input)),
 
@@ -1400,11 +1440,11 @@ export class TrpcRouter {
         .input(adminChangeInput)
         .mutation(({ ctx, input }) => this.shiftService.change(ctx.user, input)),
 
-      requestChange: shopFloorProcedure
+      requestChange: protectedProcedure
         .input(requestChangeInput)
         .mutation(({ ctx, input }) => this.shiftService.requestChange(ctx.user, input)),
 
-      withdraw: shopFloorProcedure
+      withdraw: protectedProcedure
         .input(changeIdInput)
         .mutation(({ ctx, input }) => this.shiftService.withdraw(ctx.user, input)),
 
@@ -1426,13 +1466,13 @@ export class TrpcRouter {
 
       updateTask: adminProcedure
         .input(updateShiftTaskInput)
-        .mutation(({ input }) => this.shiftService.updateTask(input)),
+        .mutation(({ ctx, input }) => this.shiftService.updateTask(ctx.user, input)),
 
       removeTask: adminProcedure
         .input(taskIdInput)
         .mutation(({ input }) => this.shiftService.removeTask(input.id)),
 
-      setTaskDone: shopFloorProcedure
+      setTaskDone: protectedProcedure
         .input(setTaskDoneInput)
         .mutation(({ ctx, input }) => this.shiftService.setTaskDone(ctx.user, input)),
     }),

@@ -1,0 +1,28 @@
+{
+  "bell": "Notifications",
+  "bellUnread": "Notifications, {count, plural, one {# non lue} other {# non lues}}",
+  "title": "Notifications",
+  "filter": "Afficher",
+  "all": "Toutes",
+  "unread": "Non lues",
+  "markAllRead": "Tout marquer comme lu",
+  "empty": "Rien pour l'instant",
+  "emptyHint": "Les nouvelles commandes, les plannings publiés et vos tickets apparaissent ici.",
+  "caughtUp": "Vous êtes à jour",
+  "caughtUpHint": "Aucune notification non lue.",
+  "older": "Afficher les plus anciennes",
+  "loadError": "Impossible de charger les notifications.",
+  "open": "Ouvrir",
+  "noClient": "Sans client",
+  "shiftOn": "Poste {shift} · {day} {date}",
+  "kinds": {
+    "ORDER_CREATED": "Nouvelle commande {numero}",
+    "QUOTE_CREATED": "Nouveau devis {numero}",
+    "ORDER_IN_PRODUCTION": "Commande {numero} lancée en production",
+    "SHIFT_WEEK_PUBLISHED": "Planning des équipes publié",
+    "TASK_ASSIGNED": "Nouveau ticket : {type}",
+    "TASK_REASSIGNED_AWAY": "Ticket confié à quelqu'un d'autre : {type}",
+    "TASK_REOPENED": "Ticket rouvert : {type}",
+    "TASK_DONE": "Ticket terminé : {type}"
+  }
+}

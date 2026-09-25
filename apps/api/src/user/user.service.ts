@@ -11,6 +11,7 @@ import {
 import { getAuth } from "../auth/auth";
 import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
+import { NotificationService } from "../notification/notification.service";
 import { PrismaService } from "../prisma.service";
 import type { SessionUser } from "../trpc/trpc";
 import {
@@ -21,7 +22,10 @@ import {
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationService,
+  ) {}
 
   /** Roles the caller is permitted to assign — drives the UI's role picker. */
   assignableRoles(actor: SessionUser): Role[] {
@@ -167,20 +171,27 @@ export class UserService {
         message: `${actor.role} cannot assign the ${role} role`,
       });
     }
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { role },
       select: { id: true, email: true, role: true },
     });
+    // The notification stream re-authenticates on reconnect; ending it now
+    // makes the new role apply at once rather than within 15 minutes.
+    this.notifications.closeUser(id);
+    return updated;
   }
 
   async setBanned(actor: SessionUser, id: string, banned: boolean, reason?: string) {
     await this.targetFor(actor, id);
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { banned, banReason: banned ? (reason ?? null) : null },
       select: { id: true, email: true, banned: true },
     });
+    // A banned account's reconnect meets a 401; unbanning has nothing open.
+    if (banned) this.notifications.closeUser(id);
+    return updated;
   }
 
   async remove(actor: SessionUser, id: string) {
@@ -199,6 +210,7 @@ export class UserService {
       }
       throw cause;
     }
+    this.notifications.closeUser(id);
     return { id };
   }
 }

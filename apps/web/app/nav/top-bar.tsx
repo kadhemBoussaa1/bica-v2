@@ -10,6 +10,7 @@ import { useCurrentUser, useSignOut } from "../auth/use-auth";
 import { NAV_SECTIONS, activeChild, canSee, isActive } from "./nav-items";
 import { initials } from "./initials";
 import { MenuIcon, NAV_ICONS, SearchIcon, SignOutIcon } from "./nav-icons";
+import { NotificationsBell } from "./notifications-bell";
 import { useDrawer } from "./use-sidebar";
 import styles from "./top-bar.module.css";
 
@@ -222,6 +223,10 @@ export function TopBar() {
       </div>
 
       <div className={styles.account}>
+        {/* Every role's bell; also where this tab's notification stream
+            lives, since the top bar is on every signed-in page. */}
+        <NotificationsBell role={user.role} />
+
         <div className={styles.accountChip}>
           <span className={styles.avatar} aria-hidden="true">
             {initials(displayName)}

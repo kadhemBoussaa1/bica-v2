@@ -80,6 +80,11 @@ model User {
   shiftChangesDecided   ShiftChange[] @relation("ShiftChangeDecidedBy")
   shiftTasksDone        ShiftTask[]   @relation("ShiftTaskDoneBy")
   shiftTasksCreated     ShiftTask[]   @relation("ShiftTaskCreatedBy")
+  /// In-app notifications — docs/notifications-plan.md §2. The ones this
+  /// user receives (Cascade: a deleted account's bell goes with it) and the
+  /// ones their actions caused (SetNull: the row outlives its actor).
+  notifications      Notification[] @relation("NotificationRecipient")
+  notificationsActed Notification[] @relation("NotificationActor")
 
   @@index([role, id])
   /// Foreign key: Postgres does not index one on its own, and deleting a user
@@ -2958,4 +2963,77 @@ model ShiftTask {
   @@index([orderId])
   @@index([doneById])
   @@index([createdById])
+}
+
+// ---------------------------------------------------------------------------
+// In-app notifications — docs/notifications-plan.md
+// ---------------------------------------------------------------------------
+
+/// What a notification says, one value per sentence the bell can render.
+/// The words are the web's (`messages/<locale>/notifications.json`), built
+/// per reader from this and `Notification.params`, so a row reads in the
+/// reader's language whatever the actor's was.
+enum NotificationKind {
+  /// Event 1: an order was created. Admins.
+  ORDER_CREATED
+  /// Event 1: a quote was created through the same `order.create`. Admins.
+  QUOTE_CREATED
+  /// Event 2: DRAFT -> IN_PRODUCTION. Production accounts.
+  ORDER_IN_PRODUCTION
+  /// Event 3: a week's roster was published. Every account.
+  SHIFT_WEEK_PUBLISHED
+  /// Event 4: a ticket on a published week is now this account's.
+  TASK_ASSIGNED
+  /// Event 4: a ticket this account held was given to someone else.
+  TASK_REASSIGNED_AWAY
+  /// An admin reopened this account's ticket (DONE -> OPEN).
+  TASK_REOPENED
+  /// Event 5: a ticket was marked done. Admins.
+  TASK_DONE
+}
+
+/// One row per recipient, written in the same transaction as the change it
+/// reports: "store first, push second". The SSE stream (`GET /events`) only
+/// says that a row exists; the bell reads rows through tRPC. So nothing is
+/// lost while a tab is closed or the API restarts, and the feature still
+/// works with the stream off.
+model Notification {
+  id String @id @default(cuid())
+
+  /// The recipient. Cascade: a deleted account's bell goes with it.
+  userId String
+  user   User   @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  kind NotificationKind
+
+  /// The record the row is about, and its link target: an order, a week or
+  /// a ticket. Not a foreign key on purpose — a deleted order must not
+  /// delete the history, and the page it links to shows its own not-found.
+  entityId String
+
+  /// What the row says, frozen at emit time: order number and client, week
+  /// start, ticket type, machine and shift date. Validated per kind by
+  /// `notificationPayload` in the contract, on write and on read. Never
+  /// money: production accounts receive ORDER_IN_PRODUCTION.
+  params Json
+
+  /// Who caused it; never the recipient (the actor is excluded at emit).
+  actorId String?
+  actor   User?   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  /// Null while unread. Unread rows are never purged.
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  /// The bell's list: newest first per recipient, `id` the tiebreaker, so
+  /// (userId, createdAt, id) is the real sort key.
+  @@index([userId, createdAt, id])
+  /// The unread count and the unread-only list: `readAt IS NULL` is a
+  /// prefix match on this index.
+  @@index([userId, readAt, createdAt, id])
+  /// The purge: read rows older than the cutoff.
+  @@index([createdAt])
+  /// Foreign key: Postgres does not index one on its own.
+  @@index([actorId])
 }

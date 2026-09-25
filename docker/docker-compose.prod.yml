@@ -83,8 +83,9 @@ services:
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:?AWS_S3_BUCKET is required}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID is required}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY is required}
-      # Kept out of the environment on purpose: AUDIT_PURGE_DAYS has no
-      # default, and the purge is run by hand (docs/deployment.md).
+      # Kept out of the environment on purpose: AUDIT_PURGE_DAYS and
+      # NOTIFICATION_PURGE_DAYS have no default, and both purges are run by
+      # hand (docs/deployment.md).
     depends_on:
       postgres:
         condition: service_healthy

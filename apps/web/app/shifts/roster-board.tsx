@@ -40,6 +40,23 @@ interface RosterBoardProps {
 }
 
 /**
+ * A bell struck through: "a ticket for this person notifies nobody" — no
+ * linked account, or a banned one (docs/notifications-plan.md fact 9). An
+ * icon, not a word, so the name keeps its room in a narrow column in every
+ * language; the words are its label and tooltip.
+ */
+function BellOffGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor"
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4.5 12.5V8a4.5 4.5 0 0 1 7.6-3.25M13.5 8v4.5l1.25 1.5H6" />
+      <path d="M7.25 15.5a1.75 1.75 0 0 0 3.5 0" />
+      <path d="M2.5 2.5l13 13" />
+    </svg>
+  );
+}
+
+/**
  * The planner's body, as the "Planning équipes — Kraft v3" handoff draws
  * it: a strip of the seven days with their ticket counts, then the three
  * shift columns and the "not placed" column. A column lists its people for
@@ -77,6 +94,7 @@ export function RosterBoard({ week, onAssign }: RosterBoardProps) {
     employee: RosterEmployee;
     existing: readonly TaskData[];
     task?: TaskData;
+    hasAccount: boolean;
   } | null>(null);
   const [deleting, setDeleting] = useState<TaskData | null>(null);
 
@@ -106,6 +124,10 @@ export function RosterBoard({ week, onAssign }: RosterBoardProps) {
     }),
   );
 
+  // Who on this roster a ticket would reach no one for — no account, or a
+  // banned one (docs/notifications-plan.md §4.6). Ids only, from the
+  // admin-only day view.
+  const noAccount = new Set(dayQuery.data?.noAccount ?? []);
   const placed = new Set(week.assignments.map((a) => a.employeeId));
   const unplacedAll = (rosterQuery.data?.rows ?? []).filter((e) => !placed.has(e.id));
   const uq = unQuery.trim().toLowerCase();
@@ -250,7 +272,19 @@ export function RosterBoard({ week, onAssign }: RosterBoardProps) {
                         aria-expanded={open}
                         disabled={tasks.length === 0}
                       >
-                        <span className={styles.personName}>{employeeName(row.employee)}</span>
+                        <span className={styles.personNameRow}>
+                          <span className={styles.personName}>{employeeName(row.employee)}</span>
+                          {noAccount.has(row.employeeId) && (
+                            <span
+                              className={styles.noAccount}
+                              role="img"
+                              aria-label={t("board.noAccount")}
+                              title={t("board.noAccountTitle")}
+                            >
+                              <BellOffGlyph />
+                            </span>
+                          )}
+                        </span>
                         <span
                           className={[styles.personMeta, tasks.length > 0 ? styles.personMetaHot : null]
                             .filter(Boolean)
@@ -274,7 +308,12 @@ export function RosterBoard({ week, onAssign }: RosterBoardProps) {
                           type="button"
                           className={styles.ticketBtn}
                           onClick={() =>
-                            setForm({ shift: dayShift, employee: row.employee, existing: tasks })
+                            setForm({
+                              shift: dayShift,
+                              employee: row.employee,
+                              existing: tasks,
+                              hasAccount: !noAccount.has(row.employeeId),
+                            })
                           }
                         >
                           {t("board.ticket")}
@@ -348,7 +387,14 @@ export function RosterBoard({ week, onAssign }: RosterBoardProps) {
                             onEdit={
                               ended
                                 ? undefined
-                                : (x) => setForm({ shift: dayShift, employee: row.employee, existing: tasks, task: x })
+                                : (x) =>
+                                    setForm({
+                                      shift: dayShift,
+                                      employee: row.employee,
+                                      existing: tasks,
+                                      task: x,
+                                      hasAccount: !noAccount.has(row.employeeId),
+                                    })
                             }
                             onDelete={ended ? undefined : setDeleting}
                           />
@@ -476,6 +522,7 @@ export function RosterBoard({ week, onAssign }: RosterBoardProps) {
           employee={form.employee}
           existing={form.existing}
           task={form.task}
+          hasAccount={form.hasAccount}
           onClose={() => setForm(null)}
         />
       )}

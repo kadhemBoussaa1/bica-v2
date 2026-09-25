@@ -1,0 +1,321 @@
+/*
+ * The bell and its panel — docs/notifications-plan.md §5.1. The button is
+ * the top bar's 40px chrome; the panel is the jump box's popover recipe at
+ * card radius under the bell, and a full-width sheet under the bar on a
+ * phone.
+ */
+
+.wrap {
+  position: relative;
+  flex: none;
+}
+
+.bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+}
+
+.bell:hover,
+.bellOpen {
+  background: var(--bp-surface);
+  border-color: var(--bp-control-border-hover);
+  color: var(--bp-ink);
+}
+
+.bell:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* The chat launcher's badge: danger fill ringed in the page colour. */
+.badge {
+  position: absolute;
+  inset-block-start: -6px;
+  inset-inline-end: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-danger);
+  border: 2px solid var(--bp-page);
+  color: #fff;
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.scrim {
+  display: none;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + var(--bp-space-2));
+  inset-inline-end: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: min(400px, calc(100vw - 2 * var(--bp-space-4)));
+  max-height: min(560px, calc(100dvh - var(--bp-topbar-h) - var(--bp-space-6)));
+  overflow: hidden;
+  /* Near-opaque over the blur, so the list reads on any page behind it. */
+  background: rgb(255 255 255 / 0.94);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-card);
+  box-shadow: var(--bp-shadow-lift);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-3) var(--bp-space-4) var(--bp-space-2);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  font: 600 0.9375rem/1.2 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+/* A text button: on white, so orange-700 for text. */
+.markAll {
+  flex: none;
+  padding: var(--bp-space-1) var(--bp-space-2);
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-orange-700);
+  font: 600 0.78125rem/1.2 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.markAll:hover:not(:disabled) {
+  background: var(--bp-tint);
+}
+
+.markAll:disabled {
+  color: var(--bp-ink-faint);
+  cursor: default;
+}
+
+.markAll:focus-visible,
+.chip:focus-visible,
+.more:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.filters {
+  display: flex;
+  gap: var(--bp-space-2);
+  padding: 0 var(--bp-space-4) var(--bp-space-3);
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.chip {
+  height: 28px;
+  padding: 0 var(--bp-space-3);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-pill);
+  background: transparent;
+  color: var(--bp-ink-muted);
+  font: 600 0.75rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.chipOn {
+  background: var(--bp-orange-50);
+  border-color: var(--bp-orange-300);
+  color: var(--bp-orange-800);
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--bp-space-2);
+}
+
+.rows {
+  display: grid;
+  gap: var(--bp-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+  color: var(--bp-ink);
+  text-decoration: none;
+}
+
+.row:hover {
+  background: var(--bp-tint);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+}
+
+/* Unread: a warm tint and a dot, so read and unread differ in two ways. */
+.rowUnread {
+  background: var(--bp-orange-50);
+}
+
+.rowUnread:hover {
+  background: var(--bp-orange-100);
+}
+
+.rowIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+  color: var(--bp-ink-muted);
+}
+
+.rowUnread .rowIcon {
+  background: var(--bp-orange-100);
+  color: var(--bp-orange-800);
+}
+
+.rowBody {
+  display: grid;
+  gap: var(--bp-space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.rowTitle {
+  font: 600 0.8125rem/1.35 var(--bp-font-body);
+}
+
+.rowDetail {
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  font: 400 0.6875rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-faint);
+}
+
+.rowDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: var(--bp-space-1);
+  border-radius: 50%;
+  background: var(--bp-orange-500);
+}
+
+.more {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin-top: var(--bp-space-2);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-muted);
+  font: 600 0.78125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.more:hover:not(:disabled) {
+  background: var(--bp-surface);
+}
+
+.empty {
+  display: grid;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-6) var(--bp-space-4);
+  text-align: center;
+}
+
+.emptyTitle {
+  font: 600 0.875rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.emptyHint {
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.notice {
+  margin: 0;
+  padding: var(--bp-space-4);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-danger-text);
+}
+
+.loading {
+  display: grid;
+  gap: var(--bp-space-4);
+  padding: var(--bp-space-3);
+}
+
+.loadingRow {
+  display: grid;
+  gap: var(--bp-space-2);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * Phone: a sheet under the bar, full width with a gutter, over a scrim.
+ * `top` is the bar's height, which holds whether `fixed` resolves against
+ * the viewport or against the sticky bar (its backdrop-filter makes it the
+ * containing block): the bar sits at the top of the viewport either way.
+ */
+@media (max-width: 900px) {
+  .scrim {
+    display: block;
+    position: fixed;
+    top: var(--bp-topbar-h);
+    inset-inline: 0;
+    height: 100dvh;
+    background: rgb(26 23 20 / 0.28);
+  }
+
+  .panel {
+    position: fixed;
+    top: calc(var(--bp-topbar-h) + var(--bp-space-2));
+    inset-inline: var(--bp-space-2);
+    width: auto;
+    max-height: calc(100dvh - var(--bp-topbar-h) - var(--bp-space-4));
+  }
+}

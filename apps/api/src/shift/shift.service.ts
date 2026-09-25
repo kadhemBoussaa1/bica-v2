@@ -28,11 +28,13 @@ import {
   type ShiftChangeKind,
   type ShiftTaskType,
   type ShiftType,
+  type TaskNotificationParams,
   type UpdateShiftTaskInput,
   type WeekStartInput,
 } from "@repo/api-contract";
 import type { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
+import { NotificationService } from "../notification/notification.service";
 import { PrismaService } from "../prisma.service";
 import type { SessionUser } from "../trpc/trpc";
 import {
@@ -82,6 +84,33 @@ interface ResolvedChange {
 
 const unique = (ids: readonly string[]) => [...new Set(ids)];
 
+/** What a ticket notification says about its ticket — see `taskNotice`. */
+const TASK_NOTICE_SELECT = {
+  type: true,
+  shift: { select: { date: true, type: true } },
+  machine: { select: { name: true } },
+  order: { select: { numero: true } },
+  employee: { select: { firstName: true, lastName: true, matricule: true } },
+} satisfies Prisma.ShiftTaskSelect;
+type TaskNoticeRow = Prisma.ShiftTaskGetPayload<{ select: typeof TASK_NOTICE_SELECT }>;
+
+/**
+ * A ticket's notification params, frozen at emit time
+ * (docs/notifications-plan.md §2): what, which shift, which machine, and
+ * whose. The name is written the way the planner lists people.
+ */
+function taskNotice(task: TaskNoticeRow): TaskNotificationParams {
+  const { firstName, lastName, matricule } = task.employee;
+  return {
+    type: task.type,
+    shiftDate: isoDayOf(task.shift.date),
+    shiftType: task.shift.type,
+    machineName: task.machine?.name ?? null,
+    orderNumero: task.order?.numero ?? null,
+    employeeName: [lastName, firstName].filter(Boolean).join(" ") || matricule,
+  };
+}
+
 /**
  * Shift planning and daily tickets — docs/shift-planning-plan.md §4.2 (v2).
  *
@@ -102,7 +131,10 @@ const unique = (ids: readonly string[]) => [...new Set(ids)];
  */
 @Injectable()
 export class ShiftService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationService,
+  ) {}
 
   // ---- weeks ---------------------------------------------------------------
 
@@ -374,25 +406,42 @@ export class ShiftService {
   /**
    * Freezes the week for workers. Guarded update: a second publish, or a
    * publish racing another, finds no DRAFT row to flip and reads why.
+   *
+   * Every account but the publisher is told (event 3, every role), in the
+   * same transaction as the flip — so a re-publish, which flips nothing,
+   * tells nobody — and pushed once it commits.
    */
   async publish(actor: SessionUser, weekId: string) {
-    const flipped = await this.prisma.shiftWeek.updateMany({
-      where: { id: weekId, status: "DRAFT" },
-      data: { status: "PUBLISHED", publishedAt: new Date(), publishedById: actor.id },
-    });
-    if (flipped.count !== 1) {
-      const week = await this.prisma.shiftWeek.findUnique({
+    const outbox = this.notifications.outbox();
+    await this.prisma.$transaction(async (tx) => {
+      const flipped = await tx.shiftWeek.updateMany({
+        where: { id: weekId, status: "DRAFT" },
+        data: { status: "PUBLISHED", publishedAt: new Date(), publishedById: actor.id },
+      });
+      const week = await tx.shiftWeek.findUnique({
         where: { id: weekId },
-        select: { id: true },
+        select: { id: true, weekStart: true },
       });
       if (!week) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Week not found" });
       }
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "This week is already published",
+      if (flipped.count !== 1) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "This week is already published",
+        });
+      }
+      await this.notifications.emit(tx, outbox, {
+        payload: {
+          kind: "SHIFT_WEEK_PUBLISHED",
+          params: { weekStart: isoDayOf(week.weekStart) },
+        },
+        recipients: await this.notifications.everyone(tx),
+        entityId: week.id,
+        actorId: actor.id,
       });
-    }
+    });
+    outbox.flush();
     return { id: weekId, status: "PUBLISHED" as const };
   }
 
@@ -626,9 +675,24 @@ export class ShiftService {
           orderBy: ASSIGNMENT_ORDER,
         })
       : [];
+    // The ticket form's "no account" hint (docs/notifications-plan.md
+    // §4.6): who on this week's roster a ticket would reach no one for —
+    // no linked account, or a banned one. Employee ids only; the accounts
+    // themselves are not the planner's business. ADMIN-only procedure, so
+    // this never reaches a worker the way the shared roster select would.
+    const unreachable = weekId
+      ? await this.prisma.shiftAssignment.findMany({
+          where: {
+            weekId,
+            employee: { OR: [{ userId: null }, { user: { banned: true } }] },
+          },
+          select: { employeeId: true },
+        })
+      : [];
     return {
       date: input.date,
       week: shifts[0]?.week ?? null,
+      noAccount: unreachable.map((row) => row.employeeId),
       shifts: shifts.map((shift) => ({
         id: shift.id,
         weekId: shift.weekId,
@@ -784,11 +848,23 @@ export class ShiftService {
 
   // ---- tickets -------------------------------------------------------------
 
+  /**
+   * A new ticket. Its person's account is told (TASK_ASSIGNED) only on a
+   * PUBLISHED week: a draft is invisible to workers, and publishing it is
+   * the notification (plan fact 6).
+   */
   async createTask(actor: SessionUser, input: CreateShiftTaskInput) {
-    return this.prisma.$transaction(async (tx) => {
+    const outbox = this.notifications.outbox();
+    const created = await this.prisma.$transaction(async (tx) => {
       const shift = await tx.shift.findUnique({
         where: { id: input.shiftId },
-        select: { id: true, weekId: true, type: true, endsAt: true },
+        select: {
+          id: true,
+          weekId: true,
+          type: true,
+          endsAt: true,
+          week: { select: { status: true } },
+        },
       });
       if (!shift) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Shift not found" });
@@ -797,7 +873,7 @@ export class ShiftService {
       await this.assertOnShift(tx, shift.weekId, input.employeeId, shift.type);
       if (input.machineId) await this.assertMachineForTask(tx, input.type, input.machineId);
       if (input.orderId) await this.assertOrderOnFloor(tx, input.orderId);
-      return tx.shiftTask.create({
+      const task = await tx.shiftTask.create({
         data: {
           shiftId: shift.id,
           employeeId: input.employeeId,
@@ -807,25 +883,45 @@ export class ShiftService {
           note: input.note ?? null,
           createdById: actor.id,
         },
-        select: { id: true, shiftId: true },
+        select: { id: true, shiftId: true, ...TASK_NOTICE_SELECT },
       });
+      if (shift.week.status === "PUBLISHED") {
+        await this.notifications.emit(tx, outbox, {
+          payload: { kind: "TASK_ASSIGNED", params: taskNotice(task) },
+          recipients: [await this.notifications.accountOf(tx, input.employeeId)],
+          entityId: task.id,
+          actorId: actor.id,
+        });
+      }
+      return { id: task.id, shiftId: task.shiftId };
     });
+    outbox.flush();
+    return created;
   }
 
   /**
    * Edits a ticket in place. Refused on a DONE ticket: reopen it first, so a
    * finished ticket's content is what was finished. `machineId` and
    * `orderId` are three-valued (undefined leaves it, null clears it).
+   *
+   * Only a change of person notifies, and only on a PUBLISHED week: the new
+   * person's account gets TASK_ASSIGNED, the previous one's
+   * TASK_REASSIGNED_AWAY. A change of type, machine, order or note alone
+   * sends nothing (plan decision 12).
    */
-  async updateTask(input: UpdateShiftTaskInput) {
-    return this.prisma.$transaction(async (tx) => {
+  async updateTask(actor: SessionUser, input: UpdateShiftTaskInput) {
+    const outbox = this.notifications.outbox();
+    const updated = await this.prisma.$transaction(async (tx) => {
       const task = await tx.shiftTask.findUnique({
         where: { id: input.id },
         select: {
           id: true,
           shiftId: true,
           status: true,
-          shift: { select: { weekId: true, type: true, endsAt: true } },
+          employeeId: true,
+          shift: {
+            select: { weekId: true, type: true, endsAt: true, week: { select: { status: true } } },
+          },
         },
       });
       if (!task) {
@@ -841,7 +937,7 @@ export class ShiftService {
       await this.assertOnShift(tx, task.shift.weekId, input.employeeId, task.shift.type);
       if (input.machineId) await this.assertMachineForTask(tx, input.type, input.machineId);
       if (input.orderId) await this.assertOrderOnFloor(tx, input.orderId);
-      return tx.shiftTask.update({
+      const saved = await tx.shiftTask.update({
         where: { id: task.id },
         data: {
           employeeId: input.employeeId,
@@ -850,9 +946,27 @@ export class ShiftService {
           orderId: input.orderId === undefined ? undefined : input.orderId,
           note: input.note === undefined ? undefined : (input.note ?? null),
         },
-        select: { id: true, shiftId: true },
+        select: { id: true, shiftId: true, ...TASK_NOTICE_SELECT },
       });
+      if (task.employeeId !== input.employeeId && task.shift.week.status === "PUBLISHED") {
+        const params = taskNotice(saved);
+        await this.notifications.emit(tx, outbox, {
+          payload: { kind: "TASK_ASSIGNED", params },
+          recipients: [await this.notifications.accountOf(tx, input.employeeId)],
+          entityId: task.id,
+          actorId: actor.id,
+        });
+        await this.notifications.emit(tx, outbox, {
+          payload: { kind: "TASK_REASSIGNED_AWAY", params },
+          recipients: [await this.notifications.accountOf(tx, task.employeeId)],
+          entityId: task.id,
+          actorId: actor.id,
+        });
+      }
+      return { id: saved.id, shiftId: saved.shiftId };
     });
+    outbox.flush();
+    return updated;
   }
 
   /** Hard delete: a ticket is a to-do, like a production run (`production.remove`). */
@@ -876,6 +990,12 @@ export class ShiftService {
    * the reopen refusal: the caller can already see the row. The guarded
    * update makes a double tap idempotent — `changedNow` says whether this
    * call did it.
+   *
+   * The guarded update and its notification share one transaction, and only
+   * a call that changed the row notifies: OPEN -> DONE tells every admin but
+   * the actor (TASK_DONE, event 5); DONE -> OPEN tells the ticket's person
+   * (TASK_REOPENED, fact 7) — on a PUBLISHED week only, like every personal
+   * kind, since a worker cannot see a draft's tickets.
    */
   async setTaskDone(actor: SessionUser, input: SetTaskDoneInput) {
     const now = new Date();
@@ -891,7 +1011,14 @@ export class ShiftService {
           admin ? {} : { employeeId: me?.id, shift: { week: { status: "PUBLISHED" } } },
         ],
       },
-      select: { id: true, shiftId: true, shift: { select: { startsAt: true, endsAt: true } } },
+      select: {
+        id: true,
+        shiftId: true,
+        employeeId: true,
+        shift: {
+          select: { startsAt: true, endsAt: true, week: { select: { status: true } } },
+        },
+      },
     });
     if (!task) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Ticket not found" });
@@ -908,13 +1035,36 @@ export class ShiftService {
             : "This shift is over — ask an admin to close the ticket",
       });
     }
-    const changed = await this.prisma.shiftTask.updateMany({
-      where: { id: task.id, status: input.done ? "OPEN" : "DONE" },
-      data: input.done
-        ? { status: "DONE", doneAt: now, doneById: actor.id }
-        : { status: "OPEN", doneAt: null, doneById: null },
+    const outbox = this.notifications.outbox();
+    const changedNow = await this.prisma.$transaction(async (tx) => {
+      const changed = await tx.shiftTask.updateMany({
+        where: { id: task.id, status: input.done ? "OPEN" : "DONE" },
+        data: input.done
+          ? { status: "DONE", doneAt: now, doneById: actor.id }
+          : { status: "OPEN", doneAt: null, doneById: null },
+      });
+      if (changed.count !== 1) return false;
+      const personal = task.shift.week.status === "PUBLISHED";
+      if (input.done || personal) {
+        const notice = await tx.shiftTask.findUniqueOrThrow({
+          where: { id: task.id },
+          select: TASK_NOTICE_SELECT,
+        });
+        await this.notifications.emit(tx, outbox, {
+          payload: input.done
+            ? { kind: "TASK_DONE", params: taskNotice(notice) }
+            : { kind: "TASK_REOPENED", params: taskNotice(notice) },
+          recipients: input.done
+            ? await this.notifications.admins(tx)
+            : [await this.notifications.accountOf(tx, task.employeeId)],
+          entityId: task.id,
+          actorId: actor.id,
+        });
+      }
+      return true;
     });
-    return { id: task.id, shiftId: task.shiftId, changedNow: changed.count === 1 };
+    outbox.flush();
+    return { id: task.id, shiftId: task.shiftId, changedNow };
   }
 
   // ---- applying a change ---------------------------------------------------

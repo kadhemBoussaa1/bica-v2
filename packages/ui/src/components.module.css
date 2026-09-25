@@ -987,6 +987,27 @@
   color: var(--bp-ink-muted);
 }
 
+/* A text button: the toast is glass over white, so orange-700 for text. */
+.toastAction {
+  margin-top: var(--bp-space-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bp-orange-700);
+  font: 600 0.78125rem/1.5 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.toastAction:hover {
+  text-decoration: underline;
+}
+
+.toastAction:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+  border-radius: var(--bp-radius-dense);
+}
+
 .toastClose {
   border: 0;
   background: transparent;

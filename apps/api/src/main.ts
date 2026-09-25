@@ -8,6 +8,7 @@ import { json, type Request, type Response } from "express";
 import {
   canAccess,
   DEFAULT_PDF_LOCALE,
+  NOTIFICATION_STREAM_PATH,
   pdfLocaleSchema,
   salesInvoicePreviewInput,
   type PdfLocale,
@@ -15,6 +16,7 @@ import {
 } from "@repo/api-contract";
 import { AppModule } from "./app.module";
 import { getAuth } from "./auth/auth";
+import { NotificationService } from "./notification/notification.service";
 import { PdfService, type RenderedPdf } from "./pdf/pdf.service";
 import { PrismaService } from "./prisma.service";
 import { TrpcRouter } from "./trpc/trpc.router";
@@ -30,6 +32,7 @@ async function bootstrap() {
   const trpcRouter = app.get(TrpcRouter);
   const prisma = app.get(PrismaService);
   const pdfService = app.get(PdfService);
+  const notifications = app.get(NotificationService);
   const auth = await getAuth(prisma);
 
   // Better Auth owns /api/auth/* (sign-in, sign-out, session). Mounted before
@@ -40,8 +43,9 @@ async function bootstrap() {
   /**
    * The generated PDFs: purchase orders, goods receipts and sales invoices.
    *
-   * The only HTTP surface here besides auth and tRPC, and it exists because
-   * tRPC serialises JSON: a PDF is bytes with a content type, and routing it
+   * One of the two HTTP surfaces here besides auth and tRPC (the other is
+   * the notification stream below), and it exists because tRPC serialises
+   * JSON: a PDF is bytes with a content type, and routing it
    * through a procedure would mean base64 in a JSON envelope. So these are
    * plain Express routes, which means they do their own session and role
    * check (`requireAdmin`) rather than inheriting `adminProcedure`'s.
@@ -209,6 +213,34 @@ async function bootstrap() {
     } finally {
       previewing.delete(user.id);
     }
+  });
+
+  /**
+   * The notification stream — docs/notifications-plan.md §4.4.
+   *
+   * A plain Express route for the PDF routes' reason: tRPC answers in JSON,
+   * and a Server-Sent Events stream is an open response written to over
+   * time. Any signed-in, non-banned account, any role; 401 otherwise, which
+   * `EventSource` treats as final — the web hook (use-notification-stream)
+   * then re-checks the session instead of retrying blindly.
+   *
+   * The stream carries `{ id, kind, toast }` and nothing else; the rows are
+   * read through `notification.list`, which applies the role scope. So the
+   * session is checked once here, and the stream's 15-minute lifetime
+   * (`NotificationService.openStream`) is what re-checks it later.
+   *
+   * Not audited, like every read. No body parser: a GET with no body.
+   */
+  http.get(NOTIFICATION_STREAM_PATH, async (req: Request, res: Response) => {
+    const session = await auth.api.getSession({
+      headers: new Headers(req.headers as Record<string, string>),
+    });
+    const raw = session?.user as { id: string; banned?: boolean } | undefined;
+    if (!raw || raw.banned) {
+      res.status(401).json({ error: "Not signed in" });
+      return;
+    }
+    notifications.openStream(raw.id, res);
   });
 
   app.use(

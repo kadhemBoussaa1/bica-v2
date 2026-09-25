@@ -14,6 +14,7 @@
     "db:studio": "prisma studio",
     "db:seed": "node dist/seed.js",
     "db:audit:purge": "node dist/audit/purge.js",
+    "db:notifications:purge": "node dist/notification/purge.js",
     "db:import:step1": "node dist/migrate/import-clients-suppliers.js",
     "db:import:step2": "node dist/migrate/import-machines-employees.js",
     "db:import:step3": "node dist/migrate/import-orders.js",
