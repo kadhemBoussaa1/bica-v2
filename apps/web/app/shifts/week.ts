@@ -124,7 +124,3 @@ export function hasStarted(shift: { startsAt: string | Date }, now = new Date())
 export function hasEnded(shift: { endsAt: string | Date }, now = new Date()): boolean {
   return new Date(shift.endsAt).getTime() <= now.getTime();
 }
-
-export function employeeName(employee: { firstName: string; lastName: string; matricule: string }): string {
-  return [employee.lastName, employee.firstName].filter(Boolean).join(" ") || employee.matricule;
-}

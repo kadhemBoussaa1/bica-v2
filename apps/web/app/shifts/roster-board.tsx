@@ -13,14 +13,14 @@ import {
 import { Dialog } from "@repo/ui/dialog";
 import { useToast } from "@repo/ui/toast";
 import { useTRPC } from "../trpc/client";
-import { Avatar } from "./avatar";
+import { Avatar } from "../employees/avatar";
+import { employeeName } from "../employees/employee-name";
 import { ChangeDialog } from "./change-dialog";
 import { invalidateShiftQueries } from "./shift-queries";
 import { TaskCard } from "./task-card";
 import { TaskForm } from "./task-form";
 import type { DayShift, RosterEmployee, TaskData, WeekAssignment, WeekData } from "./types";
 import {
-  employeeName,
   formatDayShort,
   formatShiftHours,
   formatWeekday,

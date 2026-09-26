@@ -3,8 +3,7 @@
 import { createAuthClient } from "better-auth/react";
 import { adminClient, inferAdditionalFields } from "better-auth/client/plugins";
 import { ROLES } from "@repo/api-contract";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { API_URL } from "../api-url";
 
 /**
  * Better Auth browser client. `baseURL` points at the API origin because auth

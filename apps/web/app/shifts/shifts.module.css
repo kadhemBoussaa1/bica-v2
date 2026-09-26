@@ -169,49 +169,6 @@
   background: currentColor;
 }
 
-/* --- avatars: the photo, or initials on a tint. Squircles, like the toolkit. --- */
-
-.av {
-  flex: none;
-  display: inline-grid;
-  place-items: center;
-  overflow: hidden;
-  border-radius: var(--bp-radius-dense);
-  font: 600 0.78125rem/1 var(--bp-font-display);
-}
-
-.avSm {
-  width: 30px;
-  height: 30px;
-  font-size: 0.71875rem;
-}
-
-.avMd {
-  width: 34px;
-  height: 34px;
-}
-
-.avLg {
-  width: 42px;
-  height: 42px;
-  border-radius: var(--bp-radius);
-  font-size: 0.875rem;
-}
-
-.avImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.avTint0 { background: #fce3bf; color: #7a4400; }
-.avTint1 { background: #dce6f0; color: #22587c; }
-.avTint2 { background: #e1eedf; color: #2f5e3e; }
-.avTint3 { background: #efe0ec; color: #6e2f62; }
-.avTint4 { background: #f1e6d6; color: #6b4a1e; }
-.avTint5 { background: #e4e7f3; color: #3a4478; }
-
 /* --- the day strip: seven days, each with its ticket count --- */
 
 .dayBar {
@@ -835,7 +792,7 @@
 /* The same box as the existing-tickets note, in the warning tint. */
 .ticketNoAccount {
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--bp-space-2) var(--bp-space-3);
   border-radius: var(--bp-radius);
   background: var(--bp-warning-bg);
   font: 400 0.84375rem/1.5 var(--bp-font-body);
@@ -844,7 +801,7 @@
 
 .ticketExisting {
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--bp-space-2) var(--bp-space-3);
   border-radius: var(--bp-radius);
   background: #f5f2ec;
   font: 400 0.84375rem/1.5 var(--bp-font-body);

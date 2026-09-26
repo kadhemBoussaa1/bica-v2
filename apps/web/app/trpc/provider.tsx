@@ -7,9 +7,8 @@ import type { AppRouter } from "api/src/trpc/trpc.router";
 import { useTranslations } from "next-intl";
 import { UiStringsProvider, type UiStrings } from "@repo/ui/strings";
 import { ToastProvider } from "@repo/ui/toast";
+import { API_URL } from "../api-url";
 import { TRPCProvider } from "./client";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 /**
  * The toolkit's own few words (pager, "All", "Cancel", loading), translated

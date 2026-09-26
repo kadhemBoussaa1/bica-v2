@@ -141,24 +141,35 @@ export type UpdateMachineInput = z.infer<typeof updateMachineInput>;
  * `socialSecurityNumber`, `birthDate`, `address`) are part of this schema, but
  * the procedures that accept it are ADMIN-gated and the service strips them for
  * lower ranks on read. See EmployeeService.
+ *
+ * `matricule` is optional on create only: left blank, the server assigns the
+ * next free number (`EmployeeService.nextMatricule`). An existing record
+ * always has one, so `updateEmployeeInput` requires it again.
  */
 export const createEmployeeInput = z.object({
-  matricule: z.string().trim().min(1, "Matricule is required").max(60),
+  matricule: z
+    .string()
+    .trim()
+    .max(60)
+    .optional()
+    .transform((value) => value || undefined),
   firstName: z.string().trim().max(100).default(""),
   lastName: z.string().trim().max(100).default(""),
-  department: optionalText(100),
-  jobTitle: optionalText(150),
-  employmentType: optionalText(40),
-  categorie: optionalText(20),
-  echelon: optionalText(20),
-  gender: optionalText(20),
+  // Clearable, like every optional field the form renders: it sends `null`
+  // for an emptied box, and `optionalText` would reject that outright.
+  department: clearableText(100),
+  jobTitle: clearableText(150),
+  employmentType: clearableText(40),
+  categorie: clearableText(20),
+  echelon: clearableText(20),
+  gender: clearableText(20),
   email: z
     .string()
     .max(200)
-    .optional()
-    .transform((value) => value?.trim() || undefined)
+    .nullish()
+    .transform((value) => (value === null ? null : value?.trim() || undefined))
     .refine(
-      (value) => value === undefined || z.email().safeParse(value).success,
+      (value) => value === undefined || value === null || z.email().safeParse(value).success,
       { message: "Enter a valid email address, or leave it blank" },
     ),
   phone: clearableText(40),
@@ -179,10 +190,18 @@ export const createEmployeeInput = z.object({
 
 export const updateEmployeeInput = createEmployeeInput.extend({
   id: z.string().min(1),
+  matricule: z.string().trim().min(1, "Matricule is required").max(60),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeInput>;
 export type UpdateEmployeeInput = z.infer<typeof updateEmployeeInput>;
+
+/**
+ * How close a contract's end must be to count as ending soon: the list's
+ * header tile counts these, and a row or record page draws the end date in
+ * red. One number for both, so the tile and the red rows always agree.
+ */
+export const CONTRACT_ENDING_SOON_DAYS = 30;
 
 /**
  * How a production run's quantity is counted, mirroring `ProductionUnit` in

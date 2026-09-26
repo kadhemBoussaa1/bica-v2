@@ -23,7 +23,7 @@ import { formatMoney } from "../../invoice-ui";
 import { Panel, Row } from "../../../records/record-ui";
 import { PdfCanvas } from "../../../documents/pdf-canvas";
 import { usePdfPreview } from "../../../documents/use-pdf-preview";
-import { API_URL } from "../../../purchasing/document-preview";
+import { API_URL } from "../../../api-url";
 import { useTRPC } from "../../../trpc/client";
 import records from "../../../records/records.module.css";
 import styles from "../../invoices.module.css";

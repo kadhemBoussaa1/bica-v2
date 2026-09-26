@@ -152,9 +152,14 @@
   background: var(--bp-control-bg-soft);
   border: 1px solid rgb(26 23 20 / 0.12);
   flex: none;
+  /* On a phone four segments with counts outgrow the toolbar; the control
+     scrolls sideways rather than clipping the last answers out of reach. */
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .segment {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;

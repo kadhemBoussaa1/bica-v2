@@ -33,8 +33,10 @@ export function KpiTile({
   label: string;
   /** Already formatted: money through `formatMoney`, a count as digits. */
   value: string;
-  unit: string;
-  meta?: string;
+  /** Omitted when the value is a word ("Visible") or carries its own ("3 ans"). */
+  unit?: string;
+  /** A node, not a string, so a caller can isolate a date or a name with `<bdi>`. */
+  meta?: ReactNode;
   tone?: "neutral" | "success" | "danger" | "pending" | "warning";
 }) {
   const classes = [
@@ -54,7 +56,7 @@ export function KpiTile({
       </div>
       <div className={styles.kpiRow}>
         <span className={styles.kpiValue}>{value}</span>
-        <span className={styles.kpiUnit}>{unit}</span>
+        {unit !== undefined && <span className={styles.kpiUnit}>{unit}</span>}
       </div>
       {meta !== undefined && <div className={styles.kpiMeta}>{meta}</div>}
     </div>

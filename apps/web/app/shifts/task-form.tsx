@@ -16,7 +16,7 @@ import { FormDialog } from "@repo/ui/form-dialog";
 import { useToast } from "@repo/ui/toast";
 import { useTRPC } from "../trpc/client";
 import records from "../records/records.module.css";
-import { Avatar } from "./avatar";
+import { Avatar } from "../employees/avatar";
 import { invalidateShiftQueries } from "./shift-queries";
 import type { RosterEmployee, TaskData } from "./types";
 import { formatDayShort, formatShiftHours, formatWeekdayLong } from "./week";

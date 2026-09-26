@@ -82,7 +82,8 @@ apps/web/node_modules/next/dist/docs/01-app/
   is a finding. No `setQueryData` optimism, no `router.refresh()` for data
   (auth and locale only). Known gap: the partner modules (clients,
   suppliers) skip `nav.counts` — MEDIUM once, per decisions.md. [HIGH / known: MEDIUM]
-- **Polling is a documented decision** (chat launcher, 20 s + focus). A new
+- **Polling is a documented decision** (chat launcher and the bell's unread
+  count: 20 s + focus, `staleTime` 10 s). A new
   `refetchInterval` needs the same justification. `staleTime` is 30 s
   globally; do not override it per query without a reason. [MEDIUM]
 - **Row types are derived**: `type XRow = NonNullable<typeof q.data>["rows"][number]`

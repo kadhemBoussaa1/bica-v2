@@ -11,13 +11,8 @@ import { NAV_SECTIONS, canSee, isActive, type NavItem } from "./nav-items";
 import { ChevronIcon, CloseIcon, NAV_ICONS } from "./nav-icons";
 import { useTranslations } from "next-intl";
 import { useDrawer, useSidebarCollapsed } from "./use-sidebar";
+import { cx } from "./cx";
 import styles from "./sidebar.module.css";
-
-function cx(...classes: (string | undefined | false | null)[]) {
-  // noUncheckedIndexedAccess makes CSS-module lookups `string | undefined`,
-  // so classes are composed rather than interpolated.
-  return classes.filter(Boolean).join(" ");
-}
 
 const int = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 
@@ -50,7 +45,7 @@ function NavRow({
         {/* A marker, not a word: the label is dimmed and the dot says "not yet"
             without stacked chips out-shouting the live items. The state is
             spelled out for assistive tech, which cannot see dimming. */}
-        <span className={styles.srOnly}>{nav("plannedSr")}</span>
+        <span className="sr-only">{nav("plannedSr")}</span>
         <span className={styles.planned} aria-hidden="true" />
       </span>
     );

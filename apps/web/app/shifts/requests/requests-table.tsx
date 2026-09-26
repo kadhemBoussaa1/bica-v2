@@ -12,10 +12,11 @@ import { useToast } from "@repo/ui/toast";
 import { formatDateTime } from "../../../i18n/formats";
 import { useTRPC } from "../../trpc/client";
 import records from "../../records/records.module.css";
-import { Avatar } from "../avatar";
+import { Avatar } from "../../employees/avatar";
 import { invalidateShiftQueries } from "../shift-queries";
 import type { ChangeRow } from "../types";
-import { employeeName, formatShiftHours, formatWeekRange } from "../week";
+import { employeeName } from "../../employees/employee-name";
+import { formatShiftHours, formatWeekRange } from "../week";
 import styles from "../shifts.module.css";
 
 type Filter = "pending" | "accepted" | "rejected" | "withdrawn" | "all";

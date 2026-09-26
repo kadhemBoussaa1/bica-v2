@@ -8,7 +8,7 @@ import { useToast } from "@repo/ui/toast";
 import { useTRPC } from "../trpc/client";
 import { invalidateShiftQueries } from "./shift-queries";
 import type { TaskData } from "./types";
-import { employeeName } from "./week";
+import { employeeName } from "../employees/employee-name";
 import styles from "./shifts.module.css";
 
 interface TaskCardProps {

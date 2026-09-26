@@ -70,7 +70,7 @@ export class NotificationOutbox {
   }
 }
 
-export interface EmitInput {
+interface EmitInput {
   payload: NotificationPayload;
   /** Account ids; `null` (an employee without an account) is dropped. */
   recipients: readonly (string | null)[];
@@ -148,7 +148,9 @@ export class NotificationService implements BeforeApplicationShutdown {
   }
 
   // Recipient resolvers: one query each, on the caller's transaction, never
-  // a cached list — a role change or a ban applies to the next event.
+  // a cached list — a role change or a ban applies to the next event. Each
+  // reads the whole `User` table minus banned rows: accounts, tens of them,
+  // bounded by the staff.
 
   /** Every live ADMIN and SUPER_ADMIN. */
   admins(db: Db): Promise<string[]> {

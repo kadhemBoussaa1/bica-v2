@@ -156,7 +156,8 @@ Read the code path, not just the diff hunk.
   says nothing ("Invalid input", "Something went wrong"). [LOW]
 - **Every `protectedProcedure` is audited.** `.meta({ audit: false })` needs
   a comment saying why (the accepted ones: `audit.list`, `audit.actors`,
-  `nav.counts`, `chat.unread`/`markRead`). New opt-outs are findings. [HIGH]
+  `nav.counts`, `chat.unread`/`markRead`, `notification.list`/`unreadCount`/
+  `markRead`). New opt-outs are findings. [HIGH]
 - **Secrets never reach the audit row or a log.** `audit.util.ts` `redact`
   strips password-like keys; a new input carrying a secret under a new key
   name must be added there. `console.error("[module] …", cause)` is the

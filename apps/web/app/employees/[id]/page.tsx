@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { EditEmployee } from "./edit-employee";
+import { EmployeeDetail } from "../employee-detail";
 import styles from "../../records/records.module.css";
 
-export default async function EditEmployeePage({
+export default async function EmployeePage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -16,14 +16,7 @@ export default async function EditEmployeePage({
       <Link className={styles.back} href="/employees">
         {t("back")}
       </Link>
-      <header className={styles.header}>
-        <div className={styles.heading}>
-          <span className={styles.eyebrow}>{t("eyebrow")}</span>
-          <h1 className={styles.title}>{t("editEmployee")}</h1>
-        </div>
-      </header>
-
-      <EditEmployee id={id} />
+      <EmployeeDetail id={id} />
     </div>
   );
 }

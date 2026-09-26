@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@repo/ui/button";
+import { API_URL } from "../api-url";
 import records from "../records/records.module.css";
 import styles from "./purchasing.module.css";
 
@@ -19,8 +20,6 @@ import styles from "./purchasing.module.css";
  * carried by the cookie. `lang` follows whoever is reading: the same order
  * prints in French for the office and Arabic for the floor.
  */
-
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export type DocumentKind = "purchase-order" | "goods-receipt" | "sales-invoice";
 

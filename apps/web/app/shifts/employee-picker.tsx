@@ -8,10 +8,11 @@ import { Button } from "@repo/ui/button";
 import { FormDialog } from "@repo/ui/form-dialog";
 import { useToast } from "@repo/ui/toast";
 import { useTRPC } from "../trpc/client";
-import { Avatar } from "./avatar";
+import { Avatar } from "../employees/avatar";
 import { invalidateShiftQueries } from "./shift-queries";
 import type { WeekData } from "./types";
-import { employeeName, formatShiftHours, shiftDaySpan } from "./week";
+import { employeeName } from "../employees/employee-name";
+import { formatShiftHours, shiftDaySpan } from "./week";
 import styles from "./shifts.module.css";
 
 interface EmployeePickerProps {

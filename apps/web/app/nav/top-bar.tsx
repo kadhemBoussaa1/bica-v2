@@ -12,11 +12,8 @@ import { initials } from "./initials";
 import { MenuIcon, NAV_ICONS, SearchIcon, SignOutIcon } from "./nav-icons";
 import { NotificationsBell } from "./notifications-bell";
 import { useDrawer } from "./use-sidebar";
+import { cx } from "./cx";
 import styles from "./top-bar.module.css";
-
-function cx(...classes: (string | undefined | false | null)[]) {
-  return classes.filter(Boolean).join(" ");
-}
 
 /**
  * Where the user is, read off the nav: the group, the module, and — one

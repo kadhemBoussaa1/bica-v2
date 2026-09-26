@@ -18,11 +18,8 @@ import { useTRPC } from "../trpc/client";
 import { NAV_ICONS } from "./nav-icons";
 import { describeNotification, notificationHref, type NotificationItem } from "./notification-text";
 import { useNotificationStream } from "./use-notification-stream";
+import { cx } from "./cx";
 import styles from "./notifications.module.css";
-
-function cx(...classes: (string | undefined | false | null)[]) {
-  return classes.filter(Boolean).join(" ");
-}
 
 /** One page of the bell. A PAGE_SIZES value, as the input requires. */
 const PAGE_SIZE = 25;
@@ -99,7 +96,10 @@ export function NotificationsBell({ role }: { role: Role }) {
   );
   const markRead = useMutation(
     trpc.notification.markRead.mutationOptions({
-      onSettled: () => queryClient.invalidateQueries(trpc.notification.pathFilter()),
+      onSettled: () => {
+        void queryClient.invalidateQueries({ queryKey: trpc.notification.list.queryKey() });
+        void queryClient.invalidateQueries({ queryKey: trpc.notification.unreadCount.queryKey() });
+      },
     }),
   );
 
@@ -141,7 +141,7 @@ export function NotificationsBell({ role }: { role: Role }) {
       },
     });
   };
-  useNotificationStream({ enabled: true, onEvent: (event) => void toastFor(event) });
+  useNotificationStream({ onEvent: (event) => void toastFor(event) });
 
   const close = useCallback(() => {
     setOpenedOn(null);
@@ -266,7 +266,7 @@ export function NotificationsBell({ role }: { role: Role }) {
                           <span className={styles.rowBody}>
                             <span className={styles.rowTitle}>
                               {!item.readAt && (
-                                <span className={styles.visuallyHidden}>{`${t("unread")}: `}</span>
+                                <span className="sr-only">{`${t("unread")}: `}</span>
                               )}
                               {title}
                             </span>

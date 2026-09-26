@@ -1,0 +1,808 @@
+/*
+ * The employees module, from `Employees v3.dc.html`: the list's own columns
+ * beside the banded-list shell, the record page, and the form's sheet.
+ * Radii and gaps are snapped to the toolkit's scales; widths are sized from
+ * the French labels, the widest of the four languages.
+ */
+
+/* --- the list --- */
+
+/* The figure tiles take a full row of the header panel, under the title. */
+.figures {
+  flex: 1 1 100%;
+}
+
+.name {
+  display: block;
+  font: 600 0.9375rem/1.35 var(--bp-font-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role {
+  width: 190px;
+  flex: none;
+  min-width: 0;
+}
+
+.roleTitle,
+.roleMeta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roleTitle {
+  font: 400 0.875rem/1.4 var(--bp-font-body);
+}
+
+.roleMeta {
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* "fin dans 12 j · 06/10/2026" in 11px mono is ~180px. */
+.contract {
+  width: 200px;
+  flex: none;
+}
+
+.contractType {
+  display: block;
+  font: 600 0.8125rem/1.4 var(--bp-font-mono);
+}
+
+/* A fixed-term contract with no end date: never recorded, not open-ended. */
+.unrecorded {
+  color: var(--bp-warning-text);
+}
+
+.status {
+  width: 130px;
+  flex: none;
+}
+
+.chevron {
+  width: 20px;
+  flex: none;
+  color: var(--bp-orange-700);
+  text-align: end;
+}
+
+[dir="rtl"] .chevron {
+  transform: rotate(180deg);
+}
+
+/* The service chips: one answer, in ink, beside the status control. */
+.services {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.service {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgb(26 23 20 / 0.14);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-control-bg-soft);
+  color: var(--bp-ink-strong);
+  font: 500 0.8125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.service:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.service:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.serviceActive,
+.serviceActive:hover {
+  background: var(--bp-neutral-900);
+  border-color: var(--bp-neutral-900);
+  color: #fff;
+}
+
+/*
+ * Stacked, under 900px: the post reads as a line of its own under the
+ * name, then the contract and the status share one. Declared here, not
+ * only in the shell, so the fixed widths lose by intent rather than by
+ * stylesheet order.
+ */
+@media (max-width: 899px) {
+  .role {
+    width: auto;
+    flex: 1 1 100%;
+  }
+
+  .contract,
+  .status {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .chevron {
+    display: none;
+  }
+}
+
+/* --- the record page --- */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-5);
+  margin-bottom: var(--bp-space-4);
+  padding: clamp(20px, 3vw, 28px) clamp(20px, 3vw, 32px);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.heroMain {
+  display: flex;
+  gap: var(--bp-space-5);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.heroText {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.heroNameRow {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.heroName {
+  margin: 0;
+  font: 700 clamp(1.625rem, 3.6vw, 2.125rem) / 1.05 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.heroRole {
+  margin-top: var(--bp-space-1);
+  font: 400 0.96875rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.heroMeta {
+  margin-top: 2px;
+  font: 400 0.78125rem/1.5 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.heroActions {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+/* The link is only the wrapper; the button inside draws it. */
+.callLink,
+.callLink:hover {
+  text-decoration: none;
+}
+
+.archivedNotice {
+  margin: 0 0 var(--bp-space-4);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  background: rgb(26 23 20 / 0.06);
+  border: 1px solid rgb(26 23 20 / 0.12);
+  font: 400 0.875rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+/* What the record lacks: amber, with the way to fix it at the end. */
+.missing {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-4);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  background: rgb(224 161 6 / 0.14);
+  border: 1px solid rgb(224 161 6 / 0.44);
+  font: 400 0.875rem/1.5 var(--bp-font-body);
+  color: #5e4400;
+}
+
+.missingText {
+  flex: 1 1 300px;
+}
+
+.sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: var(--bp-space-4);
+  align-items: start;
+}
+
+.section {
+  padding: var(--bp-space-5);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+  color: var(--bp-ink);
+}
+
+/*
+ * The confidential panel: ink, near-opaque so the values sit on a dark
+ * ground rather than the wash. Redefines the ink tokens the rows read,
+ * not the control ones — the floor scope would also grow the button.
+ */
+.sectionInk {
+  --bp-ink: var(--bp-neutral-50);
+  --bp-ink-strong: var(--bp-neutral-100);
+  --bp-ink-muted: #c9c2b8;
+  --bp-ink-faint: var(--bp-neutral-400);
+  --bp-hairline-soft: rgb(255 255 255 / 0.1);
+  background: rgb(26 23 20 / 0.92);
+  border-color: rgb(255 255 255 / 0.12);
+  box-shadow: var(--bp-shadow-ink);
+}
+
+.sectionHead {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-2);
+}
+
+.sectionTitle {
+  margin: 0;
+  font: 700 1.125rem/1.3 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+.sectionSub {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.field {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 9px 0;
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.fieldLabel {
+  flex: none;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.fieldValue {
+  flex: 1;
+  min-width: 0;
+  text-align: end;
+  font: 500 0.875rem/1.4 var(--bp-font-body);
+  overflow-wrap: anywhere;
+}
+
+.fieldMono {
+  font-family: var(--bp-font-mono);
+  font-size: 0.8125rem;
+}
+
+.fieldWarning {
+  color: var(--bp-warning-text);
+}
+
+.fieldDanger {
+  color: var(--bp-danger-text);
+  font-weight: 600;
+}
+
+.fieldSuccess {
+  color: var(--bp-success-text);
+  font-weight: 600;
+}
+
+.reveal {
+  width: 100%;
+  min-height: var(--bp-control-h);
+  margin-top: var(--bp-space-3);
+  border: 1px solid rgb(255 255 255 / 0.24);
+  border-radius: var(--bp-radius);
+  background: rgb(255 255 255 / 0.08);
+  color: var(--bp-neutral-50);
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.reveal:hover {
+  background: rgb(255 255 255 / 0.16);
+}
+
+.reveal:focus-visible {
+  outline: 2px solid var(--bp-orange-300);
+  outline-offset: 2px;
+}
+
+/* --- the form's sheet --- */
+
+/*
+ * A `<dialog>` pinned to the inline end, full height. The UA's centring
+ * (`margin: auto`, the max sizes) is undone here; `display` only when
+ * open, or the closed dialog would draw.
+ */
+.drawer {
+  --drawer-shift: 40px;
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  width: min(820px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bp-neutral-50);
+  color: var(--bp-ink);
+  box-shadow: 0 0 50px rgb(26 23 20 / 0.2);
+}
+
+[dir="rtl"] .drawer {
+  --drawer-shift: -40px;
+}
+
+.drawer[open] {
+  display: flex;
+  flex-direction: column;
+  animation: drawerIn 200ms ease-out;
+}
+
+.drawer::backdrop {
+  background: rgb(26 23 20 / 0.38);
+  backdrop-filter: blur(4px);
+}
+
+@keyframes drawerIn {
+  from {
+    transform: translateX(var(--drawer-shift));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer[open] {
+    animation: none;
+  }
+}
+
+.drawerHead {
+  flex: none;
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: center;
+  padding: var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.drawerHeading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawerTitle {
+  margin: 0;
+  font: 700 1.5rem/1.2 var(--bp-font-display);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.drawerClose {
+  flex: none;
+  width: var(--bp-control-h);
+  height: var(--bp-control-h);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: var(--bp-ink);
+  font: 400 1.25rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.drawerClose:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.steps {
+  flex: none;
+  display: flex;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-3) var(--bp-space-5);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.stepChip {
+  flex: none;
+  display: inline-flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgb(26 23 20 / 0.14);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-surface);
+  color: var(--bp-ink-strong);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.stepChip:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.stepChipCurrent,
+.stepChipCurrent:hover {
+  background: var(--bp-neutral-900);
+  border-color: var(--bp-neutral-900);
+  color: #fff;
+}
+
+.stepNo {
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(26 23 20 / 0.08);
+  color: var(--bp-ink-muted);
+  font: 500 0.6875rem/1 var(--bp-font-mono);
+}
+
+.stepNoCurrent {
+  background: var(--bp-orange-500);
+  color: #fff;
+}
+
+.stepNoDone {
+  background: var(--bp-success);
+  color: #fff;
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--bp-space-5);
+}
+
+.drawerFoot {
+  flex: none;
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--bp-space-4) var(--bp-space-5);
+  border-top: 1px solid var(--bp-hairline);
+  background: var(--bp-surface);
+}
+
+.stepCount {
+  flex: 1;
+  text-align: center;
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* On a phone the count takes its own line, and the buttons share the next. */
+@media (max-width: 599px) {
+  .stepCount {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .drawerFoot > button {
+    flex: 1 1 0;
+    padding-inline: var(--bp-space-2);
+  }
+}
+
+.stepStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+.fieldGrid,
+.fieldGridNarrow {
+  display: grid;
+  gap: var(--bp-space-4);
+}
+
+.fieldGrid {
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+}
+
+.fieldGridNarrow {
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+/* The photo: a drop zone the width of the step, the avatar previewing it. */
+.photoSlot {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--bp-space-4);
+  border: 1.5px dashed rgb(26 23 20 / 0.24);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-surface);
+}
+
+.photoText {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.photoTitle {
+  font: 600 0.9375rem/1.4 var(--bp-font-body);
+}
+
+.photoHint {
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.photoError {
+  font: 500 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-danger-text);
+}
+
+.photoActions {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+/* A picker in place of an input: the toolkit's field label, then the choices. */
+.choiceField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  min-width: 0;
+}
+
+.choiceLabel {
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.toggle {
+  display: flex;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-1);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  border: 1px solid rgb(26 23 20 / 0.14);
+}
+
+.toggleOption {
+  flex: 1;
+  min-height: 38px;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-ink-muted);
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.toggleOptionActive {
+  background: var(--bp-neutral-900);
+  color: #fff;
+}
+
+.optionRow {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+.option {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgb(26 23 20 / 0.14);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-surface);
+  color: var(--bp-ink-strong);
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.option:hover,
+.card:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.optionActive,
+.optionActive:hover {
+  background: rgb(242 145 0 / 0.12);
+  border-color: var(--bp-orange-600);
+  color: var(--bp-orange-800);
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--bp-space-2);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 64px;
+  padding: var(--bp-space-3) 14px;
+  border: 1.5px solid rgb(26 23 20 / 0.14);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: var(--bp-ink);
+  text-align: start;
+  cursor: pointer;
+}
+
+.cardActive,
+.cardActive:hover {
+  background: rgb(242 145 0 / 0.12);
+  border-color: var(--bp-orange-600);
+}
+
+.cardTitle {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  font: 700 0.9375rem/1.3 var(--bp-font-body);
+}
+
+.cardMeta {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.statusCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: var(--bp-space-3);
+}
+
+.statusCard {
+  min-height: 72px;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+}
+
+.statusDot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  display: block;
+}
+
+.statusCardOnRoster .statusDot {
+  background: var(--bp-success);
+  border-radius: 50%;
+}
+
+.statusCardSuspended .statusDot {
+  background: var(--bp-danger);
+  border-radius: 2px;
+}
+
+.suspension {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: var(--bp-space-4);
+  padding: var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  background: rgb(193 53 43 / 0.06);
+  border: 1px solid rgb(143 37 30 / 0.22);
+}
+
+@media (max-width: 599px) {
+  .suspension {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.confidentialBanner {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: var(--bp-space-3) 14px;
+  border-radius: var(--bp-radius);
+  background: var(--bp-neutral-900);
+  color: var(--bp-neutral-50);
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+}
+
+.confidentialBanner strong {
+  color: var(--bp-orange-300);
+}
+
+.accountList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+.accountIntro {
+  margin: 0 0 var(--bp-space-1);
+  font: 400 0.875rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.account {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--bp-space-3);
+  width: 100%;
+  min-height: 62px;
+  padding: var(--bp-space-2) var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+}
+
+.accountBadge {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--bp-radius-dense);
+  background: rgb(26 23 20 / 0.07);
+  color: var(--bp-ink-strong);
+  font: 700 0.875rem/1 var(--bp-font-display);
+}
+
+.accountText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

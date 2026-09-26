@@ -15,7 +15,8 @@ import { useToast } from "@repo/ui/toast";
 import { useTRPC } from "../../trpc/client";
 import { invalidateShiftQueries } from "../shift-queries";
 import type { MyWeek } from "../types";
-import { employeeName, formatShiftHours } from "../week";
+import { employeeName } from "../../employees/employee-name";
+import { formatShiftHours } from "../week";
 import styles from "../shifts.module.css";
 
 interface RequestDialogProps {

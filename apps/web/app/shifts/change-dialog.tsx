@@ -18,7 +18,8 @@ import { useTRPC } from "../trpc/client";
 import records from "../records/records.module.css";
 import { invalidateShiftQueries } from "./shift-queries";
 import type { RosterEmployee, WeekAssignment, WeekData } from "./types";
-import { employeeName, formatShiftHours } from "./week";
+import { employeeName } from "../employees/employee-name";
+import { formatShiftHours } from "./week";
 
 interface ChangeDialogProps {
   week: WeekData;

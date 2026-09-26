@@ -123,6 +123,19 @@ export const createUploadInput = z.object({
 export type CreateUploadInput = z.infer<typeof createUploadInput>;
 
 /**
+ * What an employee's photo may be: images a browser can draw in an `<img>`.
+ * Narrower than the scans allowlist — no PDF, and no HEIC or TIFF, which
+ * Chrome cannot display, so a portrait stored in either would render as the
+ * initials fallback everywhere.
+ */
+export const EMPLOYEE_PHOTO_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+export const employeePhotoUploadInput = createUploadInput.extend({
+  contentType: z.enum(EMPLOYEE_PHOTO_CONTENT_TYPES),
+});
+export type EmployeePhotoUploadInput = z.infer<typeof employeePhotoUploadInput>;
+
+/**
  * What the browser gets back: where to PUT the bytes, and the URL to store on
  * the row once that succeeds.
  *

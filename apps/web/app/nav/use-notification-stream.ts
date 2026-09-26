@@ -7,7 +7,7 @@ import {
   notificationEvent,
   type NotificationEvent,
 } from "@repo/api-contract";
-import { API_URL } from "../purchasing/document-preview";
+import { API_URL } from "../api-url";
 import { useTRPC } from "../trpc/client";
 
 /** The hook's own retry, after EventSource has given up: 5 s doubling to 60 s. */
@@ -17,8 +17,8 @@ const BACKOFF_MAX_MS = 60_000;
 /**
  * The notification stream — docs/notifications-plan.md §5.2.
  *
- * One `EventSource` on `GET /events` while `enabled` (a signed-in shell) AND
- * the tab is visible (§5.3): over HTTP/1.1 a browser allows ~6 connections
+ * One `EventSource` on `GET /events` while the bell is mounted (a signed-in
+ * shell) AND the tab is visible (§5.3): over HTTP/1.1 a browser allows ~6 connections
  * per origin and an open stream holds one, so hidden tabs let theirs go and
  * fall back to the bell's poll. A hidden tab could not show a toast anyway.
  *
@@ -36,10 +36,8 @@ const BACKOFF_MAX_MS = 60_000;
  * jittered backoff, reset by the next `ready`.
  */
 export function useNotificationStream({
-  enabled,
   onEvent,
 }: {
-  enabled: boolean;
   onEvent: (event: NotificationEvent) => void;
 }) {
   const trpc = useTRPC();
@@ -51,13 +49,13 @@ export function useNotificationStream({
   });
 
   useEffect(() => {
-    if (!enabled) return;
     let source: EventSource | null = null;
     let retry: ReturnType<typeof setTimeout> | null = null;
     let backoff = BACKOFF_FIRST_MS;
 
     const refresh = () => {
-      void queryClient.invalidateQueries(trpc.notification.pathFilter());
+      void queryClient.invalidateQueries({ queryKey: trpc.notification.list.queryKey() });
+      void queryClient.invalidateQueries({ queryKey: trpc.notification.unreadCount.queryKey() });
     };
 
     const disconnect = () => {
@@ -114,5 +112,5 @@ export function useNotificationStream({
       document.removeEventListener("visibilitychange", onVisibility);
       disconnect();
     };
-  }, [enabled, queryClient, trpc]);
+  }, [queryClient, trpc]);
 }

@@ -17,11 +17,12 @@ type Translate = (key: string, values?: Record<string, string | number>) => stri
 /**
  * First-strong isolate around a name or a number, so "CMD-658" or a Latin
  * client name keeps its own order inside an Arabic sentence. Characters
- * rather than `<bdi>` because the same strings fill toasts, which take
- * plain text.
+ * (U+2068 FIRST STRONG ISOLATE … U+2069 POP DIRECTIONAL ISOLATE) rather
+ * than `<bdi>` because the same strings fill toasts, which take plain text;
+ * written as escapes so an editor can see them.
  */
 function iso(text: string): string {
-  return `⁨${text}⁩`;
+  return `\u2068${text}\u2069`;
 }
 
 /**

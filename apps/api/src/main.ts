@@ -59,14 +59,32 @@ async function bootstrap() {
    * read is a read: the procedures already record who opened the record this
    * renders from.
    */
+  /**
+   * The Better Auth session behind a request, read the same way on every
+   * HTTP surface here: the PDF routes, the notification stream and tRPC's
+   * context. `user` is Better Auth's own row; the `as` names the columns
+   * the admin plugin adds, which its types do not carry (the documented
+   * escape, with `as Role` at the callers). `impersonatedBy` is set by the
+   * admin plugin while a higher-ranked user impersonates.
+   */
+  const readSession = async (req: Request) => {
+    const session = await auth.api.getSession({
+      headers: new Headers(req.headers as Record<string, string>),
+    });
+    const user = session?.user as
+      | { id: string; email: string; name: string; role?: string; banned?: boolean }
+      | undefined;
+    const impersonatedBy =
+      (session?.session as { impersonatedBy?: string | null } | undefined)?.impersonatedBy ??
+      null;
+    return { user, impersonatedBy };
+  };
+
   const requireAdmin = async (
     req: Request,
     res: Response,
   ): Promise<{ id: string; role: Role } | null> => {
-    const session = await auth.api.getSession({
-      headers: new Headers(req.headers as Record<string, string>),
-    });
-    const raw = session?.user as { id: string; role?: string; banned?: boolean } | undefined;
+    const { user: raw } = await readSession(req);
     const role = (raw?.role ?? "MAGASINIER") as Role;
     if (!raw || raw.banned) {
       res.status(401).json({ error: "Not signed in" });
@@ -232,15 +250,12 @@ async function bootstrap() {
    * Not audited, like every read. No body parser: a GET with no body.
    */
   http.get(NOTIFICATION_STREAM_PATH, async (req: Request, res: Response) => {
-    const session = await auth.api.getSession({
-      headers: new Headers(req.headers as Record<string, string>),
-    });
-    const raw = session?.user as { id: string; banned?: boolean } | undefined;
-    if (!raw || raw.banned) {
+    const { user } = await readSession(req);
+    if (!user || user.banned) {
       res.status(401).json({ error: "Not signed in" });
       return;
     }
-    notifications.openStream(raw.id, res);
+    notifications.openStream(user.id, res);
   });
 
   app.use(
@@ -248,19 +263,9 @@ async function bootstrap() {
     createExpressMiddleware({
       router: trpcRouter.appRouter,
       createContext: async ({ req, res }) => {
-        const session = await auth.api.getSession({
-          headers: new Headers(req.headers as Record<string, string>),
-        });
+        const { user: raw, impersonatedBy } = await readSession(req);
 
         // A banned user is treated as signed out.
-        const raw = session?.user as
-          | { id: string; email: string; name: string; role?: string; banned?: boolean }
-          | undefined;
-        // Set by the admin plugin while a higher-ranked user impersonates.
-        const impersonatedBy =
-          (session?.session as { impersonatedBy?: string | null } | undefined)
-            ?.impersonatedBy ?? null;
-
         const user: SessionUser | null =
           raw && !raw.banned
             ? {

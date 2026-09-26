@@ -286,15 +286,6 @@
   gap: var(--bp-space-2);
 }
 
-.visuallyHidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /*
  * Phone: a sheet under the bar, full width with a gutter, over a scrim.
  * `top` is the bar's height, which holds whether `fixed` resolves against

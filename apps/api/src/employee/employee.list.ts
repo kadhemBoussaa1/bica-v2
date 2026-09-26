@@ -114,6 +114,14 @@ export const listEmployeesInput = listQueryBase.extend({
   sortBy: z.enum(EMPLOYEE_SORT_KEYS).default("lastName"),
   filter: z.enum(["all", ...EMPLOYEE_FACET_KEYS]).default("all"),
   sortDir: listQueryBase.shape.sortDir.default("asc"),
+  /**
+   * The service chip: one department, matched exactly. Scope rather than a
+   * facet, because the values are free text read from the data, not a fixed
+   * vocabulary — and as scope the status counts narrow to the chosen
+   * service. An equality on a column every caller of this list already reads
+   * and searches, so it reveals nothing a search would not.
+   */
+  department: z.string().trim().min(1).max(100).nullish(),
 });
 
 export type ListEmployeesInput = z.infer<typeof listEmployeesInput>;

@@ -21,11 +21,11 @@ import { useToast } from "@repo/ui/toast";
 import { formatDateTime } from "../../../i18n/formats";
 import { useTRPC } from "../../trpc/client";
 import records from "../../records/records.module.css";
-import { Avatar } from "../avatar";
+import { Avatar } from "../../employees/avatar";
+import { employeeName } from "../../employees/employee-name";
 import { invalidateShiftQueries } from "../shift-queries";
 import type { MyShift, MyWeek as MyWeekType } from "../types";
 import {
-  employeeName,
   formatDayShort,
   formatShiftHours,
   formatWeekRange,

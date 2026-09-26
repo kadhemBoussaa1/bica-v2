@@ -7,6 +7,7 @@ import {
   createShipmentFromOrderInput,
   createUploadInput,
   discardShipmentDraftInput,
+  employeePhotoUploadInput,
   exportShipmentIdInput,
   shipShipmentInput,
   updateShipmentCustomsInput,
@@ -577,6 +578,9 @@ export class TrpcRouter {
           this.employeeService.byId(ctx.user, input.id),
         ),
 
+      // The list header's figures and the service chips' values.
+      summary: adminProcedure.query(() => this.employeeService.summary()),
+
       create: adminProcedure
         .input(createEmployeeInput)
         .mutation(({ input }) => this.employeeService.create(input)),
@@ -598,6 +602,20 @@ export class TrpcRouter {
         .mutation(({ ctx, input }) =>
           this.employeeService.linkUser(ctx.user, input.id, input.userId),
         ),
+
+      /**
+       * A presigned PUT for a photo — docs/s3-assets-plan.md "Step 2". No
+       * record-level check, like the chat's: the form uploads before a new
+       * record exists, and the procedure gate is the whole question — anyone
+       * who may save an employee may attach a photo to one. The URL only
+       * reaches a row through `create`/`update`, which own the record rules.
+       *
+       * A mutation: it hands out a capability, and the audit row belongs
+       * with the act of minting it.
+       */
+      createPhotoUpload: adminProcedure
+        .input(employeePhotoUploadInput)
+        .mutation(({ input }) => this.storageService.createUpload(input)),
     }),
 
     /**

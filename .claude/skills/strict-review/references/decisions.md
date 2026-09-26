@@ -49,8 +49,30 @@ session, or the next review will report it.
   at the top of the list they had just read), `nav.counts`,
   `settings.summary` (the settings rail's figures, polled every 60 s like
   `nav.counts`),
-  `chat.unread` and `chat.markRead`. `audit.byId` stays audited. Reads are logged despite
+  `chat.unread` and `chat.markRead`, and `notification.list`,
+  `notification.unreadCount` and `notification.markRead` (the bell: polled
+  on every page, opened with the bell, and a read receipt — plan §4.3,
+  decision 14). `audit.byId` stays audited. Reads are logged despite
   refetch volume; the purge is the hand-run `db:audit:purge`.
+- **Notifications** (docs/notifications-plan.md, built 2026-09-25): rows
+  are written on the business transaction and pushed after commit through
+  `NotificationOutbox`; on a caller's `tx` (invoice, shipment) the rows are
+  written without a push and the poll finds them. `GET /events` is a plain
+  Express route like `/documents`: any role, 401 when banned, unaudited
+  (a read); streams live in one process (`NotificationService.streams`),
+  heartbeat every 25 s, ended by the server after 15 minutes so the
+  reconnect re-authenticates; `closeUser` on ban, delete and role change.
+  Recipients are resolved per event from the live `User` table (accounts:
+  tens of rows), never cached; a missing or banned account yields no row and
+  no error (fact 9). `entityId` is not a foreign key on purpose. Unread rows
+  are never purged; `NOTIFICATION_PURGE_DAYS` has no default. The kinds a
+  role may read are a leak set applied at read time (decision 13).
+- **`shift.myWeek`, `requestChange`, `withdraw` and `setTaskDone` are
+  `protectedProcedure`** (decision 11): MAGASINIER has the "My shifts" nav
+  row. Each is scoped to the caller's own employee row in the service
+  (`requireEmployee`, `employeeFor`, `requestedById`), and `setTaskDone`
+  throws NOT_FOUND for a non-admin with no employee row before it queries.
+  `weekByStart`, `current` and the admin procedures keep their gates.
 - **AUTH rows have no IP** and `trust proxy` is off until a reverse proxy
   exists (a forwarded header would be spoofable).
 - **PDF routes are plain Express**, do their own `requireAdmin`, and are not
@@ -95,6 +117,17 @@ session, or the next review will report it.
 - **Chat**: server-side read stamp (`ChatRead`), own notices never count,
   launcher polls every 20 s and on focus. Do not reintroduce a browser
   stamp.
+- **Bell** (docs/notifications-plan.md §5): `notification.unreadCount`
+  polls at 20 s with `staleTime` 10 s and refetch on focus, the chat
+  launcher's shape; the stream only makes it immediate. One `EventSource`
+  per visible tab, closed when hidden (decision 15); the hook owns
+  reconnection (5–60 s jittered backoff, `me` invalidated on a CLOSED error,
+  decision 16). A toast re-reads the newest unread page (`take: 10`) to word
+  itself like the bell. The panel is a non-modal popover on the jump box's
+  recipe (white at 0.94 over the glass blur; page text ghosts through it by
+  design), a sheet with a scrim under 900 px; not a `<dialog>`, like the
+  chat launcher. Badge caps at 99+ (decision 17). `/shifts` and
+  `/shifts/me` read `?week=` and write it back on stepping.
 - **Sales invoices list**: tiles follow the filter; drafts stay visible under
   any date window; overdue = ISSUED, unpaid, `dueAt` < today (payment
   recording is not built, so app-issued invoices past due stay overdue).
