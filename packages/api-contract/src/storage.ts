@@ -136,6 +136,61 @@ export const employeePhotoUploadInput = createUploadInput.extend({
 export type EmployeePhotoUploadInput = z.infer<typeof employeePhotoUploadInput>;
 
 /**
+ * The papers an employee's record holds — mirrors `EmployeeDocumentKind` in
+ * the Prisma schema; duplicated rather than imported, like every enum in
+ * this package. The fixed kinds are one slot each; OTHER accumulates, each
+ * under the name it was filed with.
+ */
+export const EMPLOYEE_DOCUMENT_KINDS = [
+  "CONTRACT",
+  "ID_CARD",
+  "CNSS_CERTIFICATE",
+  "FITNESS_CERTIFICATE",
+  "CIVP_AGREEMENT",
+  "OTHER",
+] as const;
+export type EmployeeDocumentKind = (typeof EMPLOYEE_DOCUMENT_KINDS)[number];
+
+/**
+ * A presigned PUT for a document on one employee's record. The scans
+ * allowlist rather than the photo one: a contract is usually a PDF, a CIN a
+ * phone shot. The id lets the procedure refuse an unknown record before it
+ * hands out a capability.
+ */
+export const employeeDocumentUploadInput = createUploadInput.extend({
+  employeeId: z.string().min(1),
+});
+export type EmployeeDocumentUploadInput = z.infer<typeof employeeDocumentUploadInput>;
+
+/**
+ * Files an uploaded document on the record. `url` is what the upload
+ * returned; the server checks it is on this app's bucket before storing it,
+ * since a client could send any string. OTHER needs a name to be told apart
+ * from the rest; the fixed kinds are named by their kind.
+ */
+export const addEmployeeDocumentInput = z
+  .object({
+    employeeId: z.string().min(1),
+    kind: z.enum(EMPLOYEE_DOCUMENT_KINDS),
+    name: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .transform((value) => value || undefined),
+    url: z.string().max(1000),
+    contentType: uploadContentTypeSchema,
+  })
+  .refine((input) => input.kind !== "OTHER" || input.name !== undefined, {
+    message: "Name the document",
+    path: ["name"],
+  });
+export type AddEmployeeDocumentInput = z.infer<typeof addEmployeeDocumentInput>;
+
+export const removeEmployeeDocumentInput = z.object({ id: z.string().min(1) });
+export type RemoveEmployeeDocumentInput = z.infer<typeof removeEmployeeDocumentInput>;
+
+/**
  * What the browser gets back: where to PUT the bytes, and the URL to store on
  * the row once that succeeds.
  *

@@ -1,0 +1,789 @@
+/*
+ * An employee's record page, from `Employees v3.dc.html`: a header band in
+ * the person's own tint, what needs doing, then the contract timeline and
+ * the documents beside the details and the confidential panel. Radii and
+ * gaps are snapped to the toolkit's scales; sides are logical, so Arabic
+ * mirrors the whole page.
+ */
+
+/* --- tones: colour AND dot shape, read by the badge, the chip and a row --- */
+
+.toneSuccess {
+  --tone-fg: var(--bp-success-text);
+  --tone-dot: var(--bp-success);
+  --tone-radius: 50%;
+}
+
+.toneDanger {
+  --tone-fg: var(--bp-danger-text);
+  --tone-dot: var(--bp-danger);
+  --tone-radius: 2px;
+}
+
+.toneNeutral {
+  --tone-fg: var(--bp-ink-strong);
+  --tone-dot: var(--bp-ink-faint);
+  --tone-radius: 2px;
+}
+
+/* --- the header band --- */
+
+.hero {
+  --band: #f1e6d6;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--bp-space-4);
+  padding: clamp(24px, 3vw, 32px);
+  border-radius: var(--bp-radius-panel);
+  background: linear-gradient(120deg, var(--band) 0%, #f8f4ee 100%);
+  border: 1px solid rgb(255 255 255 / 0.7);
+  box-shadow: 0 20px 48px rgb(26 23 20 / 0.12);
+}
+
+[dir="rtl"] .hero {
+  background: linear-gradient(240deg, var(--band) 0%, #f8f4ee 100%);
+}
+
+/* The avatar's six tints (avatar.module.css), so band and initials match. */
+.band0 { --band: #fce3bf; }
+.band1 { --band: #dce6f0; }
+.band2 { --band: #e1eedf; }
+.band3 { --band: #efe0ec; }
+.band4 { --band: #f1e6d6; }
+.band5 { --band: #e4e7f3; }
+.bandSuspended { --band: #efe3df; }
+.bandArchived { --band: #e7e3dd; }
+
+.heroGlow {
+  position: absolute;
+  inset-inline-end: -60px;
+  top: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.35);
+  pointer-events: none;
+}
+
+.heroMain {
+  position: relative;
+  display: flex;
+  gap: var(--bp-space-5);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* The photo in a white frame, radius concentric with the avatar's. */
+.portrait {
+  position: relative;
+  flex: none;
+  padding: 5px;
+  border-radius: calc(var(--bp-radius-panel) + 5px);
+  background: #fff;
+  box-shadow: 0 12px 28px rgb(26 23 20 / 0.16);
+}
+
+.portrait > span:first-child {
+  display: grid;
+}
+
+.statusBadge {
+  position: absolute;
+  inset-inline-end: -4px;
+  bottom: -4px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.statusBadge i {
+  width: 18px;
+  height: 18px;
+  display: block;
+  border-radius: var(--tone-radius);
+  background: var(--tone-dot);
+}
+
+.heroText {
+  flex: 1 1 340px;
+  min-width: 0;
+}
+
+.heroTop {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: var(--bp-radius-pill);
+  background: #fff;
+  color: var(--tone-fg);
+  font: 600 0.78125rem/1 var(--bp-font-body);
+}
+
+.statusChip i {
+  width: 7px;
+  height: 7px;
+  display: block;
+  border-radius: var(--tone-radius);
+  background: var(--tone-dot);
+}
+
+.heroMatricule {
+  font: 400 0.78125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-strong);
+}
+
+.heroName {
+  margin: var(--bp-space-2) 0 2px;
+  font: 700 clamp(1.875rem, 4.2vw, 2.625rem) / 1.02 var(--bp-font-display);
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+.heroRole {
+  font: 400 1.0625rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.heroService {
+  color: var(--bp-ink-muted);
+}
+
+.chips {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+  margin-top: var(--bp-space-3);
+}
+
+.chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  min-height: 32px;
+  padding: 5px 12px;
+  border-radius: var(--bp-radius-dense);
+  background: rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.9);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+}
+
+.chip strong {
+  font-weight: 600;
+}
+
+.chipLabel {
+  color: var(--bp-ink-muted);
+}
+
+.heroActions {
+  flex: 0 1 auto;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+/* The number itself on a dark button: the call is the action, the number the proof. */
+.call,
+.call:hover {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  min-height: 52px;
+  padding: 0 var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-neutral-900);
+  color: #fff;
+  text-decoration: none;
+}
+
+.call:hover {
+  background: var(--bp-neutral-800);
+}
+
+.call:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.callIcon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--bp-orange-300);
+}
+
+.callText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.callLabel {
+  font: 400 0.71875rem/1.25 var(--bp-font-body);
+  color: #c9c2b8;
+}
+
+.callNumber {
+  font: 600 0.875rem/1.25 var(--bp-font-mono);
+}
+
+.archive {
+  color: var(--bp-danger-text);
+}
+
+.archivedNotice {
+  margin: 0 0 var(--bp-space-4);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  background: rgb(26 23 20 / 0.06);
+  border: 1px solid rgb(26 23 20 / 0.12);
+  font: 400 0.875rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+/* --- panels --- */
+
+.panel {
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  box-shadow: var(--bp-shadow-panel);
+  color: var(--bp-ink);
+}
+
+/* The issues panel sits alone above the columns. */
+.issuesPanel {
+  margin-bottom: var(--bp-space-4);
+}
+
+.panel:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.panelHead {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--bp-space-4);
+}
+
+.panelTitle {
+  margin: 0;
+  font: 700 1.1875rem/1.3 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+.panelMeta {
+  flex: 1;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* --- what needs doing --- */
+
+.issues {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+  gap: var(--bp-space-3);
+}
+
+.issue {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: flex-start;
+  padding: var(--bp-space-4);
+  border-radius: var(--bp-radius-block);
+  background: var(--issue-bg);
+  border: 1px solid var(--issue-border);
+}
+
+.issueDanger {
+  --issue-bg: rgb(193 53 43 / 0.07);
+  --issue-border: rgb(143 37 30 / 0.3);
+  --issue-fg: var(--bp-danger-text);
+}
+
+.issueWarning {
+  --issue-bg: rgb(224 161 6 / 0.1);
+  --issue-border: rgb(138 100 4 / 0.34);
+  --issue-fg: var(--bp-warning-text);
+}
+
+.issueMark {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--bp-radius-dense);
+  background: var(--issue-fg);
+  color: #fff;
+  font: 700 1.0625rem/1 var(--bp-font-display);
+}
+
+.issueText {
+  flex: 1;
+  min-width: 0;
+}
+
+.issueTitle {
+  display: block;
+  font: 700 0.90625rem/1.4 var(--bp-font-body);
+  color: var(--issue-fg);
+}
+
+.issueMeta {
+  display: block;
+  margin-bottom: var(--bp-space-2);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.issueAction {
+  min-height: var(--bp-control-h-dense);
+  padding: 0 14px;
+  border: 1px solid var(--issue-border);
+  border-radius: var(--bp-radius-dense);
+  background: #fff;
+  color: var(--issue-fg);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.issueAction:hover {
+  background: var(--issue-bg);
+}
+
+.issueAction:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* --- the two columns --- */
+
+.layout {
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.main {
+  flex: 1.6 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+.side {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+/* --- the contract timeline --- */
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 11px;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-neutral-900);
+  color: #fff;
+  font: 600 0.75rem/1 var(--bp-font-mono);
+}
+
+.contractState {
+  flex: 1;
+  text-align: end;
+  font: 600 0.875rem/1.4 var(--bp-font-body);
+}
+
+.stateSuccess { color: var(--bp-success-text); }
+.stateDanger { color: var(--bp-danger-text); }
+.stateWarning { color: var(--bp-warning-text); }
+.stateLater { color: var(--bp-orange-700); }
+.stateMuted { color: var(--bp-ink-muted); }
+
+/* `--at` is how far along the contract today is, set on the track. */
+.track {
+  --fill-dir: to right;
+  position: relative;
+  height: 44px;
+}
+
+[dir="rtl"] .track {
+  --fill-dir: to left;
+}
+
+.trackBar,
+.trackFill {
+  position: absolute;
+  top: 16px;
+  height: 12px;
+  border-radius: var(--bp-radius-pill);
+}
+
+.trackBar {
+  inset-inline: 0;
+  background: rgb(26 23 20 / 0.1);
+}
+
+/* A CDI: no end, so the track is hatched rather than measured. */
+.trackOpen {
+  background: repeating-linear-gradient(
+    90deg,
+    rgb(46 125 79 / 0.2) 0 8px,
+    rgb(46 125 79 / 0.06) 8px 14px
+  );
+}
+
+/* Any other contract with no end date: hatched in ink, nothing measured. */
+.trackUnknown {
+  background: repeating-linear-gradient(
+    90deg,
+    rgb(26 23 20 / 0.12) 0 8px,
+    rgb(26 23 20 / 0.04) 8px 14px
+  );
+}
+
+.trackFill {
+  inset-inline-start: 0;
+  width: var(--at);
+}
+
+.fillOpen { background: linear-gradient(var(--fill-dir), #3f9160, var(--bp-success)); }
+.fillEnded { background: #a39a90; }
+.fillSoon { background: linear-gradient(var(--fill-dir), var(--bp-orange-500), var(--bp-danger)); }
+.fillLater { background: linear-gradient(var(--fill-dir), var(--bp-orange-300), var(--bp-orange-500)); }
+
+.trackToday {
+  position: absolute;
+  top: 6px;
+  inset-inline-start: var(--at);
+  width: 4px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--bp-neutral-900);
+  box-shadow: 0 0 0 3px #fff;
+  transform: translateX(-50%);
+}
+
+[dir="rtl"] .trackToday {
+  transform: translateX(50%);
+}
+
+.trackLabels {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bp-space-4);
+  margin-top: 6px;
+}
+
+.trackMiddle {
+  text-align: center;
+}
+
+.trackEnd {
+  text-align: end;
+}
+
+.trackLabel {
+  display: block;
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.trackValue {
+  display: block;
+  font: 600 0.875rem/1.4 var(--bp-font-body);
+}
+
+/* --- documents --- */
+
+.docGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: var(--bp-space-3);
+}
+
+/* The actions wrap under the text when three of them would squeeze it. */
+.doc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2) var(--bp-space-3);
+  align-items: center;
+  min-height: 68px;
+  padding: var(--bp-space-3) 14px;
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-surface);
+  border: 1.5px solid rgb(26 23 20 / 0.1);
+}
+
+.docMissing {
+  background: rgb(255 255 255 / 0.5);
+  border: 1.5px dashed rgb(138 100 4 / 0.45);
+}
+
+.docIcon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--bp-radius-dense);
+  background: rgb(89 128 166 / 0.14);
+  color: var(--bp-info-text);
+}
+
+.docIcon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.docMissing .docIcon {
+  background: rgb(224 161 6 / 0.16);
+  color: var(--bp-warning-text);
+}
+
+.docText {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+.docName {
+  display: block;
+  font: 600 0.875rem/1.4 var(--bp-font-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docMeta {
+  display: block;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.docMissing .docMeta {
+  color: var(--bp-warning-text);
+}
+
+.docActions {
+  flex: none;
+  display: flex;
+  gap: var(--bp-space-1);
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+/* Text actions, but a row control's height so a finger can hit them. */
+.docLink,
+.docLink:hover {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--bp-control-h-dense);
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: none;
+  color: var(--bp-orange-700);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.docLink:hover {
+  background: rgb(242 145 0 / 0.1);
+}
+
+.docLink:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.docLink:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 1px;
+}
+
+.docMissing .docLink {
+  color: var(--bp-warning-text);
+}
+
+.docLinkQuiet,
+.docLinkQuiet:hover {
+  color: var(--bp-ink-muted);
+}
+
+/* A named file being added: its name, then the file. */
+.docNew {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--bp-space-2);
+  border-style: dashed;
+}
+
+.docNewActions {
+  display: flex;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+/* --- the side groups --- */
+
+.group + .group {
+  margin-top: var(--bp-space-3);
+}
+
+.groupHead {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  margin-bottom: var(--bp-space-1);
+}
+
+.groupDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  display: block;
+  border-radius: 2px;
+}
+
+.groupTitle {
+  margin: 0;
+  font: 700 1rem/1.3 var(--bp-font-display);
+}
+
+.row {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: var(--bp-space-2) 0;
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.rowLabel {
+  flex: none;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.rowValue {
+  flex: 1;
+  min-width: 0;
+  text-align: end;
+  font: 500 0.875rem/1.4 var(--bp-font-body);
+  overflow-wrap: anywhere;
+}
+
+.rowMono {
+  font-family: var(--bp-font-mono);
+  font-size: 0.8125rem;
+}
+
+.rowEmpty {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--bp-ink-muted);
+}
+
+.rowToned {
+  color: var(--tone-fg);
+  font-weight: 600;
+}
+
+/* --- the confidential panel: ink --- */
+
+/*
+ * Redefines the ink tokens the rows read, not the control ones — the floor
+ * scope would also grow the reveal button to 56px.
+ */
+.ink {
+  --bp-ink: var(--bp-neutral-50);
+  --bp-ink-strong: var(--bp-neutral-100);
+  --bp-ink-muted: #c9c2b8;
+  --bp-ink-faint: var(--bp-neutral-400);
+  --bp-hairline-soft: rgb(255 255 255 / 0.1);
+  background: var(--bp-neutral-900);
+  border-color: rgb(255 255 255 / 0.1);
+  box-shadow: 0 16px 36px rgb(26 23 20 / 0.24);
+}
+
+.inkHead {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  margin-bottom: var(--bp-space-2);
+}
+
+.lock {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--bp-orange-300);
+}
+
+.inkTitle {
+  flex: 1;
+  margin: 0;
+  font: 700 1.125rem/1.3 var(--bp-font-display);
+}
+
+.inkSub {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.reveal {
+  width: 100%;
+  min-height: var(--bp-control-h);
+  margin-top: var(--bp-space-3);
+  border: 1px solid rgb(255 255 255 / 0.24);
+  border-radius: var(--bp-radius);
+  background: rgb(255 255 255 / 0.08);
+  color: var(--bp-neutral-50);
+  font: 600 0.875rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.reveal:hover {
+  background: rgb(255 255 255 / 0.16);
+}
+
+.reveal:focus-visible {
+  outline: 2px solid var(--bp-orange-300);
+  outline-offset: 2px;
+}
+
+/* On a phone the actions take the width under the text. */
+@media (max-width: 599px) {
+  .heroActions {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}

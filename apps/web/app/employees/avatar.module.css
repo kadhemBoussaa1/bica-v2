@@ -41,13 +41,13 @@
   font: 700 1.75rem/1 var(--bp-font-display);
 }
 
-/* The record page's head: the panel radius, and a shadow to lift it. */
+/* The record page's portrait, inside its white frame (which casts the shadow). */
 .avHero {
-  width: 104px;
-  height: 104px;
+  width: 114px;
+  height: 114px;
   border-radius: var(--bp-radius-panel);
-  font: 700 2.25rem/1 var(--bp-font-display);
-  box-shadow: 0 10px 24px rgb(26 23 20 / 0.12);
+  font: 700 2.625rem/1 var(--bp-font-display);
+  letter-spacing: -0.02em;
 }
 
 .avImg {

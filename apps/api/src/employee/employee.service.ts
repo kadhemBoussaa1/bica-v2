@@ -5,6 +5,7 @@ import {
   canAccessAny,
   canManageUser,
   CONTRACT_ENDING_SOON_DAYS,
+  type AddEmployeeDocumentInput,
   type CreateEmployeeInput,
   type UpdateEmployeeInput,
 } from "@repo/api-contract";
@@ -12,6 +13,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
 import { todayUtc } from "../list/period";
 import { PrismaService } from "../prisma.service";
+import { StorageService } from "../storage/storage.service";
 import type { SessionUser } from "../trpc/trpc";
 import {
   EMPLOYEE_SELECT,
@@ -23,9 +25,25 @@ import {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** The linked account, by name, on a record page. */
-const ACCOUNT_SELECT = {
+const DOCUMENT_SELECT = {
+  id: true,
+  kind: true,
+  name: true,
+  url: true,
+  contentType: true,
+  createdAt: true,
+} as const satisfies Prisma.EmployeeDocumentSelect;
+
+/**
+ * What a record page adds to the columns: the linked account by name, and
+ * the documents filed on the record, newest first.
+ */
+const RECORD_EXTRAS_SELECT = {
   user: { select: { name: true, email: true } },
+  documents: {
+    select: DOCUMENT_SELECT,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  },
 } as const satisfies Prisma.EmployeeSelect;
 
 /**
@@ -34,10 +52,10 @@ const ACCOUNT_SELECT = {
  * confidential columns from the page's types even when they are sent.
  */
 type EmployeeRecord = Prisma.EmployeeGetPayload<{
-  select: typeof EMPLOYEE_SELECT & typeof ACCOUNT_SELECT;
+  select: typeof EMPLOYEE_SELECT & typeof RECORD_EXTRAS_SELECT;
 }>;
 type EmployeeRecordSensitive = Prisma.EmployeeGetPayload<{
-  select: typeof EMPLOYEE_SELECT_SENSITIVE & typeof ACCOUNT_SELECT;
+  select: typeof EMPLOYEE_SELECT_SENSITIVE & typeof RECORD_EXTRAS_SELECT;
 }>;
 
 /** How many names the "ending soon" tile spells out before it stops. */
@@ -53,7 +71,10 @@ const RETURN_SELECT = {
 
 @Injectable()
 export class EmployeeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   /**
    * ADMIN and above read salary, CIN, social security number, date of birth and
@@ -164,11 +185,11 @@ export class EmployeeService {
     )
       ? await this.prisma.employee.findUnique({
           where: { id },
-          select: { ...EMPLOYEE_SELECT_SENSITIVE, ...ACCOUNT_SELECT },
+          select: { ...EMPLOYEE_SELECT_SENSITIVE, ...RECORD_EXTRAS_SELECT },
         })
       : await this.prisma.employee.findUnique({
           where: { id },
-          select: { ...EMPLOYEE_SELECT, ...ACCOUNT_SELECT },
+          select: { ...EMPLOYEE_SELECT, ...RECORD_EXTRAS_SELECT },
         });
     if (!employee) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Employee not found" });
@@ -408,6 +429,63 @@ export class EmployeeService {
       birthDate: ifSent(input.birthDate, full.birthDate),
       address: ifSent(input.address, full.address),
     };
+  }
+
+  /**
+   * Refuses an unknown record before `createDocumentUpload` hands out a
+   * capability, so a PUT URL is only ever minted for a real employee.
+   */
+  async assertDocumentUploadable(employeeId: string) {
+    await this.assertExists(employeeId);
+  }
+
+  /**
+   * Files an uploaded document on the record.
+   *
+   * The URL is client-supplied, so it must be on this app's bucket — the
+   * same gate the chat applies to attachments — or any link could be filed
+   * as a "scan" and opened from the record by the next admin.
+   *
+   * A fixed kind is one slot: the new row replaces the old in one
+   * transaction, so the slot is never empty and never double. OTHER only
+   * adds. The replaced S3 object is left in place: nothing in this app
+   * deletes from the shared bucket (see StorageService).
+   */
+  async addDocument(input: AddEmployeeDocumentInput) {
+    await this.assertExists(input.employeeId);
+    if (!this.storage.isOwnAssetUrl(input.url)) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Document must be an uploaded file" });
+    }
+    return this.prisma.$transaction(async (tx) => {
+      if (input.kind !== "OTHER") {
+        await tx.employeeDocument.deleteMany({
+          where: { employeeId: input.employeeId, kind: input.kind },
+        });
+      }
+      return tx.employeeDocument.create({
+        data: {
+          employeeId: input.employeeId,
+          kind: input.kind,
+          name: input.kind === "OTHER" ? (input.name ?? null) : null,
+          url: input.url,
+          contentType: input.contentType,
+        },
+        select: DOCUMENT_SELECT,
+      });
+    });
+  }
+
+  /** Takes a document off the record. The file stays on S3, as on replace. */
+  async removeDocument(id: string) {
+    const found = await this.prisma.employeeDocument.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!found) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Document not found" });
+    }
+    await this.prisma.employeeDocument.delete({ where: { id } });
+    return { id };
   }
 
   private async assertExists(id: string) {

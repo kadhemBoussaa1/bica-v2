@@ -1,31 +1,30 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useState, type CSSProperties, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { canAccess } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { Dialog } from "@repo/ui/dialog";
 import { formatDay, numberFormat } from "../../i18n/formats";
 import { useCurrentUser } from "../auth/use-auth";
-import { KpiRow, KpiTile } from "../records/kpi";
 import { useTRPC } from "../trpc/client";
 import records from "../records/records.module.css";
-import { Avatar } from "./avatar";
+import { Avatar, tintIndex } from "./avatar";
+import { EmployeeDocuments, documentSlots } from "./employee-documents";
 import { EmployeeDrawer, type StepKey } from "./employee-drawer";
 import { employeeName } from "./employee-name";
 import {
   contractEnd,
-  ContractEndText,
   invalidateEmployeeQueries,
   statusOf,
-  StatusPill,
   tenureMonths,
   todayUtc,
   useGenderLabel,
   useTenureText,
+  type EmployeeStatus,
 } from "./employee-ui";
-import styles from "./employees.module.css";
+import styles from "./employee-detail.module.css";
 
 /** Salaries are in dinars, which count in millimes: always three decimals. */
 const MILLIMES = { minimumFractionDigits: 3, maximumFractionDigits: 3 } as const;
@@ -33,14 +32,32 @@ const MILLIMES = { minimumFractionDigits: 3, maximumFractionDigits: 3 } as const
 /** What the confidential panel shows until "show" is pressed. */
 const MASK = "••••••";
 
-type Tone = "warning" | "danger" | "success";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The documents panel, which the "documents missing" issue scrolls to. */
+const DOCUMENTS_ID = "employee-documents";
+
+/** The header band washes in the avatar's own tint, so the page reads as this person's. */
+const BANDS = [
+  styles.band0,
+  styles.band1,
+  styles.band2,
+  styles.band3,
+  styles.band4,
+  styles.band5,
+];
+
+const STATUS_TONE: Record<EmployeeStatus, string | undefined> = {
+  onRoster: styles.toneSuccess,
+  suspended: styles.toneDanger,
+  archived: styles.toneNeutral,
+};
 
 /**
- * One labelled value in a section. `null` is "never recorded" and draws the
- * muted dash; a `tone` colours a value that needs attention ("not given")
- * or states a standing.
+ * One labelled value in a side group. `null` reads "not given", in italics,
+ * so an empty field is visibly a gap rather than a blank.
  */
-function Field({
+function Row({
   label,
   value,
   mono = false,
@@ -49,65 +66,61 @@ function Field({
   label: string;
   value: ReactNode;
   mono?: boolean;
-  tone?: Tone;
+  tone?: EmployeeStatus;
 }) {
-  const toneClass =
-    tone === "warning"
-      ? styles.fieldWarning
-      : tone === "danger"
-        ? styles.fieldDanger
-        : tone === "success"
-          ? styles.fieldSuccess
-          : null;
+  const t = useTranslations("employees.detail.fields");
+  const empty = value === null || value === "";
   return (
-    <div className={styles.field}>
-      <span className={styles.fieldLabel}>{label}</span>
+    <div className={styles.row}>
+      <span className={styles.rowLabel}>{label}</span>
       <span
-        className={[styles.fieldValue, mono ? styles.fieldMono : null, toneClass]
+        className={[
+          styles.rowValue,
+          mono && !empty ? styles.rowMono : null,
+          empty ? styles.rowEmpty : null,
+          tone ? STATUS_TONE[tone] : null,
+          tone ? styles.rowToned : null,
+        ]
           .filter(Boolean)
           .join(" ")}
       >
-        {value === null || value === "" ? <span className={records.absent} /> : value}
+        {empty ? t("notGiven") : value}
       </span>
     </div>
   );
 }
 
-function Section({
-  title,
-  sub,
-  ink = false,
-  children,
-}: {
-  title: string;
-  sub?: string;
-  /** The confidential panel: ink, so it reads as apart from the rest. */
-  ink?: boolean;
-  children: ReactNode;
-}) {
+function Group({ title, dot, children }: { title: string; dot: string; children: ReactNode }) {
   return (
-    <section
-      className={[styles.section, ink ? styles.sectionInk : null].filter(Boolean).join(" ")}
-    >
-      <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>{title}</h2>
-        {sub && <span className={styles.sectionSub}>{sub}</span>}
+    <div className={styles.group}>
+      <div className={styles.groupHead}>
+        <i className={styles.groupDot} style={{ background: dot }} aria-hidden />
+        <h3 className={styles.groupTitle}>{title}</h3>
       </div>
       {children}
-    </section>
+    </div>
   );
 }
 
+interface Issue {
+  key: string;
+  severity: "danger" | "warning";
+  title: string;
+  meta: string;
+  action: string;
+  act: () => void;
+}
+
 /**
- * An employee's record page, from `Employees v3.dc.html`: who they are and
- * where they stand at the head, four figures, what is missing, then the
- * record in four sections. Editing opens the form as a sheet over the page,
- * at the step that holds whatever the "to complete" notice names.
+ * An employee's record page, from `Employees v3.dc.html`: the person on a
+ * band in their own tint, what needs doing, then the contract on a
+ * timeline and the papers on file beside who they are and how to reach
+ * them. Editing opens the form as a sheet over the page, at the step that
+ * fixes whatever issue was clicked.
  */
 export function EmployeeDetail({ id }: { id: string }) {
   const t = useTranslations("employees");
   const common = useTranslations("common");
-  const locale = useLocale();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { user: me } = useCurrentUser();
@@ -149,40 +162,156 @@ export function EmployeeDetail({ id }: { id: string }) {
   const name = employeeName(employee);
   const today = todayUtc();
   const status = statusOf(employee);
+  const onRoster = status === "onRoster";
   const end = contractEnd(employee.contractEndDate, today);
-  const endingSoon = end.kind === "ends" && end.soon;
   const months = tenureMonths(employee.hireDate, today);
   const gender = genderLabel(employee.gender);
+  const account = employee.user;
   // The service selects the confidential columns for ADMIN and above only,
   // so the record is one of two shapes. The panel draws when the server sent
   // them — the data decides, not a second guess at the role.
   const confidential = "cin" in employee ? employee : null;
-  // Linking an account is ADMIN-only too; below that, a missing one is not
-  // this reader's to fix.
+  // Linking an account is ADMIN-only; below that, a missing one is not this
+  // reader's to fix.
   const canLink = me ? canAccess(me.role, "ADMIN") : false;
+  const slots = documentSlots(employee.employmentType, employee.documents);
+  const missingDocs = slots.filter((slot) => slot.document === undefined);
 
-  // What the record lacks, in the order the form's steps hold them, so
-  // "Complete" opens the first one. Only for a record still in use.
-  const missing: { key: "phone" | "reason" | "account"; step: StepKey }[] = [];
+  // What needs doing, most urgent first. Only for a record still in use:
+  // an archived one is out of the app, and its gaps are nobody's to chase.
+  const issues: Issue[] = [];
   if (employee.active) {
-    if (employee.phone === null) missing.push({ key: "phone", step: "contact" });
-    if (employee.suspended && employee.suspensionReason === null) {
-      missing.push({ key: "reason", step: "roster" });
+    const toStep = (step: StepKey) => () => setEditing(step);
+    if (onRoster && end.kind === "ends" && end.soon) {
+      issues.push({
+        key: "ending",
+        severity: "danger",
+        title: t("detail.issues.endingSoon", { count: end.days }),
+        meta: t("detail.issues.endingSoonMeta", { date: formatDay(end.date) }),
+        action: t("detail.issues.renew"),
+        act: toStep("role"),
+      });
     }
-    if (!employee.suspended && employee.userId === null && canLink) {
-      missing.push({ key: "account", step: "account" });
+    if (onRoster && end.kind === "ended") {
+      issues.push({
+        key: "expired",
+        severity: "danger",
+        title: t("detail.issues.expired"),
+        meta: t("detail.issues.expiredMeta", { date: formatDay(end.date) }),
+        action: t("detail.issues.regularise"),
+        act: toStep("role"),
+      });
+    }
+    if (employee.phone === null) {
+      issues.push({
+        key: "phone",
+        severity: "warning",
+        title: t("detail.issues.noPhone"),
+        meta: t("detail.issues.noPhoneMeta"),
+        action: t("detail.issues.add"),
+        act: toStep("contact"),
+      });
+    }
+    if (employee.suspended && employee.suspensionReason === null) {
+      issues.push({
+        key: "reason",
+        severity: "warning",
+        title: t("detail.issues.noReason"),
+        meta:
+          employee.suspendedAt === null
+            ? t("detail.issues.noReasonUndated")
+            : t("detail.issues.noReasonMeta", { date: formatDay(employee.suspendedAt) }),
+        action: t("detail.issues.fill"),
+        act: toStep("roster"),
+      });
+    }
+    if (onRoster && employee.userId === null && canLink) {
+      issues.push({
+        key: "account",
+        severity: "warning",
+        title: t("detail.issues.noAccount"),
+        meta: t("detail.issues.noAccountMeta"),
+        action: t("detail.issues.link"),
+        act: toStep("account"),
+      });
+    }
+    if (missingDocs.length > 0) {
+      issues.push({
+        key: "documents",
+        severity: "warning",
+        title: t("detail.issues.documents", { count: missingDocs.length }),
+        meta: missingDocs
+          .map((slot) =>
+            slot.kind === "CONTRACT" && employee.employmentType !== null
+              ? t("detail.documents.kinds.contractOf", { type: employee.employmentType })
+              : t(`detail.documents.kinds.${slot.kind}`),
+          )
+          .join(", "),
+        action: t("detail.issues.upload"),
+        act: () => {
+          const section = document.getElementById(DOCUMENTS_ID);
+          section?.scrollIntoView({ behavior: "smooth", block: "start" });
+          section?.focus({ preventScroll: true });
+        },
+      });
     }
   }
-  const missingList = new Intl.ListFormat(locale, { type: "conjunction" }).format(
-    missing.map((item) => t(`detail.missing.${item.key}`)),
-  );
+
+  // The contract on a line from hire to end, with today marked on it. An
+  // open-ended CDI draws a hatched track with no end; any other contract
+  // with no end date says the date is missing rather than inventing one.
+  const hired = employee.hireDate === null ? null : new Date(employee.hireDate).getTime();
+  let percent = 0;
+  let fillClass: string | undefined;
+  let stateText: string;
+  let stateTone: string | undefined;
+  let showToday = false;
+  if (end.kind === "open") {
+    if (employee.employmentType === "CDI") {
+      stateText = t("detail.contract.openEnded");
+      stateTone = styles.stateSuccess;
+      fillClass = styles.fillOpen;
+      percent = 70;
+      showToday = true;
+    } else {
+      stateText = t("detail.contract.noEnd");
+      stateTone = styles.stateWarning;
+    }
+  } else if (end.kind === "ended") {
+    stateText = t("detail.contract.endedAgo", {
+      count: Math.round((today - new Date(end.date).getTime()) / DAY_MS),
+    });
+    stateTone = styles.stateMuted;
+    fillClass = styles.fillEnded;
+    percent = 100;
+  } else {
+    stateText = t("detail.contract.remaining", { count: end.days });
+    stateTone = end.soon ? styles.stateDanger : styles.stateLater;
+    fillClass = end.soon ? styles.fillSoon : styles.fillLater;
+    const span = new Date(end.date).getTime() - (hired ?? today);
+    percent = hired === null || span <= 0 ? 0 : Math.min(100, ((today - hired) / span) * 100);
+    showToday = hired !== null;
+  }
+  const trackClass =
+    end.kind === "open"
+      ? employee.employmentType === "CDI"
+        ? styles.trackOpen
+        : styles.trackUnknown
+      : undefined;
+  const position = { "--at": `${percent.toFixed(1)}%` } as CSSProperties;
 
   const masked = (value: string | null) => (reveal ? value : value === null ? null : MASK);
   const salary =
     confidential === null || confidential.salary === null
       ? null
       : `${numberFormat(MILLIMES).format(confidential.salary)} TND`;
-  const account = employee.user;
+
+  const band =
+    status === "suspended"
+      ? styles.bandSuspended
+      : status === "archived"
+        ? styles.bandArchived
+        : BANDS[tintIndex(employee.id)];
 
   return (
     <>
@@ -192,51 +321,90 @@ export function EmployeeDetail({ id }: { id: string }) {
         </p>
       )}
 
-      <header className={styles.hero}>
+      <header className={[styles.hero, band].filter(Boolean).join(" ")}>
+        <div className={styles.heroGlow} aria-hidden />
         <div className={styles.heroMain}>
-          <Avatar employee={employee} size="hero" />
+          <span className={styles.portrait}>
+            <Avatar employee={employee} size="hero" />
+            <span
+              className={[styles.statusBadge, STATUS_TONE[status]].filter(Boolean).join(" ")}
+              title={t(`status.${status}`)}
+            >
+              <i aria-hidden />
+            </span>
+          </span>
+
           <div className={styles.heroText}>
-            <div className={styles.heroNameRow}>
-              <h1 className={styles.heroName}>{name}</h1>
-              <StatusPill status={status} />
+            <div className={styles.heroTop}>
+              <span className={[styles.statusChip, STATUS_TONE[status]].filter(Boolean).join(" ")}>
+                <i aria-hidden />
+                {t(`status.${status}`)}
+              </span>
+              <bdi className={styles.heroMatricule}>
+                {t("detail.matricule", { matricule: employee.matricule })}
+              </bdi>
             </div>
+            <h1 className={styles.heroName}>{name}</h1>
             {(employee.jobTitle !== null || employee.department !== null) && (
               <div className={styles.heroRole}>
-                {[employee.jobTitle, employee.department]
-                  .filter((part): part is string => part !== null)
-                  .map((part, index) => (
-                    <span key={part}>
-                      {index > 0 && " · "}
-                      <bdi>{part}</bdi>
-                    </span>
-                  ))}
+                {employee.jobTitle !== null && <bdi>{employee.jobTitle}</bdi>}
+                {employee.department !== null && (
+                  <span className={styles.heroService}>
+                    {employee.jobTitle !== null && " · "}
+                    <bdi>{employee.department}</bdi>
+                  </span>
+                )}
               </div>
             )}
-            <div className={styles.heroMeta}>
-              <bdi>{t("detail.matricule", { matricule: employee.matricule })}</bdi>
-              {gender !== null && (
-                <>
-                  {" · "}
-                  <bdi>{gender}</bdi>
-                </>
+            <div className={styles.chips}>
+              {months !== null && (
+                <span className={styles.chip}>
+                  <span className={styles.chipLabel}>{t("detail.chips.since")}</span>
+                  <strong>{tenureText(months)}</strong>
+                </span>
               )}
+              {gender !== null && (
+                <span className={styles.chip}>
+                  <span className={styles.chipLabel}>{t("detail.chips.sex")}</span>
+                  <strong>{gender}</strong>
+                </span>
+              )}
+              <span className={styles.chip}>
+                <span className={styles.chipLabel}>{t("detail.chips.planning")}</span>
+                <strong>{account ? t("detail.chips.visible") : t("detail.chips.absent")}</strong>
+              </span>
             </div>
           </div>
+
           <div className={styles.heroActions}>
-            <Button variant="primary" onClick={() => setEditing("identity")}>
-              {t("detail.edit")}
-            </Button>
             {employee.phone !== null && (
               // A `tel:` link, so a phone dials and a desktop hands it to
               // whatever it uses for calls.
-              <a href={`tel:${employee.phone.replace(/\s/g, "")}`} className={styles.callLink}>
-                <Button variant="secondary" tabIndex={-1}>
-                  {t("detail.call")}
-                </Button>
+              <a href={`tel:${employee.phone.replace(/\s/g, "")}`} className={styles.call}>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={styles.callIcon}
+                  aria-hidden
+                >
+                  <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
+                </svg>
+                <span className={styles.callText}>
+                  <span className={styles.callLabel}>{t("detail.call")}</span>
+                  <bdi className={styles.callNumber}>{employee.phone}</bdi>
+                </span>
               </a>
             )}
+            <Button variant="primary" onClick={() => setEditing("identity")}>
+              {t("detail.edit")}
+            </Button>
             <Button
-              variant={employee.active ? "danger" : "secondary"}
+              variant={employee.active ? "ghost" : "secondary"}
+              className={employee.active ? styles.archive : undefined}
               onClick={() => {
                 setError(null);
                 setConfirming(true);
@@ -246,175 +414,202 @@ export function EmployeeDetail({ id }: { id: string }) {
             </Button>
           </div>
         </div>
-
-        <KpiRow>
-          <KpiTile
-            label={t("detail.tiles.tenure")}
-            value={months === null ? "—" : tenureText(months)}
-            meta={
-              employee.hireDate === null ? (
-                t("detail.tiles.noHireDate")
-              ) : (
-                <bdi>{t("detail.tiles.hiredOn", { date: formatDay(employee.hireDate) })}</bdi>
-              )
-            }
-          />
-          <KpiTile
-            label={t("detail.tiles.contract")}
-            value={employee.employmentType ?? "—"}
-            meta={
-              employee.employmentType === null && end.kind === "open" ? undefined : (
-                <ContractEndText end={end} employmentType={employee.employmentType} />
-              )
-            }
-            tone={endingSoon ? "danger" : "neutral"}
-          />
-          <KpiTile
-            label={t("detail.tiles.roster")}
-            value={t(`status.${status}`)}
-            meta={
-              status === "suspended" && employee.suspendedAt !== null ? (
-                <bdi>{t("detail.tiles.since", { date: formatDay(employee.suspendedAt) })}</bdi>
-              ) : status === "onRoster" ? (
-                t("detail.tiles.active")
-              ) : undefined
-            }
-            tone={status === "onRoster" ? "success" : status === "suspended" ? "danger" : "neutral"}
-          />
-          <KpiTile
-            label={t("detail.tiles.planning")}
-            value={account ? t("detail.tiles.visible") : t("detail.tiles.absent")}
-            meta={
-              account ? (
-                <bdi>{t("detail.tiles.account", { name: account.name })}</bdi>
-              ) : (
-                t("detail.tiles.noAccount")
-              )
-            }
-            tone={account ? "success" : "warning"}
-          />
-        </KpiRow>
       </header>
 
       {!employee.active && <p className={styles.archivedNotice}>{t("detail.archivedNotice")}</p>}
 
-      {missing.length > 0 && (
-        <div className={styles.missing}>
-          <strong>{t("detail.missing.title")}</strong>
-          <span className={styles.missingText}>{t("detail.missing.text", { items: missingList })}</span>
-          <Button variant="secondary" onClick={() => setEditing(missing[0]?.step ?? "identity")}>
-            {t("detail.missing.action")}
-          </Button>
-        </div>
+      {issues.length > 0 && (
+        <section className={[styles.panel, styles.issuesPanel].filter(Boolean).join(" ")}>
+          <div className={styles.panelHead}>
+            <h2 className={styles.panelTitle}>{t("detail.issues.title")}</h2>
+            <span className={styles.panelMeta}>
+              {t("detail.issues.count", { count: issues.length })}
+            </span>
+          </div>
+          <div className={styles.issues}>
+            {issues.map((issue) => (
+              <div
+                key={issue.key}
+                className={[
+                  styles.issue,
+                  issue.severity === "danger" ? styles.issueDanger : styles.issueWarning,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <span className={styles.issueMark} aria-hidden>
+                  !
+                </span>
+                <span className={styles.issueText}>
+                  <span className={styles.issueTitle}>{issue.title}</span>
+                  <span className={styles.issueMeta}>{issue.meta}</span>
+                  <button type="button" className={styles.issueAction} onClick={issue.act}>
+                    {issue.action}
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
-      <div className={styles.sections}>
-        <Section title={t("detail.sections.role")}>
-          <Field label={t("detail.fields.jobTitle")} value={employee.jobTitle} />
-          <Field label={t("detail.fields.department")} value={employee.department} />
-          <Field label={t("detail.fields.contract")} value={employee.employmentType} mono />
-          <Field
-            label={t("detail.fields.hired")}
-            value={employee.hireDate === null ? null : formatDay(employee.hireDate)}
-            mono
-          />
-          <Field
-            label={t("detail.fields.contractEnds")}
-            value={
-              end.kind === "open"
-                ? employee.employmentType === null
-                  ? null
-                  : employee.employmentType === "CDI"
-                    ? t("contractEnd.open")
-                    : t("contractEnd.notGiven")
-                : formatDay(end.date)
-            }
-            mono={end.kind !== "open"}
-            tone={
-              endingSoon
-                ? "danger"
-                : end.kind === "open" &&
-                    employee.employmentType !== null &&
-                    employee.employmentType !== "CDI"
-                  ? "warning"
-                  : undefined
-            }
-          />
-          <Field label={t("detail.fields.category")} value={employee.categorie} mono />
-          <Field label={t("detail.fields.echelon")} value={employee.echelon} mono />
-        </Section>
-
-        <Section title={t("detail.sections.contact")}>
-          <Field label={t("detail.fields.phone")} value={employee.phone} mono />
-          <Field label={t("detail.fields.phone2")} value={employee.phone2} mono />
-          <Field
-            label={t("detail.fields.email")}
-            value={employee.email === null ? null : <bdi>{employee.email}</bdi>}
-          />
-        </Section>
-
-        <Section title={t("detail.sections.roster")}>
-          <Field
-            label={t("detail.fields.status")}
-            value={t(`status.${status}`)}
-            tone={status === "onRoster" ? "success" : status === "suspended" ? "danger" : undefined}
-          />
-          <Field
-            label={t("detail.fields.suspendedOn")}
-            value={employee.suspendedAt === null ? null : formatDay(employee.suspendedAt)}
-            mono
-          />
-          <Field
-            label={t("detail.fields.reason")}
-            value={
-              employee.suspended
-                ? (employee.suspensionReason ?? t("detail.fields.notGiven"))
-                : t("detail.fields.notApplicable")
-            }
-            tone={employee.suspended && employee.suspensionReason === null ? "warning" : undefined}
-          />
-          <Field
-            label={t("detail.fields.account")}
-            value={account ? <bdi>{account.name}</bdi> : t("detail.fields.none")}
-            tone={account ? undefined : "warning"}
-          />
-        </Section>
-
-        {confidential !== null && (
-          <Section
-            title={t("detail.sections.confidential")}
-            sub={t("detail.sections.confidentialSub")}
-            ink
-          >
-            <Field label={t("detail.fields.salary")} value={masked(salary)} mono />
-            <Field label={t("detail.fields.cin")} value={masked(confidential.cin)} mono />
-            <Field
-              label={t("detail.fields.ssn")}
-              value={masked(confidential.socialSecurityNumber)}
-              mono
-            />
-            <Field
-              label={t("detail.fields.birthDate")}
-              value={masked(
-                confidential.birthDate === null ? null : formatDay(confidential.birthDate),
+      <div className={styles.layout}>
+        <div className={styles.main}>
+          <section className={styles.panel}>
+            <div className={styles.panelHead}>
+              <h2 className={styles.panelTitle}>{t("detail.contract.title")}</h2>
+              <span className={styles.typeBadge}>{employee.employmentType ?? "—"}</span>
+              <span className={[styles.contractState, stateTone].filter(Boolean).join(" ")}>
+                {stateText}
+              </span>
+            </div>
+            <div className={styles.track} style={position}>
+              <div className={[styles.trackBar, trackClass].filter(Boolean).join(" ")} />
+              {fillClass !== undefined && (
+                <div className={[styles.trackFill, fillClass].filter(Boolean).join(" ")} />
               )}
-              mono
-            />
-            <Field
-              label={t("detail.fields.address")}
-              value={masked(confidential.address)}
-              mono={!reveal}
-            />
-            <button
-              type="button"
-              className={styles.reveal}
-              aria-pressed={reveal}
-              onClick={() => setReveal((shown) => !shown)}
+              {showToday && <div className={styles.trackToday} />}
+            </div>
+            <div className={styles.trackLabels}>
+              <span>
+                <span className={styles.trackLabel}>{t("detail.contract.hired")}</span>
+                <span className={styles.trackValue}>
+                  {employee.hireDate === null ? "—" : formatDay(employee.hireDate)}
+                </span>
+              </span>
+              <span className={styles.trackMiddle}>
+                <span className={styles.trackLabel}>{t("detail.contract.today")}</span>
+                <span className={styles.trackValue}>
+                  {months === null
+                    ? t("detail.contract.noHireDate")
+                    : t("detail.contract.presence", { tenure: tenureText(months) })}
+                </span>
+              </span>
+              <span className={styles.trackEnd}>
+                <span className={styles.trackLabel}>{t("detail.contract.end")}</span>
+                <span
+                  className={[
+                    styles.trackValue,
+                    end.kind === "ends" && end.soon ? styles.stateDanger : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  {end.kind === "open"
+                    ? employee.employmentType === "CDI"
+                      ? t("contractEnd.open")
+                      : "—"
+                    : formatDay(end.date)}
+                </span>
+              </span>
+            </div>
+          </section>
+
+          <EmployeeDocuments employee={employee} id={DOCUMENTS_ID} />
+        </div>
+
+        <div className={styles.side}>
+          <section className={styles.panel}>
+            <Group title={t("detail.groups.role")} dot="var(--bp-orange-500)">
+              <Row label={t("detail.fields.jobTitle")} value={employee.jobTitle} />
+              <Row label={t("detail.fields.department")} value={employee.department} />
+              <Row
+                label={t("detail.fields.grade")}
+                value={
+                  employee.categorie === null && employee.echelon === null
+                    ? null
+                    : [employee.categorie ?? "—", employee.echelon ?? "—"].join(" · ")
+                }
+                mono
+              />
+            </Group>
+            <Group
+              title={t("detail.groups.roster")}
+              dot={
+                status === "onRoster"
+                  ? "var(--bp-success)"
+                  : status === "suspended"
+                    ? "var(--bp-danger)"
+                    : "var(--bp-ink-faint)"
+              }
             >
-              {reveal ? t("detail.hide") : t("detail.reveal")}
-            </button>
-          </Section>
-        )}
+              <Row label={t("detail.fields.status")} value={t(`status.${status}`)} tone={status} />
+              {employee.suspendedAt !== null && (
+                <Row
+                  label={t("detail.fields.suspendedOn")}
+                  value={formatDay(employee.suspendedAt)}
+                  mono
+                />
+              )}
+              {employee.suspended && (
+                <Row label={t("detail.fields.reason")} value={employee.suspensionReason} />
+              )}
+              <Row
+                label={t("detail.fields.account")}
+                value={account ? <bdi>{account.name}</bdi> : null}
+              />
+            </Group>
+            <Group title={t("detail.groups.contact")} dot="var(--bp-info)">
+              {/* `<bdi>`: in Arabic the leading "+" would otherwise land at the end. */}
+              <Row
+                label={t("detail.fields.phone")}
+                value={employee.phone === null ? null : <bdi>{employee.phone}</bdi>}
+                mono
+              />
+              {employee.phone2 !== null && (
+                <Row label={t("detail.fields.phone2")} value={<bdi>{employee.phone2}</bdi>} mono />
+              )}
+              <Row
+                label={t("detail.fields.email")}
+                value={employee.email === null ? null : <bdi>{employee.email}</bdi>}
+              />
+            </Group>
+          </section>
+
+          {confidential !== null && (
+            <section className={[styles.panel, styles.ink].filter(Boolean).join(" ")}>
+              <div className={styles.inkHead}>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={styles.lock}
+                  aria-hidden
+                >
+                  <path d="M5 11h14v10H5z M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                <h2 className={styles.inkTitle}>{t("detail.confidential.title")}</h2>
+                <span className={styles.inkSub}>{t("detail.confidential.sub")}</span>
+              </div>
+              <Row label={t("detail.fields.salary")} value={masked(salary)} mono />
+              <Row label={t("detail.fields.cin")} value={masked(confidential.cin)} mono />
+              <Row
+                label={t("detail.fields.ssn")}
+                value={masked(confidential.socialSecurityNumber)}
+                mono
+              />
+              <Row
+                label={t("detail.fields.birthDate")}
+                value={masked(
+                  confidential.birthDate === null ? null : formatDay(confidential.birthDate),
+                )}
+                mono
+              />
+              <Row label={t("detail.fields.address")} value={masked(confidential.address)} mono />
+              <button
+                type="button"
+                className={styles.reveal}
+                aria-pressed={reveal}
+                onClick={() => setReveal((shown) => !shown)}
+              >
+                {reveal ? t("detail.hide") : t("detail.reveal")}
+              </button>
+            </section>
+          )}
+        </div>
       </div>
 
       {editing !== null && (

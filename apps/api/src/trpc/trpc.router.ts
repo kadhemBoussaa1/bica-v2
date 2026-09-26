@@ -7,7 +7,10 @@ import {
   createShipmentFromOrderInput,
   createUploadInput,
   discardShipmentDraftInput,
+  addEmployeeDocumentInput,
+  employeeDocumentUploadInput,
   employeePhotoUploadInput,
+  removeEmployeeDocumentInput,
   exportShipmentIdInput,
   shipShipmentInput,
   updateShipmentCustomsInput,
@@ -616,6 +619,26 @@ export class TrpcRouter {
       createPhotoUpload: adminProcedure
         .input(employeePhotoUploadInput)
         .mutation(({ input }) => this.storageService.createUpload(input)),
+
+      /**
+       * The record's documents — Employees v3. Upload first (a presigned
+       * PUT, refused for an unknown record), then file the returned URL,
+       * which the service checks is on this app's bucket.
+       */
+      createDocumentUpload: adminProcedure
+        .input(employeeDocumentUploadInput)
+        .mutation(async ({ input }) => {
+          await this.employeeService.assertDocumentUploadable(input.employeeId);
+          return this.storageService.createUpload(input);
+        }),
+
+      addDocument: adminProcedure
+        .input(addEmployeeDocumentInput)
+        .mutation(({ input }) => this.employeeService.addDocument(input)),
+
+      removeDocument: adminProcedure
+        .input(removeEmployeeDocumentInput)
+        .mutation(({ input }) => this.employeeService.removeDocument(input.id)),
     }),
 
     /**

@@ -11,7 +11,7 @@ interface AvatarProps {
   /**
    * sm/md/lg (30–42px) for the shift screens' dense rosters; xl (46px) for
    * an employees list row, xxl (84px) for the form's photo slot, and hero
-   * (104px) for the head of a record page.
+   * (114px) for the framed portrait at the head of a record page.
    */
   size?: "sm" | "md" | "lg" | "xl" | "xxl" | "hero";
 }
@@ -35,10 +35,18 @@ const TINTS = [
   styles.avTint5,
 ];
 
-function tintFor(id: string): string | undefined {
+/**
+ * Which of the six tints a person gets, by id. Exported so the record
+ * page's header band can wash in the same colour as the initials.
+ */
+export function tintIndex(id: string): number {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return TINTS[h % TINTS.length];
+  return h % TINTS.length;
+}
+
+function tintFor(id: string): string | undefined {
+  return TINTS[tintIndex(id)];
 }
 
 /**

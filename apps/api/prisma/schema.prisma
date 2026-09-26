@@ -504,6 +504,9 @@ model Employee {
   counterpartChanges ShiftChange[]     @relation("ShiftChangeCounterpart")
   shiftTasks         ShiftTask[]
 
+  /// Scans and PDFs filed on the record (Employees v3 "Documents").
+  documents EmployeeDocument[]
+
   /// Legacy bigint primary key — see Client.legacyId.
   legacyId BigInt? @unique
 
@@ -513,6 +516,48 @@ model Employee {
   @@index([createdAt, id])
   @@index([active, lastName, id])
   @@index([department])
+}
+
+/// The papers an employee's record is expected to hold, from
+/// `Employees v3.dc.html`. The fixed kinds are one slot each; OTHER is any
+/// further file, named by whoever filed it.
+enum EmployeeDocumentKind {
+  CONTRACT
+  ID_CARD
+  CNSS_CERTIFICATE
+  FITNESS_CERTIFICATE
+  CIVP_AGREEMENT
+  OTHER
+}
+
+/// One file on an employee's record: uploaded straight to S3 through a
+/// presigned PUT, then filed here by URL (`EmployeeService.addDocument`).
+///
+/// A fixed kind holds one current file — filing a new one replaces the row —
+/// while OTHER accumulates. Not enforced by a unique index because OTHER
+/// needs several rows per employee; the service replaces in a transaction.
+model EmployeeDocument {
+  id String @id @default(cuid())
+
+  /// Cascade: a document has no meaning without its person. Employees are
+  /// archived, never deleted, so this guards a path nothing takes today.
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  kind EmployeeDocumentKind
+  /// The label an OTHER document was filed under; null for the fixed kinds,
+  /// whose kind is their label.
+  name String?
+
+  url String
+  /// A plain String, like `ChatAttachment.contentType`: the allowlist is the
+  /// contract's `UPLOAD_CONTENT_TYPES`, signed into the presigned PUT.
+  contentType String
+
+  createdAt DateTime @default(now())
+
+  /// Loaded per employee, newest first.
+  @@index([employeeId, createdAt])
 }
 
 /// Bag construction. SAC_LUXE removed 2026-09: not a produced bag type, only
