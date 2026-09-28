@@ -21,6 +21,7 @@
     "db:import:step4": "node dist/migrate/import-stock.js",
     "db:import:step5": "node dist/migrate/import-invoices.js",
     "db:import:step6": "node dist/migrate/import-purchasing.js",
+    "db:import:step8": "node dist/migrate/import-inks.js",
     "db:verify-pricing": "node dist/migrate/verify-pricing.js",
     "db:backfill-metrage": "node dist/migrate/backfill-metrage.js",
     "db:employee-accounts": "node dist/migrate/create-employee-accounts.js"

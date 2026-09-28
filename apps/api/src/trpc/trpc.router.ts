@@ -1003,9 +1003,17 @@ export class TrpcRouter {
         .input(inkColourIdInput)
         .query(({ input }) => this.inkService.byId(input.id)),
 
+      /** The page's header tiles; plumbing beside the audited `list`. */
+      summary: adminProcedure.meta({ audit: false }).query(() => this.inkService.summary()),
+
+      /** The drawer: the colour, its figures and its merged history. */
+      detail: adminProcedure
+        .input(inkColourIdInput)
+        .query(({ input }) => this.inkService.detail(input.id)),
+
       create: adminProcedure
         .input(createInkColourInput)
-        .mutation(({ input }) => this.inkService.create(input)),
+        .mutation(({ ctx, input }) => this.inkService.create(ctx.user, input)),
 
       update: adminProcedure
         .input(updateInkColourInput)
@@ -1013,8 +1021,8 @@ export class TrpcRouter {
 
       setActive: adminProcedure
         .input(setInkColourActiveInput)
-        .mutation(({ input }) =>
-          this.inkService.setActive(input.id, input.active),
+        .mutation(({ ctx, input }) =>
+          this.inkService.setActive(ctx.user, input.id, input.active),
         ),
 
       remove: adminProcedure
@@ -1023,11 +1031,11 @@ export class TrpcRouter {
 
       restock: adminProcedure
         .input(restockInkInput)
-        .mutation(({ input }) => this.inkService.restock(input)),
+        .mutation(({ ctx, input }) => this.inkService.restock(ctx.user, input)),
 
       adjust: adminProcedure
         .input(adjustInkStockInput)
-        .mutation(({ input }) => this.inkService.adjust(input)),
+        .mutation(({ ctx, input }) => this.inkService.adjust(ctx.user, input)),
 
       usageForOrder: shopFloorProcedure
         .input(inkUsageForOrderInput)

@@ -169,3 +169,21 @@ export function legacyPool(): Pool {
   }
   return new Pool({ connectionString, max: 4 });
 }
+
+/**
+ * The old app's **raw** database (the Java app's own schema, restored from a
+ * `bicapack_db-*.dump`), as opposed to the ETL output `legacyPool` reads. For
+ * the tables the ETL never carried: the ink stock (`couleur`,
+ * `commande_couleur`) and the order pipeline (template steps,
+ * `parent_action_id`, `requires_attachment`).
+ */
+export function legacyRawPool(): Pool {
+  const connectionString = process.env.LEGACY_RAW_DATABASE_URL;
+  if (!connectionString) {
+    throw new Error(
+      "LEGACY_RAW_DATABASE_URL must be set to a restored raw legacy dump " +
+        "(see docs/production-data-import.md, step 1).",
+    );
+  }
+  return new Pool({ connectionString, max: 4 });
+}

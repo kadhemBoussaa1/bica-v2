@@ -47,6 +47,8 @@ model User {
   productionRuns     ProductionRun[]     @relation("ProductionRunRecordedBy")
   /// Ink drawn from stock for an order by this user — see InkUsage.
   inkUsagesRecorded  InkUsage[]          @relation("InkUsageRecordedBy")
+  /// Deliveries, counts and archive events on ink colours — see InkMovement.
+  inkMovements       InkMovement[]       @relation("InkMovementBy")
   rollAllocations    RollAllocation[]    @relation("RollAllocationBy")
   /// Reels this user scanned in on the warehouse floor — see PaperRoll.receivedAt.
   rollsReceived      PaperRoll[]         @relation("PaperRollReceivedBy")
@@ -411,7 +413,6 @@ model Machine {
   productionRuns ProductionRun[]
   /// Tickets naming this machine — see ShiftTask. Restrict there.
   shiftTasks     ShiftTask[]
-
   @@index([createdAt, id])
   @@index([active, name, id])
   @@index([type])
@@ -506,7 +507,6 @@ model Employee {
 
   /// Scans and PDFs filed on the record (Employees v3 "Documents").
   documents EmployeeDocument[]
-
   /// Legacy bigint primary key — see Client.legacyId.
   legacyId BigInt? @unique
 
@@ -2405,20 +2405,23 @@ enum InkUnit {
 }
 
 /// An ink colour in the catalogue, with its live stock balance. Rebuilt from
-/// the legacy `couleur` table (Spring Boot V22, "color stock") — which existed
-/// but held **zero rows**, so nothing is imported and `legacyId` is absent;
-/// see docs/legacy-migration.md "Step 7".
+/// the legacy `couleur` table (Spring Boot V22, "color stock"). It was empty
+/// in the July copy; the 24-Sep dump holds 79 rows, imported by
+/// `migrate/import-inks.ts` keyed on `legacyId` — see docs/legacy-migration.md
+/// "Step 7".
 ///
 /// Not the same thing as `OrderColour`: that is the print colour NAMED on an
 /// order (the legacy `produit` rows, "NOIR QUADRI"), a spec. This is the tin
 /// of ink on the shelf and how much is left in it.
 ///
 /// `stock` is the single live balance, moved in place — restocked, corrected
-/// after a count, and decremented by every `InkUsage`. The legacy design
-/// deliberately kept no movement ledger (the decision is recorded in its
-/// COLOR_STOCK_PLAN.md) and this keeps the same shape: the usage lines are
-/// the only history. Every write to it is an atomic `increment`/`decrement`
-/// or a conditional `updateMany`, never read-modify-write — see InkService.
+/// after a count, and decremented by every `InkUsage`. The legacy design kept
+/// no movement ledger; since the Ink stock v3 redesign (2026-09-28, by the
+/// user's decision) deliveries, counts and the opening balance are also
+/// written to `InkMovement`, beside the usage lines. `stock` stays the
+/// authority: the ledger records how it moved, it is never summed back into
+/// it. Every write to it is an atomic `increment`/`decrement` or a
+/// conditional `updateMany`, never read-modify-write — see InkService.
 model InkColour {
   id String @id @default(cuid())
 
@@ -2435,11 +2438,32 @@ model InkColour {
   /// Optional low-stock threshold; the list flags a colour at or under it.
   alertThreshold Float?
 
+  /// A swatch for recognising the tin at a glance, "#C8102E". Display only;
+  /// legacy colours have none.
+  hex String?
+
+  /// Where the balance stands against the threshold, as one sortable figure:
+  /// 0 when out (`stock <= 0`), 1 + stock/threshold when low (so (1, 2]),
+  /// 3 + stock/threshold when above it (3 + 1 with no threshold). The same
+  /// rule as the contract's `inkStockState`, which a Prisma `where` cannot
+  /// express because it compares two columns of the row.
+  ///
+  /// **Written by the database, never by the app**: the trigger
+  /// `ink_colour_stock_level` (migration `20260928120000_ink_stock_v3`)
+  /// recomputes it on every insert and every update of `stock` or
+  /// `alertThreshold`, so the conditional decrements in InkService keep it
+  /// right without knowing it exists.
+  stockLevel Float @default(0)
+
   /// Archive rather than delete once a usage line names it — see
   /// `InkService.remove`.
   active Boolean @default(true)
 
-  usages InkUsage[]
+  usages    InkUsage[]
+  movements InkMovement[]
+
+  /// Legacy bigint primary key — see Client.legacyId.
+  legacyId BigInt? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2449,6 +2473,63 @@ model InkColour {
   @@index([active, code, id])
   @@index([active, name, id])
   @@index([active, stock, id])
+  @@index([active, stockLevel, id])
+}
+
+/// What an `InkMovement` records. Ink used on an order is not here: that is
+/// an `InkUsage` line, which the colour's history merges with these.
+enum InkMovementKind {
+  /// The balance a colour started with — typed on create, or imported.
+  OPENING
+  /// A delivery: `delta` is the quantity received.
+  DELIVERY
+  /// A count replaced the balance: `delta` is the difference it made.
+  ADJUSTMENT
+  /// Archived or restored; `delta` is 0.
+  ARCHIVED
+  RESTORED
+}
+
+/// Why a count replaced the balance — the chips of the Adjust dialog.
+enum InkAdjustReason {
+  INVENTORY
+  BREAKAGE
+  ENTRY_ERROR
+  OTHER
+}
+
+/// One change to an ink colour's balance other than an order's usage,
+/// written in the same transaction as the balance it describes. Added with
+/// the Ink stock v3 redesign; there is no history before it (and none at all
+/// for legacy deliveries), so the colour's history starts at its OPENING row.
+model InkMovement {
+  id String @id @default(cuid())
+
+  colourId String
+  /// Restrict: a colour with history is archived, never deleted.
+  colour   InkColour @relation(fields: [colourId], references: [id], onDelete: Restrict)
+
+  kind InkMovementKind
+
+  /// Signed change to `stock`, in the colour's unit.
+  delta        Float
+  /// `stock` right after this movement, read back from the same write.
+  balanceAfter Float
+
+  /// ADJUSTMENT only.
+  reason     InkAdjustReason?
+  /// DELIVERY only, optional: the receipt number the ink came in on, as typed.
+  receiptRef String?
+
+  /// Who did it; SetNull so the history outlives the account.
+  byId String?
+  by   User?   @relation("InkMovementBy", fields: [byId], references: [id], onDelete: SetNull)
+
+  at DateTime @default(now())
+
+  /// The colour's history, newest first.
+  @@index([colourId, at, id])
+  @@index([byId])
 }
 
 /// Ink taken from stock for an order — legacy `commande_couleur`. There is no
@@ -2480,6 +2561,9 @@ model InkUsage {
   /// Who recorded it — the session, like ProductionRun.recordedBy.
   recordedById String?
   recordedBy   User?   @relation("InkUsageRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  /// Legacy `commande_couleur` id — see Client.legacyId.
+  legacyId BigInt? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

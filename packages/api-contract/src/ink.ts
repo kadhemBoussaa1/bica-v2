@@ -4,8 +4,10 @@ import { z } from "zod";
  * Ink stock — the colour catalogue and the ink drawn from it per order.
  *
  * Rebuilt from the legacy `couleur` / `commande_couleur` tables (Spring Boot
- * V22), which were designed but never filled: both were empty in the
- * production database. See docs/legacy-migration.md "Step 7".
+ * V22), empty in the July copy and imported from the 24-Sep dump. See
+ * docs/legacy-migration.md "Step 7". The v3 redesign ("Ink stock v3.dc.html")
+ * added a swatch, the adjust reason and receipt reference, and the movement
+ * history they are written to.
  */
 
 /** Units an ink colour is stocked in — the `InkUnit` enum in the schema. */
@@ -31,6 +33,16 @@ const optionalText = (max: number) =>
       const trimmed = value?.trim();
       return trimmed ? trimmed : undefined;
     });
+
+/** Why a count replaced the balance — the `InkAdjustReason` enum. */
+export const INK_ADJUST_REASONS = ["INVENTORY", "BREAKAGE", "ENTRY_ERROR", "OTHER"] as const;
+export type InkAdjustReason = (typeof INK_ADJUST_REASONS)[number];
+
+/** A swatch, "#C8102E". Display only. */
+export const inkHexSchema = z
+  .string()
+  .regex(/^#[0-9A-Fa-f]{6}$/, "Use a colour like #C8102E")
+  .transform((value) => value.toUpperCase());
 
 /** A stock level or threshold: zero is meaningful, negative is not. */
 const level = z.number().min(0, "Cannot be negative").max(1e9);
@@ -60,6 +72,8 @@ export const createInkColourInput = z.object({
    */
   stock: level.default(0),
   alertThreshold: level.optional(),
+  /** `null` clears it on update; omitted leaves it as it is. */
+  hex: inkHexSchema.nullable().optional(),
 });
 
 export const updateInkColourInput = createInkColourInput
@@ -77,12 +91,15 @@ export const setInkColourActiveInput = z.object({
 export const restockInkInput = z.object({
   id: z.string().min(1),
   quantity: movement,
+  /** The receipt it came in on, as typed — "26IBR-094". Optional. */
+  receiptRef: optionalText(60),
 });
 
 /** A correction after a physical count: replaces the balance. */
 export const adjustInkStockInput = z.object({
   id: z.string().min(1),
   stock: level,
+  reason: z.enum(INK_ADJUST_REASONS).default("INVENTORY"),
 });
 
 export const recordInkUsageInput = z.object({

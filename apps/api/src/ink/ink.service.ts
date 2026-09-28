@@ -12,6 +12,7 @@ import {
   type UpdateInkUsageInput,
 } from "@repo/api-contract";
 import type { Prisma } from "../generated/prisma/client.js";
+import type { InkAdjustReason, InkMovementKind } from "../generated/prisma/enums.js";
 import { runListQuery } from "../list/list-query";
 import { dayOrNow } from "../list/period";
 import { PrismaService } from "../prisma.service";
@@ -40,6 +41,11 @@ const USAGE_RETURN_SELECT = {
 } as const;
 
 const qty = new Intl.NumberFormat("en-US", { maximumFractionDigits: 3 });
+
+/** The window "consumption per month" is averaged over. */
+const CONSUMPTION_DAYS = 90;
+/** How many history rows the drawer shows, newest first. */
+const HISTORY_LIMIT = 60;
 
 /**
  * The ink catalogue and its stock balance — docs/legacy-migration.md "Step 7".
@@ -77,6 +83,151 @@ export class InkService {
     });
   }
 
+  /**
+   * The header tiles: every live colour, whatever the chips and search say —
+   * they describe the shelf, not the page. The level counts use the same
+   * `stockLevel` ranges as the list's facets.
+   */
+  async summary() {
+    const live = { active: true } satisfies Prisma.InkColourWhereInput;
+    const [units, low, out, outNames, noThreshold] = await this.prisma.$transaction([
+      this.prisma.inkColour.groupBy({
+        by: ["unit"],
+        where: live,
+        orderBy: { unit: "asc" },
+        _count: { _all: true },
+        _sum: { stock: true },
+      }),
+      this.prisma.inkColour.count({ where: { ...live, stockLevel: { gt: 0, lt: 3 } } }),
+      this.prisma.inkColour.count({ where: { ...live, stockLevel: 0 } }),
+      this.prisma.inkColour.findMany({
+        where: { ...live, stockLevel: 0 },
+        select: { code: true, name: true },
+        orderBy: [{ code: "asc" }, { id: "asc" }],
+        take: 4,
+      }),
+      this.prisma.inkColour.count({ where: { ...live, alertThreshold: null } }),
+    ]);
+    return {
+      live: units.reduce((sum, group) => sum + (group._count as { _all: number })._all, 0),
+      totals: units.map((group) => ({ unit: group.unit, stock: group._sum?.stock ?? 0 })),
+      low,
+      out,
+      outNames: outNames.map((colour) => colour.name ?? colour.code),
+      noThreshold,
+    };
+  }
+
+  /**
+   * The drawer: the colour, what it is used for, and its history — the
+   * ledger's movements merged with the usage lines, newest first.
+   *
+   * Each row carries the balance right after it. A movement stored its own
+   * (`balanceAfter`); a usage line's is worked back from the next known
+   * figure above it. History before a colour's OPENING row is not the
+   * balance's (an imported colour's legacy usages were already deducted
+   * from the balance it opened with), so those rows show none.
+   */
+  async detail(id: string) {
+    const since = new Date(Date.now() - CONSUMPTION_DAYS * 24 * 3600 * 1000);
+    const [colour, movements, usages, orders, recent] = await this.prisma.$transaction([
+      this.prisma.inkColour.findUnique({ where: { id }, select: INK_SELECT }),
+      this.prisma.inkMovement.findMany({
+        where: { colourId: id },
+        orderBy: [{ at: "desc" }, { id: "desc" }],
+        take: HISTORY_LIMIT,
+        select: {
+          id: true,
+          kind: true,
+          delta: true,
+          balanceAfter: true,
+          reason: true,
+          receiptRef: true,
+          at: true,
+          by: { select: { name: true } },
+        },
+      }),
+      this.prisma.inkUsage.findMany({
+        where: { colourId: id },
+        orderBy: [{ usedAt: "desc" }, { id: "desc" }],
+        take: HISTORY_LIMIT,
+        select: {
+          id: true,
+          quantity: true,
+          usedAt: true,
+          order: { select: { id: true, numero: true } },
+          recordedBy: { select: { name: true } },
+        },
+      }),
+      this.prisma.inkUsage.groupBy({
+        by: ["orderId"],
+        where: { colourId: id },
+        orderBy: { orderId: "asc" },
+      }),
+      this.prisma.inkUsage.aggregate({
+        where: { colourId: id, usedAt: { gte: since } },
+        _sum: { quantity: true },
+      }),
+    ]);
+    if (!colour) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Colour not found" });
+    }
+
+    type Row =
+      | { type: "movement"; at: Date; movement: (typeof movements)[number] }
+      | { type: "usage"; at: Date; usage: (typeof usages)[number] };
+    const merged: Row[] = [
+      ...movements.map((movement) => ({ type: "movement" as const, at: movement.at, movement })),
+      ...usages.map((usage) => ({ type: "usage" as const, at: usage.usedAt, usage })),
+    ]
+      .sort((a, b) => b.at.getTime() - a.at.getTime())
+      .slice(0, HISTORY_LIMIT);
+
+    let balance: number | null = colour.stock;
+    const history = merged.map((row) => {
+      if (row.type === "movement") {
+        const { movement } = row;
+        balance = movement.kind === "OPENING" ? null : movement.balanceAfter - movement.delta;
+        return {
+          id: movement.id,
+          kind: movement.kind,
+          at: movement.at,
+          delta: movement.delta,
+          after: movement.balanceAfter as number | null,
+          reason: movement.reason,
+          receiptRef: movement.receiptRef,
+          by: movement.by?.name ?? null,
+          order: null,
+        };
+      }
+      const { usage } = row;
+      const after = balance;
+      balance = balance === null ? null : balance + usage.quantity;
+      return {
+        id: usage.id,
+        kind: "USAGE" as const,
+        at: usage.usedAt,
+        delta: -usage.quantity,
+        after,
+        reason: null,
+        receiptRef: null,
+        by: usage.recordedBy?.name ?? null,
+        order: usage.order,
+      };
+    });
+
+    const perMonth = ((recent._sum.quantity ?? 0) / CONSUMPTION_DAYS) * 30;
+    return {
+      colour,
+      orderCount: orders.length,
+      /** Average over the last 90 days; null when nothing was drawn. */
+      perMonth: perMonth > 0 ? perMonth : null,
+      /** At that rate; null without a rate or without stock. */
+      weeksLeft: perMonth > 0 && colour.stock > 0 ? colour.stock / ((perMonth * 12) / 52) : null,
+      history,
+    };
+  }
+
   async byId(id: string) {
     const colour = await this.prisma.inkColour.findUnique({
       where: { id },
@@ -88,17 +239,23 @@ export class InkService {
     return colour;
   }
 
-  async create(input: CreateInkColourInput) {
+  /** The colour and its OPENING row, which starts its history. */
+  async create(actor: SessionUser, input: CreateInkColourInput) {
     await this.assertCodeFree(input.code);
-    return this.prisma.inkColour.create({
-      data: {
-        code: input.code,
-        name: input.name ?? null,
-        unit: input.unit,
-        stock: input.stock,
-        alertThreshold: input.alertThreshold ?? null,
-      },
-      select: RETURN_SELECT,
+    return this.prisma.$transaction(async (tx) => {
+      const colour = await tx.inkColour.create({
+        data: {
+          code: input.code,
+          name: input.name ?? null,
+          unit: input.unit,
+          stock: input.stock,
+          alertThreshold: input.alertThreshold ?? null,
+          hex: input.hex ?? null,
+        },
+        select: RETURN_SELECT,
+      });
+      await this.record(tx, actor, colour, { kind: "OPENING", delta: colour.stock });
+      return colour;
     });
   }
 
@@ -113,25 +270,31 @@ export class InkService {
         name: input.name ?? null,
         unit: input.unit,
         alertThreshold: input.alertThreshold ?? null,
+        // Clearable: null clears the swatch, omitted leaves it.
+        ...(input.hex !== undefined ? { hex: input.hex } : {}),
       },
       select: RETURN_SELECT,
     });
   }
 
-  async setActive(id: string, active: boolean) {
+  async setActive(actor: SessionUser, id: string, active: boolean) {
     await this.assertExists(id);
-    return this.prisma.inkColour.update({
-      where: { id },
-      data: { active },
-      select: RETURN_SELECT,
+    return this.prisma.$transaction(async (tx) => {
+      const colour = await tx.inkColour.update({
+        where: { id },
+        data: { active },
+        select: RETURN_SELECT,
+      });
+      await this.record(tx, actor, colour, { kind: active ? "RESTORED" : "ARCHIVED", delta: 0 });
+      return colour;
     });
   }
 
   /**
-   * Hard delete, refused once any usage line names the colour: the lines are
-   * the only movement history there is, so deleting their colour would erase
-   * what an order consumed. Archive instead — the legacy service made the
-   * same call, with a 400 rather than an FK error.
+   * Hard delete, refused once any usage line names the colour: deleting it
+   * would erase what an order consumed. Archive instead — the legacy service
+   * made the same call, with a 400 rather than an FK error. A never-used
+   * colour's own movements (its OPENING row, restocks) go with it.
    */
   async remove(id: string) {
     const colour = await this.prisma.inkColour.findUnique({
@@ -149,29 +312,61 @@ export class InkService {
           "Archive it instead, so that history keeps its colour.",
       });
     }
-    await this.prisma.inkColour.delete({ where: { id } });
+    await this.prisma.$transaction([
+      this.prisma.inkMovement.deleteMany({ where: { colourId: id } }),
+      this.prisma.inkColour.delete({ where: { id } }),
+    ]);
     return { id };
   }
 
   // ---- balance -------------------------------------------------------------
 
-  /** A delivery: the balance goes up by the quantity. Archived colours too — a late delivery is still ink on the shelf. */
-  async restock(input: RestockInkInput) {
+  /**
+   * A delivery: the balance goes up by the quantity. Archived colours too —
+   * a late delivery is still ink on the shelf. The ledger row takes the
+   * balance the increment returned, so it is exact under concurrent draws.
+   */
+  async restock(actor: SessionUser, input: RestockInkInput) {
     await this.assertExists(input.id);
-    return this.prisma.inkColour.update({
-      where: { id: input.id },
-      data: { stock: { increment: input.quantity } },
-      select: RETURN_SELECT,
+    return this.prisma.$transaction(async (tx) => {
+      const colour = await tx.inkColour.update({
+        where: { id: input.id },
+        data: { stock: { increment: input.quantity } },
+        select: RETURN_SELECT,
+      });
+      await this.record(tx, actor, colour, {
+        kind: "DELIVERY",
+        delta: input.quantity,
+        receiptRef: input.receiptRef ?? null,
+      });
+      return colour;
     });
   }
 
-  /** A count: the balance is replaced, whatever it was. */
-  async adjust(input: AdjustInkStockInput) {
-    await this.assertExists(input.id);
-    return this.prisma.inkColour.update({
-      where: { id: input.id },
-      data: { stock: input.stock },
-      select: RETURN_SELECT,
+  /**
+   * A count: the balance is replaced, whatever it was. The ledger needs the
+   * difference, so the row is locked (`FOR UPDATE`) before the old figure is
+   * read: a draw landing between the read and the write would otherwise
+   * make the recorded difference wrong, though not the balance.
+   */
+  async adjust(actor: SessionUser, input: AdjustInkStockInput) {
+    return this.prisma.$transaction(async (tx) => {
+      const [locked] = await tx.$queryRaw<{ stock: number }[]>`
+        SELECT "stock" FROM "InkColour" WHERE "id" = ${input.id} FOR UPDATE`;
+      if (!locked) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Colour not found" });
+      }
+      const colour = await tx.inkColour.update({
+        where: { id: input.id },
+        data: { stock: input.stock },
+        select: RETURN_SELECT,
+      });
+      await this.record(tx, actor, colour, {
+        kind: "ADJUSTMENT",
+        delta: colour.stock - locked.stock,
+        reason: input.reason,
+      });
+      return colour;
     });
   }
 
@@ -287,6 +482,32 @@ export class InkService {
   }
 
   // ---- helpers -------------------------------------------------------------
+
+  /** One ledger row, in the caller's transaction, at the balance it left. */
+  private async record(
+    tx: Prisma.TransactionClient,
+    actor: SessionUser,
+    colour: { id: string; stock: number },
+    movement: {
+      kind: InkMovementKind;
+      delta: number;
+      reason?: InkAdjustReason;
+      receiptRef?: string | null;
+    },
+  ) {
+    await tx.inkMovement.create({
+      data: {
+        colourId: colour.id,
+        kind: movement.kind,
+        delta: movement.delta,
+        balanceAfter: colour.stock,
+        reason: movement.reason ?? null,
+        receiptRef: movement.receiptRef ?? null,
+        byId: actor.id,
+      },
+      select: { id: true },
+    });
+  }
 
   /**
    * The conditional decrement: matches the row only while the balance covers
