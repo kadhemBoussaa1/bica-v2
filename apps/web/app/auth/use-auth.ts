@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { forgetThisDevice } from "../pwa/use-push";
 import { useTRPC } from "../trpc/client";
 import { signIn, signOut } from "./client";
 
@@ -48,6 +49,10 @@ export function useSignIn() {
  * Signs out, then clears every cached query. Without the reset, React Query
  * would keep serving the previous user's data from cache after the session
  * cookie is gone.
+ *
+ * First, this browser's push subscription and icon badge go, so a shared
+ * phone stops notifying for the account that just left. Best effort: the
+ * server's copy is deleted with the session regardless (docs/pwa-plan.md).
  */
 export function useSignOut() {
   const router = useRouter();
@@ -55,6 +60,7 @@ export function useSignOut() {
 
   return useMutation({
     mutationFn: async () => {
+      await forgetThisDevice();
       await signOut();
     },
     onSuccess: async () => {

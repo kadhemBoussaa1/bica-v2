@@ -17,5 +17,20 @@
   "breadcrumb": "Ruta de navegación",
   "new": "Nuevo",
   "edit": "Editar",
-  "detail": "Detalle"
+  "detail": "Detalle",
+  "offline": {
+    "title": "Sin conexión",
+    "body": "Bicapack necesita conexión para cargar esta página. Compruebe el Wi-Fi o los datos móviles e inténtelo de nuevo.",
+    "retry": "Reintentar",
+    "banner": "Sin conexión: los cambios no se podrán guardar hasta que vuelva la conexión."
+  },
+  "install": {
+    "row": "Instalar la app",
+    "title": "Añadir Bicapack a la pantalla de inicio",
+    "step1": "Toque <key>Compartir</key> en la barra del navegador.",
+    "step2": "Elija <key>Añadir a pantalla de inicio</key>.",
+    "step3": "Toque <key>Añadir</key> y abra Bicapack desde la pantalla de inicio.",
+    "note": "La app instalada tiene su propia sesión: inicie sesión de nuevo la primera vez que la abra. En este dispositivo, las notificaciones solo funcionan en la app instalada.",
+    "done": "Entendido"
+  }
 }

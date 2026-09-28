@@ -27,6 +27,34 @@ const nextConfig = {
    * start` still works on such a build, with a warning.
    */
   output: "standalone",
+  experimental: {
+    /**
+     * Detects a dropped connection from failed navigations and prefetches as
+     * well as the browser's `offline` event, retries them once it is back,
+     * and feeds `useOffline()` — the offline banner in the top bar
+     * (app/pwa/offline-banner.tsx). Data goes through tRPC and React Query,
+     * which keep their own retry policy.
+     */
+    useOffline: true,
+  },
+  /**
+   * The service worker (public/sw.js), per Next's PWA guide. Never cached,
+   * so a fixed worker reaches every installed app on its next launch; the
+   * registration also asks for `updateViaCache: "none"`. The CSP applies
+   * to the worker's own context: it fetches only this origin.
+   */
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+    ];
+  },
   /**
    * The settings module (2026-09-23) took over /users and /activity. The old
    * URLs live on in bookmarks and browser history, so they forward — query

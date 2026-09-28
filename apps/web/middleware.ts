@@ -57,12 +57,24 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except Next internals, the favicon, and static assets.
+  // Everything except Next internals, the favicon, static assets, and the
+  // installed app's plumbing (docs/pwa-plan.md). None of the exempt routes
+  // reads data:
   //
-  // `manifest.webmanifest` is exempt because the browser fetches it WITHOUT
-  // credentials: left in, it redirects to /login and the app cannot be
-  // installed on the warehouse handheld. It names no data — see app/manifest.ts.
+  // - `manifest.webmanifest`: the browser fetches it WITHOUT credentials.
+  //   Left in, it redirects to /login and the app cannot be installed on the
+  //   warehouse handheld. It names no data — see app/manifest.ts.
+  // - `sw.js`: signed out, a redirect instead of the script fails the
+  //   service worker's registration, which starts on /login.
+  // - `offline`: the worker caches it on install, signed out; gated, it
+  //   would cache /login as the offline page.
+  // - `push/describe`: words a push for the service worker from the kind
+  //   and params it is given. It must answer a device whose session cookie
+  //   has lapsed, or every push there reads "Bicapack".
+  //
+  // The lookahead is anchored right after the leading `/`, and the three
+  // routes end in `$`, so `/offlinex` and `/foo/sw.js` stay gated.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.png$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw\\.js$|offline$|push/describe$|.*\\.png$).*)",
   ],
 };

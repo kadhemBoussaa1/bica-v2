@@ -1,7 +1,8 @@
 import type { inferRouterOutputs } from "@trpc/server";
 // Type-only import: erased at compile time, so no server code reaches the bundle.
 import type { AppRouter } from "api/src/trpc/trpc.router";
-import { canAccess, weekStartOf, type Role } from "@repo/api-contract";
+import type { NotificationPayload } from "@repo/api-contract";
+import type { Locale } from "../../i18n/config";
 import { numberFormat } from "../../i18n/formats";
 import { formatShiftDate, formatWeekRange, formatWeekday } from "../shifts/week";
 
@@ -28,18 +29,24 @@ function iso(text: string): string {
 
 /**
  * What a row says, in the reader's language, from the frozen params: a
- * title and an optional detail line. The toast uses the same two strings,
- * so the popup and the bell never word one event differently.
+ * title and an optional detail line. The toast and a phone push
+ * (app/push/describe/route.ts) use the same two strings, so the bell, the
+ * popup and the lock screen never word one event differently.
+ *
+ * Needs only the kind and params, so the bell passes its row and the push
+ * route the payload it was sent. `locale` is for that route, which has no
+ * `<html lang>` to read weekday names from.
  */
 export function describeNotification(
-  item: NotificationItem,
+  item: NotificationPayload,
   t: Translate,
   enums: Translate,
+  locale?: Locale,
 ): { title: string; detail: string | null } {
   const shiftLine = (p: { shiftType: string; shiftDate: string }) =>
     t("shiftOn", {
       shift: enums(`shiftType.${p.shiftType}`),
-      day: formatWeekday(p.shiftDate),
+      day: formatWeekday(p.shiftDate, locale),
       date: formatShiftDate(p.shiftDate),
     });
   const join = (...parts: (string | null)[]) => parts.filter(Boolean).join(" · ");
@@ -94,30 +101,5 @@ export function describeNotification(
           item.params.orderNumero && iso(item.params.orderNumero),
         ),
       };
-  }
-}
-
-/**
- * Where a row opens. Orders go to their page (a 404 there, if the order was
- * deleted since, is that page's own not-found), and so does a production
- * run, which lists under its order. A week or a ticket opens on
- * its week: the planner for ADMIN and above when the row is about the
- * planning, "My shifts" for the ticket's own person and for every worker.
- */
-export function notificationHref(item: NotificationItem, role: Role): string {
-  switch (item.kind) {
-    case "ORDER_CREATED":
-    case "QUOTE_CREATED":
-    case "ORDER_IN_PRODUCTION":
-    case "PRODUCTION_RECORDED":
-      return `/orders/${encodeURIComponent(item.entityId)}`;
-    case "SHIFT_WEEK_PUBLISHED":
-      return canAccess(role, "ADMIN")
-        ? `/shifts?week=${item.params.weekStart}`
-        : `/shifts/me?week=${item.params.weekStart}`;
-    case "TASK_DONE":
-      return `/shifts?week=${weekStartOf(item.params.shiftDate)}`;
-    default:
-      return `/shifts/me?week=${weekStartOf(item.params.shiftDate)}`;
   }
 }

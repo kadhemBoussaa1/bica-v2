@@ -47,6 +47,12 @@ PUBLIC_URL="$(env_value PUBLIC_URL)"
 export PUBLIC_URL="${PUBLIC_URL:-$_scheme://$DOMAIN}"
 unset _scheme
 
+# The web image's deployment id when it is built here (`deploy.sh --build`):
+# installed apps reload once after a deploy instead of breaking on a
+# navigation. Empty outside a git checkout, which only drops that reload.
+GIT_SHA="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
+export GIT_SHA
+
 compose() {
   docker compose --env-file "$ENV_FILE" -f "$ROOT/docker/docker-compose.prod.yml" "$@"
 }

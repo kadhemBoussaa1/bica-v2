@@ -31,5 +31,16 @@
     "PRODUCER": "{count} pcs",
     "QUALITY_CONTROL": "{count} pcs",
     "PACKAGING": "{count} colis"
+  },
+  "push": {
+    "row": "Notifications sur cet appareil",
+    "on": "Activées : vous êtes prévenu même l'app fermée.",
+    "off": "Désactivées : vous ne les voyez que l'app ouverte.",
+    "turnOn": "Activer",
+    "turnOff": "Désactiver",
+    "denied": "Bloquées dans les réglages du navigateur.",
+    "installFirst": "Sur iPhone, ajoutez d'abord l'app à l'écran d'accueil.",
+    "installHow": "Comment",
+    "failed": "Échec. Réessayez."
   }
 }

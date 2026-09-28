@@ -82,9 +82,13 @@ jobs:
           tags: |
             ${{ steps.name.outputs.prefix }}-${{ matrix.image }}:main
             ${{ steps.name.outputs.prefix }}-${{ matrix.image }}:main-${{ env.SHA }}
+          # NEXT_DEPLOYMENT_ID: env.SHA, the commit built, not github.sha
+          # (see env above). Every deploy changes it, API-only ones too, and
+          # open apps then reload once on their next navigation.
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_URL }}
             NEXT_PUBLIC_APP_URL=${{ vars.PUBLIC_URL }}
+            NEXT_DEPLOYMENT_ID=${{ env.SHA }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,scope=${{ matrix.image }},mode=max
 

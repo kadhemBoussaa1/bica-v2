@@ -83,6 +83,12 @@ services:
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:?AWS_S3_BUCKET is required}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID is required}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY is required}
+      # Web Push. `:-`, not `:?` like the lines above, on purpose: push is
+      # optional (PushService boots with it off when these are empty), so a
+      # missing key must not stop the stack.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       # Kept out of the environment on purpose: AUDIT_PURGE_DAYS and
       # NOTIFICATION_PURGE_DAYS have no default, and both purges are run by
       # hand (docs/deployment.md).
@@ -107,6 +113,9 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${PUBLIC_URL:?run through deploy/compose.sh, which sets PUBLIC_URL}
         NEXT_PUBLIC_APP_URL: ${PUBLIC_URL:?run through deploy/compose.sh, which sets PUBLIC_URL}
+        # The checkout's commit, from deploy/lib.sh (`deploy.sh --build`).
+        # Optional on purpose: empty builds without skew protection.
+        NEXT_DEPLOYMENT_ID: ${GIT_SHA:-}
     restart: unless-stopped
     healthcheck:
       # /login renders without a session: proves the server, the build and

@@ -17,5 +17,20 @@
   "breadcrumb": "Fil d'Ariane",
   "new": "Nouveau",
   "edit": "Modifier",
-  "detail": "Détail"
+  "detail": "Détail",
+  "offline": {
+    "title": "Vous êtes hors ligne",
+    "body": "Bicapack a besoin d'une connexion pour charger cette page. Vérifiez le Wi-Fi ou les données mobiles, puis réessayez.",
+    "retry": "Réessayer",
+    "banner": "Vous êtes hors ligne — les modifications ne pourront pas être enregistrées avant le retour de la connexion."
+  },
+  "install": {
+    "row": "Installer l'app",
+    "title": "Ajouter Bicapack à l'écran d'accueil",
+    "step1": "Touchez <key>Partager</key> dans la barre du navigateur.",
+    "step2": "Choisissez <key>Sur l'écran d'accueil</key>.",
+    "step3": "Touchez <key>Ajouter</key>, puis ouvrez Bicapack depuis l'écran d'accueil.",
+    "note": "L'app installée a sa propre session : reconnectez-vous la première fois que vous l'ouvrez. Sur cet appareil, les notifications ne fonctionnent que dans l'app installée.",
+    "done": "Compris"
+  }
 }

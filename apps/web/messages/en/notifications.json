@@ -31,5 +31,16 @@
     "PRODUCER": "{count} pcs",
     "QUALITY_CONTROL": "{count} pcs",
     "PACKAGING": "{count} {n, plural, one {parcel} other {parcels}}"
+  },
+  "push": {
+    "row": "Notifications on this device",
+    "on": "On — you're notified even with the app closed.",
+    "off": "Off — you only see them while the app is open.",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "denied": "Blocked in the browser's settings.",
+    "installFirst": "On iPhone, add the app to your Home Screen first.",
+    "installHow": "How",
+    "failed": "That didn't work. Try again."
   }
 }

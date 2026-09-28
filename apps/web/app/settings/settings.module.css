@@ -14,7 +14,7 @@
   container: settings / inline-size;
   /* The module fills what the top bar leaves, edge to edge: the block is the
      screen here, not a card on a page. Nothing outside it scrolls. */
-  height: calc(100dvh - var(--bp-topbar-h));
+  height: calc(100dvh - var(--bp-topbar-h) - var(--bp-safe-top));
   display: flex;
 }
 

@@ -87,6 +87,8 @@ model User {
   /// ones their actions caused (SetNull: the row outlives its actor).
   notifications      Notification[] @relation("NotificationRecipient")
   notificationsActed Notification[] @relation("NotificationActor")
+  /// The browsers this user turned phone notifications on in — docs/pwa-plan.md.
+  pushSubscriptions  PushSubscription[]
 
   @@index([role, id])
   /// Foreign key: Postgres does not index one on its own, and deleting a user
@@ -121,6 +123,10 @@ model Session {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The push subscriptions made in this session: signing out deletes the
+  /// session, and them with it (docs/pwa-plan.md).
+  pushSubscriptions PushSubscription[]
 
   @@index([userId])
 }
@@ -3168,4 +3174,26 @@ model Notification {
   @@index([createdAt])
   /// Foreign key: Postgres does not index one on its own.
   @@index([actorId])
+}
+
+/// One browser's Web Push subscription — docs/pwa-plan.md, phase 2. The
+/// push carries a signal (`{ id, kind, params, url }`) and the Notification
+/// row stays the truth, as with the SSE stream.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  /// One row per browser install; re-subscribing on a shared device rebinds it.
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Sign-out deletes the session, and with it this row: a shared phone never
+  /// receives the previous user's pushes, even if the browser's cleanup fails.
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
 }

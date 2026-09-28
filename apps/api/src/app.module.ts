@@ -11,6 +11,7 @@ import { InventoryService } from "./inventory/inventory.service";
 import { InvoiceService } from "./invoice/invoice.service";
 import { MachineService } from "./machine/machine.service";
 import { NotificationService } from "./notification/notification.service";
+import { PushService } from "./notification/push.service";
 import { OrderService } from "./order/order.service";
 import { PdfService } from "./pdf/pdf.service";
 import { TemplateService } from "./template/template.service";
@@ -54,6 +55,7 @@ import { UserService } from "./user/user.service";
     ShiftService,
     DashboardService,
     NotificationService,
+    PushService,
     SearchService,
     TrpcRouter,
   ],

@@ -301,9 +301,10 @@
    against this dock rather than against the viewport. */
 .launcherDock {
   position: fixed;
-  /* Logical, so Arabic puts the whole dock bottom-LEFT without a second rule. */
-  inset-inline-end: var(--bp-space-5);
-  inset-block-end: var(--bp-space-5);
+  /* Logical, so Arabic puts the whole dock bottom-LEFT without a second rule.
+     Clear of the home indicator and a landscape notch (tokens.css). */
+  inset-inline-end: calc(var(--bp-space-5) + var(--bp-safe-inline-end));
+  inset-block-end: calc(var(--bp-space-5) + var(--bp-safe-bottom));
   z-index: 35;
   display: grid;
   justify-items: center;
@@ -409,12 +410,14 @@
 
 .panel {
   position: absolute;
-  inset-inline-end: var(--bp-space-5);
+  inset-inline-end: calc(var(--bp-space-5) + var(--bp-safe-inline-end));
   /* Clear of the dock: button, its gap, the dismiss chip, and one more gap. */
-  inset-block-end: calc(52px + 22px + 2 * var(--bp-space-2) + var(--bp-space-5));
+  inset-block-end: calc(
+    52px + 22px + 2 * var(--bp-space-2) + var(--bp-space-5) + var(--bp-safe-bottom)
+  );
   pointer-events: auto;
   width: min(420px, calc(100vw - 2 * var(--bp-space-5)));
-  height: min(620px, calc(100vh - 190px));
+  height: min(620px, calc(100vh - 190px - var(--bp-safe-top) - var(--bp-safe-bottom)));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -776,14 +779,17 @@
   }
 
   .panel {
-    inset-inline: var(--bp-space-3);
-    inset-block-end: calc(52px + 22px + 2 * var(--bp-space-2) + var(--bp-space-4));
+    inset-inline-start: calc(var(--bp-space-3) + var(--bp-safe-inline-start));
+    inset-inline-end: calc(var(--bp-space-3) + var(--bp-safe-inline-end));
+    inset-block-end: calc(
+      52px + 22px + 2 * var(--bp-space-2) + var(--bp-space-4) + var(--bp-safe-bottom)
+    );
     width: auto;
-    height: min(560px, calc(100vh - 170px));
+    height: min(560px, calc(100vh - 170px - var(--bp-safe-top) - var(--bp-safe-bottom)));
   }
 
   .launcherDock {
-    inset-inline-end: var(--bp-space-4);
-    inset-block-end: var(--bp-space-4);
+    inset-inline-end: calc(var(--bp-space-4) + var(--bp-safe-inline-end));
+    inset-block-end: calc(var(--bp-space-4) + var(--bp-safe-bottom));
   }
 }

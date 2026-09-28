@@ -65,7 +65,9 @@ async function bootstrap() {
    * context. `user` is Better Auth's own row; the `as` names the columns
    * the admin plugin adds, which its types do not carry (the documented
    * escape, with `as Role` at the callers). `impersonatedBy` is set by the
-   * admin plugin while a higher-ranked user impersonates.
+   * admin plugin while a higher-ranked user impersonates. `sessionId` is the
+   * Session row's id, which a push subscription is bound to (it cascades on
+   * sign-out; a refresh keeps the id).
    */
   const readSession = async (req: Request) => {
     const session = await auth.api.getSession({
@@ -77,7 +79,8 @@ async function bootstrap() {
     const impersonatedBy =
       (session?.session as { impersonatedBy?: string | null } | undefined)?.impersonatedBy ??
       null;
-    return { user, impersonatedBy };
+    const sessionId = session?.session.id ?? null;
+    return { user, impersonatedBy, sessionId };
   };
 
   const requireAdmin = async (
@@ -263,7 +266,7 @@ async function bootstrap() {
     createExpressMiddleware({
       router: trpcRouter.appRouter,
       createContext: async ({ req, res }) => {
-        const { user: raw, impersonatedBy } = await readSession(req);
+        const { user: raw, impersonatedBy, sessionId } = await readSession(req);
 
         // A banned user is treated as signed out.
         const user: SessionUser | null =
@@ -277,7 +280,7 @@ async function bootstrap() {
               }
             : null;
 
-        return { prisma, user, req, res };
+        return { prisma, user, sessionId: user ? sessionId : null, req, res };
       },
     }),
   );

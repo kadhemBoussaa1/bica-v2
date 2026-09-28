@@ -123,6 +123,8 @@ import {
   myWeekInput,
   listNotificationsInput,
   markNotificationsReadInput,
+  pushSubscriptionInput,
+  pushUnsubscribeInput,
   globalSearchInput,
 } from "@repo/api-contract";
 import { candidatesInput } from "../allocation/allocation.list";
@@ -144,6 +146,7 @@ import { InvoiceService } from "../invoice/invoice.service";
 import { listMachinesInput } from "../machine/machine.list";
 import { MachineService } from "../machine/machine.service";
 import { NotificationService } from "../notification/notification.service";
+import { PushService } from "../notification/push.service";
 import { listOrdersInput } from "../order/order.list";
 import { OrderService } from "../order/order.service";
 import {
@@ -221,6 +224,7 @@ export class TrpcRouter {
     private readonly shiftService: ShiftService,
     private readonly dashboardService: DashboardService,
     private readonly notificationService: NotificationService,
+    private readonly pushService: PushService,
     private readonly searchService: SearchService,
   ) {}
 
@@ -418,6 +422,31 @@ export class TrpcRouter {
         .meta({ audit: false })
         .input(markNotificationsReadInput)
         .mutation(({ ctx, input }) => this.notificationService.markRead(ctx.user, input)),
+    }),
+
+    /**
+     * Phone notifications with the app closed — docs/pwa-plan.md, phase 2.
+     *
+     * Every role, like the bell, and out of the activity trace like it: the
+     * toggle is a device preference, and `subscribe` also runs on every
+     * page load to rebind a device to the current session. The sending is
+     * `PushService.send`, from the notification outbox, not a procedure.
+     */
+    push: router({
+      /** The VAPID public key, or null while push is off (the toggle hides). */
+      config: protectedProcedure
+        .meta({ audit: false })
+        .query(() => ({ publicKey: this.pushService.publicKey })),
+
+      subscribe: protectedProcedure
+        .meta({ audit: false })
+        .input(pushSubscriptionInput)
+        .mutation(({ ctx, input }) => this.pushService.subscribe(ctx.user, ctx.sessionId, input)),
+
+      unsubscribe: protectedProcedure
+        .meta({ audit: false })
+        .input(pushUnsubscribeInput)
+        .mutation(({ ctx, input }) => this.pushService.unsubscribe(ctx.user, input)),
     }),
 
     /**

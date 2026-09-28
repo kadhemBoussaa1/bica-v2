@@ -74,6 +74,14 @@ ARG NEXT_PUBLIC_APP_URL
 RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ -z "$NEXT_PUBLIC_APP_URL" ]; then \
       echo "NEXT_PUBLIC_API_URL and NEXT_PUBLIC_APP_URL are required build args" >&2; exit 1; \
     fi
+# The commit being built. `next build` reads it as the deployment id, so an
+# installed app left open across a deploy does a full reload on its next
+# navigation instead of asking for chunks that are gone (docs/pwa-plan.md
+# step 8). Optional: empty means no skew protection, not a failed build.
+# Needed here only — the standalone server carries the config it was built
+# with, so runner-web sets nothing.
+ARG NEXT_DEPLOYMENT_ID
+ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID}
 RUN --mount=type=cache,id=turbo-web,target=/app/.turbo/cache \
     --mount=type=cache,id=next-cache,target=/app/apps/web/.next/cache \
     pnpm turbo run build --filter=web

@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCurrentUser } from "../auth/use-auth";
+import { InstallDialog } from "../pwa/install-dialog";
+import { InstallIcon } from "../pwa/pwa-icons";
+import { useInstall } from "../pwa/use-install";
 import { useTRPC } from "../trpc/client";
 import { NAV_SECTIONS, canSee, isActive, type NavItem } from "./nav-items";
 import { ChevronIcon, CloseIcon, NAV_ICONS } from "./nav-icons";
@@ -71,8 +74,43 @@ function NavRow({
 }
 
 /**
+ * "Install app", at the foot of the rail — docs/pwa-plan.md step 6. The
+ * rail is the phone's drawer too, so every role sees it. Chrome's own
+ * dialog where it offers one (Android, desktop); the "Add to Home Screen"
+ * steps on iOS, which has none; nothing once installed, or in a browser
+ * that cannot install.
+ */
+function InstallRow() {
+  const shell = useTranslations("shell");
+  const { canPrompt, isIos, isStandalone, prompt } = useInstall();
+  const [steps, setSteps] = useState(false);
+  if (isStandalone || !(canPrompt || isIos)) return null;
+
+  const label = shell("install.row");
+  return (
+    <div className={styles.foot}>
+      <button
+        type="button"
+        className={cx(styles.row, styles.rowButton)}
+        // iOS first: its browsers never offer Chrome's prompt, so the steps
+        // are the only way there, whatever else the page has heard.
+        onClick={() => (isIos ? setSteps(true) : void prompt())}
+        // In rail mode the label is hidden, so the title is the tooltip.
+        title={label}
+      >
+        <span className={styles.icon}>
+          <InstallIcon />
+        </span>
+        <span className={styles.label}>{label}</span>
+      </button>
+      <InstallDialog open={steps} onClose={() => setSteps(false)} />
+    </div>
+  );
+}
+
+/**
  * The app shell's navigation rail: brand, the modules grouped by who works
- * them, and the collapse toggle at its foot. Identity and sign-out live in
+ * them, the install row, and the collapse toggle at its foot. Identity and sign-out live in
  * the top bar (see top-bar.tsx), so the rail is navigation and nothing else.
  *
  * Renders nothing without a session, which is what lets it sit in the root
@@ -207,6 +245,8 @@ export function Sidebar() {
             </div>
           ))}
         </nav>
+
+        <InstallRow />
 
         <button
           type="button"

@@ -21,6 +21,8 @@ export interface TrpcContext {
   prisma: PrismaService;
   /** Null for anonymous requests. */
   user: SessionUser | null;
+  /** The Better Auth Session row behind `user`; null with it. Push subscriptions bind to it. */
+  sessionId: string | null;
   req: CreateExpressContextOptions["req"];
   res: CreateExpressContextOptions["res"];
 }

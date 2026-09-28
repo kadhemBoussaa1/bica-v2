@@ -177,9 +177,15 @@ a {
   border: 0;
 }
 
+/*
+ * Each offset adds the landscape notch's inset (--bp-safe-inline-*, zero on
+ * a desktop): the sidebar widens by the same amount, and the end edge keeps
+ * the page off a notch on the other side.
+ */
 .shell {
   min-height: 100dvh;
-  padding-inline-start: var(--bp-sidebar-w);
+  padding-inline-start: calc(var(--bp-sidebar-w) + var(--bp-safe-inline-start));
+  padding-inline-end: var(--bp-safe-inline-end);
   /* Must match the sidebar's own width transition (sidebar.module.css). */
   transition: padding-inline-start 160ms ease;
 }
@@ -192,19 +198,19 @@ a {
    durations and easings must stay identical or the rail and the content edge
    visibly drift apart mid-collapse. */
 html.sidebar-collapsed .shell {
-  padding-inline-start: var(--bp-sidebar-w-rail);
+  padding-inline-start: calc(var(--bp-sidebar-w-rail) + var(--bp-safe-inline-start));
 }
 
 /* Signed out (login page): no sidebar is rendered, so claim the full width. */
 html.sidebar-hidden .shell {
-  padding-inline-start: 0;
+  padding-inline-start: var(--bp-safe-inline-start);
 }
 
 @media (max-width: 900px) {
   /* The sidebar becomes an overlay drawer and reserves no space. */
   .shell,
   html.sidebar-collapsed .shell {
-    padding-inline-start: 0;
+    padding-inline-start: var(--bp-safe-inline-start);
   }
 }
 

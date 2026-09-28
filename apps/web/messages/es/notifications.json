@@ -31,5 +31,16 @@
     "PRODUCER": "{count} uds.",
     "QUALITY_CONTROL": "{count} uds.",
     "PACKAGING": "{count} {n, plural, one {bulto} other {bultos}}"
+  },
+  "push": {
+    "row": "Notificaciones en este dispositivo",
+    "on": "Activadas: le avisamos aunque la app esté cerrada.",
+    "off": "Desactivadas: solo las ve con la app abierta.",
+    "turnOn": "Activar",
+    "turnOff": "Desactivar",
+    "denied": "Bloqueadas en los ajustes del navegador.",
+    "installFirst": "En iPhone, añada primero la app a la pantalla de inicio.",
+    "installHow": "Cómo",
+    "failed": "No se pudo. Inténtelo de nuevo."
   }
 }

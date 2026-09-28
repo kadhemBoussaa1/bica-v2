@@ -15,6 +15,7 @@ import {
 import type { Prisma } from "../generated/prisma/client.js";
 import { PrismaService } from "../prisma.service";
 import type { SessionUser } from "../trpc/trpc";
+import { PushService } from "./push.service";
 
 type Db = Prisma.TransactionClient;
 
@@ -37,8 +38,8 @@ const HEARTBEAT_MS = 25_000;
  */
 const STREAM_LIFETIME_MS = 15 * 60_000;
 
-/** A written row the stream has not been told about yet. */
-interface PendingPush {
+/** A written row the stream (and Web Push) has not been told about yet. */
+export interface PendingPush {
   id: string;
   userId: string;
   kind: NotificationKind;
@@ -95,7 +96,10 @@ interface EmitInput {
 export class NotificationService implements BeforeApplicationShutdown {
   private readonly streams = new Map<string, Set<Response>>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pushService: PushService,
+  ) {}
 
   /**
    * Ends every open stream before Nest closes the HTTP server.
@@ -116,8 +120,19 @@ export class NotificationService implements BeforeApplicationShutdown {
 
   // ---- emission -----------------------------------------------------------
 
+  /**
+   * Delivery, once the transaction has committed: the open streams, then
+   * Web Push for the personal kinds (docs/pwa-plan.md). The push is not
+   * awaited — a slow push service must not delay the business response —
+   * and `send` never rejects; the catch is the backstop.
+   */
   outbox(): NotificationOutbox {
-    return new NotificationOutbox((rows) => this.push(rows));
+    return new NotificationOutbox((rows) => {
+      this.push(rows);
+      this.pushService
+        .send(rows)
+        .catch((cause: unknown) => console.error("[push] delivery failed", cause));
+    });
   }
 
   /**

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguagePicker } from "../../i18n/language-picker";
 import { useCurrentUser, useSignOut } from "../auth/use-auth";
+import { OfflineBanner } from "../pwa/offline-banner";
 import { GlobalSearch } from "./global-search";
 import { NAV_SECTIONS, activeChild, isActive } from "./nav-items";
 import { initials } from "./initials";
@@ -110,7 +111,7 @@ export function TopBar() {
       <div className={styles.account}>
         {/* Every role's bell; also where this tab's notification stream
             lives, since the top bar is on every signed-in page. */}
-        <NotificationsBell role={user.role} />
+        <NotificationsBell role={user.role} userId={user.id} />
 
         <div className={styles.accountChip}>
           <span className={styles.avatar} aria-hidden="true">
@@ -141,6 +142,9 @@ export function TopBar() {
           </span>
         </button>
       </div>
+
+      {/* Hangs under the bar while the connection is down. */}
+      <OfflineBanner />
     </header>
   );
 }

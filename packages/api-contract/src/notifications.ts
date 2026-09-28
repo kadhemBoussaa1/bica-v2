@@ -2,7 +2,7 @@ import { z } from "zod";
 import { PAGE_SIZES } from "./list.js";
 import { WORKSHOP_STAGES } from "./production.js";
 import { canAccess, type Role } from "./roles.js";
-import { SHIFT_TASK_TYPES, SHIFT_TYPES } from "./shifts.js";
+import { SHIFT_TASK_TYPES, SHIFT_TYPES, weekStartOf } from "./shifts.js";
 
 /**
  * In-app notifications — docs/notifications-plan.md §3.
@@ -68,6 +68,23 @@ export const TOAST_NOTIFICATION_KINDS: readonly NotificationKind[] = [
 
 export function isToastNotification(kind: NotificationKind): boolean {
   return TOAST_NOTIFICATION_KINDS.includes(kind);
+}
+
+/**
+ * The kinds that also reach a phone as a system notification when the app
+ * is closed (docs/pwa-plan.md, phase 2). The toast set today, as its own
+ * constant so the two can diverge: the admins' feed stays in the bell.
+ */
+export const PUSH_NOTIFICATION_KINDS: readonly NotificationKind[] = [
+  "ORDER_IN_PRODUCTION",
+  "SHIFT_WEEK_PUBLISHED",
+  "TASK_ASSIGNED",
+  "TASK_REASSIGNED_AWAY",
+  "TASK_REOPENED",
+];
+
+export function isPushNotification(kind: NotificationKind): boolean {
+  return PUSH_NOTIFICATION_KINDS.includes(kind);
 }
 
 /** The badge shows at most this, then "99+" (plan decision 17). */
@@ -143,6 +160,35 @@ export const notificationPayload = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("PRODUCTION_RECORDED"), params: productionRecordedParams }),
 ]);
 export type NotificationPayload = z.infer<typeof notificationPayload>;
+
+/**
+ * Where a row opens — shared so the bell and a phone push (the API builds
+ * the push's URL) always agree. Orders go to their page (a 404 there, if
+ * the order was deleted since, is that page's own not-found), and so does
+ * a production run, which lists under its order. A week or a ticket opens
+ * on its week: the planner for ADMIN and above when the row is about the
+ * planning, "My shifts" for the ticket's own person and for every worker.
+ */
+export function notificationHref(
+  item: NotificationPayload & { entityId: string },
+  role: Role,
+): string {
+  switch (item.kind) {
+    case "ORDER_CREATED":
+    case "QUOTE_CREATED":
+    case "ORDER_IN_PRODUCTION":
+    case "PRODUCTION_RECORDED":
+      return `/orders/${encodeURIComponent(item.entityId)}`;
+    case "SHIFT_WEEK_PUBLISHED":
+      return canAccess(role, "ADMIN")
+        ? `/shifts?week=${item.params.weekStart}`
+        : `/shifts/me?week=${item.params.weekStart}`;
+    case "TASK_DONE":
+      return `/shifts?week=${weekStartOf(item.params.shiftDate)}`;
+    default:
+      return `/shifts/me?week=${weekStartOf(item.params.shiftDate)}`;
+  }
+}
 
 // ---- inputs ----------------------------------------------------------------
 

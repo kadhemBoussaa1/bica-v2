@@ -19,8 +19,15 @@
   z-index: 30;
   display: flex;
   flex-direction: column;
-  width: var(--bp-sidebar-w);
+  /* Wider by the notch's inset in landscape, which the ink fills; the
+     content column's offset adds the same inset (globals.css). The top and
+     bottom insets keep the brand under the status bar's clock and the foot
+     above the home indicator. All zero on a desktop. */
+  width: calc(var(--bp-sidebar-w) + var(--bp-safe-inline-start));
   height: 100dvh;
+  padding-top: var(--bp-safe-top);
+  padding-bottom: var(--bp-safe-bottom);
+  padding-inline-start: var(--bp-safe-inline-start);
   /* v3: the "ink" glass recipe, a touch denser than the handoff's 62% so the
      muted labels keep AA over the pale wash and its orange glow. */
   background: rgb(26 23 20 / 0.84);
@@ -45,7 +52,7 @@
 }
 
 .collapsed {
-  width: var(--bp-sidebar-w-rail);
+  width: calc(var(--bp-sidebar-w-rail) + var(--bp-safe-inline-start));
 }
 
 /* First paint, before the stored preference is applied. */
@@ -371,6 +378,34 @@ a.row:hover {
 .collapsed .planned {
   display: none;
 }
+/* --- foot: the install row (sidebar.tsx, InstallRow) --- */
+
+/* The nav's own inset, so the row lines up with the modules above it. */
+.foot {
+  flex: none;
+  padding: 0 10px 8px;
+  transition: padding 160ms ease;
+}
+
+.collapsed .foot {
+  padding-inline-start: 6px;
+  padding-inline-end: 6px;
+}
+
+/* A nav row that is a button: the row's look, none of the button's. */
+.rowButton {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+}
+
+.rowButton:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+}
+
 /* --- foot: the collapse toggle --- */
 
 .collapseButton {
@@ -453,7 +488,7 @@ a.row:hover {
     z-index: 40;
     /* Off-canvas by default. Width is forced back to full so a collapsed
        desktop preference cannot produce a 68px-wide drawer. */
-    width: var(--bp-sidebar-w);
+    width: calc(var(--bp-sidebar-w) + var(--bp-safe-inline-start));
     transform: translateX(-100%);
     transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
   }
@@ -488,7 +523,8 @@ a.row:hover {
     padding: 0 8px 8px;
     gap: 10px;
   }
-  .collapsed .nav {
+  .collapsed .nav,
+  .collapsed .foot {
     padding-inline-start: 10px;
     padding-inline-end: 10px;
   }
@@ -518,6 +554,7 @@ a.row:hover {
 @media (prefers-reduced-motion: reduce) {
   .sidebar,
   .nav,
+  .foot,
   .chevron,
   .brandName,
   .label,

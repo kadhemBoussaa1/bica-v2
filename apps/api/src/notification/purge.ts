@@ -9,6 +9,12 @@
  * their age (plan fact 4): nobody has seen them yet. 90 is the agreed
  * value; `NOTIFICATION_PURGE_DAYS` has no default on purpose — a missing
  * value must never silently delete.
+ *
+ * Also deletes the push subscriptions of expired sessions (docs/pwa-plan.md).
+ * Sending skips them, so no push service ever answers 410 for them, and the
+ * cascade fires only when Better Auth deletes the Session row, which it does
+ * lazily — a phone that never comes back would keep its row forever. They
+ * need no cutoff: an expired session never revives.
  */
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -46,12 +52,17 @@ async function main() {
     console.log(
       `${matching} of ${total} Notification rows are read and older than ${cutoff.toISOString()} (${days} days); ${unreadOld} unread rows that old are kept.`,
     );
+    const lapsed = { session: { expiresAt: { lte: new Date() } } };
+    const lapsedCount = await prisma.pushSubscription.count({ where: lapsed });
+    console.log(`${lapsedCount} PushSubscription rows belong to expired sessions.`);
     if (!confirmed) {
       console.log("Dry run — nothing deleted. Re-run with --yes to delete them.");
       return;
     }
     const { count } = await prisma.notification.deleteMany({ where });
     console.log(`Deleted ${count} rows.`);
+    const { count: pushCount } = await prisma.pushSubscription.deleteMany({ where: lapsed });
+    console.log(`Deleted ${pushCount} push subscriptions.`);
   } finally {
     await prisma.$disconnect();
   }

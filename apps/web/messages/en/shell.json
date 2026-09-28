@@ -17,5 +17,20 @@
   "breadcrumb": "Breadcrumb",
   "new": "New",
   "edit": "Edit",
-  "detail": "Detail"
+  "detail": "Detail",
+  "offline": {
+    "title": "You're offline",
+    "body": "Bicapack needs a connection to load this page. Check the Wi-Fi or mobile data, then try again.",
+    "retry": "Try again",
+    "banner": "You're offline — changes can't be saved until the connection is back."
+  },
+  "install": {
+    "row": "Install app",
+    "title": "Add Bicapack to your Home Screen",
+    "step1": "Tap <key>Share</key> in the browser's toolbar.",
+    "step2": "Choose <key>Add to Home Screen</key>.",
+    "step3": "Tap <key>Add</key>, then open Bicapack from your Home Screen.",
+    "note": "The installed app keeps its own sign-in, so you'll sign in once more the first time you open it. Notifications on this device work only in the installed app.",
+    "done": "Got it"
+  }
 }

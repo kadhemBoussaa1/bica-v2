@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
@@ -9,6 +9,7 @@ import { Providers } from "./trpc/provider";
 import { ChatLauncher } from "./chat/chat-launcher";
 import { Sidebar } from "./nav/sidebar";
 import { TopBar } from "./nav/top-bar";
+import { PwaRegistrar } from "./pwa/pwa-registrar";
 
 // Archivo for structure, IBM Plex Sans for reading, IBM Plex Mono for figures.
 const archivo = Archivo({
@@ -37,6 +38,21 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 export const metadata: Metadata = {
   title: "Bicapack ERP",
   description: "Kraft paper bag production ERP.",
+  // The Home Screen app on an iPhone (docs/pwa-plan.md). The icon is the
+  // app-dir `apple-icon.png`.
+  appleWebApp: { capable: true, title: "Bicapack", statusBarStyle: "default" },
+  // iOS otherwise turns order numbers and quantities into phone links.
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Content runs under the notch and the home indicator; the --bp-safe-*
+  // tokens (tokens.css) pad whatever touches a screen edge.
+  viewportFit: "cover",
+  // Same as the manifest's theme_color.
+  themeColor: "#f29100",
 };
 
 export default async function RootLayout({
@@ -57,6 +73,9 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider>
         <Providers>
+          {/* The service worker, on every page including /login, so the
+              offline page is cached before anyone signs in. Renders nothing. */}
+          <PwaRegistrar />
           {/* The shell: fixed sidebar plus the content column it offsets.
               Sidebar renders nothing without a session, and `.shell` keeps its
               padding at zero in that case, so /login is unaffected. */}

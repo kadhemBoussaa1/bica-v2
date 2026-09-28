@@ -937,8 +937,9 @@
 
 .toastStack {
   position: fixed;
-  inset-inline-end: var(--bp-space-4);
-  bottom: var(--bp-space-4);
+  /* Clear of the home indicator and a landscape notch (tokens.css). */
+  inset-inline-end: calc(var(--bp-space-4) + var(--bp-safe-inline-end));
+  bottom: calc(var(--bp-space-4) + var(--bp-safe-bottom));
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -1530,6 +1531,8 @@
 }
 
 @media (max-width: 600px) {
+  /* Full screen, so the head clears the status bar and the actions clear
+     the home indicator (tokens.css). */
   .formDialog,
   .formDialogWide {
     width: 100vw;
@@ -1539,5 +1542,9 @@
     margin: 0;
     border: 0;
     border-radius: 0;
+    padding-top: var(--bp-safe-top);
+    padding-bottom: var(--bp-safe-bottom);
+    padding-inline-start: var(--bp-safe-inline-start);
+    padding-inline-end: var(--bp-safe-inline-end);
   }
 }

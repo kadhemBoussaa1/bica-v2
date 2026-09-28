@@ -179,6 +179,21 @@
   /* Table rows */
   --bp-row-h: 56px;
   --bp-row-h-dense: 40px;
+
+  /* Safe areas: the notch, the status bar and the home indicator, once the
+     viewport is `viewport-fit=cover` (the app's layout). Zero on a desktop.
+     Added to a spacing token where an element touches a screen edge —
+     `calc(var(--bp-space-4) + var(--bp-safe-bottom))` — never used alone.
+     Logical, so the inline pair swaps with the direction below. */
+  --bp-safe-top: env(safe-area-inset-top, 0px);
+  --bp-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bp-safe-inline-start: env(safe-area-inset-left, 0px);
+  --bp-safe-inline-end: env(safe-area-inset-right, 0px);
+}
+
+[dir="rtl"] {
+  --bp-safe-inline-start: env(safe-area-inset-right, 0px);
+  --bp-safe-inline-end: env(safe-area-inset-left, 0px);
 }
 
 /* Where next/font's variables are in scope, upgrade the type tokens to the

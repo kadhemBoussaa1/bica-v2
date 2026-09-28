@@ -67,7 +67,10 @@
   display: flex;
   flex-direction: column;
   width: min(400px, calc(100vw - 2 * var(--bp-space-4)));
-  max-height: min(560px, calc(100dvh - var(--bp-topbar-h) - var(--bp-space-6)));
+  max-height: min(
+    560px,
+    calc(100dvh - var(--bp-topbar-h) - var(--bp-safe-top) - var(--bp-space-6))
+  );
   overflow: hidden;
   /* Near-opaque over the blur, so the list reads on any page behind it. */
   background: rgb(255 255 255 / 0.94);
@@ -293,10 +296,12 @@
  * containing block): the bar sits at the top of the viewport either way.
  */
 @media (max-width: 900px) {
+  /* The bar grows by the status-bar inset (top-bar.module.css), so every
+     `top` here does too. */
   .scrim {
     display: block;
     position: fixed;
-    top: var(--bp-topbar-h);
+    top: calc(var(--bp-topbar-h) + var(--bp-safe-top));
     inset-inline: 0;
     height: 100dvh;
     background: rgb(26 23 20 / 0.28);
@@ -304,9 +309,11 @@
 
   .panel {
     position: fixed;
-    top: calc(var(--bp-topbar-h) + var(--bp-space-2));
+    top: calc(var(--bp-topbar-h) + var(--bp-safe-top) + var(--bp-space-2));
     inset-inline: var(--bp-space-2);
     width: auto;
-    max-height: calc(100dvh - var(--bp-topbar-h) - var(--bp-space-4));
+    max-height: calc(
+      100dvh - var(--bp-topbar-h) - var(--bp-safe-top) - var(--bp-safe-bottom) - var(--bp-space-4)
+    );
   }
 }

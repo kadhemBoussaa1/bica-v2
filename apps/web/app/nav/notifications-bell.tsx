@@ -7,6 +7,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useTranslations } from "next-intl";
 import {
   NOTIFICATION_BADGE_MAX,
+  notificationHref,
   type NotificationEvent,
   type NotificationKind,
   type Role,
@@ -16,7 +17,9 @@ import { useToast } from "@repo/ui/toast";
 import { formatDateTime, numberFormat } from "../../i18n/formats";
 import { useTRPC } from "../trpc/client";
 import { NAV_ICONS } from "./nav-icons";
-import { describeNotification, notificationHref, type NotificationItem } from "./notification-text";
+import { PushToggle } from "../pwa/push-toggle";
+import { usePushSync } from "../pwa/use-push";
+import { describeNotification, type NotificationItem } from "./notification-text";
 import { useNotificationStream } from "./use-notification-stream";
 import { cx } from "./cx";
 import styles from "./notifications.module.css";
@@ -65,8 +68,12 @@ function BellIcon() {
  * The panel is a popover under the bell and a full-width sheet on a phone,
  * with the chat launcher's dismissal rules: Escape, a click outside, and
  * navigating away all close it.
+ *
+ * Its head carries this device's phone-notification switch (PushToggle),
+ * and the bell keeps a subscribed device bound to the current session on
+ * every load (usePushSync) — docs/pwa-plan.md, phase 2.
  */
-export function NotificationsBell({ role }: { role: Role }) {
+export function NotificationsBell({ role, userId }: { role: Role; userId: string }) {
   const t = useTranslations("notifications");
   const enums = useTranslations("enums");
   const trpc = useTRPC();
@@ -143,6 +150,7 @@ export function NotificationsBell({ role }: { role: Role }) {
     });
   };
   useNotificationStream({ onEvent: (event) => void toastFor(event) });
+  usePushSync(userId);
 
   const close = useCallback(() => {
     setOpenedOn(null);
@@ -167,6 +175,17 @@ export function NotificationsBell({ role }: { role: Role }) {
   }, [open, close]);
 
   const unread = countQuery.data ?? 0;
+
+  // The installed app's icon badge (iOS Home Screen, desktop). Only while
+  // the app is open — a push cannot know the count — so it can lag until
+  // the next launch; it is cleared on sign-out (use-auth.ts).
+  const counted = countQuery.data !== undefined;
+  useEffect(() => {
+    if (!counted || !("setAppBadge" in navigator)) return;
+    const badged = unread > 0 ? navigator.setAppBadge(unread) : navigator.clearAppBadge();
+    badged.catch(() => {});
+  }, [counted, unread]);
+
   const badge =
     unread > NOTIFICATION_BADGE_MAX
       ? `${numberFormat().format(NOTIFICATION_BADGE_MAX)}+`
@@ -209,6 +228,7 @@ export function NotificationsBell({ role }: { role: Role }) {
                 {t("markAllRead")}
               </button>
             </div>
+            <PushToggle userId={userId} />
             <div className={styles.filters} role="group" aria-label={t("filter")}>
               {[false, true].map((only) => (
                 <button

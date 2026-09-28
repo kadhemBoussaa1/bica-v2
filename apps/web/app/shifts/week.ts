@@ -9,6 +9,7 @@ import {
   weekStartOf,
   type ShiftType,
 } from "@repo/api-contract";
+import type { Locale } from "../../i18n/config";
 import { dateFormat } from "../../i18n/formats";
 
 /**
@@ -61,9 +62,14 @@ export function formatShiftDate(value: string | Date): string {
   return dateFormat({ dateStyle: "medium", timeZone: "UTC" }).format(utcDay(isoDayOf(value)));
 }
 
-/** "Sun" — a weekday name is a word, so it follows the reader's language. */
-export function formatWeekday(value: string | Date): string {
-  return dateFormat({ weekday: "short", timeZone: "UTC" }).format(utcDay(isoDayOf(value)));
+/**
+ * "Sun" — a weekday name is a word, so it follows the reader's language:
+ * `locale`, or `<html lang>` when omitted (the server has no document).
+ */
+export function formatWeekday(value: string | Date, locale?: Locale): string {
+  return dateFormat({ weekday: "short", timeZone: "UTC" }, locale).format(
+    utcDay(isoDayOf(value)),
+  );
 }
 
 /** "Sunday". */

@@ -71,9 +71,13 @@ const NUMERIC_TIME: Record<string, Intl.DateTimeFormatOptions> = {
  * spelled out numerically, so `dateStyle: "medium"` at any of the call
  * sites renders `23/09/2026` without each of them having to know. Anything
  * asking only for a month or a weekday is left alone and follows the
- * reader.
+ * reader — `locale` when the caller knows it (a route handler wording a
+ * push, which has no `document`), else `<html lang>`.
  */
-function resolveDate(options: Intl.DateTimeFormatOptions): {
+function resolveDate(
+  options: Intl.DateTimeFormatOptions,
+  locale?: Locale,
+): {
   locale: string;
   options: Intl.DateTimeFormatOptions;
 } {
@@ -85,7 +89,7 @@ function resolveDate(options: Intl.DateTimeFormatOptions): {
     rest.hour !== undefined ||
     rest.minute !== undefined ||
     rest.second !== undefined;
-  if (!namesADayOrAClock) return { locale: activeLocale(), options };
+  if (!namesADayOrAClock) return { locale: locale ?? activeLocale(), options };
   return {
     locale: DATE_LOCALE,
     options: {
@@ -109,8 +113,12 @@ export function numberFormat(options: Intl.NumberFormatOptions = {}): Intl.Numbe
   return fmt;
 }
 
-export function dateFormat(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  const resolved = resolveDate(options);
+/** `locale` only matters for month and weekday names; see `resolveDate`. */
+export function dateFormat(
+  options: Intl.DateTimeFormatOptions,
+  locale?: Locale,
+): Intl.DateTimeFormat {
+  const resolved = resolveDate(options, locale);
   // Keyed on what was resolved, not on what was asked for: two different
   // requests that resolve to the same formatter should share one.
   const key = `${resolved.locale}:${JSON.stringify(resolved.options)}`;
