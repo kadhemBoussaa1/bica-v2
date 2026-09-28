@@ -23,6 +23,13 @@
     "TASK_ASSIGNED": "New ticket: {type}",
     "TASK_REASSIGNED_AWAY": "Ticket given to someone else: {type}",
     "TASK_REOPENED": "Ticket reopened: {type}",
-    "TASK_DONE": "Ticket done: {type}"
+    "TASK_DONE": "Ticket done: {type}",
+    "PRODUCTION_RECORDED": "Production entry on order {numero}"
+  },
+  "runFigure": {
+    "PRINTING": "{count} m",
+    "PRODUCER": "{count} pcs",
+    "QUALITY_CONTROL": "{count} pcs",
+    "PACKAGING": "{count} {n, plural, one {parcel} other {parcels}}"
   }
 }

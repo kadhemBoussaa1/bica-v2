@@ -23,6 +23,13 @@
     "TASK_ASSIGNED": "تذكرة جديدة: {type}",
     "TASK_REASSIGNED_AWAY": "أُسندت التذكرة إلى شخص آخر: {type}",
     "TASK_REOPENED": "أُعيد فتح التذكرة: {type}",
-    "TASK_DONE": "اكتملت التذكرة: {type}"
+    "TASK_DONE": "اكتملت التذكرة: {type}",
+    "PRODUCTION_RECORDED": "إدخال إنتاج على الطلب {numero}"
+  },
+  "runFigure": {
+    "PRINTING": "{count} م",
+    "PRODUCER": "{count} قطعة",
+    "QUALITY_CONTROL": "{count} قطعة",
+    "PACKAGING": "{count} طرد"
   }
 }

@@ -2,6 +2,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 // Type-only import: erased at compile time, so no server code reaches the bundle.
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import { canAccess, weekStartOf, type Role } from "@repo/api-contract";
+import { numberFormat } from "../../i18n/formats";
 import { formatShiftDate, formatWeekRange, formatWeekday } from "../shifts/week";
 
 /**
@@ -69,6 +70,20 @@ export function describeNotification(
           item.params.machineName && iso(item.params.machineName),
         ),
       };
+    case "PRODUCTION_RECORDED":
+      return {
+        title: t(`kinds.${item.kind}`, { numero: iso(item.params.numero) }),
+        detail: join(
+          enums(`workshopStage.${item.params.stage}`),
+          // `n` drives the plural; `count` is the figure in French grouping.
+          t(`runFigure.${item.params.stage}`, {
+            count: iso(numberFormat().format(item.params.quantity)),
+            n: item.params.quantity,
+          }),
+          item.params.machineName && iso(item.params.machineName),
+          iso(formatShiftDate(item.params.day)),
+        ),
+      };
     default:
       // The three personal ticket kinds: the reader is the ticket's person.
       return {
@@ -84,7 +99,8 @@ export function describeNotification(
 
 /**
  * Where a row opens. Orders go to their page (a 404 there, if the order was
- * deleted since, is that page's own not-found). A week or a ticket opens on
+ * deleted since, is that page's own not-found), and so does a production
+ * run, which lists under its order. A week or a ticket opens on
  * its week: the planner for ADMIN and above when the row is about the
  * planning, "My shifts" for the ticket's own person and for every worker.
  */
@@ -93,6 +109,7 @@ export function notificationHref(item: NotificationItem, role: Role): string {
     case "ORDER_CREATED":
     case "QUOTE_CREATED":
     case "ORDER_IN_PRODUCTION":
+    case "PRODUCTION_RECORDED":
       return `/orders/${encodeURIComponent(item.entityId)}`;
     case "SHIFT_WEEK_PUBLISHED":
       return canAccess(role, "ADMIN")

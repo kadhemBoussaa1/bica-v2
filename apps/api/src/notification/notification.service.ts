@@ -84,7 +84,8 @@ interface EmitInput {
  *
  * Three jobs. Emission: one row per recipient on the caller's transaction,
  * called from the service choke points (OrderService.create / transition,
- * ShiftService.publish and the ticket writes), never from the router or the
+ * ShiftService.publish and the ticket writes, ProductionService.create),
+ * never from the router or the
  * audit middleware. Reads: the bell's list, count and mark-read, scoped to
  * the caller's own rows and to the kinds their role may read NOW. Streams:
  * the open `GET /events` responses, per account, in this process — the API

@@ -3119,6 +3119,9 @@ enum NotificationKind {
   TASK_REOPENED
   /// Event 5: a ticket was marked done. Admins.
   TASK_DONE
+  /// A production run was recorded against an order (added 2026-09-28).
+  /// Admins; bell only.
+  PRODUCTION_RECORDED
 }
 
 /// One row per recipient, written in the same transaction as the change it

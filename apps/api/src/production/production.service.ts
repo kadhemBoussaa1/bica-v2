@@ -4,6 +4,7 @@ import type { CreateProductionRunInput, UpdateProductionRunInput } from "@repo/a
 import { machineTypesForStage, ordersAreScopedFor } from "@repo/api-contract";
 import type { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
+import { NotificationService } from "../notification/notification.service";
 import { orderScopeFor } from "../order/order.scope";
 import { PrismaService } from "../prisma.service";
 import type { SessionUser } from "../trpc/trpc";
@@ -30,7 +31,10 @@ import {
  */
 @Injectable()
 export class ProductionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationService,
+  ) {}
 
   /**
    * Session-derived scope, expressed through the run's `order` relation —
@@ -302,18 +306,46 @@ export class ProductionService {
    * transition for a PRODUCTION user — see `OrderService.transition`. The
    * dependency runs one way only: packaging does not advance anything by
    * itself, it just stops being a reason the transition is refused.
+   *
+   * Every admin but the recorder is notified (PRODUCTION_RECORDED), on the
+   * same transaction, pushed once it commits. Only here: correcting or
+   * deleting a run tells nobody.
    */
   async create(actor: SessionUser, input: CreateProductionRunInput) {
-    await this.assertOrderInScope(actor, input.orderId);
-    await this.assertMachineFitsStage(input);
-    return this.prisma.productionRun.create({
-      data: {
-        orderId: input.orderId,
-        recordedById: actor.id,
-        ...this.writable(input),
-      },
-      select: RETURN_SELECT,
+    const order = await this.assertOrderInScope(actor, input.orderId);
+    const machine = await this.assertMachineFitsStage(input);
+    const outbox = this.notifications.outbox();
+    const run = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.productionRun.create({
+        data: {
+          orderId: input.orderId,
+          recordedById: actor.id,
+          ...this.writable(input),
+        },
+        select: RETURN_SELECT,
+      });
+      await this.notifications.emit(tx, outbox, {
+        payload: {
+          kind: "PRODUCTION_RECORDED",
+          params: {
+            numero: order.numero,
+            stage: input.stage,
+            // The headline `writable()` copied into `quantite` for this stage.
+            quantity: created.quantite,
+            machineName: machine?.name ?? null,
+            day: input.dateProduction,
+          },
+        },
+        recipients: await this.notifications.admins(tx),
+        // The order, not the run: a run has no page of its own, and the
+        // order's page lists its runs.
+        entityId: order.id,
+        actorId: actor.id,
+      });
+      return created;
     });
+    outbox.flush();
+    return run;
   }
 
   /**
@@ -437,7 +469,8 @@ export class ProductionService {
    * `machineTypesForStage` where both sides read the same rule.
    *
    * A no-op for QUALITY_CONTROL and PACKAGING, which carry no machine at all
-   * (the union rejects the field outright for them).
+   * (the union rejects the field outright for them), and so returns null
+   * for them; otherwise the machine it checked.
    */
   private async assertMachineFitsStage(
     input: CreateProductionRunInput | UpdateProductionRunInput,
@@ -445,7 +478,7 @@ export class ProductionService {
     // Narrow on the stage, not on the mapping's return: only these two
     // branches of the union carry `machineId` at all, and TypeScript needs to
     // see the discriminant tested to know that.
-    if (input.stage !== "PRINTING" && input.stage !== "PRODUCER") return;
+    if (input.stage !== "PRINTING" && input.stage !== "PRODUCER") return null;
     const allowed = machineTypesForStage(input.stage) ?? [];
 
     const machine = await this.prisma.machine.findUnique({
@@ -467,12 +500,13 @@ export class ProductionService {
         message: `${machine.name} is not a machine the ${input.stage === "PRINTING" ? "printing" : "producer"} station runs`,
       });
     }
+    return machine;
   }
 
   private async assertOrderInScope(actor: SessionUser, orderId: string) {
     const order = await this.prisma.order.findFirst({
       where: { AND: [{ id: orderId }, orderScopeFor(actor.role)] },
-      select: { id: true },
+      select: { id: true, numero: true },
     });
     if (!order) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });

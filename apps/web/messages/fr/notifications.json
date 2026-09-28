@@ -23,6 +23,13 @@
     "TASK_ASSIGNED": "Nouveau ticket : {type}",
     "TASK_REASSIGNED_AWAY": "Ticket confié à quelqu'un d'autre : {type}",
     "TASK_REOPENED": "Ticket rouvert : {type}",
-    "TASK_DONE": "Ticket terminé : {type}"
+    "TASK_DONE": "Ticket terminé : {type}",
+    "PRODUCTION_RECORDED": "Entrée de production sur la commande {numero}"
+  },
+  "runFigure": {
+    "PRINTING": "{count} m",
+    "PRODUCER": "{count} pcs",
+    "QUALITY_CONTROL": "{count} pcs",
+    "PACKAGING": "{count} colis"
   }
 }

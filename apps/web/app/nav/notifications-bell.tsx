@@ -34,6 +34,7 @@ const KIND_ICON: Record<NotificationKind, string> = {
   TASK_REASSIGNED_AWAY: "my-shifts",
   TASK_REOPENED: "my-shifts",
   TASK_DONE: "my-shifts",
+  PRODUCTION_RECORDED: "production",
 };
 
 /** A bell, on the nav glyphs' 18px grid. */

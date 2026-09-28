@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PAGE_SIZES } from "./list.js";
+import { WORKSHOP_STAGES } from "./production.js";
 import { canAccess, type Role } from "./roles.js";
 import { SHIFT_TASK_TYPES, SHIFT_TYPES } from "./shifts.js";
 
@@ -21,21 +22,24 @@ export const NOTIFICATION_KINDS = [
   "TASK_REASSIGNED_AWAY",
   "TASK_REOPENED",
   "TASK_DONE",
+  "PRODUCTION_RECORDED",
 ] as const;
 export const notificationKindSchema = z.enum(NOTIFICATION_KINDS);
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 /**
  * The kinds only ADMIN and above may read: the commercial ones and the
- * admins' ticket feed. A LEAK SET, not "what a role usually receives"
- * (plan decision 13): an ADMIN can hold an employee row and be assigned a
- * ticket, and must still see that TASK_ASSIGNED; a demoted admin must stop
- * seeing the orders they were told about.
+ * admins' shop-floor feed (tickets done, production recorded). A LEAK SET,
+ * not "what a role usually receives" (plan decision 13): an ADMIN can hold
+ * an employee row and be assigned a ticket, and must still see that
+ * TASK_ASSIGNED; a demoted admin must stop seeing the orders they were
+ * told about.
  */
 export const ADMIN_ONLY_NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "ORDER_CREATED",
   "QUOTE_CREATED",
   "TASK_DONE",
+  "PRODUCTION_RECORDED",
 ];
 
 /**
@@ -50,8 +54,9 @@ export function visibleNotificationKinds(role: Role): NotificationKind[] {
 
 /**
  * The personal kinds, which pop a toast as well as landing in the bell
- * (plan fact 8). A new order or quote and a finished ticket are bell-only:
- * they are the admins' ambient feed, not something addressed to one person.
+ * (plan fact 8). A new order or quote, a finished ticket and a recorded
+ * production run are bell-only: they are the admins' ambient feed, not
+ * something addressed to one person.
  */
 export const TOAST_NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "ORDER_IN_PRODUCTION",
@@ -106,6 +111,22 @@ const taskParams = z.object({
 export type TaskNotificationParams = z.infer<typeof taskParams>;
 
 /**
+ * A production run recorded against an order. `quantity` is the run's
+ * headline figure (its `quantite`): metres for PRINTING, pieces for PRODUCER
+ * and QUALITY_CONTROL, parcels for PACKAGING — the stage says which.
+ * `machineName` is null for the two stations that name no machine. `day` is
+ * the day the work happened, which can be earlier than the row's own
+ * `createdAt` when a shift is typed in late.
+ */
+const productionRecordedParams = z.object({
+  numero: z.string(),
+  stage: z.enum(WORKSHOP_STAGES),
+  quantity: z.number(),
+  machineName: z.string().nullable(),
+  day: isoDay,
+});
+
+/**
  * A kind with its params, discriminated on `kind`. The API validates with it
  * on write (`NotificationService.emit`) and on read (`list`), so the client
  * receives a typed union and never guesses a shape.
@@ -119,6 +140,7 @@ export const notificationPayload = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("TASK_REASSIGNED_AWAY"), params: taskParams }),
   z.object({ kind: z.literal("TASK_REOPENED"), params: taskParams }),
   z.object({ kind: z.literal("TASK_DONE"), params: taskParams }),
+  z.object({ kind: z.literal("PRODUCTION_RECORDED"), params: productionRecordedParams }),
 ]);
 export type NotificationPayload = z.infer<typeof notificationPayload>;
 
