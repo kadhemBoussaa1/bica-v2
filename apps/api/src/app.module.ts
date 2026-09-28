@@ -17,6 +17,7 @@ import { TemplateService } from "./template/template.service";
 import { ProductService } from "./product/product.service";
 import { ProductionService } from "./production/production.service";
 import { PurchasingService } from "./purchasing/purchasing.service";
+import { SearchService } from "./search/search.service";
 import { ShipmentService } from "./shipment/shipment.service";
 import { ShiftService } from "./shift/shift.service";
 import { StockService } from "./stock/stock.service";
@@ -53,6 +54,7 @@ import { UserService } from "./user/user.service";
     ShiftService,
     DashboardService,
     NotificationService,
+    SearchService,
     TrpcRouter,
   ],
 })

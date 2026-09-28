@@ -36,7 +36,12 @@ const money = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 2,
 });
 
-export function ShipmentsTable() {
+export function ShipmentsTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const t = useTranslations("stock");
   const common = useTranslations("common");
   const trpc = useTRPC();
@@ -45,7 +50,10 @@ export function ShipmentsTable() {
   // Mirrors the procedures' adminProcedure gate — UX only, see ClientsTable.
   const canWrite = me ? canAccess(me.role, "ADMIN") : false;
   const [error, setError] = useState<string | null>(null);
-  const [tableState, setTableState] = useState<ShipmentsTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<ShipmentsTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const shipmentsQuery = useQuery({
     ...trpc.stock.listShipments.queryOptions(tableState),

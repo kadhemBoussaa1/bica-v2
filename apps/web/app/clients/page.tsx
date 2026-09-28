@@ -1,9 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { ClientsTable } from "./clients-table";
+import { initialSearchOf, type ListPageProps } from "../records/list-search";
 import { NewRecordButton } from "../records/new-record-button";
 import styles from "../records/records.module.css";
 
-export default async function ClientsPage() {
+export default async function ClientsPage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   const t = await getTranslations("clients");
   return (
     <div className={styles.page}>
@@ -16,7 +18,7 @@ export default async function ClientsPage() {
         <NewRecordButton href="/clients/new" label={t("newClient")} />
       </header>
 
-      <ClientsTable />
+      <ClientsTable key={search} initialSearch={search} />
     </div>
   );
 }

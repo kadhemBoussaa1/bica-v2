@@ -1,8 +1,17 @@
 {
-  "goTo": "Aller à…",
-  "goToModule": "Aller à un module",
+  "searchPlaceholder": "Rechercher…",
+  "searchLabel": "Rechercher un module ou une fiche",
   "modules": "Modules",
-  "noModuleMatches": "Aucun module ne correspond",
+  "noMatches": "Aucun résultat pour « {term} »",
+  "search": {
+    "searching": "Recherche…",
+    "failed": "La recherche a échoué. Réessayez.",
+    "seeAll": "Voir tous les résultats dans {module}",
+    "draft": "Brouillon",
+    "noNumber": "Sans numéro",
+    "stocktakeOf": "Inventaire du {date}",
+    "archived": "Archivé"
+  },
   "signOut": "Se déconnecter",
   "signingOut": "Déconnexion…",
   "breadcrumb": "Fil d'Ariane",

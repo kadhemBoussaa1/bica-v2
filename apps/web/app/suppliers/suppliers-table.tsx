@@ -47,14 +47,21 @@ const INITIAL_STATE: SuppliersTableState = {
   filter: "all",
 };
 
-export function SuppliersTable() {
+export function SuppliersTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { user: me } = useCurrentUser();
   const t = useTranslations("suppliers");
   const common = useTranslations("common");
-  const [tableState, setTableState] =
-    useState<SuppliersTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<SuppliersTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
   const [error, setError] = useState<string | null>(null);
 
   // Mirrors the procedures' adminProcedure gate — UX only, see ClientsTable.

@@ -1,8 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { CountsList } from "./counts-list";
+import { initialSearchOf, type ListPageProps } from "../../records/list-search";
 import styles from "../../records/records.module.css";
 
-export default async function StocktakePage() {
+export default async function StocktakePage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   const t = await getTranslations("stock");
 
   return (
@@ -15,7 +17,7 @@ export default async function StocktakePage() {
         <p className={styles.subtitle}>{t("stocktake.subtitle")}</p>
       </header>
 
-      <CountsList />
+      <CountsList key={search} initialSearch={search} />
     </div>
   );
 }

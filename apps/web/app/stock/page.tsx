@@ -1,8 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { RollsTable } from "./rolls-table";
+import { initialSearchOf, type ListPageProps } from "../records/list-search";
 import styles from "../records/records.module.css";
 
-export default async function StockPage() {
+export default async function StockPage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   const t = await getTranslations("stock");
   return (
     <div className={styles.page}>
@@ -14,7 +16,7 @@ export default async function StockPage() {
         <p className={styles.subtitle}>{t("rolls.subtitle")}</p>
       </header>
 
-      <RollsTable />
+      <RollsTable key={search} initialSearch={search} />
     </div>
   );
 }

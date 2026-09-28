@@ -1,4 +1,5 @@
 import { PurchaseInvoicesTable } from "./purchase-invoices-table";
+import { initialSearchOf, type ListPageProps } from "../../records/list-search";
 import styles from "../../records/records.module.css";
 
 /**
@@ -6,10 +7,11 @@ import styles from "../../records/records.module.css";
  * the same query as the list, as on the sales side, so the whole panel is
  * drawn there.
  */
-export default function PurchaseInvoicesPage() {
+export default async function PurchaseInvoicesPage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   return (
     <div className={styles.page}>
-      <PurchaseInvoicesTable />
+      <PurchaseInvoicesTable key={search} initialSearch={search} />
     </div>
   );
 }

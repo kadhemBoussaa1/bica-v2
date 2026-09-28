@@ -1,9 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { InksTable } from "./inks-table";
+import { initialSearchOf, type ListPageProps } from "../../records/list-search";
 import { NewRecordButton } from "../../records/new-record-button";
 import styles from "../../records/records.module.css";
 
-export default async function InksPage() {
+export default async function InksPage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   const t = await getTranslations("stock");
   return (
     <div className={styles.page}>
@@ -16,7 +18,7 @@ export default async function InksPage() {
         <NewRecordButton href="/stock/inks/new" label={t("inks.newColour")} />
       </header>
 
-      <InksTable />
+      <InksTable key={search} initialSearch={search} />
     </div>
   );
 }

@@ -159,6 +159,9 @@
       "updateTask": "Edited a ticket",
       "removeTask": "Deleted a ticket",
       "setTaskDone": "Marked a ticket done / reopened it"
+    },
+    "search": {
+      "global": "Global search"
     }
   }
 }

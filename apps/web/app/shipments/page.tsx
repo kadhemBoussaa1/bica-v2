@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { ShipmentsTable } from "./shipments-table";
+import { initialSearchOf, type ListPageProps } from "../records/list-search";
 import styles from "../records/records.module.css";
 
 /**
@@ -7,7 +8,8 @@ import styles from "../records/records.module.css";
  * (the "Create shipment" action on an INVOICED order), so it starts with
  * its client, its invoice and its parcels already right.
  */
-export default async function ShipmentsPage() {
+export default async function ShipmentsPage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   const t = await getTranslations("shipments");
   return (
     <div className={styles.page}>
@@ -19,7 +21,7 @@ export default async function ShipmentsPage() {
         <p className={styles.subtitle}>{t("subtitle")}</p>
       </header>
 
-      <ShipmentsTable />
+      <ShipmentsTable key={search} initialSearch={search} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { SuppliersTable } from "./suppliers-table";
+import { initialSearchOf, type ListPageProps } from "../records/list-search";
 import {
   NewRecordButton,
   RecordActions,
@@ -7,7 +8,8 @@ import {
 } from "../records/new-record-button";
 import styles from "../records/records.module.css";
 
-export default async function SuppliersPage() {
+export default async function SuppliersPage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   const t = await getTranslations("suppliers");
   return (
     <div className={styles.page}>
@@ -28,7 +30,7 @@ export default async function SuppliersPage() {
         </RecordActions>
       </header>
 
-      <SuppliersTable />
+      <SuppliersTable key={search} initialSearch={search} />
     </div>
   );
 }

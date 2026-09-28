@@ -78,11 +78,19 @@ function monthOf(issuedAt: string | Date | null): string | null {
   return issuedAt === null ? null : new Date(issuedAt).toISOString().slice(0, 7);
 }
 
-export function SalesInvoicesTable() {
+export function SalesInvoicesTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const trpc = useTRPC();
   const t = useTranslations("invoices");
   const enums = useTranslations("enums");
-  const [tableState, setTableState] = useState<SalesInvoicesTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<SalesInvoicesTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const invoicesQuery = useQuery({
     ...trpc.salesInvoice.list.queryOptions(tableState),

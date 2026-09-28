@@ -123,6 +123,7 @@ import {
   myWeekInput,
   listNotificationsInput,
   markNotificationsReadInput,
+  globalSearchInput,
 } from "@repo/api-contract";
 import { candidatesInput } from "../allocation/allocation.list";
 import { AllocationService } from "../allocation/allocation.service";
@@ -163,6 +164,7 @@ import {
   listPurchaseOrdersInput,
 } from "../purchasing/purchasing.list";
 import { PurchasingService } from "../purchasing/purchasing.service";
+import { SearchService } from "../search/search.service";
 import { listExportShipmentsInput } from "../shipment/shipment.list";
 import { ShipmentService } from "../shipment/shipment.service";
 import { ShiftService } from "../shift/shift.service";
@@ -219,6 +221,7 @@ export class TrpcRouter {
     private readonly shiftService: ShiftService,
     private readonly dashboardService: DashboardService,
     private readonly notificationService: NotificationService,
+    private readonly searchService: SearchService,
   ) {}
 
   readonly appRouter = router({
@@ -269,6 +272,22 @@ export class TrpcRouter {
           "my-shifts": myShifts,
         };
       }),
+    }),
+
+    /**
+     * The top bar's record search. Every signed-in role: the service asks
+     * only the modules the caller's role opens, and each with that module's
+     * own list vocabulary and scope — see `SearchService`.
+     *
+     * Audited, unlike the nav's other reads (decided 2026-09-28): what was
+     * looked up, and by whom, belongs in the trace. The term is the row's
+     * input. The box waits for a pause in typing before it asks, which
+     * keeps this to about one row per search rather than one per keystroke.
+     */
+    search: router({
+      global: protectedProcedure
+        .input(globalSearchInput)
+        .query(({ ctx, input }) => this.searchService.global(ctx.user, input.term)),
     }),
 
     /**

@@ -50,11 +50,19 @@ const INITIAL_STATE: ShipmentsTableState = {
   filter: "all",
 };
 
-export function ShipmentsTable() {
+export function ShipmentsTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const t = useTranslations("shipments");
   const trpc = useTRPC();
   const router = useRouter();
-  const [tableState, setTableState] = useState<ShipmentsTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<ShipmentsTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const shipmentsQuery = useQuery({
     ...trpc.shipment.list.queryOptions(tableState),

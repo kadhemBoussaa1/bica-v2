@@ -1,0 +1,214 @@
+/*
+ * The top bar's search: module names as you type, then the records of every
+ * module the role opens once the term is long enough to mean something.
+ */
+
+.search {
+  position: relative;
+  flex: 0 1 300px;
+  min-width: 120px;
+}
+
+/* The icon's anchor, apart from `.search` so the phone rule below can move the popover alone. */
+.field {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  inset-inline-start: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--bp-ink-faint);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 40px;
+  padding-block: 0;
+  padding-inline: 34px 12px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg);
+  color: var(--bp-ink);
+  font: 400 0.8125rem/1 var(--bp-font-body);
+}
+
+.searchInput:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+  background: var(--bp-surface);
+}
+
+/*
+ * Wider than the box: a record row carries a number, a line of context and
+ * a date. Scrolls inside itself, so a term that matches in every module
+ * never runs off the bottom of the screen.
+ *
+ * A solid ground, not glass: the popover sits inside the bar, whose own
+ * backdrop-filter is its backdrop root, so its blur never reaches the page
+ * under the bar — and a long list over a dashboard read the figures
+ * through it. `--bp-surface` is the near-solid ground tokens.css names.
+ */
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-start: 0;
+  z-index: 10;
+  width: max(100%, 440px);
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-card);
+  box-shadow: var(--bp-shadow-lift);
+}
+
+.section + .section {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--bp-hairline);
+}
+
+.sectionLabel {
+  padding: 10px 12px 6px;
+  font: 400 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+/* Last results while the next ones load: still readable, clearly not final. */
+.stale {
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+
+.status {
+  padding: 12px;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  color: var(--bp-ink);
+  font: 400 0.84375rem/1.2 var(--bp-font-body);
+  text-align: start;
+  cursor: pointer;
+}
+
+.optionActive {
+  background: var(--bp-tint);
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--bp-ink-muted);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title,
+.detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordTitle {
+  font-weight: 600;
+}
+
+.detail {
+  font-size: 0.75rem;
+  color: var(--bp-ink-muted);
+}
+
+.archived .recordTitle,
+.archived .detail {
+  color: var(--bp-ink-faint);
+}
+
+.meta {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  color: var(--bp-ink-faint);
+}
+
+.archivedTag {
+  padding: 3px 8px;
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint);
+  font: 600 0.625rem/1 var(--bp-font-body);
+  letter-spacing: 0.02em;
+  color: var(--bp-ink-muted);
+}
+
+/* The way into the full list, under a group that has more than it shows. */
+.more {
+  min-height: 36px;
+  font-size: 0.78125rem;
+  font-weight: 600;
+  color: var(--bp-orange-700);
+}
+
+.moreArrow {
+  display: inline-block;
+}
+
+/* The arrow points the way the line reads. */
+[dir="rtl"] .moreArrow {
+  transform: scaleX(-1);
+}
+
+/* --- phone --- */
+
+@media (max-width: 900px) {
+  .search {
+    flex: 1 1 auto;
+    /*
+     * Static here, so the popover is placed against the sticky bar instead
+     * of the box: the box starts after the menu button and the logo, and a
+     * popover anchored to it would run off the screen's far edge.
+     */
+    position: static;
+  }
+
+  .popover {
+    top: calc(100% - 2px);
+    inset-inline: var(--bp-gutter);
+    width: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .search {
+    min-width: 0;
+  }
+}

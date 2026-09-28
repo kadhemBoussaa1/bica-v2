@@ -163,7 +163,12 @@ function RangeBar({
   );
 }
 
-export function MachinesTable() {
+export function MachinesTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const t = useTranslations("machines");
   const common = useTranslations("common");
   const enums = useTranslations("enums");
@@ -172,7 +177,10 @@ export function MachinesTable() {
   const { user: me } = useCurrentUser();
   const canWrite = me ? canAccess(me.role, "ADMIN") : false;
   const [error, setError] = useState<string | null>(null);
-  const [tableState, setTableState] = useState<MachinesTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<MachinesTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const machinesQuery = useQuery({
     ...trpc.machine.list.queryOptions(tableState),

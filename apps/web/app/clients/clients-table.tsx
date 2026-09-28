@@ -46,14 +46,21 @@ const INITIAL_STATE: ClientsTableState = {
   filter: "all",
 };
 
-export function ClientsTable() {
+export function ClientsTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { user: me } = useCurrentUser();
   const t = useTranslations("clients");
   const common = useTranslations("common");
-  const [tableState, setTableState] =
-    useState<ClientsTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<ClientsTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
   const [error, setError] = useState<string | null>(null);
 
   // Writes are ADMIN and above server-side. Mirroring that here only avoids

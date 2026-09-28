@@ -1,8 +1,17 @@
 {
-  "goTo": "Go to…",
-  "goToModule": "Go to a module",
+  "searchPlaceholder": "Search…",
+  "searchLabel": "Search modules and records",
   "modules": "Modules",
-  "noModuleMatches": "No module matches",
+  "noMatches": "Nothing matches “{term}”",
+  "search": {
+    "searching": "Searching…",
+    "failed": "The search failed. Try again.",
+    "seeAll": "See all results in {module}",
+    "draft": "Draft",
+    "noNumber": "No number",
+    "stocktakeOf": "Stocktake of {date}",
+    "archived": "Archived"
+  },
   "signOut": "Sign out",
   "signingOut": "Signing out…",
   "breadcrumb": "Breadcrumb",

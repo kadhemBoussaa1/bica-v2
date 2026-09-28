@@ -91,12 +91,20 @@ function monthOf(issuedAt: string | Date): string {
   return new Date(issuedAt).toISOString().slice(0, 7);
 }
 
-export function PurchaseOrdersTable() {
+export function PurchaseOrdersTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const trpc = useTRPC();
   const t = useTranslations("purchasing");
   const enums = useTranslations("enums");
   const filters = usePurchasingFilters();
-  const [tableState, setTableState] = useState<PurchaseOrdersTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<PurchaseOrdersTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const ordersQuery = useQuery({
     ...trpc.purchaseOrder.list.queryOptions(tableState),

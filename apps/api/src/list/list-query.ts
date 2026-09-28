@@ -135,13 +135,7 @@ export async function runListQuery<
   // scan by construction. Fine at admin scale; pg_trgm is the upgrade path
   // once a list outgrows it.
   const searchFragment = query.search
-    ? typeof declaration.searchable === "function"
-      ? declaration.searchable(query.search)
-      : ({
-          OR: declaration.searchable.map((field) => ({
-            [field]: { contains: query.search, mode: "insensitive" },
-          })),
-        } as TWhere)
+    ? searchWhere(declaration.searchable, query.search)
     : undefined;
 
   // Scope comes first and is never optional. Everything else is AND-ed onto it,
@@ -243,6 +237,24 @@ export async function runListQuery<
     facetCounts,
     ...(aggregates ? { aggregates } : {}),
   };
+}
+
+/**
+ * A declaration's `searchable` applied to a term: the where fragment a list's
+ * search box becomes. Exported for the top bar's search (search.service.ts),
+ * which must match exactly what each module's own list matches — the
+ * vocabulary is the security boundary, and a second copy would drift.
+ */
+export function searchWhere<TWhere>(
+  searchable: readonly string[] | ((term: string) => TWhere),
+  term: string,
+): TWhere {
+  if (typeof searchable === "function") return searchable(term);
+  return {
+    OR: searchable.map((field) => ({
+      [field]: { contains: term, mode: "insensitive" },
+    })),
+  } as TWhere;
 }
 
 /**

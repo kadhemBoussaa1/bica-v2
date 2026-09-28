@@ -1,6 +1,7 @@
 /*
- * The top bar: breadcrumb, jump box, account menu. Sticky over the content
- * column; on a phone it also carries the drawer's menu button.
+ * The top bar: breadcrumb, search box (global-search.module.css), account
+ * menu. Sticky over the content column; on a phone it also carries the
+ * drawer's menu button.
  */
 
 .bar {
@@ -97,112 +98,6 @@
 .crumbCurrent {
   color: var(--bp-ink);
   font-weight: 600;
-}
-
-/* --- jump box --- */
-
-.search {
-  position: relative;
-  flex: 0 1 220px;
-  min-width: 120px;
-}
-
-.searchIcon {
-  position: absolute;
-  inset-inline-start: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  color: var(--bp-ink-faint);
-  pointer-events: none;
-}
-
-.searchInput {
-  width: 100%;
-  height: 40px;
-  padding-block: 0;
-  padding-inline: 34px 12px;
-  border: 1px solid var(--bp-control-border);
-  border-radius: var(--bp-radius);
-  background: var(--bp-control-bg);
-  color: var(--bp-ink);
-  font: 400 0.8125rem/1 var(--bp-font-body);
-}
-
-.searchInput:focus {
-  outline: 2px solid var(--bp-focus);
-  outline-offset: -1px;
-  border-color: var(--bp-focus);
-  background: var(--bp-surface);
-}
-
-.popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  inset-inline-start: 0;
-  inset-inline-end: 0;
-  z-index: 10;
-  min-width: 240px;
-  padding: 6px;
-  background: rgb(255 255 255 / 0.92);
-  backdrop-filter: var(--bp-glass-blur);
-  border: 1px solid var(--bp-glass-border);
-  border-radius: var(--bp-radius-card);
-  box-shadow: var(--bp-shadow-lift);
-}
-
-.popoverEmpty {
-  padding: 12px;
-  font: 400 0.78125rem/1.4 var(--bp-font-body);
-  color: var(--bp-ink-faint);
-}
-
-.popoverItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: var(--bp-radius-dense);
-  background: transparent;
-  color: var(--bp-ink);
-  font: 400 0.84375rem/1 var(--bp-font-body);
-  text-align: start;
-  cursor: pointer;
-}
-
-.popoverItem:hover,
-.popoverItemFirst {
-  background: var(--bp-tint);
-}
-
-.popoverItem:focus-visible {
-  outline: 2px solid var(--bp-focus);
-  outline-offset: -2px;
-}
-
-.popoverIcon {
-  display: inline-flex;
-  flex: none;
-  color: var(--bp-ink-muted);
-}
-
-.popoverLabel {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.popoverGroup {
-  flex: none;
-  font: 400 0.65625rem/1 var(--bp-font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--bp-ink-faint);
 }
 
 /* --- account --- */
@@ -334,10 +229,6 @@
     display: none;
   }
 
-  .search {
-    flex: 1 1 auto;
-  }
-
   .identity,
   .signOutLabel {
     display: none;
@@ -359,7 +250,8 @@
 /*
  * Narrow phones: the bar held more than 390px before the bell joined it,
  * and sign-out was the control pushed off the edge. The gaps tighten, the
- * jump box may shrink to little more than its icon, and the initials chip —
+ * search box may shrink to little more than its icon (its own stylesheet
+ * says so), and the initials chip —
  * read-only chrome, already reduced to two letters here — gives way, so
  * every control stays on screen.
  */
@@ -367,10 +259,6 @@
   .bar,
   .account {
     gap: var(--bp-space-2);
-  }
-
-  .search {
-    min-width: 0;
   }
 
   .accountChip {

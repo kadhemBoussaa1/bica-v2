@@ -50,7 +50,12 @@ const int = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
  *
  * The toolbar, pager and empty state are DataTable's; only the body is ours.
  */
-export function OrdersGrid() {
+export function OrdersGrid({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const t = useTranslations("orders");
@@ -59,7 +64,10 @@ export function OrdersGrid() {
   const { user: me } = useCurrentUser();
   const canWrite = me ? canAccess(me.role, "ADMIN") : false;
   const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState<OrdersGridState>(INITIAL_STATE);
+  const [state, setState] = useState<OrdersGridState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const ordersQuery = useQuery({
     ...trpc.order.list.queryOptions(state),

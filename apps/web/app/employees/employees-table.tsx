@@ -67,11 +67,21 @@ const STATUS_KEYS: readonly ("all" | EmployeeFacet)[] = ["all", "onRoster", "sus
  * `startCreating` is the `/employees/new` deep link: the list with the form
  * already open. Closing it there goes back to the plain list URL.
  */
-export function EmployeesTable({ startCreating = false }: { startCreating?: boolean }) {
+export function EmployeesTable({
+  startCreating = false,
+  initialSearch = "",
+}: {
+  startCreating?: boolean;
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const t = useTranslations("employees");
   const trpc = useTRPC();
   const router = useRouter();
-  const [tableState, setTableState] = useState<EmployeesTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<EmployeesTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
   const [creating, setCreating] = useState(startCreating);
 
   const listQuery = useQuery({

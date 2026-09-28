@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LanguagePicker } from "../../i18n/language-picker";
 import { useCurrentUser, useSignOut } from "../auth/use-auth";
-import { NAV_SECTIONS, activeChild, canSee, isActive } from "./nav-items";
+import { GlobalSearch } from "./global-search";
+import { NAV_SECTIONS, activeChild, isActive } from "./nav-items";
 import { initials } from "./initials";
-import { MenuIcon, NAV_ICONS, SearchIcon, SignOutIcon } from "./nav-icons";
+import { MenuIcon, SignOutIcon } from "./nav-icons";
 import { NotificationsBell } from "./notifications-bell";
 import { useDrawer } from "./use-sidebar";
 import { cx } from "./cx";
@@ -47,7 +47,7 @@ function crumbsFor(
 }
 
 /**
- * The bar above every page: breadcrumb, a jump box, the signed-in user and
+ * The bar above every page: breadcrumb, the search box, the signed-in user and
  * a sign-out button beside them. On a phone it also carries the menu
  * button that opens the navigation drawer, since the rail is off-canvas.
  *
@@ -56,7 +56,6 @@ function crumbsFor(
  */
 export function TopBar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, isPending } = useCurrentUser();
   const signOut = useSignOut();
   const { open: drawerOpen, setOpen: setDrawerOpen } = useDrawer(pathname);
@@ -65,69 +64,7 @@ export function TopBar() {
   const common = useTranslations("common");
   const enums = useTranslations("enums");
 
-  const [query, setQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
-
-  // The jump popover closes on an outside click and on Escape.
-  useEffect(() => {
-    if (!searchFocused) return;
-    const onPointer = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (searchRef.current && !searchRef.current.contains(target))
-        setSearchFocused(false);
-    };
-    const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setSearchFocused(false);
-    };
-    document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [searchFocused]);
-
   if (isPending || !user) return null;
-
-  /*
-   * The jump box: type a module's name, Enter opens it. Only modules this
-   * role can reach and that exist, filtered the same way the sidebar is —
-   * plus the pages inside a module that has them, so "users" still lands on
-   * the users page now that it is a tile under Settings rather than a row.
-   * Not a record search — that lives on each list, where the server does it.
-   */
-  const term = query.trim().toLowerCase();
-  const matches = NAV_SECTIONS.flatMap((section) => {
-    const group = section.title
-      ? nav(`sections.${section.title.toLowerCase()}`)
-      : null;
-    return section.items
-      .filter((item) => item.href !== null && canSee(user.role, item))
-      .flatMap((item) => [item, ...(item.children ?? [])])
-      .filter((entry) => canSee(user.role, entry))
-      .map((entry) => ({
-        key: entry.key,
-        label: nav(`items.${entry.key}`),
-        href: entry.href as string,
-        group,
-      }))
-      .filter((entry) => term === "" || entry.label.toLowerCase().includes(term));
-  });
-  const showMatches = searchFocused && term !== "";
-
-  const jump = (href: string) => {
-    setQuery("");
-    setSearchFocused(false);
-    router.push(href);
-  };
-
-  const onSearchKey = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter" && matches[0] && term !== "") {
-      event.preventDefault();
-      jump(matches[0].href);
-    }
-  };
 
   const crumbs = crumbsFor(pathname, nav, t);
   const displayName = user.name || user.email;
@@ -168,56 +105,7 @@ export function TopBar() {
         ))}
       </nav>
 
-      <div className={styles.search} ref={searchRef}>
-        <span className={styles.searchIcon} aria-hidden="true">
-          <SearchIcon />
-        </span>
-        <input
-          type="search"
-          className={styles.searchInput}
-          placeholder={t("goTo")}
-          aria-label={t("goToModule")}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setSearchFocused(true);
-          }}
-          onFocus={() => setSearchFocused(true)}
-          onKeyDown={onSearchKey}
-          autoComplete="off"
-        />
-        {showMatches && (
-          <div className={styles.popover} role="listbox" aria-label={t("modules")}>
-            {matches.length === 0 && (
-              <div className={styles.popoverEmpty}>{t("noModuleMatches")}</div>
-            )}
-            {matches.map((item, index) => {
-              const Icon = NAV_ICONS[item.key];
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  role="option"
-                  aria-selected={index === 0}
-                  className={cx(
-                    styles.popoverItem,
-                    index === 0 && styles.popoverItemFirst,
-                  )}
-                  onClick={() => jump(item.href)}
-                >
-                  <span className={styles.popoverIcon}>
-                    {Icon ? <Icon /> : null}
-                  </span>
-                  <span className={styles.popoverLabel}>{item.label}</span>
-                  {item.group && (
-                    <span className={styles.popoverGroup}>{item.group}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <GlobalSearch role={user.role} />
 
       <div className={styles.account}>
         {/* Every role's bell; also where this tab's notification stream

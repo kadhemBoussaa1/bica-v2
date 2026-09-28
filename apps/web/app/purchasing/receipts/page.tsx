@@ -1,8 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { GoodsReceiptsTable } from "./goods-receipts-table";
+import { initialSearchOf, type ListPageProps } from "../../records/list-search";
 import styles from "../../records/records.module.css";
 
-export default async function GoodsReceiptsPage() {
+export default async function GoodsReceiptsPage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   const t = await getTranslations("purchasing");
   return (
     <div className={styles.page}>
@@ -19,7 +21,7 @@ export default async function GoodsReceiptsPage() {
         <p className={styles.subtitle}>{t("receipts.subtitle")}</p>
       </header>
 
-      <GoodsReceiptsTable />
+      <GoodsReceiptsTable key={search} initialSearch={search} />
     </div>
   );
 }

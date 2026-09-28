@@ -56,7 +56,12 @@ type InkRow = {
   _count: { usages: number };
 };
 
-export function InksTable() {
+export function InksTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { push } = useToast();
@@ -67,7 +72,10 @@ export function InksTable() {
   const unitLabel = (value: "KG" | "L") => units(`inkUnit.${value}`);
   const canWrite = me ? canAccess(me.role, "ADMIN") : false;
   const [error, setError] = useState<string | null>(null);
-  const [tableState, setTableState] = useState<InksTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<InksTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const inksQuery = useQuery({
     ...trpc.ink.list.queryOptions(tableState),

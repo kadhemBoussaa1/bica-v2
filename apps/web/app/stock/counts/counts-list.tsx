@@ -53,14 +53,22 @@ type CountRow = {
  * than a form — and the open session gets a panel above the table because it
  * is the only row anyone can act on.
  */
-export function CountsList() {
+export function CountsList({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const t = useTranslations("stock");
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { push } = useToast();
 
-  const [tableState, setTableState] = useState<CountsState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<CountsState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
   const [error, setError] = useState<string | null>(null);
 
   const countsQuery = useQuery({

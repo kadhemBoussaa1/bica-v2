@@ -49,12 +49,20 @@ const DOT_CLASS: Record<string, string | undefined> = {
   COMPLETE: purchasing.dotReceived,
 };
 
-export function GoodsReceiptsTable() {
+export function GoodsReceiptsTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const trpc = useTRPC();
   const router = useRouter();
   const t = useTranslations("purchasing");
   const filters = usePurchasingFilters();
-  const [tableState, setTableState] = useState<GoodsReceiptsTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<GoodsReceiptsTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const receiptsQuery = useQuery({
     ...trpc.goodsReceipt.list.queryOptions(tableState),

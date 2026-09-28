@@ -1,8 +1,17 @@
 {
-  "goTo": "الانتقال إلى…",
-  "goToModule": "الانتقال إلى وحدة",
+  "searchPlaceholder": "بحث…",
+  "searchLabel": "ابحث عن وحدة أو سجل",
   "modules": "الوحدات",
-  "noModuleMatches": "لا توجد وحدة مطابقة",
+  "noMatches": "لا توجد نتائج لـ «{term}»",
+  "search": {
+    "searching": "جارٍ البحث…",
+    "failed": "فشل البحث. حاول مرة أخرى.",
+    "seeAll": "عرض كل النتائج في {module}",
+    "draft": "مسودة",
+    "noNumber": "بدون رقم",
+    "stocktakeOf": "جرد {date}",
+    "archived": "مؤرشف"
+  },
   "signOut": "تسجيل الخروج",
   "signingOut": "جارٍ تسجيل الخروج…",
   "breadcrumb": "مسار التنقل",

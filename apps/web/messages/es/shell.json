@@ -1,8 +1,17 @@
 {
-  "goTo": "Ir a…",
-  "goToModule": "Ir a un módulo",
+  "searchPlaceholder": "Buscar…",
+  "searchLabel": "Buscar un módulo o un registro",
   "modules": "Módulos",
-  "noModuleMatches": "Ningún módulo coincide",
+  "noMatches": "Sin resultados para «{term}»",
+  "search": {
+    "searching": "Buscando…",
+    "failed": "La búsqueda falló. Inténtelo de nuevo.",
+    "seeAll": "Ver todos los resultados en {module}",
+    "draft": "Borrador",
+    "noNumber": "Sin número",
+    "stocktakeOf": "Inventario del {date}",
+    "archived": "Archivado"
+  },
   "signOut": "Cerrar sesión",
   "signingOut": "Cerrando sesión…",
   "breadcrumb": "Ruta de navegación",

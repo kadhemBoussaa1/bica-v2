@@ -1,9 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { ShipmentsTable } from "./shipments-table";
+import { initialSearchOf, type ListPageProps } from "../../records/list-search";
 import { NewRecordButton } from "../../records/new-record-button";
 import styles from "../../records/records.module.css";
 
-export default async function ShipmentsPage() {
+export default async function ShipmentsPage({ searchParams }: ListPageProps) {
+  const search = await initialSearchOf(searchParams);
   const t = await getTranslations("stock");
   return (
     <div className={styles.page}>
@@ -16,7 +18,7 @@ export default async function ShipmentsPage() {
         <NewRecordButton href="/stock/shipments/new" label={t("shipments.newShipment")} />
       </header>
 
-      <ShipmentsTable />
+      <ShipmentsTable key={search} initialSearch={search} />
     </div>
   );
 }

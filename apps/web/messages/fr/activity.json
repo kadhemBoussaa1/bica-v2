@@ -159,6 +159,9 @@
       "updateTask": "Ticket modifié",
       "removeTask": "Ticket supprimé",
       "setTaskDone": "Ticket marqué fait / rouvert"
+    },
+    "search": {
+      "global": "Recherche globale"
     }
   }
 }

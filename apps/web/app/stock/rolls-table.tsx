@@ -302,11 +302,19 @@ function AdvancedFilter({
   );
 }
 
-export function RollsTable() {
+export function RollsTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const t = useTranslations("stock");
   const enums = useTranslations("enums");
   const trpc = useTRPC();
-  const [tableState, setTableState] = useState<RollsTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<RollsTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const rollsQuery = useQuery({
     ...trpc.stock.listRolls.queryOptions(tableState),

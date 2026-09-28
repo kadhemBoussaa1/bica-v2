@@ -89,7 +89,12 @@ const INITIAL_STATE: ProductsTableState = {
   filter: "all",
 };
 
-export function ProductsTable() {
+export function ProductsTable({
+  initialSearch = "",
+}: {
+  /** The page's `?search=`, the table's first search — see list-search.ts. */
+  initialSearch?: string;
+}) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { user: me } = useCurrentUser();
@@ -98,7 +103,10 @@ export function ProductsTable() {
   const enums = useTranslations("enums");
   const canWrite = me ? canAccess(me.role, "ADMIN") : false;
   const [error, setError] = useState<string | null>(null);
-  const [tableState, setTableState] = useState<ProductsTableState>(INITIAL_STATE);
+  const [tableState, setTableState] = useState<ProductsTableState>({
+    ...INITIAL_STATE,
+    search: initialSearch,
+  });
 
   const productsQuery = useQuery({
     ...trpc.product.list.queryOptions(tableState),
