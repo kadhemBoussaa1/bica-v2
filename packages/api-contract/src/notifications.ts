@@ -53,10 +53,10 @@ export function visibleNotificationKinds(role: Role): NotificationKind[] {
 }
 
 /**
- * The personal kinds, which pop a toast as well as landing in the bell
- * (plan fact 8). A new order or quote, a finished ticket and a recorded
- * production run are bell-only: they are the admins' ambient feed, not
- * something addressed to one person.
+ * The kinds that pop a toast as well as landing in the bell (plan fact 8):
+ * the personal ones, and a recorded production run, which admins asked to
+ * be told about as it happens (2026-09-29). A new order or quote and a
+ * finished ticket stay bell-only, the admins' ambient feed.
  */
 export const TOAST_NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "ORDER_IN_PRODUCTION",
@@ -64,6 +64,7 @@ export const TOAST_NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "TASK_ASSIGNED",
   "TASK_REASSIGNED_AWAY",
   "TASK_REOPENED",
+  "PRODUCTION_RECORDED",
 ];
 
 export function isToastNotification(kind: NotificationKind): boolean {
@@ -73,7 +74,12 @@ export function isToastNotification(kind: NotificationKind): boolean {
 /**
  * The kinds that also reach a phone as a system notification when the app
  * is closed (docs/pwa-plan.md, phase 2). The toast set today, as its own
- * constant so the two can diverge: the admins' feed stays in the bell.
+ * constant so the two can diverge.
+ *
+ * Every kind here must also be in TOAST_NOTIFICATION_KINDS: the service
+ * worker (public/sw.js) shows nothing while the app is open and focused,
+ * because the toast says it there. A push-only kind would reach a closed
+ * phone and never an open app.
  */
 export const PUSH_NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "ORDER_IN_PRODUCTION",
@@ -81,6 +87,7 @@ export const PUSH_NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "TASK_ASSIGNED",
   "TASK_REASSIGNED_AWAY",
   "TASK_REOPENED",
+  "PRODUCTION_RECORDED",
 ];
 
 export function isPushNotification(kind: NotificationKind): boolean {

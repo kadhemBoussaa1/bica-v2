@@ -122,7 +122,7 @@ export class NotificationService implements BeforeApplicationShutdown {
 
   /**
    * Delivery, once the transaction has committed: the open streams, then
-   * Web Push for the personal kinds (docs/pwa-plan.md). The push is not
+   * Web Push for the push kinds (docs/pwa-plan.md). The push is not
    * awaited — a slow push service must not delay the business response —
    * and `send` never rejects; the catch is the backstop.
    */

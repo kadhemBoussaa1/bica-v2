@@ -108,8 +108,9 @@ export class PushService {
   }
 
   /**
-   * Pushes the personal kinds among rows a transaction just committed —
-   * called by NotificationOutbox's delivery, beside the SSE push.
+   * Pushes the push kinds (`isPushNotification`) among rows a transaction
+   * just committed — called by NotificationOutbox's delivery, beside the
+   * SSE push.
    *
    * Fire and forget, and NEVER rejects: the caller does not await it (a slow
    * push service must not delay the business response), and an unhandled

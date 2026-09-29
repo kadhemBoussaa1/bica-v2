@@ -61,7 +61,8 @@ function BellIcon() {
  * scopes them to the kinds this role may read — and opens on the page the
  * row is about, marking it read on the way.
  *
- * Personal kinds also pop a toast. The stream says only which row and
+ * The toast kinds (the personal ones, and production entries for admins)
+ * also pop a toast. The stream says only which row and
  * whether to toast; the words come from the row, read through tRPC like the
  * bell's, so a popup and the bell never word one event differently.
  *
