@@ -7,8 +7,13 @@
 export const LOCALES = ["en", "fr", "ar", "es"] as const;
 export type Locale = (typeof LOCALES)[number];
 
-/** English is what the app spoke before it had a picker: the no-surprise default. */
-export const DEFAULT_LOCALE: Locale = "en";
+/**
+ * French, the plant's working language (user decision, 2026-09-29), and
+ * the language the generated documents already default to. Only a browser
+ * whose user has not picked a language gets it: a choice made in the
+ * picker is a cookie, and it wins.
+ */
+export const DEFAULT_LOCALE: Locale = "fr";
 
 export const LOCALE_COOKIE = "bp-locale";
 
