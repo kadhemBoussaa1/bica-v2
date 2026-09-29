@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { canAccessAny, type WorkshopStage } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
@@ -40,8 +41,14 @@ export function ProductionViews() {
   const { user } = useCurrentUser();
   const t = useTranslations("production");
   const enums = useTranslations("enums");
+  const params = useSearchParams();
   const [view, setView] = useState<"day" | "month">("day");
-  const [date, setDate] = useState(() => isoDay(new Date()));
+  // `?date=` (the dashboard's last-day tile) opens the day view on that day.
+  // Read once, on arrival: navigating days afterwards does not touch the URL.
+  const [date, setDate] = useState(() => {
+    const asked = params.get("date");
+    return asked && /^\d{4}-\d{2}-\d{2}$/.test(asked) ? asked : isoDay(new Date());
+  });
   const [month, setMonth] = useState(() => isoMonth(new Date()));
   const [recording, setRecording] = useState<WorkshopStage | null>(null);
 

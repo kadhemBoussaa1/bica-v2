@@ -12,8 +12,11 @@ const int = () => numberFormat({ maximumFractionDigits: 0 });
 
 type Figure = Exclude<keyof MonthTotals, "month">;
 
-/** The four stations in flow order, each with its headline and its label. */
-const STAGES = [
+/**
+ * The four stations in flow order, each with its headline and its label.
+ * The KPI row's last-day tile reads it too.
+ */
+export const STAGES = [
   { stage: "PRINTING", figure: "metersPrinted", label: "printed" },
   { stage: "PRODUCER", figure: "piecesProduced", label: "produced" },
   { stage: "QUALITY_CONTROL", figure: "piecesControlled", label: "controlled" },

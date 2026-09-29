@@ -124,6 +124,27 @@ export function weekStartOf(isoDay: string): string {
   return addDays(isoDay, -weekdayOf(isoDay));
 }
 
+/**
+ * Whether any shift's output belongs to `isoDay`. A shift's production
+ * belongs to the day it ENDS (user rule, 2026-09-29): the night shift starts
+ * at 22:00 and counts for the next day, so Sunday night is Monday's
+ * production and Sunday has none. Unlike a `Shift` row, which is dated by
+ * the day it starts. Derived from `WEEK_SHIFTS`.
+ */
+export function isProductionDay(isoDay: string): boolean {
+  const weekday = weekdayOf(isoDay);
+  return WEEK_SHIFTS.some(
+    (s) => (s.dayOffset + (SHIFT_HOURS[s.type].endsNextDay ? 1 : 0)) % 7 === weekday,
+  );
+}
+
+/** The last production day before `isoDay`: the day before, or Saturday on a Monday. */
+export function previousProductionDay(isoDay: string): string {
+  let day = addDays(isoDay, -1);
+  for (let step = 0; step < 7 && !isProductionDay(day); step++) day = addDays(day, -1);
+  return day;
+}
+
 /** Today's date in plant time, as YYYY-MM-DD. */
 export function plantDay(now: Date = new Date()): string {
   return new Date(now.getTime() + PLANT_UTC_OFFSET_MS).toISOString().slice(0, 10);

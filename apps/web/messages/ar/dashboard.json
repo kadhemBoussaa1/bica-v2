@@ -49,7 +49,10 @@
     "overdueMeta": "{count, plural, =0 {لا شيء صادر} one {واحدة صادرة، لم يُسجَّل دفع} other {# صادرة، لم يُسجَّل دفع}}",
     "requests": "طلبات الورديات",
     "requestsUnit": "معلّقة",
-    "requestsMeta": "{count, plural, =0 {لا شيء للبتّ فيه} other {# للبتّ فيها}}"
+    "requestsMeta": "{count, plural, =0 {لا شيء للبتّ فيه} other {# للبتّ فيها}}",
+    "yesterday": "إنتاج الأمس",
+    "lastDay": "آخر يوم إنتاج",
+    "entries": "{count, plural, =0 {لا إدخالات} one {إدخال واحد} other {# إدخالات}}"
   },
   "production": {
     "title": "الإنتاج",

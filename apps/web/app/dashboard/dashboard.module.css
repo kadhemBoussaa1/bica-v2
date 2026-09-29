@@ -272,10 +272,49 @@
 
 /* --- the four headline figures --- */
 
+/*
+ * Columns from the row's own width, not the viewport's (the sidebar takes
+ * 280px or 68px of the same screen). Explicit steps rather than auto-fit:
+ * the last-day tile is two tiles wide, and auto-fit would leave it alone on
+ * a second line beside empty tracks.
+ *
+ *   one row      6 tracks, the wide tile spans 2
+ *   4 + 1        4 tracks, the wide tile takes its own line
+ *   2 + 2 + 1    2 tracks, the same
+ *   stacked      under 440px
+ */
+.kpisFrame {
+  container: kpis / inline-size;
+}
+
 .kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--bp-space-4);
+}
+
+@container kpis (min-width: 440px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .kpiWide {
+    grid-column: 1 / -1;
+  }
+}
+
+@container kpis (min-width: 880px) {
+  .kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container kpis (min-width: 1440px) {
+  .kpis {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .kpiWide {
+    grid-column: span 2;
+  }
 }
 
 .kpi {
@@ -318,6 +357,74 @@
 .kpiMeta {
   font: 400 0.8125rem/1.4 var(--bp-font-body);
   color: var(--bp-ink-muted);
+}
+
+/* The last production day: four station figures, a link to that day. The
+   figures go four across once the tile's content box has room, two by two
+   before that. */
+.kpiWide {
+  container: kpiwide / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  transition: border-color 120ms ease-out;
+}
+
+.kpiWide:hover {
+  border-color: var(--bp-control-border-hover);
+}
+
+.kpiWide:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.kpiStations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bp-space-2) var(--bp-space-3);
+}
+
+@container kpiwide (min-width: 420px) {
+  .kpiStations {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.kpiStation {
+  min-width: 0;
+  display: grid;
+  gap: var(--bp-space-1);
+}
+
+.kpiStationLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-width: 0;
+  font: 500 0.75rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  white-space: nowrap;
+}
+
+.kpiStationFigure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--bp-space-1);
+}
+
+.kpiStationValue {
+  font: 700 1.375rem/1.1 var(--bp-font-display);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kpiWide {
+    transition: none;
+  }
 }
 
 /* --- production: one card per station, then the quality breakdown --- */
@@ -532,7 +639,9 @@
   /* 300px, not the handoff's 340: three across beside the sidebar at 1280. */
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: var(--bp-space-4);
-  align-items: start;
+  /* Panels in one row share its height (user request, 2026-09-29): three
+     cards ending at three heights read as a layout fault. */
+  align-items: stretch;
 }
 
 /* One subgrid track for the labels, so every bar starts on the same line

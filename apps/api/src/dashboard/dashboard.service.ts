@@ -4,6 +4,7 @@ import {
   SHIFT_TYPES,
   inkStockState,
   plantDay,
+  previousProductionDay,
   utcDay,
   weekStartOf,
   type OrderStatus,
@@ -109,8 +110,8 @@ export class DashboardService {
       });
 
     // One transaction so every figure describes the same instant; the
-    // production trend is the one read outside it (a multi-step method
-    // cannot be an element of a batch), and it is month-grained anyway.
+    // production trend and the last production day are the reads outside it:
+    // a multi-step method cannot be an element of a batch.
     const [
       orderGroups,
       quotes,
@@ -246,6 +247,11 @@ export class DashboardService {
     ]);
 
     const production = await this.production.monthlyTotals(actor, { from: trendFrom, to: month });
+    // The last production day's totals, from the production page's own day
+    // view, so the tile equals that page on that day. The day before today
+    // in plant time, or Saturday on a Monday: output belongs to the day a
+    // shift ends, so Sunday has none (`previousProductionDay`).
+    const lastDay = await this.production.daily(actor, { date: previousProductionDay(plantToday) });
 
     const byStatus = new Map(orderGroups.map((g) => [g.status as OrderStatus, g._count._all]));
     const headcount = new Map(headcountGroups.map((g) => [g.type as ShiftType, g._count._all]));
@@ -271,6 +277,7 @@ export class DashboardService {
       plantToday,
       month,
       production,
+      lastProductionDay: { date: lastDay.date, totals: lastDay.totals },
       orders: {
         /** Active job orders per status, zero-filled in enum order; quotes are separate. */
         byStatus: ORDER_STATUSES.map((status) => ({ status, count: byStatus.get(status) ?? 0 })),

@@ -49,7 +49,10 @@
     "overdueMeta": "{count, plural, =0 {ninguna emitida} one {# emitida, sin pago registrado} other {# emitidas, sin pago registrado}}",
     "requests": "Solicitudes de turno",
     "requestsUnit": "pendientes",
-    "requestsMeta": "{count, plural, =0 {nada que decidir} other {# por decidir}}"
+    "requestsMeta": "{count, plural, =0 {nada que decidir} other {# por decidir}}",
+    "yesterday": "Producción de ayer",
+    "lastDay": "Último día de producción",
+    "entries": "{count, plural, =0 {sin entradas} one {# entrada} other {# entradas}}"
   },
   "production": {
     "title": "Producción",
