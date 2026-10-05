@@ -162,6 +162,31 @@
     },
     "search": {
       "global": "Búsqueda global"
+    },
+    "manufacturing": {
+      "create": "Orden de fabricación abierta",
+      "cancel": "Orden de fabricación cancelada",
+      "reopen": "Orden de fabricación reabierta",
+      "remove": "Orden de fabricación eliminada",
+      "addAction": "Acción de OF añadida",
+      "updateAction": "Acción de OF editada",
+      "removeAction": "Acción de OF quitada",
+      "moveAction": "Acción de OF movida",
+      "start": "Acción de OF iniciada",
+      "complete": "Acción de OF terminada",
+      "skip": "Acción de OF omitida",
+      "undo": "Último paso de OF deshecho",
+      "setEmployees": "Empleados de una acción de OF definidos",
+      "setMachine": "Máquina de una acción de OF definida",
+      "createAttachmentUpload": "Subida de archivo de OF solicitada",
+      "addAttachment": "Archivo de OF añadido",
+      "removeAttachment": "Archivo de OF quitado",
+      "addComment": "Acción de OF comentada"
+    },
+    "manufacturingTemplate": {
+      "create": "Plantilla de OF creada",
+      "update": "Plantilla de OF editada",
+      "setActive": "Plantilla de OF archivada / restaurada"
     }
   }
 }

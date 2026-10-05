@@ -89,6 +89,11 @@ model User {
   notificationsActed Notification[] @relation("NotificationActor")
   /// The browsers this user turned phone notifications on in — docs/pwa-plan.md.
   pushSubscriptions  PushSubscription[]
+  /// OFs this user opened / cancelled and the comments they wrote on actions —
+  /// docs/manufacturing-orders-plan.md. All SetNull: each row keeps a name.
+  manufacturingOrdersCreated   ManufacturingOrder[]         @relation("ManufacturingOrderCreatedBy")
+  manufacturingOrdersCancelled ManufacturingOrder[]         @relation("ManufacturingOrderCancelledBy")
+  manufacturingComments        ManufacturingActionComment[] @relation("ManufacturingCommentAuthor")
 
   @@index([role, id])
   /// Foreign key: Postgres does not index one on its own, and deleting a user
@@ -419,6 +424,10 @@ model Machine {
   productionRuns ProductionRun[]
   /// Tickets naming this machine — see ShiftTask. Restrict there.
   shiftTasks     ShiftTask[]
+
+  /// OF actions run on this machine — see ManufacturingAction. Restrict there.
+  manufacturingActions ManufacturingAction[]
+
   @@index([createdAt, id])
   @@index([active, name, id])
   @@index([type])
@@ -513,6 +522,10 @@ model Employee {
 
   /// Scans and PDFs filed on the record (Employees v3 "Documents").
   documents EmployeeDocument[]
+
+  /// OF actions this person is assigned to — see ManufacturingActionAssignee.
+  manufacturingAssignments ManufacturingActionAssignee[]
+
   /// Legacy bigint primary key — see Client.legacyId.
   legacyId BigInt? @unique
 
@@ -920,6 +933,11 @@ model Order {
   /// job (docs/shift-planning-plan.md). Only an IN_PRODUCTION order may be
   /// named; SetNull there, so a ticket outlives an order's deletion.
   shiftTasks ShiftTask[]
+
+  /// The order's OF (ordre de fabrication), at most one — see
+  /// ManufacturingOrder. Its number is derived from `numero`, so
+  /// `OrderService.update` renumbers it in the same transaction.
+  manufacturingOrder ManufacturingOrder?
 
   /// Archive rather than delete — nine legacy tables reference an order.
   active Boolean @default(true)
@@ -3196,4 +3214,246 @@ model PushSubscription {
 
   @@index([userId])
   @@index([sessionId])
+}
+
+// ---------------------------------------------------------------------------
+// Manufacturing orders (ordres de fabrication, OF) — docs/manufacturing-orders-plan.md
+// ---------------------------------------------------------------------------
+//
+// An OF describes how one order is made: an ordered pipeline of actions,
+// worked strictly one after the other. ADMIN and above only. The rules that
+// decide what may change and when are pure functions in the contract
+// (`manufacturing.ts`), shared with the web so a button is disabled by the
+// same test that would refuse the call.
+
+/// Never typed, apart from CANCELLED: recomputed from the actions on every
+/// action write (`manufacturingStatusOf`). No actions at all is a DRAFT.
+enum ManufacturingOrderStatus {
+  DRAFT
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+/// WAITING -> IN_PROGRESS -> DONE, or SKIPPED (from waiting or in progress).
+/// "Started" everywhere means "no longer WAITING".
+enum ManufacturingActionStatus {
+  WAITING
+  IN_PROGRESS
+  DONE
+  SKIPPED
+}
+
+/// A reusable pipeline. Creating an OF COPIES its actions, so editing or
+/// archiving a template never changes an OF made from it. The OF remembers
+/// which template it started from (`ManufacturingOrder.templateId`) only to
+/// say so on screen.
+model ManufacturingTemplate {
+  id String @id @default(cuid())
+
+  name        String
+  description String?
+
+  /// Archive rather than delete: the picker hides it, the list keeps it.
+  active Boolean @default(true)
+
+  actions ManufacturingTemplateAction[]
+
+  /// The OFs opened from this template — a count on its card, nothing more:
+  /// an OF holds a COPY of the actions, never a live link to them.
+  manufacturingOrders ManufacturingOrder[]
+
+  /// The old app's `pipeline_template.id` — the importer's create-only key.
+  legacyId BigInt? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, name, id])
+}
+
+/// One row of a template: a name and the three switches. Replaced as a whole
+/// set on every template save, so a row has no identity worth keeping.
+model ManufacturingTemplateAction {
+  id String @id @default(cuid())
+
+  templateId String
+  template   ManufacturingTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  position Int
+  label    String
+
+  handlesEmployees   Boolean @default(false)
+  handlesMachine     Boolean @default(false)
+  handlesAttachments Boolean @default(false)
+
+  @@index([templateId, position])
+}
+
+/// An OF: at most one per order, and only for an ORDER (never a QUOTE).
+model ManufacturingOrder {
+  id String @id @default(cuid())
+
+  /// `OF-<year>-<n>` for an order numbered `CMD-<n>` — see
+  /// `manufacturingOrderNumero`. Stored so the list can search it, and kept
+  /// in step with the order by `OrderService.update`.
+  numero String @unique
+  /// The year the OF was opened. Kept apart from `createdAt` because the
+  /// number is rebuilt from it when the order is renumbered.
+  year   Int
+
+  /// Restrict: orders are archived, never deleted.
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  status ManufacturingOrderStatus @default(DRAFT)
+
+  /// The template its actions were copied from, to label the OF ("from
+  /// template X"). Null for an OF opened empty and for every imported one —
+  /// the old app never recorded it. SetNull: the OF outlives the template.
+  templateId String?
+  template   ManufacturingTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  /// The pipeline's shape was changed after it was copied (an action added,
+  /// removed, moved or redefined): "from template X, adapted".
+  adapted    Boolean                @default(false)
+
+  /// When anything last happened on the OF — a status move, a person, a
+  /// file, a comment. Written by every `ManufacturingService` change; an
+  /// in-progress OF untouched for `MANUFACTURING_STALE_DAYS` reads as stale.
+  lastActivityAt DateTime @default(now())
+
+  cancelledAt   DateTime?
+  cancelReason  String?
+  cancelledById String?
+  cancelledBy   User?     @relation("ManufacturingOrderCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  /// The number the old app gave it (`OF-2026-000765`), on the 68 imported
+  /// OFs only. Shown beside the new one and searchable: staff still hold
+  /// sheets printed with it. Also the importer's create-only key.
+  legacyNumero String? @unique
+
+  /// Who opened it. The name is a snapshot, as on `ChatMessage`: it outlives
+  /// the account, and on an imported OF it is the old app's username.
+  createdById   String?
+  createdBy     User?   @relation("ManufacturingOrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdByName String?
+
+  actions ManufacturingAction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt, id])
+  @@index([cancelledById])
+  @@index([createdById])
+  /// Foreign key: deleting a template SetNulls it here.
+  @@index([templateId])
+}
+
+/// One step of an OF's pipeline.
+///
+/// The three switches say which fields the action offers; an offered field
+/// is never required. Once the action has started its definition (label,
+/// switches, position) is frozen; its people, machine and files stay
+/// editable until it is done or skipped.
+model ManufacturingAction {
+  id String @id @default(cuid())
+
+  manufacturingOrderId String
+  manufacturingOrder   ManufacturingOrder @relation(fields: [manufacturingOrderId], references: [id], onDelete: Cascade)
+
+  /// 0-based and contiguous within the OF. Indexed, not unique: a move
+  /// rewrites several rows, and a unique would need a deferred constraint.
+  /// The OF row lock is what keeps two writers from interleaving.
+  position Int
+  label    String
+
+  handlesEmployees   Boolean @default(false)
+  handlesMachine     Boolean @default(false)
+  handlesAttachments Boolean @default(false)
+
+  status ManufacturingActionStatus @default(WAITING)
+
+  /// Null on an action skipped while still waiting — which is how "undo"
+  /// knows whether a skipped action goes back to in progress or to waiting.
+  startedAt   DateTime?
+  /// When it was done or skipped.
+  completedAt DateTime?
+
+  /// Restrict: machines are archived, never deleted.
+  machineId String?
+  machine   Machine? @relation(fields: [machineId], references: [id], onDelete: Restrict)
+
+  assignees   ManufacturingActionAssignee[]
+  attachments ManufacturingActionAttachment[]
+  comments    ManufacturingActionComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([manufacturingOrderId, position])
+  @@index([machineId])
+}
+
+/// Who works an action — several per action.
+model ManufacturingActionAssignee {
+  actionId String
+  action   ManufacturingAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  /// Restrict: employees are archived, never deleted.
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  @@id([actionId, employeeId])
+  @@index([employeeId])
+}
+
+/// A file on an action: uploaded straight to S3 through a presigned PUT,
+/// then filed here by URL. Close to `ChatAttachment`, except that `size` is
+/// optional — a file imported from the old app carries a URL and a name only.
+/// Removing the row leaves the object: nothing here deletes from the shared
+/// bucket (see StorageService).
+model ManufacturingActionAttachment {
+  id String @id @default(cuid())
+
+  actionId String
+  action   ManufacturingAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  url         String
+  /// A plain String, like `ChatAttachment.contentType`; read from the file
+  /// extension on an imported file.
+  contentType String
+  /// The name the user chose, for the link label. The S3 key is not it.
+  filename    String
+  size        Int?
+
+  createdAt DateTime @default(now())
+
+  /// Loaded per action, in insertion order.
+  @@index([actionId, id])
+}
+
+/// A comment on an action. Always addable, whatever the action's status.
+///
+/// `authorName` is the snapshot that keeps it readable: the account's name
+/// when written here, the old app's username on an imported comment. Both
+/// author fields empty marks a comment the importer wrote itself, from the
+/// old built-in fields that have no column here.
+model ManufacturingActionComment {
+  id String @id @default(cuid())
+
+  actionId String
+  action   ManufacturingAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  body String
+
+  authorId   String?
+  author     User?   @relation("ManufacturingCommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  authorName String?
+
+  createdAt DateTime @default(now())
+
+  /// Loaded per action, oldest first.
+  @@index([actionId, createdAt])
+  @@index([authorId])
 }

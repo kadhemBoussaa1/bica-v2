@@ -126,6 +126,21 @@ import {
   pushSubscriptionInput,
   pushUnsubscribeInput,
   globalSearchInput,
+  addManufacturingActionInput,
+  addManufacturingAttachmentInput,
+  addManufacturingCommentInput,
+  cancelManufacturingOrderInput,
+  createManufacturingOrderInput,
+  createManufacturingTemplateInput,
+  manufacturingActionIdInput,
+  manufacturingAttachmentUploadInput,
+  manufacturingOrderIdInput,
+  moveManufacturingActionInput,
+  removeManufacturingAttachmentInput,
+  setManufacturingActionEmployeesInput,
+  setManufacturingActionMachineInput,
+  updateManufacturingActionInput,
+  updateManufacturingTemplateInput,
 } from "@repo/api-contract";
 import { candidatesInput } from "../allocation/allocation.list";
 import { AllocationService } from "../allocation/allocation.service";
@@ -168,6 +183,9 @@ import {
 } from "../purchasing/purchasing.list";
 import { PurchasingService } from "../purchasing/purchasing.service";
 import { SearchService } from "../search/search.service";
+import { listManufacturingOrdersInput } from "../manufacturing/manufacturing.list";
+import { ManufacturingTemplateService } from "../manufacturing/manufacturing-template.service";
+import { ManufacturingService } from "../manufacturing/manufacturing.service";
 import { listExportShipmentsInput } from "../shipment/shipment.list";
 import { ShipmentService } from "../shipment/shipment.service";
 import { ShiftService } from "../shift/shift.service";
@@ -226,6 +244,8 @@ export class TrpcRouter {
     private readonly notificationService: NotificationService,
     private readonly pushService: PushService,
     private readonly searchService: SearchService,
+    private readonly manufacturingService: ManufacturingService,
+    private readonly manufacturingTemplateService: ManufacturingTemplateService,
   ) {}
 
   readonly appRouter = router({
@@ -1010,6 +1030,137 @@ export class TrpcRouter {
         .input(allocationIdInput)
         .mutation(({ ctx, input }) =>
           this.allocationService.cancel(ctx.user, input.id),
+        ),
+    }),
+
+    /**
+     * Manufacturing orders (OF): one per order, a pipeline of actions worked
+     * one after the other — docs/manufacturing-orders-plan.md. ADMIN and
+     * above throughout; production and warehouse accounts have no access.
+     *
+     * Every mutation returns the OF's `{ id, numero, orderId }`, and an
+     * action is always named `actionId` in an input, never `id`: the
+     * activity trace takes the first `id` it finds as the call's record, and
+     * an action's row has to open the OF, which is the page that exists.
+     */
+    manufacturing: router({
+      list: adminProcedure
+        .input(listManufacturingOrdersInput)
+        .query(({ input }) => this.manufacturingService.list(input)),
+
+      byId: adminProcedure
+        .input(manufacturingOrderIdInput)
+        .query(({ input }) => this.manufacturingService.byId(input.id)),
+
+      // The list header's figures and the tabs' counts.
+      summary: adminProcedure.query(() => this.manufacturingService.summary()),
+
+      create: adminProcedure
+        .input(createManufacturingOrderInput)
+        .mutation(({ ctx, input }) => this.manufacturingService.create(ctx.user, input)),
+
+      cancel: adminProcedure
+        .input(cancelManufacturingOrderInput)
+        .mutation(({ ctx, input }) => this.manufacturingService.cancel(ctx.user, input)),
+
+      reopen: adminProcedure
+        .input(manufacturingOrderIdInput)
+        .mutation(({ input }) => this.manufacturingService.reopen(input.id)),
+
+      /** Only while no action has started; a started OF is cancelled instead. */
+      remove: adminProcedure
+        .input(manufacturingOrderIdInput)
+        .mutation(({ input }) => this.manufacturingService.remove(input.id)),
+
+      // The pipeline's shape: waiting actions only, below the last started one.
+      addAction: adminProcedure
+        .input(addManufacturingActionInput)
+        .mutation(({ input }) => this.manufacturingService.addAction(input)),
+
+      updateAction: adminProcedure
+        .input(updateManufacturingActionInput)
+        .mutation(({ input }) => this.manufacturingService.updateAction(input)),
+
+      removeAction: adminProcedure
+        .input(manufacturingActionIdInput)
+        .mutation(({ input }) => this.manufacturingService.removeAction(input.actionId)),
+
+      moveAction: adminProcedure
+        .input(moveManufacturingActionInput)
+        .mutation(({ input }) => this.manufacturingService.moveAction(input)),
+
+      // Working it, strictly one action after the other. Finishing the
+      // action in progress starts the next one; `undo` steps back the same way.
+      start: adminProcedure
+        .input(manufacturingActionIdInput)
+        .mutation(({ input }) => this.manufacturingService.start(input.actionId)),
+
+      complete: adminProcedure
+        .input(manufacturingActionIdInput)
+        .mutation(({ input }) => this.manufacturingService.complete(input.actionId)),
+
+      skip: adminProcedure
+        .input(manufacturingActionIdInput)
+        .mutation(({ input }) => this.manufacturingService.skip(input.actionId)),
+
+      /** Steps the OF's pipeline back one action. */
+      undo: adminProcedure
+        .input(manufacturingOrderIdInput)
+        .mutation(({ input }) => this.manufacturingService.undo(input.id)),
+
+      setEmployees: adminProcedure
+        .input(setManufacturingActionEmployeesInput)
+        .mutation(({ input }) => this.manufacturingService.setEmployees(input)),
+
+      setMachine: adminProcedure
+        .input(setManufacturingActionMachineInput)
+        .mutation(({ input }) => this.manufacturingService.setMachine(input)),
+
+      /**
+       * A file on an action, in the app's usual two steps: a presigned PUT
+       * (refused unless the action can take a file right now), then the
+       * returned URL is filed, which the service checks is on this bucket.
+       */
+      createAttachmentUpload: adminProcedure
+        .input(manufacturingAttachmentUploadInput)
+        .mutation(async ({ input }) => {
+          await this.manufacturingService.assertAttachmentUploadable(input.actionId);
+          return this.storageService.createUpload(input);
+        }),
+
+      addAttachment: adminProcedure
+        .input(addManufacturingAttachmentInput)
+        .mutation(({ input }) => this.manufacturingService.addAttachment(input)),
+
+      removeAttachment: adminProcedure
+        .input(removeManufacturingAttachmentInput)
+        .mutation(({ input }) => this.manufacturingService.removeAttachment(input.attachmentId)),
+
+      addComment: adminProcedure
+        .input(addManufacturingCommentInput)
+        .mutation(({ ctx, input }) => this.manufacturingService.addComment(ctx.user, input)),
+    }),
+
+    /**
+     * The pipeline templates an OF is opened from. Its own router rather
+     * than `manufacturing.template*`: the activity trace links a row by its
+     * module, and a template has no page for a link to open.
+     */
+    manufacturingTemplate: router({
+      list: adminProcedure.query(() => this.manufacturingTemplateService.list()),
+
+      create: adminProcedure
+        .input(createManufacturingTemplateInput)
+        .mutation(({ input }) => this.manufacturingTemplateService.create(input)),
+
+      update: adminProcedure
+        .input(updateManufacturingTemplateInput)
+        .mutation(({ input }) => this.manufacturingTemplateService.update(input)),
+
+      setActive: adminProcedure
+        .input(setPartnerActiveInput)
+        .mutation(({ input }) =>
+          this.manufacturingTemplateService.setActive(input.id, input.active),
         ),
     }),
 

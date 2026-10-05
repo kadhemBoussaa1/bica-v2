@@ -13,6 +13,7 @@ import {
   canAccess,
   findOrderTransition,
   legacyFlagsForStatus,
+  manufacturingOrderNumero,
   normaliseProductSpec,
   parcelBalance,
   plannedParcels,
@@ -451,36 +452,60 @@ export class OrderService {
     return `CMD-${sequence}`;
   }
 
+  /**
+   * One transaction, opened on a lock of the order row: the order's OF takes
+   * its number from `numero` (`OF-<year>-<n>` for `CMD-<n>`), so a renumber
+   * rewrites both or neither, and `ManufacturingService.create` — which
+   * takes the same lock — can never build an OF number from a `numero` this
+   * save is about to replace. While an OF exists the order must keep a
+   * `CMD-<n>` number, or the OF would have none to follow.
+   */
   async update(input: UpdateOrderInput) {
-    const current = await this.assertExists(input.id);
     await this.assertNumeroFree(input.numero, input.id);
-    // Only a CHANGED number is checked against the counter: a legacy order
-    // already holding one ahead of it (CMD-6009) must stay saveable.
-    if (input.numero !== current.numero) {
-      await this.assertNumeroNotAhead(input.numero);
-    }
     await this.assertReferencesExist(input.clientId);
-    const product = await this.resolveProduct(
-      this.prisma,
-      input.product,
-      input.clientId ?? null,
-      current.productId,
-    );
     try {
-      return await this.prisma.order.update({
-        where: { id: input.id },
-        data: {
-          // Written here, not in `writable`: `create` allocates its own and
-          // this is the only path that takes one from the caller.
-          numero: input.numero,
-          ...this.writable(input),
-          productId: product.id,
-          ...this.priced(product, input, current.legacyGlueCostPerUnit),
-          // kind/status/the legacy booleans are deliberately absent: `update`
-          // never touches the lifecycle. Only `create`, `transition` and
-          // `acceptQuote` do — see their doc comments.
-        },
-        select: RETURN_SELECT,
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT 1 FROM "Order" WHERE "id" = ${input.id} FOR UPDATE`;
+        const current = await this.assertExists(input.id, tx);
+        if (input.numero !== current.numero) {
+          // Only a CHANGED number is checked against the counter: a legacy
+          // order already holding one ahead of it (CMD-6009) must stay saveable.
+          await this.assertNumeroNotAhead(input.numero);
+          if (current.manufacturingOrder) {
+            const numero = manufacturingOrderNumero(input.numero, current.manufacturingOrder.year);
+            if (numero === null) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `This order has a manufacturing order (${current.manufacturingOrder.numero}) — its number must stay in the CMD-<n> form`,
+              });
+            }
+            await tx.manufacturingOrder.update({
+              where: { id: current.manufacturingOrder.id },
+              data: { numero },
+            });
+          }
+        }
+        const product = await this.resolveProduct(
+          tx,
+          input.product,
+          input.clientId ?? null,
+          current.productId,
+        );
+        return tx.order.update({
+          where: { id: input.id },
+          data: {
+            // Written here, not in `writable`: `create` allocates its own and
+            // this is the only path that takes one from the caller.
+            numero: input.numero,
+            ...this.writable(input),
+            productId: product.id,
+            ...this.priced(product, input, current.legacyGlueCostPerUnit),
+            // kind/status/the legacy booleans are deliberately absent: `update`
+            // never touches the lifecycle. Only `create`, `transition` and
+            // `acceptQuote` do — see their doc comments.
+          },
+          select: RETURN_SELECT,
+        });
       });
     } catch (cause) {
       // `assertNumeroFree` is a read; two saves racing to the same number
@@ -1130,10 +1155,16 @@ export class OrderService {
     };
   }
 
-  private async assertExists(id: string) {
-    const found = await this.prisma.order.findUnique({
+  private async assertExists(id: string, db: Db = this.prisma) {
+    const found = await db.order.findUnique({
       where: { id },
-      select: { id: true, numero: true, productId: true, legacyGlueCostPerUnit: true },
+      select: {
+        id: true,
+        numero: true,
+        productId: true,
+        legacyGlueCostPerUnit: true,
+        manufacturingOrder: { select: { id: true, numero: true, year: true } },
+      },
     });
     if (!found) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });

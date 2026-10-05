@@ -337,6 +337,12 @@ export const ORDER_DETAIL_SELECT_PRICED = {
     },
     orderBy: { invoice: { createdAt: "asc" } },
   },
+
+  // ---- manufacturing order --------------------------------------------------
+  // The order's OF, for the detail's "Create OF" / "Open OF" card
+  // (docs/manufacturing-orders-plan.md). On this select because the OF
+  // module is ADMIN and above, exactly the callers who get it.
+  manufacturingOrder: { select: { id: true, numero: true, status: true } },
 } satisfies Prisma.OrderSelect;
 
 export const listOrdersInput = listQueryBase.extend({

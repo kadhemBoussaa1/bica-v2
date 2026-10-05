@@ -13,6 +13,7 @@
     "suppliers": "Suppliers",
     "products": "Products",
     "job-orders": "Job orders",
+    "manufacturing-orders": "Manufacturing orders",
     "machines": "Machines",
     "employees": "Employees",
     "production": "Production",

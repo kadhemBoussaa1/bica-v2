@@ -1,0 +1,1831 @@
+/*
+ * Manufacturing orders (OF), from "Ordres de fabrication v3.dc.html": the
+ * list with its figures, the template cards and their side-panel editor,
+ * and the OF page — a timeline of action cards beside a rail.
+ *
+ * The handoff's radii and gaps are snapped to the toolkit scales, and its
+ * status colours come from the banded lists' tones (`--state-*`), so a
+ * status reads the same here as on every other v3 list.
+ */
+
+/* ---------------------------------------------------------------------- */
+/* Shared                                                                  */
+/* ---------------------------------------------------------------------- */
+
+/* The header's tiles take the full row under the title and the tabs. */
+.figures {
+  flex: 1 1 100%;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.fine {
+  margin: 0;
+  font: 400 0.75rem/1.45 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.none {
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+}
+
+/* A text button: "show the others", an expander. */
+.linkBtn {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font: 600 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-accent-text);
+  cursor: pointer;
+}
+
+.linkBtn:hover {
+  text-decoration: underline;
+}
+
+/* A borderless button for the quiet, weighty actions: archive, cancel, delete. */
+.quietBtn {
+  min-height: var(--bp-control-h-dense);
+  padding: 0 var(--bp-space-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  cursor: pointer;
+}
+
+.quietBtn:hover:not(:disabled) {
+  background: var(--bp-tint);
+}
+
+.quietDanger {
+  color: var(--bp-danger-text);
+}
+
+.quietDanger:hover:not(:disabled) {
+  background: rgb(193 53 43 / 0.08);
+}
+
+.quietBtn:disabled,
+.insert:disabled,
+.chipRemove:disabled,
+.rowRemove:disabled,
+.arrow:disabled,
+.toggle:disabled,
+.choice:disabled,
+.machineOption:disabled,
+.statusOption:disabled,
+.dropzone:disabled,
+.suggestion:disabled,
+.capCard:disabled,
+.position:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.linkBtn:focus-visible,
+.quietBtn:focus-visible,
+.sortBtn:focus-visible,
+.cardHead:focus-visible,
+.jumpChip:focus-visible,
+.insert:focus-visible,
+.statusOption:focus-visible,
+.dashedChip:focus-visible,
+.chipRemove:focus-visible,
+.choice:focus-visible,
+.machineOption:focus-visible,
+.dropzone:focus-visible,
+.rowRemove:focus-visible,
+.arrow:focus-visible,
+.toggle:focus-visible,
+.suggestion:focus-visible,
+.capCard:focus-visible,
+.position:focus-visible,
+.drawerClose:focus-visible,
+.input:focus-visible,
+.rowNewInput:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+/* What an action offers, as small icon tiles. */
+.caps {
+  flex: none;
+  display: inline-flex;
+  gap: var(--bp-space-1);
+}
+
+.cap {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--bp-tint);
+  color: var(--bp-ink-muted);
+}
+
+.cap svg,
+.machineChip svg,
+.fileChip svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* On a template card the tiles take the field's colour: machine blue, files orange. */
+.cap_machine {
+  background: rgb(89 128 166 / 0.16);
+  color: var(--bp-info-text);
+}
+
+.cap_attachments {
+  background: rgb(242 145 0 / 0.16);
+  color: var(--bp-orange-800);
+}
+
+/* A strip of one segment per action: a row's progress, a template's shape. */
+.strip {
+  display: flex;
+  gap: 3px;
+}
+
+.seg {
+  flex: 1;
+  min-width: 0;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--bp-tint-strong);
+}
+
+.seg_DONE {
+  background: var(--bp-success);
+}
+
+.seg_IN_PROGRESS {
+  background: var(--bp-orange-500);
+}
+
+.seg_SKIPPED {
+  background: var(--bp-warning);
+}
+
+.seg_machine {
+  background: rgb(89 128 166);
+}
+
+.seg_files {
+  background: var(--bp-orange-500);
+}
+
+.seg_plain {
+  background: rgb(26 23 20 / 0.22);
+}
+
+/* A plain text input, for the places a labelled 48px field would be too much. */
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--bp-control-pad-dense);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  font: 400 0.875rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.input:hover {
+  border-color: var(--bp-control-border-hover);
+}
+
+.inputStrong {
+  min-height: var(--bp-control-h);
+  border-radius: var(--bp-radius);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+/* The one field a small dialog is about. */
+.inputAccent {
+  min-height: var(--bp-control-h);
+  border: 1.5px solid var(--bp-orange-600);
+  border-radius: var(--bp-radius);
+  font-size: 0.9375rem;
+}
+
+.labelled {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.labelText {
+  padding: 0;
+  font: 600 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--bp-ink-muted);
+}
+
+/* ---------------------------------------------------------------------- */
+/* List                                                                    */
+/* ---------------------------------------------------------------------- */
+
+/* Fixed columns beside the row's sentence; widths set from the French labels. */
+.colPipeline {
+  flex: none;
+  width: 240px;
+}
+
+.colNow {
+  flex: none;
+  width: 250px;
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.colOpened {
+  flex: none;
+  width: 110px;
+  min-width: 0;
+}
+
+.stripFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bp-space-2);
+  margin-top: 6px;
+  font: 400 0.75rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.stripFoot strong {
+  font: 600 0.75rem/1.3 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+}
+
+.nowText {
+  min-width: 0;
+}
+
+.nowTitle {
+  display: block;
+  font: 500 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nowLive {
+  font-weight: 600;
+  color: var(--bp-ink);
+}
+
+.by {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The column head that sorts: same mono face as its neighbours. */
+.sortBtn {
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sortBtn:hover {
+  color: var(--bp-ink);
+}
+
+@media (max-width: 899px) {
+  .colPipeline,
+  .colNow,
+  .colOpened {
+    width: auto;
+  }
+
+  .colPipeline {
+    flex-basis: 100%;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Templates                                                               */
+/* ---------------------------------------------------------------------- */
+
+.templatesTab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+.templatesHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-3);
+}
+
+.templatesIntro {
+  flex: 1 1 400px;
+  margin: 0;
+  max-width: 78ch;
+  font: 400 0.875rem/1.55 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.templates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+  gap: var(--bp-space-4);
+  align-items: start;
+}
+
+.template {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-5);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+/* Archived: still readable, visibly out of use. */
+.templateArchived > :not(.templateActions) {
+  opacity: 0.55;
+}
+
+.templateName {
+  margin: 0;
+  font: 700 1.1875rem/1.22 var(--bp-font-display);
+  letter-spacing: -0.015em;
+  color: var(--bp-ink);
+}
+
+.templateDescription {
+  margin: 3px 0 0;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+}
+
+.stat,
+.statSolid {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 11px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint);
+  font: 400 0.78125rem/1 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.statSolid {
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline);
+}
+
+.stat strong,
+.statSolid strong {
+  font: 600 0.78125rem/1 var(--bp-font-mono);
+}
+
+.templateSteps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.templateStep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.templateStepNumber {
+  flex: none;
+  width: 22px;
+  text-align: end;
+  font: 400 0.75rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.templateStepLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 0.84375rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.templateStep .cap {
+  width: 24px;
+  height: 24px;
+}
+
+.templateStep .cap svg {
+  width: 13px;
+  height: 13px;
+}
+
+.templateActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-2);
+  padding-top: var(--bp-space-3);
+  border-top: 1px solid var(--bp-hairline);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Template editor: a side panel                                           */
+/* ---------------------------------------------------------------------- */
+
+.drawer {
+  --drawer-shift: 40px;
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  width: min(820px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bp-neutral-50);
+  color: var(--bp-ink);
+  box-shadow: 0 0 50px rgb(26 23 20 / 0.2);
+}
+
+/* The panel slides in from the edge it is docked to. */
+[dir="rtl"] .drawer {
+  --drawer-shift: -40px;
+}
+
+.drawer[open] {
+  display: flex;
+  flex-direction: column;
+  animation: drawerIn 200ms ease-out;
+}
+
+.drawer::backdrop {
+  background: rgb(26 23 20 / 0.38);
+  backdrop-filter: blur(4px);
+}
+
+@keyframes drawerIn {
+  from {
+    transform: translateX(var(--drawer-shift));
+    opacity: 0;
+  }
+}
+
+.drawerHead {
+  flex: none;
+  display: flex;
+  gap: var(--bp-space-4);
+  align-items: center;
+  padding: var(--bp-space-5);
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.drawerHeading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawerTitle {
+  margin: 0;
+  font: 700 1.5rem/1.2 var(--bp-font-display);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.drawerClose {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  color: var(--bp-ink);
+  font: 400 1.25rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.drawerClose:hover {
+  border-color: var(--bp-orange-500);
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  padding: var(--bp-space-5);
+}
+
+.drawerFoot {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-4) var(--bp-space-5);
+  border-top: 1px solid var(--bp-hairline);
+  background: var(--bp-surface);
+}
+
+.drawerStatus {
+  flex: 1 1 160px;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rowsHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 var(--bp-space-2) var(--bp-space-1);
+  font: 600 0.625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--bp-space-2);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+}
+
+.rowOrder {
+  flex: none;
+  width: 62px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.rowGrow {
+  flex: 1;
+  min-width: 0;
+}
+
+.rowNumber {
+  width: 24px;
+  text-align: center;
+  font: 600 0.78125rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.rowArrows {
+  display: flex;
+  flex-direction: column;
+}
+
+.arrow {
+  width: 32px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: 400 0.625rem/1 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  cursor: pointer;
+}
+
+.arrow:hover:not(:disabled) {
+  background: rgb(242 145 0 / 0.14);
+}
+
+.rowInput {
+  flex: 1;
+  background: var(--bp-neutral-50);
+}
+
+.rowToggles {
+  flex: none;
+  width: 222px;
+  display: flex;
+  gap: var(--bp-space-1);
+}
+
+/* An on/off switch: quiet when off, the orange tint when on. */
+.toggle {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 var(--bp-space-1);
+  background: var(--bp-surface);
+  border: 1.5px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  font: 600 0.71875rem/1 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+  cursor: pointer;
+}
+
+.toggle svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.toggleOn {
+  background: rgb(242 145 0 / 0.14);
+  border-color: var(--bp-orange-300);
+  color: var(--bp-orange-800);
+}
+
+.rowEnd {
+  flex: none;
+  width: 36px;
+}
+
+/* A square × that takes a row, a file or a person away. */
+.rowRemove {
+  flex: none;
+  width: 36px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  font: 400 1.0625rem/1 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+}
+
+.rowRemove:hover:not(:disabled),
+.chipRemove:hover:not(:disabled) {
+  background: rgb(193 53 43 / 0.1);
+  color: var(--bp-danger-text);
+}
+
+.rowNew {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: center;
+  padding: var(--bp-space-2);
+  border: 1.5px dashed rgb(26 23 20 / 0.22);
+  border-radius: var(--bp-radius-block);
+}
+
+.rowNewInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--bp-space-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  font: 400 0.90625rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.infoNote {
+  margin: 0;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border: 1px solid rgb(34 88 124 / 0.2);
+  border-radius: var(--bp-radius);
+  background: rgb(89 128 166 / 0.1);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-info-text);
+}
+
+@media (max-width: 640px) {
+  .rowsHead {
+    display: none;
+  }
+
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .rowInput {
+    flex-basis: calc(100% - 72px);
+  }
+
+  .rowToggles {
+    flex: 1 1 0;
+    width: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* OF page: header                                                         */
+/* ---------------------------------------------------------------------- */
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  padding: clamp(20px, 3vw, 26px);
+  margin-bottom: var(--bp-space-4);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.headTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-5);
+}
+
+/* The order's photo: the 92px thumbnail, rounder and lifted off the glass. */
+.headThumb {
+  flex: none;
+  display: flex;
+}
+
+.headThumb img,
+.headThumb > span {
+  border-radius: var(--bp-radius-panel);
+  box-shadow: 0 10px 24px rgb(26 23 20 / 0.12);
+}
+
+.headMain {
+  flex: 1 1 340px;
+  min-width: 0;
+}
+
+.headTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-3);
+  margin-top: 2px;
+}
+
+.headNumero {
+  margin: 0;
+  font: 700 clamp(1.625rem, 3.6vw, 2.125rem) / 1.05 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  color: var(--bp-ink);
+}
+
+.headWho {
+  margin-top: var(--bp-space-1);
+  font: 400 0.9375rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.headMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-1) var(--bp-space-4);
+  margin-top: var(--bp-space-1);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.headOrder {
+  font: 600 0.8125rem/1.5 var(--bp-font-mono);
+  color: var(--bp-accent-text);
+}
+
+/* The old app's number: staff still hold sheets printed with it. */
+.headLegacy {
+  font-family: var(--bp-font-mono);
+}
+
+.headProgress {
+  flex: 0 1 300px;
+  min-width: 240px;
+}
+
+.headCount {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-2);
+}
+
+.headDone {
+  font: 700 2.125rem/1 var(--bp-font-display);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.headTotal {
+  font: 400 0.9375rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.bar {
+  height: 10px;
+  margin-top: 10px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint-strong);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--bp-radius-pill);
+  background: linear-gradient(90deg, #3f9160, var(--bp-success));
+}
+
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-3);
+  margin-top: var(--bp-space-3);
+}
+
+/* One chip per action: the pipeline at a glance, and a way to jump to a card. */
+.jump {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: var(--bp-space-1) 2px 6px;
+}
+
+.jumpChip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  max-width: 210px;
+  padding-block: 0;
+  padding-inline: 6px var(--bp-space-3);
+  background: var(--bp-surface);
+  border: 1.5px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-pill);
+  font: 600 0.78125rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+  cursor: pointer;
+}
+
+.jumpMark {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bp-tint);
+  font: 500 0.6875rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.jumpName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jump_WAITING {
+  color: var(--bp-ink-muted);
+}
+
+.jump_DONE .jumpMark {
+  background: var(--bp-success);
+  color: #fff;
+}
+
+.jump_SKIPPED .jumpMark {
+  background: var(--bp-warning);
+  color: #fff;
+}
+
+.jump_IN_PROGRESS {
+  background: rgb(242 145 0 / 0.12);
+  border-color: var(--bp-orange-300);
+}
+
+.jump_IN_PROGRESS .jumpMark {
+  background: var(--bp-orange-500);
+  color: #fff;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.jumpOn,
+.jumpOn.jump_IN_PROGRESS {
+  background: var(--bp-neutral-900);
+  border-color: var(--bp-neutral-900);
+  color: #fff;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(242 145 0 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgb(242 145 0 / 0);
+  }
+}
+
+.headFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-2);
+  padding-top: var(--bp-space-3);
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.frozen {
+  border: 1px solid rgb(224 161 6 / 0.34);
+  background: var(--bp-warning-bg);
+  color: var(--bp-warning-text);
+}
+
+/* ---------------------------------------------------------------------- */
+/* OF page: the pipeline                                                   */
+/* ---------------------------------------------------------------------- */
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--bp-space-4);
+}
+
+.panel {
+  flex: 1 1 560px;
+  min-width: 0;
+  padding: var(--bp-space-5);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.panelHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-3);
+  margin-bottom: var(--bp-space-4);
+}
+
+.panelTitle {
+  flex: 1;
+  margin: 0;
+  font: 700 1.25rem/1.2 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  column-gap: var(--bp-space-3);
+  /* A chip jump lands the card clear of the sticky top bar. */
+  scroll-margin-top: calc(var(--bp-topbar-h) + var(--bp-space-5));
+}
+
+.stepRail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* The number on the rail: hollow while waiting, filled once started. */
+.stepMark {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgb(26 23 20 / 0.18);
+  border-radius: 50%;
+  background: var(--bp-surface);
+  font: 600 0.8125rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.stepLine {
+  flex: 1;
+  width: 2px;
+  min-height: 12px;
+  background: var(--bp-tint-strong);
+}
+
+.step:last-child .stepLine {
+  background: transparent;
+}
+
+.step_DONE .stepMark {
+  background: var(--bp-success);
+  border-color: transparent;
+  color: #fff;
+}
+
+.step_DONE .stepLine {
+  background: var(--bp-success);
+}
+
+.step_SKIPPED .stepMark {
+  background: var(--bp-warning);
+  border-color: transparent;
+  color: #fff;
+}
+
+.step_IN_PROGRESS .stepMark {
+  background: var(--bp-orange-500);
+  border-color: transparent;
+  color: #fff;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.stepBody {
+  min-width: 0;
+  padding-bottom: var(--bp-space-3);
+}
+
+.card {
+  padding: 14px var(--bp-space-4);
+  background: rgb(255 255 255 / 0.82);
+  border: 1.5px solid var(--bp-hairline-soft);
+  border-radius: var(--bp-radius-block);
+}
+
+.step_WAITING .card {
+  background: rgb(255 255 255 / 0.45);
+}
+
+.step_IN_PROGRESS .card {
+  border-color: rgb(217 124 0 / 0.4);
+}
+
+.card:hover {
+  border-color: var(--bp-orange-300);
+}
+
+/* The open card is the one being worked: solid, ringed, lifted. */
+.stepOpen .card,
+.stepOpen .card:hover {
+  background: var(--bp-surface);
+  border-color: var(--bp-orange-600);
+  box-shadow: 0 14px 30px rgb(26 23 20 / 0.12);
+}
+
+/* The card's own head is the control that opens and closes it. */
+.cardHead {
+  width: 100%;
+  display: block;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  text-align: start;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cardTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-2) 10px;
+}
+
+.cardName {
+  flex: 1 1 200px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: 600 0.96875rem/1.35 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.step_WAITING .cardName {
+  color: var(--bp-ink-strong);
+}
+
+.step_SKIPPED .cardName {
+  color: var(--bp-ink-muted);
+  text-decoration: line-through;
+}
+
+.cardWhen {
+  display: block;
+  margin-top: 2px;
+  font: 400 0.75rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+/* What the action holds: people, a machine, files — as chips. */
+.held {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-2);
+}
+
+.card > .held {
+  margin-top: 10px;
+}
+
+.personChip,
+.machineChip,
+.fileChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  max-width: 100%;
+  border-radius: var(--bp-radius-pill);
+  font: 500 0.8125rem/1.3 var(--bp-font-body);
+}
+
+.personChip {
+  padding-block: 2px;
+  padding-inline: 3px 11px;
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline);
+  color: var(--bp-ink);
+}
+
+.personChipLarge {
+  min-height: 38px;
+  padding-inline: var(--bp-space-1);
+  font-size: 0.84375rem;
+}
+
+.machineChip {
+  padding: 0 11px;
+  background: rgb(89 128 166 / 0.12);
+  color: var(--bp-info-text);
+}
+
+.fileChip {
+  padding: 0 11px;
+  background: rgb(242 145 0 / 0.1);
+  color: var(--bp-orange-800);
+  overflow-wrap: anywhere;
+}
+
+.fileChip:hover {
+  text-decoration: underline;
+}
+
+.chipRemove {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  font: 400 0.9375rem/1 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+}
+
+/* What the importer wrote from the old app's built-in fields. */
+.legacy {
+  margin-top: 10px;
+  padding: 10px var(--bp-space-3);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+}
+
+.legacyHead {
+  margin-bottom: 3px;
+  font: 500 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.legacyBody {
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.card > .fine {
+  margin-top: var(--bp-space-2);
+}
+
+/* ---- the open card: where the action is worked ---- */
+
+.work {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* A fieldset's legend sits outside the flex gap: give it the same breath. */
+.group > legend {
+  margin-bottom: 7px;
+}
+
+.groupLabel {
+  font: 600 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.statusOptions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 560px;
+}
+
+.statusOption {
+  min-height: 44px;
+  padding: 0 var(--bp-space-2);
+  background: var(--bp-surface);
+  border: 1.5px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  font: 700 0.84375rem/1.2 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+}
+
+.statusOption:hover:not(:disabled) {
+  border-color: var(--state-fg);
+  color: var(--state-fg);
+}
+
+/* The status the action has: its own tone, and not dimmed though disabled. */
+.statusOptionOn,
+.statusOptionOn:disabled {
+  background: var(--state-bg);
+  border-color: var(--state-fg);
+  color: var(--state-fg);
+  opacity: 1;
+}
+
+.dashedChip {
+  min-height: 38px;
+  padding: 0 14px;
+  background: transparent;
+  border: 1.5px dashed rgb(26 23 20 / 0.24);
+  border-radius: var(--bp-radius-pill);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  cursor: pointer;
+}
+
+.dashedChip:hover {
+  border-color: var(--bp-orange-500);
+  color: var(--bp-orange-800);
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  padding: 10px;
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius);
+}
+
+.picker .held {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding-block: 2px;
+  padding-inline: var(--bp-space-1) var(--bp-space-3);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-pill);
+  font: 400 0.8125rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+  cursor: pointer;
+}
+
+.choice:hover:not(:disabled) {
+  border-color: var(--bp-orange-500);
+  background: rgb(242 145 0 / 0.06);
+}
+
+.machineOptions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--bp-space-2);
+}
+
+.machineOption {
+  min-height: 56px;
+  padding: var(--bp-space-2) var(--bp-space-3);
+  background: var(--bp-surface);
+  border: 1.5px solid var(--bp-hairline);
+  border-radius: var(--bp-radius);
+  text-align: start;
+  cursor: pointer;
+}
+
+.machineOption:hover:not(:disabled) {
+  border-color: rgb(89 128 166);
+}
+
+.machineOptionOn {
+  background: rgb(89 128 166 / 0.12);
+  border-color: rgb(89 128 166);
+}
+
+.machineCode {
+  display: block;
+  font: 600 0.8125rem/1.4 var(--bp-font-mono);
+  color: var(--bp-ink);
+}
+
+.machineName {
+  display: block;
+  font: 400 0.75rem/1.35 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding-inline: var(--bp-space-3) 6px;
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-dense);
+}
+
+.fileRow svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--bp-orange-800);
+}
+
+.fileName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 0.84375rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.fileName:hover {
+  color: var(--bp-accent-text);
+}
+
+.fileRow .rowRemove {
+  width: 32px;
+  height: 32px;
+}
+
+/* Click to pick a file, or drop one on it. */
+.dropzone {
+  min-height: 56px;
+  padding: var(--bp-space-2) var(--bp-space-3);
+  background: rgb(255 255 255 / 0.6);
+  border: 1.5px dashed rgb(26 23 20 / 0.22);
+  border-radius: var(--bp-radius);
+  font: 400 0.84375rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  cursor: pointer;
+}
+
+.dropzone:hover:not(:disabled),
+.dropzoneOver {
+  border-color: var(--bp-orange-500);
+  background: rgb(242 145 0 / 0.06);
+}
+
+.dropzoneHint {
+  color: var(--bp-ink-muted);
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px var(--bp-space-3);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-hairline-soft);
+  border-radius: var(--bp-radius-dense);
+}
+
+.noteBy {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.noteBody {
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.noteForm {
+  display: flex;
+  gap: var(--bp-space-2);
+}
+
+.noteForm .input {
+  flex: 1;
+  min-height: var(--bp-control-h);
+}
+
+/* The pipeline's shape: move, redefine or remove an action not yet started. */
+.structure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-2);
+  padding-top: var(--bp-space-3);
+  border-top: 1px dashed rgb(26 23 20 / 0.14);
+}
+
+.structureLabel {
+  font: 500 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.insert {
+  display: block;
+  width: 100%;
+  min-height: 22px;
+  margin-top: var(--bp-space-1);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: start;
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+  cursor: pointer;
+}
+
+.insert:hover:not(:disabled) {
+  color: var(--bp-accent-text);
+}
+
+/* ---------------------------------------------------------------------- */
+/* OF page: the rail                                                       */
+/* ---------------------------------------------------------------------- */
+
+.rail {
+  flex: 1 1 300px;
+  min-width: min(280px, 100%);
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+/* What is happening now, on ink: the one dark card on the page. */
+.now {
+  padding: var(--bp-space-5);
+  border-radius: var(--bp-radius-panel);
+  background: rgb(26 23 20 / 0.92);
+  box-shadow: var(--bp-shadow-ink);
+}
+
+.nowKicker {
+  font: 600 0.65625rem/1.4 var(--bp-font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-accent-text);
+}
+
+.nowHeading {
+  margin-top: 6px;
+  font: 700 1.25rem/1.25 var(--bp-font-display);
+  color: var(--bp-ink);
+  overflow-wrap: anywhere;
+}
+
+.nowLine {
+  margin-top: 2px;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.nowNext {
+  margin-top: 14px;
+  padding-top: var(--bp-space-3);
+  border-top: 1px solid var(--bp-hairline);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.nowNext strong {
+  color: var(--bp-ink);
+}
+
+.railCard {
+  padding: var(--bp-space-5);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.railTitle {
+  margin: 0 0 var(--bp-space-2);
+  font: 700 1.0625rem/1.3 var(--bp-font-display);
+}
+
+.railRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border-top: 1px solid var(--bp-hairline-soft);
+  font: 400 0.875rem/1.35 var(--bp-font-body);
+}
+
+.railGrow {
+  flex: 1;
+  min-width: 0;
+}
+
+.railMeta {
+  flex: none;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 0.75rem/1.3 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.railCode {
+  flex: none;
+  font: 600 0.8125rem/1.3 var(--bp-font-mono);
+}
+
+.railWhere {
+  font-size: 0.78125rem;
+  color: var(--bp-ink-muted);
+}
+
+.railFile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.84375rem;
+  color: var(--bp-accent-text);
+}
+
+@media (max-width: 899px) {
+  .rail {
+    max-width: none;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Dialogs                                                                 */
+/* ---------------------------------------------------------------------- */
+
+.dialogForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+}
+
+.dialogForm p {
+  margin: 0;
+}
+
+/* The "new action" form inside its dialog. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+.suggestions,
+.positions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.suggestion {
+  min-height: 34px;
+  padding: 0 var(--bp-space-3);
+  background: var(--bp-surface);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-pill);
+  font: 400 0.78125rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+  cursor: pointer;
+}
+
+.suggestion:hover:not(:disabled) {
+  border-color: var(--bp-orange-500);
+}
+
+.capCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bp-space-2);
+}
+
+/* One of the three fields an action may offer, as a card you tick. */
+.capCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bp-space-2);
+  min-height: 104px;
+  padding: var(--bp-space-3);
+  background: var(--bp-surface);
+  border: 1.5px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-block);
+  text-align: start;
+  cursor: pointer;
+}
+
+.capCardOn {
+  background: rgb(242 145 0 / 0.1);
+  border-color: var(--bp-orange-600);
+}
+
+.capCardTop {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.capCardIcon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+  color: var(--bp-ink-muted);
+}
+
+.capCardIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.capCardOn .capCardIcon {
+  background: var(--bp-orange-500);
+  color: var(--bp-neutral-900);
+}
+
+.capCardBox {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgb(26 23 20 / 0.3);
+  border-radius: 6px;
+  background: var(--bp-surface);
+  font: 700 0.75rem/1 var(--bp-font-body);
+  color: #fff;
+}
+
+.capCardOn .capCardBox {
+  background: var(--bp-orange-600);
+  border-color: var(--bp-orange-600);
+}
+
+.capCardLabel {
+  font: 700 0.875rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.capCardMeta {
+  font: 400 0.71875rem/1.35 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.position {
+  min-height: 40px;
+  padding: 0 14px;
+  background: var(--bp-surface);
+  border: 1.5px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  cursor: pointer;
+}
+
+.positionOn {
+  background: var(--bp-neutral-900);
+  border-color: var(--bp-neutral-900);
+  color: #fff;
+}
+
+@media (max-width: 520px) {
+  .capCards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .capCard {
+    min-height: 0;
+  }
+
+  .statusOptions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .noteForm {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer[open],
+  .jump_IN_PROGRESS .jumpMark,
+  .step_IN_PROGRESS .stepMark {
+    animation: none;
+  }
+}

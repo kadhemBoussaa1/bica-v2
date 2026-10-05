@@ -12,7 +12,11 @@ apps/api/src/generated
 # Secrets. The examples hold none.
 **/.env
 **/.env.*
-!**/.env.example
+# A literal path, never a wildcard: with a `!**/...` exception BuildKit has
+# to walk into every excluded directory in case it holds a match, and
+# docker/certbot/conf/accounts is root-only once certbot has run, so a
+# `deploy.sh --build` after --ssl-init dies with "permission denied".
+!apps/api/.env.example
 
 # Working notes, local tooling, server state.
 docs

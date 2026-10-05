@@ -137,5 +137,17 @@
   "shiftTaskStatus": {
     "OPEN": "Ouvert",
     "DONE": "Fait"
+  },
+  "manufacturingOrderStatus": {
+    "DRAFT": "Brouillon",
+    "IN_PROGRESS": "En cours",
+    "DONE": "Terminé",
+    "CANCELLED": "Annulé"
+  },
+  "manufacturingActionStatus": {
+    "WAITING": "Brouillon",
+    "IN_PROGRESS": "En cours",
+    "DONE": "Terminée",
+    "SKIPPED": "Ignorée"
   }
 }

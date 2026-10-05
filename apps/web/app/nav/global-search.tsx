@@ -28,6 +28,7 @@ const KIND_NAV: Record<SearchKind, string> = {
   supplier: "suppliers",
   product: "products",
   order: "job-orders",
+  manufacturingOrder: "manufacturing-orders",
   machine: "machines",
   employee: "employees",
   roll: "stock",

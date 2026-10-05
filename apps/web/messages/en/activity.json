@@ -162,6 +162,31 @@
     },
     "search": {
       "global": "Global search"
+    },
+    "manufacturing": {
+      "create": "Opened manufacturing order",
+      "cancel": "Cancelled manufacturing order",
+      "reopen": "Reopened manufacturing order",
+      "remove": "Deleted manufacturing order",
+      "addAction": "Added OF action",
+      "updateAction": "Edited OF action",
+      "removeAction": "Removed OF action",
+      "moveAction": "Moved OF action",
+      "start": "Started OF action",
+      "complete": "Finished OF action",
+      "skip": "Skipped OF action",
+      "undo": "Undid last OF step",
+      "setEmployees": "Set OF action employees",
+      "setMachine": "Set OF action machine",
+      "createAttachmentUpload": "OF file upload requested",
+      "addAttachment": "Added OF file",
+      "removeAttachment": "Removed OF file",
+      "addComment": "Commented on OF action"
+    },
+    "manufacturingTemplate": {
+      "create": "Created OF template",
+      "update": "Edited OF template",
+      "setActive": "Archived / restored OF template"
     }
   }
 }

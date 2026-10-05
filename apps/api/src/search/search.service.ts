@@ -11,6 +11,7 @@ import {
 } from "../invoice/invoice.list";
 import { searchWhere } from "../list/list-query";
 import { machineListDeclaration } from "../machine/machine.list";
+import { manufacturingOrderListDeclaration } from "../manufacturing/manufacturing.list";
 import { orderListDeclaration } from "../order/order.list";
 import { orderScopeFor } from "../order/order.scope";
 import { PrismaService } from "../prisma.service";
@@ -220,6 +221,39 @@ const SOURCES: readonly Source[] = [
       detail: line(row.client?.name, row.product.name),
       date: null,
       archived: !row.active,
+    }),
+  }),
+  source({
+    kind: "manufacturingOrder",
+    roles: ["ADMIN"],
+    search: (term: string) => searchWhere(manufacturingOrderListDeclaration.searchable, term),
+    // Either number: an OF imported from the old app is still known by the
+    // one printed on its sheets, and typing that one must find it first.
+    exact: (term: string): Prisma.ManufacturingOrderWhereInput => ({
+      OR: [{ numero: equalsTerm(term) }, { legacyNumero: equalsTerm(term) }],
+    }),
+    find: (db, where, take) =>
+      db.manufacturingOrder.findMany({
+        where,
+        take,
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+        select: {
+          id: true,
+          numero: true,
+          legacyNumero: true,
+          order: { select: { numero: true, client: { select: { name: true } } } },
+        },
+      }),
+    toHit: (row) => ({
+      id: row.id,
+      title: row.numero,
+      alt: row.legacyNumero,
+      // The old number leads the line, so two OFs whose numbers share
+      // digits (old OF-2026-000670, new OF-2026-670) are told apart.
+      detail: line(row.legacyNumero, row.order.numero, row.order.client?.name),
+      date: null,
+      // "Archived" is not what a cancelled OF is; the page says which it is.
+      archived: false,
     }),
   }),
   source({

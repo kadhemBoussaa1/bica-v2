@@ -142,6 +142,13 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         requires: ["ADMIN", "PRODUCTION", "MAGASINIER"],
       },
       {
+        // Manufacturing orders (OF) and their templates: ADMIN and above
+        // only, like every `manufacturing.*` procedure.
+        key: "manufacturing-orders",
+        href: "/manufacturing-orders",
+        requires: ["ADMIN"],
+      },
+      {
         key: "machines",
         href: "/machines",
         requires: ["ADMIN"],

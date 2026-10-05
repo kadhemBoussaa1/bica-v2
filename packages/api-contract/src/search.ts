@@ -27,6 +27,7 @@ export const SEARCH_KINDS = [
   "supplier",
   "product",
   "order",
+  "manufacturingOrder",
   "machine",
   "employee",
   "roll",

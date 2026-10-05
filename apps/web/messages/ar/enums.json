@@ -137,5 +137,17 @@
   "shiftTaskStatus": {
     "OPEN": "مفتوحة",
     "DONE": "منجزة"
+  },
+  "manufacturingOrderStatus": {
+    "DRAFT": "مسودة",
+    "IN_PROGRESS": "جارٍ",
+    "DONE": "منجز",
+    "CANCELLED": "ملغى"
+  },
+  "manufacturingActionStatus": {
+    "WAITING": "مسودة",
+    "IN_PROGRESS": "جارية",
+    "DONE": "منجزة",
+    "SKIPPED": "متجاوزة"
   }
 }

@@ -21,6 +21,7 @@ import { useCurrentUser } from "../../auth/use-auth";
 import { useTRPC } from "../../trpc/client";
 import { OrderColours } from "../order-colours";
 import { OrderInks } from "../order-inks";
+import { OrderManufacturing } from "../order-manufacturing";
 import { OrderPaper } from "../order-paper";
 import { OrderProduction, runHeadline } from "../order-production";
 import { OrderStatusBadge } from "../order-status";
@@ -560,6 +561,15 @@ export function OrderDetail({ id }: { id: string }) {
             }
           />
         </Card>
+
+        {/* The order's OF: admins only (it rides the priced select), and never on a quote. */}
+        {priced && o.kind === "ORDER" && (
+          <OrderManufacturing
+            orderId={o.id}
+            numero={o.numero}
+            manufacturingOrder={priced.manufacturingOrder}
+          />
+        )}
 
         {/* From INVOICED onward: the documents that bill this order, one per export cycle. */}
         {invoices && invoices.length > 0 && (

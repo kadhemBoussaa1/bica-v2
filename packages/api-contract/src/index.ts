@@ -37,3 +37,4 @@ export * from "./shifts.js";
 export * from "./notifications.js";
 export * from "./push.js";
 export * from "./search.js";
+export * from "./manufacturing.js";

@@ -162,6 +162,31 @@
     },
     "search": {
       "global": "Recherche globale"
+    },
+    "manufacturing": {
+      "create": "Ordre de fabrication ouvert",
+      "cancel": "Ordre de fabrication annulé",
+      "reopen": "Ordre de fabrication rouvert",
+      "remove": "Ordre de fabrication supprimé",
+      "addAction": "Action d'OF ajoutée",
+      "updateAction": "Action d'OF modifiée",
+      "removeAction": "Action d'OF retirée",
+      "moveAction": "Action d'OF déplacée",
+      "start": "Action d'OF démarrée",
+      "complete": "Action d'OF terminée",
+      "skip": "Action d'OF ignorée",
+      "undo": "Dernière étape d'OF annulée",
+      "setEmployees": "Employés d'une action d'OF définis",
+      "setMachine": "Machine d'une action d'OF définie",
+      "createAttachmentUpload": "Envoi d'un fichier d'OF demandé",
+      "addAttachment": "Fichier d'OF ajouté",
+      "removeAttachment": "Fichier d'OF retiré",
+      "addComment": "Action d'OF commentée"
+    },
+    "manufacturingTemplate": {
+      "create": "Modèle d'OF créé",
+      "update": "Modèle d'OF modifié",
+      "setActive": "Modèle d'OF archivé / restauré"
     }
   }
 }

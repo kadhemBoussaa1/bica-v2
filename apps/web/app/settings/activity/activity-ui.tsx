@@ -49,10 +49,20 @@ export function actionLabel(t: ActivityT, action: string): string | null {
  * two record types, told apart by the action name. Users have no detail
  * page; their trace is the activity list itself. Unknown → null → text.
  */
-function entityHref(module: string, action: string, id: string): string | null {
+function entityHref(module: string, action: string, id: string, label: string | null): string | null {
   switch (module) {
     case "order":
       return `/orders/${id}`;
+    // Every OF call that went through names its record by the OF's number.
+    // A row without one is a refused call, and the only id it can carry is
+    // its input's — the ORDER's, on a refused "create" — so an OF link
+    // there would open a page that does not exist.
+    case "manufacturing":
+      return label ? `/manufacturing-orders/${id}` : null;
+    // A template has no page of its own: it opens in a dialog on the list.
+    // Unlinked on purpose, not by omission.
+    case "manufacturingTemplate":
+      return null;
     case "salesInvoice":
       return `/invoices/sales/${id}`;
     case "purchaseInvoice":
@@ -126,7 +136,7 @@ export function OutcomeBadge({ outcome }: { outcome: AuditRow["outcome"] }) {
 /** A row's entity as a link when the module has a page, else plain text. */
 export function EntityLink({ row }: { row: Pick<AuditRow, "module" | "action" | "entityId" | "entityLabel"> }) {
   if (!row.entityId) return <span className={records.absent} />;
-  const href = entityHref(row.module, row.action, row.entityId);
+  const href = entityHref(row.module, row.action, row.entityId, row.entityLabel);
   const text = row.entityLabel ?? row.entityId;
   return href ? (
     <Link

@@ -62,6 +62,18 @@ function JobOrdersIcon() {
   );
 }
 
+/** Manufacturing orders — three steps on a rail, each with its line of text. */
+function ManufacturingOrdersIcon() {
+  return (
+    <Svg>
+      <circle cx="4.5" cy="4" r="1.75" />
+      <circle cx="4.5" cy="9" r="1.75" />
+      <circle cx="4.5" cy="14" r="1.75" />
+      <path d="M4.5 5.75v1.5M4.5 10.75v1.5M8.5 4h6M8.5 9h6M8.5 14h4" />
+    </Svg>
+  );
+}
+
 /** Production — a reel on the press: web feeding off a roll. */
 function ProductionIcon() {
   return (
@@ -313,6 +325,7 @@ export const NAV_ICONS: Record<string, () => React.JSX.Element> = {
   suppliers: SuppliersIcon,
   products: ProductsIcon,
   "job-orders": JobOrdersIcon,
+  "manufacturing-orders": ManufacturingOrdersIcon,
   machines: MachinesIcon,
   employees: EmployeesIcon,
   production: ProductionIcon,
