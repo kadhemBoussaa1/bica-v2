@@ -7,6 +7,12 @@
  *
  * Idempotent: rows are upserted on `legacyId`, so re-running updates in place.
  * Read-only against the legacy database.
+ *
+ * `--only-new` is for a database already in use: it creates the machines and
+ * employees this database does not have yet (by `legacyId`) and leaves every
+ * existing row exactly as it is — a re-run in place would otherwise write the
+ * old app's values over anything edited here since. A new employee whose
+ * matricule is already taken here is reported and skipped, never merged.
  */
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -22,12 +28,28 @@ function num(value: unknown): number | null {
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
+  const onlyNew = process.argv.includes("--only-new");
   const legacy = legacyPool();
   const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
   });
 
   try {
+    // What `--only-new` must not touch: the rows already here, by legacy id,
+    // and the matricules in use — a person added in this app may hold one.
+    const [machinesHere, employeesHere] = await Promise.all([
+      prisma.machine.findMany({ where: { legacyId: { not: null } }, select: { legacyId: true } }),
+      prisma.employee.findMany({ select: { legacyId: true, matricule: true } }),
+    ]);
+    const machineIdsHere = new Set(machinesHere.map((row) => String(row.legacyId)));
+    const employeeIdsHere = new Set(
+      employeesHere.filter((row) => row.legacyId !== null).map((row) => String(row.legacyId)),
+    );
+    const matriculesHere = new Set(employeesHere.map((row) => row.matricule));
+    const created: string[] = [];
+    const conflicts: string[] = [];
+    let kept = 0;
+
     // ---- machines ----------------------------------------------------------
     //
     // Suppliers are already imported and carry their legacy id, so the FK is
@@ -62,6 +84,12 @@ async function main() {
         console.warn(`  skipped machine ${String(row.id)}: blank name or code`);
         continue;
       }
+
+      if (onlyNew && machineIdsHere.has(String(row.id))) {
+        kept += 1;
+        continue;
+      }
+      if (onlyNew) created.push(`machine ${code} ${name}`);
 
       const legacySupplier = row.fournisseur_id;
       const supplierId =
@@ -139,6 +167,19 @@ async function main() {
         continue;
       }
 
+      if (onlyNew && employeeIdsHere.has(String(row.id))) {
+        kept += 1;
+        continue;
+      }
+      if (onlyNew && matriculesHere.has(matricule)) {
+        conflicts.push(
+          `employee ${String(row.id)} (${[lastName, firstName].filter(Boolean).join(" ")}): ` +
+            `matricule ${matricule} is already used here — not imported`,
+        );
+        continue;
+      }
+      if (onlyNew) created.push(`employee ${matricule} ${[lastName, firstName].filter(Boolean).join(" ")}`);
+
       const rawDept = text(row.department);
       const dept = department(row.department);
       if (rawDept !== null && dept !== null && rawDept !== dept) {
@@ -203,6 +244,14 @@ async function main() {
     if (cleanedJobTitles.size > 0) {
       console.log(`\njob titles normalised:`);
       for (const [from, to] of cleanedJobTitles) console.log(`  ${from} -> ${to}`);
+    }
+    if (onlyNew) {
+      console.log(`\nonly new rows: ${created.length} to add, ${kept} already here and left untouched`);
+      for (const value of created) console.log(`  + ${value}`);
+      if (conflicts.length > 0) {
+        console.warn(`\nnot imported:`);
+        for (const value of conflicts) console.warn(`  ${value}`);
+      }
     }
     if (dryRun) console.log("\n(dry run — nothing written)");
   } finally {

@@ -23,6 +23,14 @@
  * a duplicate log row per order every time, corrupting the one thing this
  * table exists to make trustworthy.
  *
+ * `--only-new` is for a database already in use: it creates the orders this
+ * database does not have yet (by `legacyId`), with their print colours, and
+ * leaves every existing order exactly as it is — a re-run in place would
+ * otherwise write the old app's values over an order edited or moved along
+ * here since. An order whose number is already taken by an order made in
+ * this app is reported and skipped: `numero` is unique, and neither order
+ * can be renumbered by an import.
+ *
  * Read-only against the legacy database.
  */
 import "dotenv/config";
@@ -269,12 +277,24 @@ async function mergeProductImages(
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
+  const onlyNew = process.argv.includes("--only-new");
   const legacy = legacyPool();
   const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
   });
 
   try {
+    // What `--only-new` must not touch: the orders already here, by legacy
+    // id, and every number in use — an order made in this app may hold one.
+    const ordersHere = await prisma.order.findMany({ select: { legacyId: true, numero: true } });
+    const orderIdsHere = new Set(
+      ordersHere.filter((row) => row.legacyId !== null).map((row) => String(row.legacyId)),
+    );
+    const numerosHere = new Set(ordersHere.map((row) => row.numero));
+    const keptLegacyIds = new Set<string>();
+    const created: string[] = [];
+    const conflicts: string[] = [];
+
     const maps = await foreignKeyMaps(prisma);
     if (maps.clients.size === 0) {
       throw new Error(
@@ -312,6 +332,20 @@ async function main() {
       const numero = text(row.numero_commande);
       if (numero === null) {
         console.warn(`  skipped commande ${String(row.id)}: blank numero`);
+        continue;
+      }
+
+      if (onlyNew && orderIdsHere.has(String(row.id))) {
+        keptLegacyIds.add(String(row.id));
+        continue;
+      }
+      if (onlyNew && numerosHere.has(numero)) {
+        // Its colours and production entries have no order to attach to
+        // either; the later steps report them.
+        conflicts.push(
+          `${numero} (old app order ${String(row.id)}): this number is already used by an order made here — not imported`,
+        );
+        keptLegacyIds.add(String(row.id));
         continue;
       }
 
@@ -446,6 +480,8 @@ async function main() {
       };
       const legacyImages = Array.isArray(row.images) ? (row.images as string[]) : [];
 
+      if (onlyNew) created.push(`${numero} (${kind === "QUOTE" ? "quote" : status})`);
+
       if (dryRun) {
         // A placeholder id keeps the colour pass below meaningful in a dry run:
         // without it every colour would be reported as an orphan.
@@ -534,7 +570,12 @@ async function main() {
       }
       orderCount += 1;
     }
-    console.log(`orders:  ${orderCount}/${orders.length}` + (skippedNoType ? ` (${skippedNoType} skipped: no type_sac)` : ""));
+    console.log(
+      `orders:  ${orderCount}/${orders.length}` +
+        (onlyNew ? ` — ${keptLegacyIds.size - conflicts.length} already here and left untouched` : "") +
+        (skippedNoType ? ` (${skippedNoType} skipped: no type_sac)` : ""),
+    );
+    for (const value of created) console.log(`  + ${value}`);
 
     // ---- print colours -----------------------------------------------------
     //
@@ -556,6 +597,8 @@ async function main() {
     }
 
     for (const row of colours) {
+      // An order left untouched keeps the colours it has.
+      if (keptLegacyIds.has(String(row.commande_id))) continue;
       const orderId = legacyToNewId.get(String(row.commande_id));
       if (orderId === undefined) {
         // Only reachable in a dry run, or if a commande was skipped above.
@@ -575,6 +618,10 @@ async function main() {
       colourCount += 1;
     }
     console.log(`colours: ${colourCount}/${colours.length}`);
+    if (conflicts.length > 0) {
+      console.warn(`\nnot imported:`);
+      for (const value of conflicts) console.warn(`  ${value}`);
+    }
 
     if (unresolved.length > 0) {
       console.warn(`\nforeign keys / enum values that did not resolve (left null, or order skipped):`);

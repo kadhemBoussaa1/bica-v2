@@ -15,6 +15,12 @@
  * identifying a `PaperRoll` — see the model comment for why `numero` and
  * `code` are labels rather than keys.
  *
+ * For a database already in use, two flags narrow the run to what is safe:
+ * `--production-only` imports production runs and nothing else (shipments,
+ * reels and allocations are stock, which has moved on here since), and
+ * `--only-new` creates the runs this database does not have yet (by
+ * `legacyId`) without rewriting an existing one.
+ *
  * Read-only against the legacy database.
  */
 import "dotenv/config";
@@ -144,6 +150,9 @@ async function foreignKeyMaps(prisma: PrismaClient) {
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
+  const productionOnly = process.argv.includes("--production-only");
+  const onlyNew = process.argv.includes("--only-new");
+  const none = { rows: [] as Record<string, unknown>[] };
   const legacy = legacyPool();
   const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -175,7 +184,7 @@ async function main() {
 
     // ---- shipments --------------------------------------------------------
 
-    const { rows: shipments } = await legacy.query<Record<string, unknown>>(
+    const { rows: shipments } = productionOnly ? none : await legacy.query<Record<string, unknown>>(
       // `date_import` as text: a bare DATE through the driver lands a day early.
       // See `legacyDate`.
       `SELECT *, date_import::text AS date_import FROM import_model ORDER BY id`,
@@ -244,7 +253,8 @@ async function main() {
       }
       shipmentCount += 1;
     }
-    console.log(
+    // A section left out says nothing rather than "0/0", which reads as a failure.
+    if (!productionOnly) console.log(
       `shipments:  ${shipmentCount}/${shipments.length}` +
         (skippedShipment ? ` (${skippedShipment} skipped: no supplier)` : ""),
     );
@@ -256,7 +266,7 @@ async function main() {
     // lineage is wired afterwards once every roll has a cuid. Doing it in one
     // pass would fail the self-FK on whichever child came first.
 
-    const { rows: rolls } = await legacy.query<Record<string, unknown>>(
+    const { rows: rolls } = productionOnly ? none : await legacy.query<Record<string, unknown>>(
       `SELECT * FROM rouleau_import ORDER BY id`,
     );
 
@@ -355,7 +365,7 @@ async function main() {
         lineageCount += 1;
       }
     }
-    console.log(
+    if (!productionOnly) console.log(
       `rolls:      ${rollCount}/${rolls.length}` +
         (dryRun ? ` (${rollParents.size} split links pending)` : ` (${lineageCount} split links)`),
     );
@@ -367,10 +377,27 @@ async function main() {
       `SELECT *, date_production::text AS date_production FROM production ORDER BY id`,
     );
 
+    // What `--only-new` must not touch: the runs already here.
+    const runsHere = onlyNew
+      ? new Set(
+          (
+            await prisma.productionRun.findMany({
+              where: { legacyId: { not: null } },
+              select: { legacyId: true },
+            })
+          ).map((row) => String(row.legacyId)),
+        )
+      : new Set<string>();
+
     let runCount = 0;
+    let runsKept = 0;
     let skippedNoOrder = 0;
 
     for (const row of runs) {
+      if (runsHere.has(String(row.id))) {
+        runsKept += 1;
+        continue;
+      }
       const legacyId = BigInt(String(row.id));
       const label = `production ${String(row.id)}`;
 
@@ -424,6 +451,7 @@ async function main() {
     }
     console.log(
       `production: ${runCount}/${runs.length}` +
+        (onlyNew ? ` — ${runsKept} already here and left untouched` : "") +
         (skippedNoOrder ? ` (${skippedNoOrder} skipped)` : ""),
     );
 
@@ -432,7 +460,7 @@ async function main() {
     // Runs last: an allocation references both an order and a reel, so both
     // passes above must have populated their id maps first.
 
-    const { rows: allocations } = await legacy.query<Record<string, unknown>>(
+    const { rows: allocations } = productionOnly ? none : await legacy.query<Record<string, unknown>>(
       `SELECT * FROM rouleau_commande ORDER BY id`,
     );
 
@@ -494,7 +522,7 @@ async function main() {
       }
       allocationCount += 1;
     }
-    console.log(
+    if (!productionOnly) console.log(
       `allocations: ${allocationCount}/${allocations.length}` +
         (skippedAllocation ? ` (${skippedAllocation} skipped)` : ""),
     );
