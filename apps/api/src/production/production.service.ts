@@ -1,9 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
-import type { CreateProductionRunInput, UpdateProductionRunInput } from "@repo/api-contract";
-import { machineTypesForStage, ordersAreScopedFor } from "@repo/api-contract";
+import type { CreateProductionRunInput, UpdateProductionRunInput, WorkshopStage } from "@repo/api-contract";
+import { assetUrl, machineTypesForStage, ordersAreScopedFor } from "@repo/api-contract";
 import type { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
+import { MailService } from "../mail/mail.service";
+import { productionRecordedMail } from "../mail/templates";
 import { NotificationService } from "../notification/notification.service";
 import { orderScopeFor } from "../order/order.scope";
 import { PrismaService } from "../prisma.service";
@@ -34,6 +36,7 @@ export class ProductionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationService,
+    private readonly mail: MailService,
   ) {}
 
   /**
@@ -342,6 +345,31 @@ export class ProductionService {
         entityId: order.id,
         actorId: actor.id,
       });
+      // Email 3 (docs/email-notifications-plan.md): what the old app mailed
+      // the boss on every production entry, with the order's photo.
+      const about = await tx.order.findUniqueOrThrow({
+        where: { id: order.id },
+        select: {
+          client: { select: { name: true } },
+          product: { select: { name: true, images: true } },
+        },
+      });
+      this.mail.queue(
+        outbox,
+        productionRecordedMail({
+          to: await this.mail.bossAndAdmins(tx),
+          orderId: order.id,
+          numero: order.numero,
+          clientName: about.client?.name ?? null,
+          productName: about.product.name,
+          stageLabel: STAGE_LABELS[input.stage],
+          quantity: created.quantite,
+          unit: input.stage === "PRINTING" ? "m" : input.stage === "PACKAGING" ? "colis" : "pcs",
+          day: input.dateProduction,
+          machineName: machine?.name ?? null,
+          imageUrl: assetUrl(about.product.images[0]),
+        }),
+      );
       return created;
     });
     outbox.flush();
@@ -527,6 +555,14 @@ export class ProductionService {
 }
 
 const RETURN_SELECT = { id: true, orderId: true, quantite: true } as const;
+
+/** The stations' French names, as the web's `enums.workshopStage` has them — for the email. */
+const STAGE_LABELS: Record<WorkshopStage, string> = {
+  PRINTING: "Impression",
+  PRODUCER: "Fabrication",
+  QUALITY_CONTROL: "Contrôle qualité",
+  PACKAGING: "Emballage",
+};
 
 /** A run as the daily view returns it. */
 type DailyRun = Prisma.ProductionRunGetPayload<{ select: typeof PRODUCTION_SELECT }>;

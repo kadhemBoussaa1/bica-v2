@@ -58,6 +58,7 @@ export interface PendingPush {
  */
 export class NotificationOutbox {
   private readonly pending: PendingPush[] = [];
+  private readonly deferred: (() => void)[] = [];
 
   constructor(private readonly deliver: (rows: PendingPush[]) => void) {}
 
@@ -65,9 +66,20 @@ export class NotificationOutbox {
     this.pending.push(...rows);
   }
 
+  /**
+   * Anything else to do once the transaction has committed — an email
+   * (`MailService.queue`) rides the same outbox as the bell, for the same
+   * reason: a mail about a row that then rolled back would announce
+   * something that never happened.
+   */
+  defer(task: () => void): void {
+    this.deferred.push(task);
+  }
+
   flush(): void {
     const rows = this.pending.splice(0);
     if (rows.length > 0) this.deliver(rows);
+    for (const task of this.deferred.splice(0)) task();
   }
 }
 

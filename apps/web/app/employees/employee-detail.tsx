@@ -563,6 +563,9 @@ export function EmployeeDetail({ id }: { id: string }) {
                 label={t("detail.fields.email")}
                 value={employee.email === null ? null : <bdi>{employee.email}</bdi>}
               />
+              {employee.workEmail !== null && (
+                <Row label={t("detail.fields.workEmail")} value={<bdi>{employee.workEmail}</bdi>} />
+              )}
             </Group>
           </section>
 

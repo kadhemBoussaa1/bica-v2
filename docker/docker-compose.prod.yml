@@ -89,6 +89,14 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # Email, optional the same way (MailService boots with it off).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-BICA-PACK - Système de Gestion}
+      MAIL_TO_BOSS: ${MAIL_TO_BOSS:-}
+      MAIL_TO_CREATIONS: ${MAIL_TO_CREATIONS:-}
       # Kept out of the environment on purpose: AUDIT_PURGE_DAYS and
       # NOTIFICATION_PURGE_DAYS have no default, and both purges are run by
       # hand (docs/deployment.md).

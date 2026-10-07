@@ -13,12 +13,19 @@
  * existing row exactly as it is — a re-run in place would otherwise write the
  * old app's values over anything edited here since. A new employee whose
  * matricule is already taken here is reported and skipped, never merged.
+ *
+ * The work email (`Employee.workEmail`, the old app's `email_professionnel`)
+ * is not in the ETL output, so it is read from the raw dump
+ * (`LEGACY_RAW_DATABASE_URL`). `--fill-work-emails` does only that, on the
+ * employees already here whose work email is empty, and needs no ETL
+ * database at all — the step that brings the 8 addresses to production
+ * (docs/email-notifications-plan.md).
  */
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client.js";
 import type { MachineType } from "../generated/prisma/enums.js";
-import { department, jobTitle, legacyDate, legacyPool, text } from "./legacy.js";
+import { department, jobTitle, legacyDate, legacyPool, legacyRawPool, text } from "./legacy.js";
 
 /** Legacy numerics are `double precision`; null and NaN both mean "absent". */
 function num(value: unknown): number | null {
@@ -29,11 +36,49 @@ function num(value: unknown): number | null {
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
   const onlyNew = process.argv.includes("--only-new");
-  const legacy = legacyPool();
+  const fillWorkEmails = process.argv.includes("--fill-work-emails");
+  const raw = legacyRawPool();
   const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
   });
 
+  // The old app's professional addresses, by legacy employee id.
+  const workEmails = new Map<string, string>();
+  try {
+    const { rows } = await raw.query<{ id: string; email: string }>(
+      `SELECT id, btrim(email_professionnel) AS email FROM employee
+       WHERE email_professionnel IS NOT NULL AND btrim(email_professionnel) <> ''`,
+    );
+    for (const row of rows) workEmails.set(String(row.id), row.email);
+  } finally {
+    await raw.end();
+  }
+
+  if (fillWorkEmails) {
+    try {
+      const here = await prisma.employee.findMany({
+        where: { legacyId: { not: null }, workEmail: null },
+        select: { id: true, legacyId: true, matricule: true },
+      });
+      let filled = 0;
+      for (const row of here) {
+        const email = workEmails.get(String(row.legacyId));
+        if (!email) continue;
+        console.log(`  ${row.matricule}: ${email}`);
+        if (!dryRun) {
+          await prisma.employee.update({ where: { id: row.id }, data: { workEmail: email } });
+        }
+        filled += 1;
+      }
+      console.log(`work emails: ${filled} filled, ${here.length - filled} employees stay without one`);
+      if (dryRun) console.log("\n(dry run — nothing written)");
+    } finally {
+      await prisma.$disconnect();
+    }
+    return;
+  }
+
+  const legacy = legacyPool();
   try {
     // What `--only-new` must not touch: the rows already here, by legacy id,
     // and the matricules in use — a person added in this app may hold one.
@@ -205,6 +250,7 @@ async function main() {
         echelon: text(row.echelon),
         gender: text(row.gender),
         email: text(row.email),
+        workEmail: workEmails.get(String(row.id)) ?? null,
         phone: text(row.phone_number),
         phone2: text(row.second_phone_number),
         hireDate: legacyDate(row.hire_date),

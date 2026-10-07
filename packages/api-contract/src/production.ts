@@ -91,6 +91,17 @@ const isoDate = calendarDate
   .optional()
   .transform((value) => value || undefined);
 
+/** An email address with the clear/absent distinction of `clearableText`. */
+const clearableEmail = z
+  .string()
+  .max(200)
+  .nullish()
+  .transform((value) => (value === null ? null : value?.trim() || undefined))
+  .refine(
+    (value) => value === undefined || value === null || z.email().safeParse(value).success,
+    { message: "Enter a valid email address, or leave it blank" },
+  );
+
 /** `isoDate`, with the clear/absent distinction of `clearableText`. */
 const clearableDate = calendarDate
   .nullish()
@@ -163,15 +174,10 @@ export const createEmployeeInput = z.object({
   categorie: clearableText(20),
   echelon: clearableText(20),
   gender: clearableText(20),
-  email: z
-    .string()
-    .max(200)
-    .nullish()
-    .transform((value) => (value === null ? null : value?.trim() || undefined))
-    .refine(
-      (value) => value === undefined || value === null || z.email().safeParse(value).success,
-      { message: "Enter a valid email address, or leave it blank" },
-    ),
+  email: clearableEmail,
+  // The work mailbox, where the "action à réaliser" email goes — see
+  // `Employee.workEmail`. Personal and work addresses are kept apart.
+  workEmail: clearableEmail,
   phone: clearableText(40),
   phone2: clearableText(40),
   hireDate: clearableDate,

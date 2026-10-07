@@ -12,6 +12,8 @@ import {
 import { Prisma } from "../generated/prisma/client.js";
 import type { PurchaseCategory, ReceiptStatus } from "../generated/prisma/enums.js";
 import { runListQuery } from "../list/list-query";
+import { MailService } from "../mail/mail.service";
+import { purchaseOrderCreatedMail } from "../mail/templates";
 import { PrismaService } from "../prisma.service";
 import {
   GOODS_RECEIPT_DETAIL_SELECT,
@@ -49,9 +51,25 @@ import { todayUtc } from "../list/period";
  * says "12 tonnes of 90 g/m²", not which reels arrived — so it stays a
  * separate, deliberate step.
  */
+/** The categories' French names, as the web's `enums.purchaseCategory` has them — for the email. */
+const CATEGORY_LABELS: Record<PurchaseCategory, string> = {
+  PAPER: "Papier",
+  INK: "Encre",
+  PLATE: "Clichés",
+  GLUE: "Colle",
+  BOXES: "Caisses",
+  PALLETS: "Palettes",
+  STRETCH_FILM: "Film étirable",
+  TRANSPORT: "Transport",
+  MISC: "Divers",
+};
+
 @Injectable()
 export class PurchasingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+  ) {}
 
   async listOrders(input: ListPurchaseOrdersInput) {
     // The period is scope, not a facet: `runListQuery` ANDs scope first and
@@ -289,7 +307,24 @@ export class PurchasingService {
 
       await this.createMatchingReceipt(tx, order.id, input.category, input.supplierId);
 
-      return { id: order.id, numero: order.numero };
+      // Email 2 (docs/email-notifications-plan.md), built on the transaction
+      // and sent once it has returned — see below.
+      const supplier = await tx.supplier.findUnique({
+        where: { id: input.supplierId },
+        select: { name: true },
+      });
+      const mail = purchaseOrderCreatedMail({
+        to: await this.mail.creationsAndAdmins(tx),
+        id: order.id,
+        numero: order.numero,
+        categoryLabel: CATEGORY_LABELS[input.category],
+        supplierName: supplier?.name ?? "",
+      });
+      return { id: order.id, numero: order.numero, mail };
+    }).then(({ mail, ...created }) => {
+      // The transaction has committed: nothing here can announce a rolled-back row.
+      this.mail.queue(null, mail);
+      return created;
     });
   }
 

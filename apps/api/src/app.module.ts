@@ -10,6 +10,7 @@ import { InkService } from "./ink/ink.service";
 import { InventoryService } from "./inventory/inventory.service";
 import { InvoiceService } from "./invoice/invoice.service";
 import { MachineService } from "./machine/machine.service";
+import { MailService } from "./mail/mail.service";
 import { NotificationService } from "./notification/notification.service";
 import { PushService } from "./notification/push.service";
 import { OrderService } from "./order/order.service";
@@ -57,6 +58,7 @@ import { UserService } from "./user/user.service";
     ShiftService,
     DashboardService,
     NotificationService,
+    MailService,
     PushService,
     SearchService,
     ManufacturingService,

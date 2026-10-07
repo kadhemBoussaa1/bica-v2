@@ -14,9 +14,7 @@ import {
   canStartAction,
   firstOpenPosition,
   MANUFACTURING_ACTIONS_MAX,
-  MANUFACTURING_ACTION_STATUSES,
   MANUFACTURING_COMMENT_MAX,
-  type ManufacturingActionStatus,
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { Avatar } from "../../employees/avatar";
@@ -25,6 +23,7 @@ import { useTRPC } from "../../trpc/client";
 import {
   ACTION_TONE,
   ActionStatusPill,
+  ButtonGlyph,
   FileGlyph,
   formatMoment,
   HandleGlyph,
@@ -48,8 +47,6 @@ export interface PipelineControls {
   start: (actionId: string) => void;
   complete: (actionId: string) => void;
   skip: (actionId: string) => void;
-  /** Steps the whole pipeline back one action. */
-  undo: () => void;
   move: (actionId: string, position: number) => void;
   setEmployees: (actionId: string, employeeIds: string[]) => void;
   setMachine: (actionId: string, machineId: string | null) => void;
@@ -59,17 +56,20 @@ export interface PipelineControls {
   pickFile: (actionId: string) => void;
   /** Uploads a file dropped on this action. */
   dropFile: (actionId: string, file: File) => void;
+  /** Emails the action's people again ("Relancer"). */
+  remind: (actionId: string) => void;
   /** The action a file is being uploaded to, if any. */
   uploadingTo: string | null;
 }
+
+/** The two things a card can unfold: what the action holds, and what was said. */
+type Panel = "form" | "comments";
 
 interface ActionItemProps {
   action: Action;
   index: number;
   /** The whole pipeline, in order: the rules read an action's neighbours. */
   actions: readonly Action[];
-  /** What stepping the pipeline back would change — see `undoSteps`. */
-  back: readonly { index: number; to: ManufacturingActionStatus }[];
   /** The OF is cancelled: only comments stay open. */
   frozen: boolean;
   open: boolean;
@@ -81,20 +81,19 @@ interface ActionItemProps {
 }
 
 /**
- * One action of the pipeline, on the timeline. Closed, the card says what
- * the action is, where it stands and what it holds; open, it is where the
- * action is worked — its status, its people, its machine, its files and its
- * comments.
+ * One action of the pipeline, on the timeline: what it is, where it stands
+ * and what it holds, then the old app's row of buttons — the form, the
+ * comments, start or finish, skip, delete, and "add an action after".
  *
- * What each control does is decided by the pure rules the server re-checks
- * (`manufacturing.ts` in the contract), so a status is offered exactly when
- * the call behind it would be accepted.
+ * Which buttons a card offers is decided by the pure rules the server
+ * re-checks (`manufacturing.ts` in the contract), so a move is offered
+ * exactly when the call behind it would be accepted. A move back is not on
+ * the card: it is the page's "undo the last step".
  */
 export function ActionItem({
   action,
   index,
   actions,
-  back,
   frozen,
   open,
   onToggle,
@@ -104,8 +103,8 @@ export function ActionItem({
   onInsertAfter,
 }: ActionItemProps) {
   const t = useTranslations("manufacturing");
-  const enums = useTranslations("enums");
   const trpc = useTRPC();
+  const [panel, setPanel] = useState<Panel>("form");
   const [picking, setPicking] = useState(false);
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
@@ -114,53 +113,39 @@ export function ActionItem({
   const { busy } = controls;
   const waiting = !frozen && canEditActionDefinition(action.status);
   const fillable = !frozen && canFillAction(action.status);
+  const startable = canStartAction(actions, index);
   const people = action.assignees.map(({ employee }) => employee);
   const uploading = controls.uploadingTo === action.id;
   const notes = action.comments.filter(isImportNote);
   const said = action.comments.length - notes.length;
+  const formOpen = open && panel === "form";
+  const commentsOpen = open && panel === "comments";
+  const handlesSomething =
+    action.handlesEmployees || action.handlesMachine || action.handlesAttachments;
 
   // Asked for only by the open card, and only when there is a choice to make.
   const rosterQuery = useQuery(
     trpc.employee.list.queryOptions(
       { pageSize: 100, sortBy: "lastName", sortDir: "asc", filter: "onRoster" },
-      { enabled: open && picking },
+      { enabled: formOpen && picking },
     ),
   );
   const machinesQuery = useQuery(
     trpc.machine.list.queryOptions(
       { pageSize: 100, sortBy: "name", sortDir: "asc", filter: "all" },
-      { enabled: open && fillable && action.handlesMachine },
+      { enabled: formOpen && fillable && action.handlesMachine },
     ),
   );
 
-  /**
-   * What clicking a status does, or null when the pipeline's sequence does
-   * not allow it. Forward moves are the action's own; a move back is the
-   * pipeline stepping back one action, offered only on the action(s) that
-   * step would change.
-   */
-  const reach = (to: ManufacturingActionStatus): (() => void) | null => {
-    if (frozen || action.status === to) return null;
-    if (to === "IN_PROGRESS" && canStartAction(actions, index)) return () => controls.start(action.id);
-    if (to === "DONE" && canCompleteAction(actions, index)) return () => controls.complete(action.id);
-    if (to === "SKIPPED" && canSkipAction(actions, index)) return () => controls.skip(action.id);
-    if (back.some((step) => step.index === index && step.to === to)) return controls.undo;
-    return null;
+  /** A button of the row that unfolds a panel: a second press folds it back. */
+  const show = (next: Panel) => {
+    if (open && panel === next) {
+      onToggle();
+      return;
+    }
+    setPanel(next);
+    if (!open) onToggle();
   };
-
-  const hint = frozen
-    ? t("action.hint.frozen")
-    : action.status === "WAITING"
-      ? canStartAction(actions, index)
-        ? t("action.hint.waiting")
-        : t("action.hint.blocked")
-      : action.status === "IN_PROGRESS"
-        ? actions[index + 1]?.status === "WAITING"
-          ? t("action.hint.inProgress")
-          : t("action.hint.last")
-        : action.status === "DONE"
-          ? t("action.hint.done", { date: formatMoment(action.completedAt) })
-          : t("action.hint.skipped", { date: formatMoment(action.completedAt) });
 
   // Each moment in its own <bdi>: in Arabic the LTR runs would otherwise
   // reorder. A dash between two, not an arrow, which would point the wrong
@@ -230,74 +215,48 @@ export function ActionItem({
             <span className={styles.cardWhen}>{when}</span>
           </button>
 
-          {!open && (
-            <>
-              {(people.length > 0 || action.machine || action.attachments.length > 0) && (
-                <div className={styles.held}>
-                  {people.map((person) => (
-                    <span key={person.id} className={styles.personChip}>
-                      <Avatar employee={person} size="sm" />
-                      {employeeName(person)}
-                    </span>
-                  ))}
-                  {action.machine && (
-                    <span className={styles.machineChip}>
-                      <HandleGlyph name="machine" />
-                      <bdi>{action.machine.code}</bdi> · {action.machine.name}
-                    </span>
-                  )}
-                  {action.attachments.map((file) => (
-                    <a
-                      key={file.id}
-                      className={styles.fileChip}
-                      href={assetUrl(file.url) ?? undefined}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <HandleGlyph name="attachments" />
-                      {file.filename}
-                    </a>
-                  ))}
-                </div>
-              )}
-              {notes.map((note) => (
-                <div key={note.id} className={styles.legacy}>
-                  <div className={styles.legacyHead}>
-                    {t("action.oldApp")} · <bdi>{formatMoment(note.createdAt)}</bdi>
-                  </div>
-                  <div className={styles.legacyBody}>{note.body}</div>
-                </div>
+          {/* What the action holds, at a glance — until the form shows it in full. */}
+          {!formOpen && (people.length > 0 || action.machine || action.attachments.length > 0) && (
+            <div className={styles.held}>
+              {people.map((person) => (
+                <span key={person.id} className={styles.personChip}>
+                  <Avatar employee={person} size="sm" />
+                  {employeeName(person)}
+                </span>
               ))}
-              {said > 0 && <div className={styles.fine}>{t("action.comments", { count: said })}</div>}
-            </>
+              {action.machine && (
+                <span className={styles.machineChip}>
+                  <HandleGlyph name="machine" />
+                  <bdi>{action.machine.code}</bdi> · {action.machine.name}
+                </span>
+              )}
+              {action.attachments.map((file) => (
+                <a
+                  key={file.id}
+                  className={styles.fileChip}
+                  href={assetUrl(file.url) ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <HandleGlyph name="attachments" />
+                  {file.filename}
+                </a>
+              ))}
+            </div>
           )}
-
-          {open && (
-            <div className={styles.work}>
-              <div className={styles.group}>
-                <span className={styles.groupLabel}>{t("action.status")}</span>
-                <div className={styles.statusOptions}>
-                  {MANUFACTURING_ACTION_STATUSES.map((status) => {
-                    const go = reach(status);
-                    const on = action.status === status;
-                    return (
-                      <button
-                        key={status}
-                        type="button"
-                        className={[styles.statusOption, ACTION_TONE[status], on ? styles.statusOptionOn : null]
-                          .filter(Boolean)
-                          .join(" ")}
-                        aria-pressed={on}
-                        disabled={busy || (!on && go === null)}
-                        onClick={() => go?.()}
-                      >
-                        {enums(`manufacturingActionStatus.${status}`)}
-                      </button>
-                    );
-                  })}
+          {!commentsOpen &&
+            notes.map((note) => (
+              <div key={note.id} className={styles.legacy}>
+                <div className={styles.legacyHead}>
+                  {t("action.oldApp")} · <bdi>{formatMoment(note.createdAt)}</bdi>
                 </div>
-                <span className={styles.fine}>{hint}</span>
+                <div className={styles.legacyBody}>{note.body}</div>
               </div>
+            ))}
+
+          {formOpen && (
+            <div className={styles.work}>
+              {!handlesSomething && <span className={styles.none}>{t("action.buttons.nothing")}</span>}
 
               {action.handlesEmployees && (
                 <div className={styles.group}>
@@ -307,7 +266,10 @@ export function ActionItem({
                       <span className={styles.none}>{t("action.noEmployees")}</span>
                     )}
                     {people.map((person) => (
-                      <span key={person.id} className={[styles.personChip, styles.personChipLarge].filter(Boolean).join(" ")}>
+                      <span
+                        key={person.id}
+                        className={[styles.personChip, styles.personChipLarge].filter(Boolean).join(" ")}
+                      >
                         <Avatar employee={person} size="sm" />
                         {employeeName(person)}
                         {fillable && (
@@ -360,9 +322,7 @@ export function ActionItem({
                             type="button"
                             className={styles.choice}
                             disabled={busy}
-                            onClick={() =>
-                              controls.setEmployees(action.id, [...assigned, person.id])
-                            }
+                            onClick={() => controls.setEmployees(action.id, [...assigned, person.id])}
                           >
                             <Avatar employee={person} size="sm" />
                             {employeeName(person)}
@@ -471,8 +431,36 @@ export function ActionItem({
                 </div>
               )}
 
+              {/* The pipeline's shape: only an action not yet started can move or be redefined. */}
+              {waiting && (
+                <div className={styles.structure}>
+                  <span className={styles.structureLabel}>{t("action.structure")}</span>
+                  <Button
+                    size="dense"
+                    // Never above a started action: the sequence depends on it.
+                    disabled={busy || index - 1 < firstOpenPosition(actions)}
+                    onClick={() => controls.move(action.id, index - 1)}
+                  >
+                    <span aria-hidden>↑</span> {t("action.moveUp")}
+                  </Button>
+                  <Button
+                    size="dense"
+                    disabled={busy || index === actions.length - 1}
+                    onClick={() => controls.move(action.id, index + 1)}
+                  >
+                    <span aria-hidden>↓</span> {t("action.moveDown")}
+                  </Button>
+                  <Button size="dense" disabled={busy} onClick={onEdit}>
+                    {t("action.edit")}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {commentsOpen && (
+            <div className={styles.work}>
               <div className={styles.group}>
-                <span className={styles.groupLabel}>{t("action.commentsTitle")}</span>
                 {action.comments.map((comment) => (
                   <div key={comment.id} className={styles.note}>
                     <span className={styles.noteBy}>
@@ -498,54 +486,96 @@ export function ActionItem({
                     aria-label={t("action.commentPlaceholder")}
                     maxLength={MANUFACTURING_COMMENT_MAX}
                     disabled={busy}
+                    autoFocus
                   />
                   <Button type="submit" variant="dark" disabled={busy || draft.trim() === ""}>
                     {t("action.publish")}
                   </Button>
                 </form>
               </div>
-
-              {waiting && (
-                <div className={styles.structure}>
-                  <span className={styles.structureLabel}>{t("action.structure")}</span>
-                  <Button
-                    size="dense"
-                    // Never above a started action: the sequence depends on it.
-                    disabled={busy || index - 1 < firstOpenPosition(actions)}
-                    onClick={() => controls.move(action.id, index - 1)}
-                  >
-                    <span aria-hidden>↑</span> {t("action.moveUp")}
-                  </Button>
-                  <Button
-                    size="dense"
-                    disabled={busy || index === actions.length - 1}
-                    onClick={() => controls.move(action.id, index + 1)}
-                  >
-                    <span aria-hidden>↓</span> {t("action.moveDown")}
-                  </Button>
-                  <Button size="dense" disabled={busy} onClick={onEdit}>
-                    {t("action.edit")}
-                  </Button>
-                  <span className={styles.spacer} />
-                  <button
-                    type="button"
-                    className={[styles.quietBtn, styles.quietDanger].filter(Boolean).join(" ")}
-                    disabled={busy}
-                    onClick={onRemove}
-                  >
-                    {t("action.remove")}
-                  </button>
-                </div>
-              )}
             </div>
           )}
-        </div>
 
-        {canInsert && (
-          <button type="button" className={styles.insert} disabled={busy} onClick={onInsertAfter}>
-            {t("detail.insertHere")}
-          </button>
-        )}
+          {/*
+            The row of buttons, as on the old app's step cards. Form and
+            comments unfold in place; the rest act at once. A button that
+            does not apply to the action's status is left out, and "start"
+            stays visible but disabled while an earlier action is unfinished.
+          */}
+          <div
+            className={styles.actions}
+            role="group"
+            aria-label={t("action.buttons.label", { name: action.label })}
+          >
+            <Button size="dense" aria-expanded={formOpen} onClick={() => show("form")}>
+              <ButtonGlyph name="form" />
+              {t("action.buttons.form")}
+            </Button>
+            <Button size="dense" aria-expanded={commentsOpen} onClick={() => show("comments")}>
+              <ButtonGlyph name="comments" />
+              {t("action.buttons.comments")}
+              {said > 0 && <span className={styles.count}>{said}</span>}
+            </Button>
+
+            {!frozen && action.status === "WAITING" && (
+              <Button
+                size="dense"
+                variant="primary"
+                disabled={busy || !startable}
+                title={startable ? undefined : t("action.buttons.blocked")}
+                onClick={() => controls.start(action.id)}
+              >
+                <span className={styles.flip}>
+                  <ButtonGlyph name="start" />
+                </span>
+                {t("action.buttons.start")}
+              </Button>
+            )}
+            {!frozen && canCompleteAction(actions, index) && (
+              <Button size="dense" variant="primary" disabled={busy} onClick={() => controls.complete(action.id)}>
+                <ButtonGlyph name="finish" />
+                {t("action.buttons.finish")}
+              </Button>
+            )}
+            {!frozen && canFillAction(action.status) && (
+              <Button
+                size="dense"
+                // Greyed, not hidden, like the old card: it reads as "nobody to remind".
+                disabled={busy || people.length === 0}
+                title={people.length === 0 ? t("action.noEmployees") : undefined}
+                onClick={() => controls.remind(action.id)}
+              >
+                <ButtonGlyph name="remind" />
+                {t("action.buttons.remind")}
+              </Button>
+            )}
+            {!frozen && canFillAction(action.status) && (
+              <Button
+                size="dense"
+                className={styles.skipBtn}
+                disabled={busy || !canSkipAction(actions, index)}
+                onClick={() => controls.skip(action.id)}
+              >
+                <span className={styles.flip}>
+                  <ButtonGlyph name="skip" />
+                </span>
+                {t("action.buttons.skip")}
+              </Button>
+            )}
+            {waiting && (
+              <Button size="dense" variant="danger" disabled={busy} onClick={onRemove}>
+                <ButtonGlyph name="delete" />
+                {t("action.buttons.delete")}
+              </Button>
+            )}
+            {canInsert && (
+              <Button size="dense" disabled={busy} onClick={onInsertAfter}>
+                <ButtonGlyph name="add" />
+                {t("action.buttons.addAfter")}
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </li>
   );

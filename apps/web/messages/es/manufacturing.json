@@ -131,7 +131,6 @@
     "frozen": "Esta OF está cancelada. Nada puede cambiar en ella hasta que se reabra; los comentarios siguen abiertos.",
     "pipeline": "Proceso",
     "addAction": "+ Añadir una acción",
-    "insertHere": "+ insertar una acción aquí",
     "noActions": "Aún no hay acciones",
     "noActionsText": "Añada la primera acción del proceso de esta OF.",
     "now": {
@@ -162,18 +161,7 @@
     "startedOn": "iniciada el {date}",
     "notStarted": "aún sin empezar",
     "skippedOn": "omitida el {date}",
-    "comments": "{count, plural, one {# comentario} other {# comentarios}}",
     "oldApp": "Aplicación antigua",
-    "status": "Estado",
-    "hint": {
-      "waiting": "Borrador: aún no se ha hecho nada.",
-      "blocked": "Empezará cuando las acciones anteriores estén terminadas.",
-      "inProgress": "Al pasarla a «Hecha», la acción siguiente empieza automáticamente.",
-      "last": "Es la última acción: pasarla a «Hecha» cierra la OF.",
-      "done": "Terminada el {date}.",
-      "skipped": "Omitida el {date}.",
-      "frozen": "La OF está cancelada: el estado ya no puede cambiar."
-    },
     "people": "Responsable(s)",
     "assign": "+ Asignar",
     "unassign": "Quitar a {name}",
@@ -191,14 +179,28 @@
     "failed": "La subida ha fallado. Inténtelo de nuevo.",
     "tooLarge": "Ese archivo supera los 25 MB.",
     "wrongType": "Solo se pueden adjuntar PDF e imágenes.",
-    "commentsTitle": "Comentarios",
     "commentPlaceholder": "Una precisión para el equipo…",
     "publish": "Publicar",
     "structure": "Proceso",
     "moveUp": "Subir",
     "moveDown": "Bajar",
     "edit": "Editar",
-    "remove": "Eliminar la acción"
+    "buttons": {
+      "form": "Formulario",
+      "comments": "Comentarios",
+      "start": "Iniciar",
+      "finish": "Terminar",
+      "skip": "Omitir",
+      "delete": "Eliminar",
+      "addAfter": "Acción",
+      "label": "Acciones sobre «{name}»",
+      "blocked": "Empezará cuando las acciones anteriores estén terminadas.",
+      "nothing": "Esta acción no gestiona empleados, máquina ni archivos.",
+      "remind": "Recordar",
+      "remindSent": "{count, plural, one {# recordatorio enviado} other {# recordatorios enviados}}",
+      "remindNoEmail": "{count, plural, one {# persona sin correo profesional} other {# personas sin correo profesional}}",
+      "remindNone": "Nadie tiene correo profesional: no se envió ningún recordatorio."
+    }
   },
   "dialogs": {
     "addTitle": "Nueva acción",

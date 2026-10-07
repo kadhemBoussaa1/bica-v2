@@ -31,6 +31,8 @@ import {
 import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
 import { PrismaService } from "../prisma.service";
+import { MailService } from "../mail/mail.service";
+import { actionAssignedMail, type MailMessage } from "../mail/templates";
 import { StorageService } from "../storage/storage.service";
 import type { SessionUser } from "../trpc/trpc";
 import {
@@ -53,6 +55,7 @@ const LOCKED_SELECT = {
     select: {
       id: true,
       position: true,
+      label: true,
       status: true,
       startedAt: true,
       handlesEmployees: true,
@@ -106,6 +109,7 @@ export class ManufacturingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly mail: MailService,
   ) {}
 
   async list(query: ListManufacturingOrdersInput) {
@@ -495,7 +499,8 @@ export class ManufacturingService {
 
   /** Marks the action in progress done; the next one starts by itself. */
   async complete(actionId: string) {
-    return this.withAction(actionId, async (tx, of, action, index) => {
+    const mails: MailMessage[] = [];
+    const ref = await this.withAction(actionId, async (tx, of, action, index) => {
       if (!canCompleteAction(of.actions, index)) {
         throw refuse("Only an action in progress can be marked done");
       }
@@ -504,8 +509,10 @@ export class ManufacturingService {
         where: { id: action.id },
         data: { status: "DONE", completedAt: now },
       });
-      await this.handOn(tx, of, index, now);
+      mails.push(...(await this.handOn(tx, of, index, now)));
     });
+    for (const mail of mails) this.mail.queue(null, mail);
+    return ref;
   }
 
   /**
@@ -514,7 +521,8 @@ export class ManufacturingService {
    * action in progress hands the pipeline on, like finishing it.
    */
   async skip(actionId: string) {
-    return this.withAction(actionId, async (tx, of, action, index) => {
+    const mails: MailMessage[] = [];
+    const ref = await this.withAction(actionId, async (tx, of, action, index) => {
       if (!canSkipAction(of.actions, index)) {
         throw refuse("Only the action in progress or the next one can be skipped");
       }
@@ -523,8 +531,10 @@ export class ManufacturingService {
         where: { id: action.id },
         data: { status: "SKIPPED", completedAt: now },
       });
-      await this.handOn(tx, of, index, now);
+      mails.push(...(await this.handOn(tx, of, index, now)));
     });
+    for (const mail of mails) this.mail.queue(null, mail);
+    return ref;
   }
 
   /**
@@ -556,10 +566,16 @@ export class ManufacturingService {
 
   // ---- what an action holds --------------------------------------------------
 
-  /** Replaces the action's people wholesale. */
+  /**
+   * Replaces the action's people wholesale. Someone newly put on the OF's
+   * CURRENT action — the one in progress, or the next to start — gets the
+   * "action à réaliser" email (email 4, trigger A), as in the old app; on
+   * a later action nothing is sent yet, the hand-on will (trigger B).
+   */
   async setEmployees(input: SetManufacturingActionEmployeesInput) {
     const employeeIds = [...new Set(input.employeeIds)];
-    return this.withAction(input.actionId, async (tx, _of, action) => {
+    const mails: MailMessage[] = [];
+    const ref = await this.withAction(input.actionId, async (tx, of, action, index) => {
       this.assertFillable(action, action.handlesEmployees, "employees");
       // Existence only: a suspended or archived person stays on an action
       // they already worked, so a later save must not be refused for them.
@@ -567,11 +583,59 @@ export class ManufacturingService {
       if (found !== employeeIds.length) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "An employee no longer exists" });
       }
+      const before = new Set(
+        (
+          await tx.manufacturingActionAssignee.findMany({
+            where: { actionId: action.id },
+            select: { employeeId: true },
+          })
+        ).map((row) => row.employeeId),
+      );
       await tx.manufacturingActionAssignee.deleteMany({ where: { actionId: action.id } });
       await tx.manufacturingActionAssignee.createMany({
         data: employeeIds.map((employeeId) => ({ actionId: action.id, employeeId })),
       });
+      if (currentActionIndex(of.actions) === index) {
+        const added = employeeIds.filter((id) => !before.has(id));
+        mails.push(...(await this.assignmentMails(tx, of, action, index, added)).mails);
+      }
     });
+    // The transaction has returned: sent now, never for a rolled-back save.
+    for (const mail of mails) this.mail.queue(null, mail);
+    return ref;
+  }
+
+  /**
+   * "Relancer" (trigger C): the action's people get the email again. Only
+   * an action still to do, with someone on it — the old app refused the
+   * same two. Says how many were reached and how many have no work email.
+   */
+  async remind(actionId: string) {
+    const mails: MailMessage[] = [];
+    let withoutEmail = 0;
+    const ref = await this.withAction(actionId, async (tx, of, action, index) => {
+      if (isActionFinished(action.status)) {
+        throw refuse("This action is finished — nothing to remind");
+      }
+      const assignees = await tx.manufacturingActionAssignee.findMany({
+        where: { actionId: action.id },
+        select: { employeeId: true },
+      });
+      if (assignees.length === 0) {
+        throw refuse("No employee is assigned to this action");
+      }
+      const built = await this.assignmentMails(
+        tx,
+        of,
+        action,
+        index,
+        assignees.map((row) => row.employeeId),
+      );
+      mails.push(...built.mails);
+      withoutEmail = built.withoutEmail;
+    });
+    for (const mail of mails) this.mail.queue(null, mail);
+    return { ...ref, sent: mails.length, withoutEmail };
   }
 
   async setMachine(input: SetManufacturingActionMachineInput) {
@@ -750,14 +814,83 @@ export class ManufacturingService {
     );
   }
 
-  /** Starts the action after `finishedIndex`, when finishing that one hands the pipeline on. */
-  private async handOn(tx: Tx, of: Locked, finishedIndex: number, at: Date) {
-    const next = of.actions[actionStartedAfter(of.actions, finishedIndex)];
-    if (!next) return;
+  /**
+   * Starts the action after `finishedIndex`, when finishing that one hands
+   * the pipeline on, and returns the "action à réaliser" emails for its
+   * people (email 4, trigger B) — the caller sends them once committed.
+   */
+  private async handOn(tx: Tx, of: Locked, finishedIndex: number, at: Date): Promise<MailMessage[]> {
+    const nextIndex = actionStartedAfter(of.actions, finishedIndex);
+    const next = of.actions[nextIndex];
+    if (!next) return [];
     await tx.manufacturingAction.update({
       where: { id: next.id },
       data: { status: "IN_PROGRESS", startedAt: at, completedAt: null },
     });
+    const assignees = await tx.manufacturingActionAssignee.findMany({
+      where: { actionId: next.id },
+      select: { employeeId: true },
+    });
+    return (
+      await this.assignmentMails(
+        tx,
+        of,
+        next,
+        nextIndex,
+        assignees.map((row) => row.employeeId),
+      )
+    ).mails;
+  }
+
+  /**
+   * One "action à réaliser" email per person in `employeeIds` who has a
+   * work email (`Employee.workEmail`, the old app's `email_professionnel`);
+   * the rest are counted, not mailed. Built on the transaction, sent later.
+   */
+  private async assignmentMails(
+    tx: Tx,
+    of: Locked,
+    action: LockedAction,
+    index: number,
+    employeeIds: readonly string[],
+  ): Promise<{ mails: MailMessage[]; withoutEmail: number }> {
+    if (employeeIds.length === 0) return { mails: [], withoutEmail: 0 };
+    const [people, order] = await Promise.all([
+      tx.employee.findMany({
+        where: { id: { in: [...employeeIds] } },
+        select: { firstName: true, lastName: true, matricule: true, workEmail: true },
+      }),
+      tx.order.findUniqueOrThrow({
+        where: { id: of.orderId },
+        select: {
+          numero: true,
+          client: { select: { name: true } },
+          product: { select: { name: true } },
+        },
+      }),
+    ]);
+    const mails: MailMessage[] = [];
+    let withoutEmail = 0;
+    for (const person of people) {
+      if (!person.workEmail) {
+        withoutEmail += 1;
+        continue;
+      }
+      mails.push(
+        actionAssignedMail({
+          to: [person.workEmail],
+          employeeName: [person.lastName, person.firstName].filter(Boolean).join(" ") || person.matricule,
+          ofId: of.id,
+          ofNumero: of.numero,
+          actionNumber: index + 1,
+          actionLabel: action.label,
+          orderNumero: order.numero,
+          clientName: order.client?.name ?? null,
+          productName: order.product.name,
+        }),
+      );
+    }
+    return { mails, withoutEmail };
   }
 
   /** The pipeline no longer matches the template it was copied from. */

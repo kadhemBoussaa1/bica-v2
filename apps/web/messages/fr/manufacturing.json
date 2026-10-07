@@ -131,7 +131,6 @@
     "frozen": "Cet OF est annulé. Rien ne peut y changer tant qu’il n’est pas rouvert ; les commentaires restent ouverts.",
     "pipeline": "Déroulé",
     "addAction": "+ Ajouter une action",
-    "insertHere": "+ insérer une action ici",
     "noActions": "Aucune action pour l’instant",
     "noActionsText": "Ajoutez la première action du déroulé de cet OF.",
     "now": {
@@ -162,18 +161,7 @@
     "startedOn": "commencée le {date}",
     "notStarted": "pas encore commencée",
     "skippedOn": "ignorée le {date}",
-    "comments": "{count, plural, one {# commentaire} other {# commentaires}}",
     "oldApp": "Ancienne application",
-    "status": "Statut",
-    "hint": {
-      "waiting": "Brouillon : rien n’a encore été fait.",
-      "blocked": "Elle démarrera quand les actions avant elle seront terminées.",
-      "inProgress": "En la passant « Terminée », l’action suivante démarre automatiquement.",
-      "last": "C’est la dernière action : la passer « Terminée » clôt l’OF.",
-      "done": "Terminée le {date}.",
-      "skipped": "Ignorée le {date}.",
-      "frozen": "L’OF est annulé : le statut ne peut plus changer."
-    },
     "people": "Responsable(s)",
     "assign": "+ Affecter",
     "unassign": "Retirer {name}",
@@ -191,14 +179,28 @@
     "failed": "L’envoi a échoué. Réessayez.",
     "tooLarge": "Ce fichier dépasse 25 Mo.",
     "wrongType": "Seuls les PDF et les images peuvent être joints.",
-    "commentsTitle": "Commentaires",
     "commentPlaceholder": "Une précision pour l’équipe…",
     "publish": "Publier",
     "structure": "Déroulé",
     "moveUp": "Monter",
     "moveDown": "Descendre",
     "edit": "Modifier",
-    "remove": "Supprimer l’action"
+    "buttons": {
+      "form": "Formulaire",
+      "comments": "Commentaires",
+      "start": "Démarrer",
+      "finish": "Terminer",
+      "skip": "Ignorer",
+      "delete": "Supprimer",
+      "addAfter": "Action",
+      "label": "Actions sur « {name} »",
+      "blocked": "Elle démarrera quand les actions avant elle seront terminées.",
+      "nothing": "Cette action ne gère ni employés, ni machine, ni fichiers.",
+      "remind": "Relancer",
+      "remindSent": "{count, plural, one {# relance envoyée} other {# relances envoyées}}",
+      "remindNoEmail": "{count, plural, one {# personne sans e-mail professionnel} other {# personnes sans e-mail professionnel}}",
+      "remindNone": "Personne n’a d’e-mail professionnel : aucune relance envoyée."
+    }
   },
   "dialogs": {
     "addTitle": "Nouvelle action",

@@ -118,6 +118,26 @@ export function ManufacturingOrderDetail({ id }: { id: string }) {
   const setMachine = useMutation(trpc.manufacturing.setMachine.mutationOptions(inline));
   const removeAttachment = useMutation(trpc.manufacturing.removeAttachment.mutationOptions(inline));
   const addComment = useMutation(trpc.manufacturing.addComment.mutationOptions(inline));
+  // "Relancer": the server says how many it reached; nothing on screen changes.
+  const remind = useMutation(
+    trpc.manufacturing.remind.mutationOptions({
+      onSuccess: (result) => {
+        if (result.sent === 0) {
+          push({ title: t("action.buttons.remindNone"), tone: "warning" });
+          return;
+        }
+        push({
+          title: t("action.buttons.remindSent", { count: result.sent }),
+          text:
+            result.withoutEmail > 0
+              ? t("action.buttons.remindNoEmail", { count: result.withoutEmail })
+              : undefined,
+          tone: "success",
+        });
+      },
+      onError: inline.onError,
+    }),
+  );
   const reopen = useMutation(trpc.manufacturing.reopen.mutationOptions(inline));
   const addAction = useMutation(trpc.manufacturing.addAction.mutationOptions(modal));
   const updateAction = useMutation(trpc.manufacturing.updateAction.mutationOptions(modal));
@@ -211,6 +231,7 @@ export function ManufacturingOrderDetail({ id }: { id: string }) {
     addComment,
     reopen,
     addAttachment,
+    remind,
   ].some((mutation) => mutation.isPending);
 
   const controls: PipelineControls = {
@@ -218,7 +239,6 @@ export function ManufacturingOrderDetail({ id }: { id: string }) {
     start: (actionId) => start.mutate({ actionId }),
     complete: (actionId) => complete.mutate({ actionId }),
     skip: (actionId) => skip.mutate({ actionId }),
-    undo: () => undo.mutate({ id: of.id }),
     move: (actionId, position) => move.mutate({ actionId, position }),
     setEmployees: (actionId, employeeIds) => setEmployees.mutate({ actionId, employeeIds }),
     setMachine: (actionId, machineId) => setMachine.mutate({ actionId, machineId }),
@@ -232,6 +252,7 @@ export function ManufacturingOrderDetail({ id }: { id: string }) {
       aim(actionId);
       void upload.upload(file);
     },
+    remind: (actionId) => remind.mutate({ actionId }),
     uploadingTo,
   };
 
@@ -389,7 +410,11 @@ export function ManufacturingOrderDetail({ id }: { id: string }) {
               />
             </div>
             <div className={styles.headActions}>
-              <Button size="dense" disabled={busy || back.length === 0} onClick={controls.undo}>
+              <Button
+                size="dense"
+                disabled={busy || back.length === 0}
+                onClick={() => undo.mutate({ id: of.id })}
+              >
                 <span aria-hidden>↶</span> {t("detail.undo")}
               </Button>
               <Link
@@ -503,7 +528,6 @@ export function ManufacturingOrderDetail({ id }: { id: string }) {
                   action={action}
                   index={index}
                   actions={actions}
-                  back={back}
                   frozen={frozen}
                   open={action.id === openId}
                   onToggle={() => setFocus(action.id === openId ? null : action.id)}

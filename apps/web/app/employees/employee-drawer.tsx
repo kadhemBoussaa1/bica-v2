@@ -189,6 +189,7 @@ export function EmployeeDrawer({
   const [phone, setPhone] = useState(employee?.phone ?? "");
   const [phone2, setPhone2] = useState(employee?.phone2 ?? "");
   const [email, setEmail] = useState(employee?.email ?? "");
+  const [workEmail, setWorkEmail] = useState(employee?.workEmail ?? "");
   const [suspended, setSuspended] = useState(employee?.suspended ?? false);
   const [suspendedAt, setSuspendedAt] = useState(toDateInput(employee?.suspendedAt));
   const [suspensionReason, setSuspensionReason] = useState(employee?.suspensionReason ?? "");
@@ -327,6 +328,7 @@ export function EmployeeDrawer({
       echelon: cleared(echelon),
       gender: cleared(gender),
       email: cleared(email),
+      workEmail: cleared(workEmail),
       phone: cleared(phone),
       phone2: cleared(phone2),
       hireDate: cleared(hireDate),
@@ -709,6 +711,19 @@ export function EmployeeDrawer({
                 placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
+                disabled={busy}
+              />
+            </div>
+            {/* Where the "action à réaliser" email goes (docs/email-notifications-plan.md). */}
+            <div className={styles.fieldWide}>
+              <TextField
+                label={t("workEmail")}
+                unit={t("optional")}
+                type="email"
+                placeholder={t("workEmailPlaceholder")}
+                value={workEmail}
+                onChange={(e) => setWorkEmail(e.target.value)}
                 autoComplete="off"
                 disabled={busy}
               />

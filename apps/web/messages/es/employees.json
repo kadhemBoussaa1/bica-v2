@@ -161,6 +161,7 @@
       "phone": "Teléfono",
       "phone2": "Segundo teléfono",
       "email": "Correo",
+      "workEmail": "Correo profesional",
       "salary": "Salario",
       "cin": "DNI",
       "ssn": "N.º de seguridad social",
@@ -237,6 +238,8 @@
     "phone2": "Segundo teléfono",
     "email": "Correo",
     "emailPlaceholder": "nombre.apellido@…",
+    "workEmail": "Correo profesional",
+    "workEmailPlaceholder": "nombre.apellido@bicapack.com",
     "status": {
       "onRoster": "En plantilla",
       "onRosterMeta": "cuenta en la plantilla",

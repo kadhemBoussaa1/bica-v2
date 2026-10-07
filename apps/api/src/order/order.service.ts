@@ -24,6 +24,8 @@ import {
 import { AllocationService } from "../allocation/allocation.service";
 import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
+import { MailService } from "../mail/mail.service";
+import { orderCreatedMail } from "../mail/templates";
 import { NotificationService, type NotificationOutbox } from "../notification/notification.service";
 import { PrismaService } from "../prisma.service";
 import { ProductService } from "../product/product.service";
@@ -97,6 +99,7 @@ export class OrderService {
     private readonly products: ProductService,
     private readonly allocations: AllocationService,
     private readonly notifications: NotificationService,
+    private readonly mail: MailService,
   ) {}
 
   /**
@@ -381,6 +384,24 @@ export class OrderService {
           entityId: order.id,
           actorId: actor.id,
         });
+        // Email 1 (docs/email-notifications-plan.md), after commit like the bell.
+        const saved = await tx.order.findUniqueOrThrow({
+          where: { id: order.id },
+          select: { quantite: true, quantityUnit: true, product: { select: { name: true } } },
+        });
+        this.mail.queue(
+          outbox,
+          orderCreatedMail({
+            to: await this.mail.creationsAndAdmins(tx),
+            id: order.id,
+            numero: order.numero,
+            kind: input.kind,
+            clientName: client?.name ?? null,
+            productName: saved.product.name,
+            quantite: saved.quantite,
+            unit: saved.quantityUnit === "KILOGRAMS" ? "kg" : "pcs",
+          }),
+        );
         return order;
       });
       outbox.flush();

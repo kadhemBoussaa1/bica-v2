@@ -161,6 +161,7 @@
       "phone": "Téléphone",
       "phone2": "Second téléphone",
       "email": "E-mail",
+      "workEmail": "E-mail professionnel",
       "salary": "Salaire",
       "cin": "CIN",
       "ssn": "N° CNSS",
@@ -237,6 +238,8 @@
     "phone2": "Second téléphone",
     "email": "E-mail",
     "emailPlaceholder": "prenom.nom@…",
+    "workEmail": "E-mail professionnel",
+    "workEmailPlaceholder": "prenom.nom@bicapack.com",
     "status": {
       "onRoster": "En effectif",
       "onRosterMeta": "compte dans l'effectif",

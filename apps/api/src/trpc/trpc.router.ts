@@ -1112,6 +1112,15 @@ export class TrpcRouter {
         .input(setManufacturingActionEmployeesInput)
         .mutation(({ input }) => this.manufacturingService.setEmployees(input)),
 
+      /**
+       * "Relancer": emails the action's people again (the old app's
+       * resend-reminder). Returns how many were reached and how many have
+       * no work email — docs/email-notifications-plan.md.
+       */
+      remind: adminProcedure
+        .input(manufacturingActionIdInput)
+        .mutation(({ input }) => this.manufacturingService.remind(input.actionId)),
+
       setMachine: adminProcedure
         .input(setManufacturingActionMachineInput)
         .mutation(({ input }) => this.manufacturingService.setMachine(input)),

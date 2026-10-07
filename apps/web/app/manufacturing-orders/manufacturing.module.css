@@ -73,14 +73,12 @@
 }
 
 .quietBtn:disabled,
-.insert:disabled,
 .chipRemove:disabled,
 .rowRemove:disabled,
 .arrow:disabled,
 .toggle:disabled,
 .choice:disabled,
 .machineOption:disabled,
-.statusOption:disabled,
 .dropzone:disabled,
 .suggestion:disabled,
 .capCard:disabled,
@@ -94,8 +92,6 @@
 .sortBtn:focus-visible,
 .cardHead:focus-visible,
 .jumpChip:focus-visible,
-.insert:focus-visible,
-.statusOption:focus-visible,
 .dashedChip:focus-visible,
 .chipRemove:focus-visible,
 .choice:focus-visible,
@@ -1303,38 +1299,6 @@
   color: var(--bp-ink-muted);
 }
 
-.statusOptions {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  max-width: 560px;
-}
-
-.statusOption {
-  min-height: 44px;
-  padding: 0 var(--bp-space-2);
-  background: var(--bp-surface);
-  border: 1.5px solid var(--bp-control-border);
-  border-radius: var(--bp-radius-dense);
-  font: 700 0.84375rem/1.2 var(--bp-font-body);
-  color: var(--bp-ink-muted);
-  cursor: pointer;
-}
-
-.statusOption:hover:not(:disabled) {
-  border-color: var(--state-fg);
-  color: var(--state-fg);
-}
-
-/* The status the action has: its own tone, and not dimmed though disabled. */
-.statusOptionOn,
-.statusOptionOn:disabled {
-  background: var(--state-bg);
-  border-color: var(--state-fg);
-  color: var(--state-fg);
-  opacity: 1;
-}
-
 .dashedChip {
   min-height: 38px;
   padding: 0 14px;
@@ -1531,22 +1495,54 @@
   color: var(--bp-ink-muted);
 }
 
-.insert {
-  display: block;
-  width: 100%;
-  min-height: 22px;
-  margin-top: var(--bp-space-1);
-  padding: 0;
-  background: transparent;
-  border: 0;
-  text-align: start;
-  font: 400 0.75rem/1.4 var(--bp-font-body);
-  color: var(--bp-ink-faint);
-  cursor: pointer;
+/*
+ * The card's row of buttons, as on the old app's step cards: form and
+ * comments first, then what moves the action along, then delete and add.
+ */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+  margin-top: var(--bp-space-3);
+  padding-top: var(--bp-space-3);
+  border-top: 1px solid var(--bp-hairline-soft);
 }
 
-.insert:hover:not(:disabled) {
-  color: var(--bp-accent-text);
+.actions svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+/* How many comments people have written, beside the button that opens them. */
+.count {
+  min-width: 18px;
+  padding: 2px 5px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint-strong);
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-strong);
+}
+
+/* "Skip" in the warning tint. Two classes, to win over the toolkit's secondary look. */
+.actions .skipBtn {
+  background: var(--bp-warning-bg);
+  border-color: rgb(224 161 6 / 0.44);
+  color: var(--bp-warning-text);
+}
+
+.actions .skipBtn:hover:not(:disabled) {
+  background: rgb(224 161 6 / 0.24);
+  border-color: var(--bp-warning);
+}
+
+/* An arrow that points forward points the other way in right-to-left text. */
+.flip {
+  display: inline-flex;
+}
+
+[dir="rtl"] .flip {
+  transform: scaleX(-1);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1811,10 +1807,6 @@
 
   .capCard {
     min-height: 0;
-  }
-
-  .statusOptions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .noteForm {

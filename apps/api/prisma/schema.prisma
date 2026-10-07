@@ -469,6 +469,10 @@ model Employee {
 
   /// Present on only 23 of the 94 legacy rows.
   email  String?
+  /// The work mailbox — the old app's `email_professionnel`, which it sent the
+  /// "action à réaliser" emails to. Kept apart from the personal `email`:
+  /// work mail goes here only, and only 8 of 95 people have one.
+  workEmail String?
   phone  String?
   phone2 String?
 

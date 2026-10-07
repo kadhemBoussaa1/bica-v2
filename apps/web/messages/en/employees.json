@@ -161,6 +161,7 @@
       "phone": "Phone",
       "phone2": "Second phone",
       "email": "Email",
+      "workEmail": "Work email",
       "salary": "Salary",
       "cin": "National ID",
       "ssn": "Social security no.",
@@ -237,6 +238,8 @@
     "phone2": "Second phone",
     "email": "Email",
     "emailPlaceholder": "first.last@…",
+    "workEmail": "Work email",
+    "workEmailPlaceholder": "first.last@bicapack.com",
     "status": {
       "onRoster": "On the roster",
       "onRosterMeta": "counts in the headcount",

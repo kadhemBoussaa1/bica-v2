@@ -131,7 +131,6 @@
     "frozen": "This OF is cancelled. Nothing on it can change until it is reopened; comments stay open.",
     "pipeline": "Pipeline",
     "addAction": "+ Add an action",
-    "insertHere": "+ insert an action here",
     "noActions": "No action yet",
     "noActionsText": "Add the first action of this OF’s pipeline.",
     "now": {
@@ -162,18 +161,7 @@
     "startedOn": "started on {date}",
     "notStarted": "not started yet",
     "skippedOn": "skipped on {date}",
-    "comments": "{count, plural, one {# comment} other {# comments}}",
     "oldApp": "Old app",
-    "status": "Status",
-    "hint": {
-      "waiting": "Draft: nothing has been done yet.",
-      "blocked": "It will start once the actions before it are finished.",
-      "inProgress": "Setting it to “Done” starts the next action automatically.",
-      "last": "This is the last action: setting it to “Done” closes the OF.",
-      "done": "Finished on {date}.",
-      "skipped": "Skipped on {date}.",
-      "frozen": "The OF is cancelled: the status can no longer change."
-    },
     "people": "In charge",
     "assign": "+ Assign",
     "unassign": "Remove {name}",
@@ -191,14 +179,28 @@
     "failed": "The upload failed. Try again.",
     "tooLarge": "That file is larger than 25 MB.",
     "wrongType": "Only PDFs and images can be attached.",
-    "commentsTitle": "Comments",
     "commentPlaceholder": "A note for the team…",
     "publish": "Post",
     "structure": "Pipeline",
     "moveUp": "Move up",
     "moveDown": "Move down",
     "edit": "Edit",
-    "remove": "Delete the action"
+    "buttons": {
+      "form": "Form",
+      "comments": "Comments",
+      "start": "Start",
+      "finish": "Finish",
+      "skip": "Skip",
+      "delete": "Delete",
+      "addAfter": "Action",
+      "label": "Actions on “{name}”",
+      "blocked": "It will start once the actions before it are finished.",
+      "nothing": "This action handles no employees, machine or files.",
+      "remind": "Remind",
+      "remindSent": "{count, plural, one {# reminder sent} other {# reminders sent}}",
+      "remindNoEmail": "{count, plural, one {# person without a work email} other {# people without a work email}}",
+      "remindNone": "Nobody has a work email: no reminder sent."
+    }
   },
   "dialogs": {
     "addTitle": "New action",

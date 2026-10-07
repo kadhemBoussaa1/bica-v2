@@ -77,6 +77,7 @@ export const EMPLOYEE_SELECT = {
   echelon: true,
   gender: true,
   email: true,
+  workEmail: true,
   phone: true,
   phone2: true,
   hireDate: true,

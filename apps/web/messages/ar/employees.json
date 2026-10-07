@@ -161,6 +161,7 @@
       "phone": "الهاتف",
       "phone2": "هاتف ثانٍ",
       "email": "البريد الإلكتروني",
+      "workEmail": "البريد المهني",
       "salary": "الراتب",
       "cin": "رقم بطاقة التعريف",
       "ssn": "رقم الضمان الاجتماعي",
@@ -237,6 +238,8 @@
     "phone2": "هاتف ثانٍ",
     "email": "البريد الإلكتروني",
     "emailPlaceholder": "prenom.nom@…",
+    "workEmail": "البريد المهني",
+    "workEmailPlaceholder": "first.last@bicapack.com",
     "status": {
       "onRoster": "على رأس العمل",
       "onRosterMeta": "يُحتسب ضمن الحضور",

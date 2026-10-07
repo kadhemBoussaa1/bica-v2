@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
 import {
+  assetUrl,
   canAccess,
   canAccessAny,
   canManageUser,
@@ -13,6 +14,8 @@ import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
 import { todayUtc } from "../list/period";
 import { PrismaService } from "../prisma.service";
+import { MailService } from "../mail/mail.service";
+import { newEmployeeMail } from "../mail/templates";
 import { StorageService } from "../storage/storage.service";
 import type { SessionUser } from "../trpc/trpc";
 import {
@@ -74,6 +77,7 @@ export class EmployeeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly mail: MailService,
   ) {}
 
   /**
@@ -198,6 +202,27 @@ export class EmployeeService {
   }
 
   async create(input: CreateEmployeeInput) {
+    const created = await this.insert(input);
+    // Email 5 (docs/email-notifications-plan.md): the row exists, so this
+    // can never announce a failed save. Not awaited by the mail service.
+    this.mail.queue(
+      null,
+      newEmployeeMail({
+        to: await this.mail.bossAndAdmins(this.prisma),
+        id: created.id,
+        fullName: [created.lastName, created.firstName].filter(Boolean).join(" ") || created.matricule,
+        matricule: created.matricule,
+        department: input.department ?? null,
+        jobTitle: input.jobTitle ?? null,
+        hireDate: input.hireDate ? new Date(input.hireDate) : null,
+        employmentType: input.employmentType ?? null,
+        photoUrl: assetUrl(input.photo),
+      }),
+    );
+    return created;
+  }
+
+  private async insert(input: CreateEmployeeInput) {
     if (input.matricule !== undefined) {
       const matricule = input.matricule;
       await this.assertMatriculeFree(matricule);
@@ -351,6 +376,7 @@ export class EmployeeService {
       echelon: input.echelon ?? null,
       gender: input.gender ?? null,
       email: input.email ?? null,
+      workEmail: input.workEmail ?? null,
       phone: input.phone ?? null,
       phone2: input.phone2 ?? null,
       hireDate: input.hireDate ? new Date(input.hireDate) : null,
@@ -415,6 +441,7 @@ export class EmployeeService {
       echelon: ifSent(input.echelon, full.echelon),
       gender: ifSent(input.gender, full.gender),
       email: ifSent(input.email, full.email),
+      workEmail: ifSent(input.workEmail, full.workEmail),
       phone: ifSent(input.phone, full.phone),
       phone2: ifSent(input.phone2, full.phone2),
       hireDate: ifSent(input.hireDate, full.hireDate),
