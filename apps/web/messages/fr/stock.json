@@ -309,6 +309,14 @@
     },
     "printLabels": "Imprimer les étiquettes"
   },
+  "lookup": {
+    "title": "Scanner une bobine",
+    "subtitle": "Scannez l'étiquette d'une bobine pour voir son papier, ce qu'il en reste et les commandes qui la réservent. L'écran reste prêt pour la suivante.",
+    "looking": "Recherche de la bobine…",
+    "manualSubmit": "Afficher la bobine",
+    "networkError": "Serveur injoignable — réessayez.",
+    "back": "← Scanner une bobine"
+  },
   "receiving": {
     "title": "Réception",
     "subtitle": "Arrivages dont il reste des bobines à scanner. Une bobine devient du stock une fois scannée en magasin.",

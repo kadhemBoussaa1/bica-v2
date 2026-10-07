@@ -309,6 +309,14 @@
     },
     "printLabels": "Imprimir etiquetas"
   },
+  "lookup": {
+    "title": "Escanear una bobina",
+    "subtitle": "Escanee la etiqueta de una bobina para ver su papel, lo que queda y qué pedidos la reservan. La pantalla queda lista para la siguiente.",
+    "looking": "Buscando la bobina…",
+    "manualSubmit": "Mostrar la bobina",
+    "networkError": "Servidor inaccesible — inténtelo de nuevo.",
+    "back": "← Escanear una bobina"
+  },
   "receiving": {
     "title": "Recepción",
     "subtitle": "Llegadas con bobinas aún por escanear. Una bobina cuenta como existencias en cuanto se escanea en el almacén.",

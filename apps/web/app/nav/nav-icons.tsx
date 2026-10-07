@@ -251,6 +251,17 @@ function ReceivingIcon() {
   );
 }
 
+/** Roll scan — a scanner frame around a magnifier: reading a reel, not taking it in. */
+function RollScanIcon() {
+  return (
+    <Svg>
+      <path d="M2.5 5.5v-3h3M12.5 2.5h3v3M15.5 12.5v3h-3M5.5 15.5h-3v-3" />
+      <circle cx="8.25" cy="8.25" r="2.75" />
+      <path d="m10.25 10.25 2.25 2.25" />
+    </Svg>
+  );
+}
+
 /** Stocktake — a clipboard with a tick: walking the floor, checking reels off. */
 function StocktakeIcon() {
   return (
@@ -334,6 +345,7 @@ export const NAV_ICONS: Record<string, () => React.JSX.Element> = {
   stock: StockIcon,
   "paper-shipments": PaperShipmentsIcon,
   receiving: ReceivingIcon,
+  "roll-scan": RollScanIcon,
   stocktake: StocktakeIcon,
   "ink-stock": InkStockIcon,
   shipments: ShipmentsIcon,

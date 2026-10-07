@@ -1,0 +1,15 @@
+/*
+ * The lookup screen borrows the receiving screen's scan zone, status card and
+ * manual form (receiving.module.css). What is its own: the zone shrinks once
+ * a reel is showing, so the reel — the reason the operator scanned — is what
+ * fills the handheld's screen, while the zone stays tappable above it.
+ */
+.zoneCompact {
+  min-height: 120px;
+  padding: var(--bp-space-5);
+}
+
+.looking {
+  font-size: 0.9rem;
+  color: var(--bp-ink-muted);
+}

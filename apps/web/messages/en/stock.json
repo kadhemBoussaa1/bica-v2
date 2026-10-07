@@ -309,6 +309,14 @@
       "emptyMessage": "No reels on this shipment match that number."
     }
   },
+  "lookup": {
+    "title": "Scan a reel",
+    "subtitle": "Scan a reel's label to see its paper, what is left on it and which orders hold it. The screen stays ready for the next one.",
+    "looking": "Looking up the reel…",
+    "manualSubmit": "Show the reel",
+    "networkError": "Server unreachable — try again.",
+    "back": "← Scan a reel"
+  },
   "receiving": {
     "title": "Receiving",
     "subtitle": "Deliveries with reels still to scan in. A reel counts as stock once it has been scanned on the floor.",

@@ -200,6 +200,15 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: "/stock/receiving",
         requires: ["ADMIN", "MAGASINIER"],
       },
+      // Scanning a reel to read it: the handheld's wedge scanner types the
+      // label into whatever screen is open, so it needs one that listens.
+      // Read-only — `stock.resolveScan` and `stock.rollById` are
+      // `orderModuleProcedure`, prices withheld below ADMIN.
+      {
+        key: "roll-scan",
+        href: "/stock/scan",
+        requires: ["ADMIN", "MAGASINIER"],
+      },
       // Walking the warehouse confirming which reels are physically there.
       // The second job for the same handheld as `receiving`, and the
       // warehouse's own screen, so MAGASINIER alongside ADMIN+ — gated

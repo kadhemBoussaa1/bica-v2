@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { RollBackLink } from "./roll-back-link";
 import { RollDetail } from "./roll-detail";
 import { NewRecordButton, RecordActions } from "../../records/new-record-button";
 import styles from "../../records/records.module.css";
@@ -10,9 +10,11 @@ export default async function RollPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className={styles.page}>
-      <Link className={styles.back} href="/stock">
-        {t("rolls.back")}
-      </Link>
+      <RollBackLink
+        className={styles.back}
+        stockLabel={t("rolls.back")}
+        scanLabel={t("lookup.back")}
+      />
       <header className={styles.header}>
         <div className={styles.heading}>
           <span className={styles.eyebrow}>{t("eyebrow")}</span>
