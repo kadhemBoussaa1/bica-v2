@@ -19,6 +19,13 @@ export const EXPORT_STATUSES = ["PREPARATION", "EXPORTED"] as const;
  * nothing else in the package needs to import back from.
  */
 export const ORDER_KINDS = ["QUOTE", "ORDER"] as const;
+/**
+ * Which market an order sells into — local (Tunisia) or export. A plain
+ * attribute chosen on the creation form and editable afterwards, unlike
+ * `kind`; the list filters on it as a second dimension beside the lifecycle
+ * chips. Every order migrated from the old app is INTERNATIONAL.
+ */
+export const ORDER_MARKETS = ["LOCAL", "INTERNATIONAL"] as const;
 /** The order lifecycle — see docs/order-lifecycle-plan.md §2.2. */
 export const ORDER_STATUSES = [
   "DRAFT",
@@ -46,6 +53,7 @@ export type TypeImpression = (typeof TYPE_IMPRESSIONS)[number];
 export type ExportStatus = (typeof EXPORT_STATUSES)[number];
 export type PricingSource = (typeof PRICING_SOURCES)[number];
 export type OrderKind = (typeof ORDER_KINDS)[number];
+export type OrderMarket = (typeof ORDER_MARKETS)[number];
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 /** "FOND_V" -> "Fond V"; "PAPIER_KRAFT" -> "Papier kraft". */

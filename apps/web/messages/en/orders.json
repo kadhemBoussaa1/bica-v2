@@ -31,6 +31,12 @@
     "archiveBody": "Order <strong>{numero}</strong> will be hidden from the default list. Nothing is deleted — its production and invoicing history stays intact.",
     "restoreBody": "Order <strong>{numero}</strong> will appear in the list again."
   },
+  "market": {
+    "label": "Market",
+    "all": "All",
+    "LOCAL": "Local",
+    "INTERNATIONAL": "International"
+  },
   "filters": {
     "quotes": "Quotes",
     "draft": "Draft",
@@ -142,6 +148,8 @@
     "sectionOrder": "Order",
     "orderNumber": "Order number",
     "kind": "Document",
+    "market": "Market",
+    "pickMarket": "Choose",
     "kindQuoteHint": "A quote is priced like an order but stays out of production: no paper can be reserved and it cannot be started. Accept it from its page to turn it into an order — it keeps its number.",
     "client": "Client",
     "quantity": "Quantity",
@@ -189,12 +197,14 @@
     "needs": "Still needed: {fields}.",
     "needsNothing": "Everything needed is filled in.",
     "needClient": "a client",
+    "needMarket": "a market",
     "needQuantity": "a quantity",
     "needProduct": "a product",
     "needPaperPrice": "a paper price",
     "marginWarningTitle": "Check this",
     "marginWarning": "The profit margin ({profit}%) does not exceed the loss margin ({loss}%), so this order sells at or below cost.",
     "needClientError": "Choose a client",
+    "needMarketError": "Choose a market",
     "needQuantityError": "Enter a quantity above zero",
     "needProductError": "Choose a product",
     "needPaperPriceError": "Enter a paper price above zero"

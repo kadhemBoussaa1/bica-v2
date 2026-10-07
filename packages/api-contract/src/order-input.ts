@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { ORDER_KINDS, ORDER_STATUSES, TYPE_IMPRESSIONS, optionalText } from "./orders.js";
+import {
+  ORDER_KINDS,
+  ORDER_MARKETS,
+  ORDER_STATUSES,
+  TYPE_IMPRESSIONS,
+  optionalText,
+} from "./orders.js";
 import { pricingInput } from "./pricing.js";
 import { createProductInput } from "./products.js";
 
@@ -47,6 +53,13 @@ const orderBase = z.object({
   // See `createOrderInput` / `updateOrderInput` below.
   description: optionalText(500),
   clientId: z.string().min(1).optional(),
+
+  // Required, with no default on purpose: the form must make the user pick
+  // local or export when drafting an order. The column's own default
+  // (INTERNATIONAL) exists only for the legacy importer, which never goes
+  // through this input. Shared by create and update, unlike `kind` below:
+  // a market is a plain attribute, so a wrong pick stays correctable.
+  market: z.enum(ORDER_MARKETS),
 
   product: orderProductRef,
 

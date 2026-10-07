@@ -632,6 +632,16 @@ enum OrderKind {
   ORDER
 }
 
+/// Which market an `Order` sells into: the Tunisian market (LOCAL) or
+/// export (INTERNATIONAL). A plain attribute, not a lifecycle axis: chosen
+/// on the creation form and editable afterwards, unlike `kind`. Added
+/// 2026-10-07; every row that existed before was an export order, which
+/// is what the column's default backfilled.
+enum OrderMarket {
+  LOCAL
+  INTERNATIONAL
+}
+
 /// The order lifecycle, replacing `okFacturation`/`okExport`/`produitFini` —
 /// see docs/order-lifecycle-plan.md §2.2 for the seven-state machine and §3
 /// for the transition table. INVOICEABLE and INVOICED are kept distinct even
@@ -851,6 +861,12 @@ model Order {
   /// Document kind: a quotation, or a confirmed order. Replaces `offreDePrix`
   /// as its own axis rather than a pipeline stage — see plan §2.1.
   kind OrderKind @default(ORDER)
+
+  /// Local or export sale. The default is for the legacy importer only
+  /// (`import-orders.ts` never sets it, and the old app has no such notion):
+  /// `createOrderInput` requires an explicit choice, so a new order drafted
+  /// in the app can never fall through to it.
+  market OrderMarket @default(INTERNATIONAL)
 
   /// Stamped by the QUOTE -> ORDER transition (plan §3.1), the legacy
   /// `confirmerOffre`. Null until then, and never set any other way.

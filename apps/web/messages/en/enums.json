@@ -40,6 +40,10 @@
     "QUOTE": "Quote",
     "ORDER": "Order"
   },
+  "orderMarket": {
+    "LOCAL": "Local market",
+    "INTERNATIONAL": "International market"
+  },
   "orderStatus": {
     "DRAFT": "Draft",
     "IN_PRODUCTION": "In production",

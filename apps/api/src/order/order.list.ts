@@ -1,4 +1,4 @@
-import { listQueryBase } from "@repo/api-contract";
+import { listQueryBase, ORDER_MARKETS } from "@repo/api-contract";
 import { z } from "zod";
 import type { Prisma } from "../generated/prisma/client.js";
 import { contains, type ListDeclaration } from "../list/list-query";
@@ -146,6 +146,9 @@ export const ORDER_LIST_SELECT = {
   // are no longer selected here at all; the table renders from the enums.
   kind: true,
   status: true,
+  // Local or export, for the card's chip and the detail head. Unpriced: it
+  // says where the bags go, not what they cost.
+  market: true,
   exportStatus: true,
   active: true,
   createdAt: true,
@@ -348,6 +351,15 @@ export const ORDER_DETAIL_SELECT_PRICED = {
 export const listOrdersInput = listQueryBase.extend({
   sortBy: z.enum(ORDER_SORT_KEYS).default("numero"),
   filter: z.enum(["all", ...ORDER_FACET_KEYS]).default("all"),
+  /**
+   * Local or export, as a second dimension beside the lifecycle chips — the
+   * same shape as the purchase orders list's `state`. Not a facet: the
+   * facets above partition the scoped set by lifecycle and are summed into
+   * "all", so a market facet would overlap every one of them and could not
+   * be combined with a chip. `OrderService.list` ANDs it into the scope
+   * instead, which is why the chip counts follow the chosen market.
+   */
+  market: z.enum(["all", ...ORDER_MARKETS]).default("all"),
   sortDir: listQueryBase.shape.sortDir.default("asc"),
 });
 

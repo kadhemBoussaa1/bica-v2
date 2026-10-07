@@ -40,6 +40,10 @@
     "QUOTE": "Devis",
     "ORDER": "Commande"
   },
+  "orderMarket": {
+    "LOCAL": "Marché local",
+    "INTERNATIONAL": "Marché international"
+  },
   "orderStatus": {
     "DRAFT": "Brouillon",
     "IN_PRODUCTION": "En production",

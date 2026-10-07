@@ -31,6 +31,12 @@
     "archiveBody": "La commande <strong>{numero}</strong> sera masquée de la liste par défaut. Rien n'est supprimé — son historique de production et de facturation reste intact.",
     "restoreBody": "La commande <strong>{numero}</strong> apparaîtra de nouveau dans la liste."
   },
+  "market": {
+    "label": "Marché",
+    "all": "Tous",
+    "LOCAL": "Local",
+    "INTERNATIONAL": "International"
+  },
   "filters": {
     "quotes": "Devis",
     "draft": "Brouillon",
@@ -142,6 +148,8 @@
     "sectionOrder": "Commande",
     "orderNumber": "Numéro de commande",
     "kind": "Document",
+    "market": "Marché",
+    "pickMarket": "Choisir",
     "kindQuoteHint": "Un devis est chiffré comme une commande mais reste hors production : aucun papier ne peut être réservé et il ne peut pas être lancé. Acceptez-le depuis sa page pour en faire une commande — il garde son numéro.",
     "client": "Client",
     "quantity": "Quantité",
@@ -189,12 +197,14 @@
     "needs": "Encore nécessaire : {fields}.",
     "needsNothing": "Tout le nécessaire est renseigné.",
     "needClient": "un client",
+    "needMarket": "un marché",
     "needQuantity": "une quantité",
     "needProduct": "un produit",
     "needPaperPrice": "un prix du papier",
     "marginWarningTitle": "À vérifier",
     "marginWarning": "La marge bénéficiaire ({profit} %) ne dépasse pas la marge de perte ({loss} %) : cette commande se vend à perte ou à prix coûtant.",
     "needClientError": "Choisissez un client",
+    "needMarketError": "Choisissez un marché",
     "needQuantityError": "Saisissez une quantité supérieure à zéro",
     "needProductError": "Choisissez un produit",
     "needPaperPriceError": "Saisissez un prix du papier supérieur à zéro"

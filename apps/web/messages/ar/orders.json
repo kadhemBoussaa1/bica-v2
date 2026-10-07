@@ -31,6 +31,12 @@
     "archiveBody": "ستُخفى الطلبية <strong>{numero}</strong> من القائمة الافتراضية. لا يُحذف أي شيء — يبقى سجل إنتاجها وفوترتها كما هو.",
     "restoreBody": "ستظهر الطلبية <strong>{numero}</strong> في القائمة من جديد."
   },
+  "market": {
+    "label": "السوق",
+    "all": "الكل",
+    "LOCAL": "محلي",
+    "INTERNATIONAL": "دولي"
+  },
   "filters": {
     "quotes": "عروض الأسعار",
     "draft": "مسودة",
@@ -142,6 +148,8 @@
     "sectionOrder": "الطلبية",
     "orderNumber": "رقم الطلبية",
     "kind": "المستند",
+    "market": "السوق",
+    "pickMarket": "اختر",
     "kindQuoteHint": "يُسعَّر عرض السعر مثل الطلب لكنه يبقى خارج الإنتاج: لا يمكن حجز ورق له ولا إطلاقه. اقبله من صفحته ليصبح طلبًا، ويحتفظ برقمه.",
     "client": "العميل",
     "quantity": "الكمية",
@@ -189,12 +197,14 @@
     "needs": "ما زال مطلوبًا: {fields}.",
     "needsNothing": "تم إدخال كل ما يلزم.",
     "needClient": "عميل",
+    "needMarket": "السوق",
     "needQuantity": "كمية",
     "needProduct": "منتج",
     "needPaperPrice": "سعر الورق",
     "marginWarningTitle": "تحقّق من هذا",
     "marginWarning": "هامش الربح ({profit}%) لا يتجاوز هامش الخسارة ({loss}%)، لذا تُباع هذه الطلبية بسعر التكلفة أو أقل.",
     "needClientError": "اختر عميلًا",
+    "needMarketError": "اختر السوق",
     "needQuantityError": "أدخل كمية أكبر من صفر",
     "needProductError": "اختر منتجًا",
     "needPaperPriceError": "أدخل سعر ورق أكبر من صفر"

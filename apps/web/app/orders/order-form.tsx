@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import {
   createOrderInput,
   ORDER_KINDS,
+  ORDER_MARKETS,
   priceOrder,
   productSpecFromRow,
   TYPE_IMPRESSIONS,
@@ -126,6 +127,12 @@ export function OrderForm({
   const [numero, setNumero] = useState(initial?.numero ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [clientId, setClientId] = useState(initial?.clientId ?? "");
+  // Local or export. Empty until picked on create — `createOrderInput`
+  // requires it and the form must not choose for the user — and prefilled
+  // from the record on edit, where it stays correctable.
+  const [market, setMarket] = useState<"" | (typeof ORDER_MARKETS)[number]>(
+    initial?.market ?? "",
+  );
 
   const [nums, setNums] = useState<Record<(typeof NUM_KEYS)[number], string>>({
     quantite: str(initial?.quantite),
@@ -398,6 +405,9 @@ export function OrderForm({
       ...(initial ? { numero } : { kind }),
       description,
       clientId: clientId === "" ? undefined : clientId,
+      // Step 1 cannot be left with it blank, so this is never undefined by
+      // the time the form submits; the Zod parse below is the backstop.
+      market: market === "" ? undefined : market,
       product:
         productMode === "existing"
           ? { mode: "existing" as const, id: existingProductId }
@@ -519,7 +529,11 @@ export function OrderForm({
    */
   const stepQuantity = Number(n("quantite").trim());
   const stepValid: Record<1 | 2 | 3, boolean> = {
-    1: clientId !== "" && n("quantite").trim() !== "" && stepQuantity > 0,
+    1:
+      clientId !== "" &&
+      market !== "" &&
+      n("quantite").trim() !== "" &&
+      stepQuantity > 0,
     // Step 2 is answered by whichever product mode is showing: an existing
     // product needs a pick, a new one needs enough spec to price — which is
     // exactly what `liveSpec` already means.
@@ -534,6 +548,7 @@ export function OrderForm({
    */
   const missing: string[] = [];
   if (clientId === "") missing.push(t("form.needClient"));
+  if (market === "") missing.push(t("form.needMarket"));
   if (!(stepQuantity > 0)) missing.push(t("form.needQuantity"));
   if (!stepValid[2]) missing.push(t("form.needProduct"));
   if (!(Number(n("paperKiloPrice").trim()) > 0)) missing.push(t("form.needPaperPrice"));
@@ -667,6 +682,24 @@ export function OrderForm({
               options={ORDER_KINDS.map((k) => ({ value: k, label: enums(`orderKind.${k}`) }))}
             />
           )}
+          {/*
+            No `allowEmpty`: blank is not an answer, so once a market is
+            picked the placeholder cannot be chosen again.
+          */}
+          <SelectField
+            label={t("form.market")}
+            error={touched && market === "" ? t("form.needMarketError") : undefined}
+            value={market}
+            onChange={(e) =>
+              setMarket(e.target.value as "" | (typeof ORDER_MARKETS)[number])
+            }
+            disabled={busy}
+            placeholder={t("form.pickMarket")}
+            options={ORDER_MARKETS.map((m) => ({
+              value: m,
+              label: enums(`orderMarket.${m}`),
+            }))}
+          />
           <SelectField
             label={t("form.client")}
             error={touched && clientId === "" ? t("form.needClientError") : undefined}

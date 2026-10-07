@@ -222,6 +222,7 @@ export function OrderDetail({ id }: { id: string }) {
               <div className={styles.clientName}>
                 {o.client?.name ?? t("noClient")}
               </div>
+              <div className={styles.market}>{enums(`orderMarket.${o.market}`)}</div>
               <div className={styles.lastEntry}>
                 <span className={styles.k}>{t("detail.lastEntry")}</span>
                 {lastRun

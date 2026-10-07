@@ -40,6 +40,10 @@
     "QUOTE": "عرض سعر",
     "ORDER": "طلب"
   },
+  "orderMarket": {
+    "LOCAL": "السوق المحلية",
+    "INTERNATIONAL": "السوق الدولية"
+  },
   "orderStatus": {
     "DRAFT": "مسودة",
     "IN_PRODUCTION": "قيد الإنتاج",

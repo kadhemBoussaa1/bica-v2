@@ -6,6 +6,7 @@ import type {
   OrderStatus,
   TransitionOrderInput,
   UpdateOrderInput,
+  OrderMarket,
 } from "@repo/api-contract";
 import {
   canAcceptQuote,
@@ -23,7 +24,7 @@ import {
 } from "@repo/api-contract";
 import { AllocationService } from "../allocation/allocation.service";
 import { Prisma } from "../generated/prisma/client.js";
-import { runListQuery } from "../list/list-query";
+import { runListQuery, searchWhere } from "../list/list-query";
 import { MailService } from "../mail/mail.service";
 import { orderCreatedMail } from "../mail/templates";
 import { NotificationService, type NotificationOutbox } from "../notification/notification.service";
@@ -132,7 +133,12 @@ export class OrderService {
     return canAccess(actor.role, "ADMIN");
   }
 
-  async list(actor: SessionUser, query: ListOrdersInput) {
+  async list(actor: SessionUser, input: ListOrdersInput) {
+    // The market is a second filter dimension, not a facet (see
+    // `listOrdersInput`): it narrows the scope the facet counts and the page
+    // are both computed on, so the chips always count within the chosen
+    // market and the two filters combine.
+    const { market, ...query } = input;
     const priced = this.canReadPricing(actor);
     // A column is sortable only if the caller can read it: ordering the
     // unpriced rows by `orderTotal` would rank every order by value without
@@ -153,17 +159,59 @@ export class OrderService {
       },
       query,
       declaration: orderListDeclaration,
-      scope: this.scopeFor(actor),
+      scope:
+        market === "all"
+          ? this.scopeFor(actor)
+          : { AND: [this.scopeFor(actor), { market }] },
     });
-    const produced = await this.producedFor(result.rows.map((row) => row.id));
+    const [produced, markets] = await Promise.all([
+      this.producedFor(result.rows.map((row) => row.id)),
+      this.marketCounts(actor, query),
+    ]);
     return {
       ...result,
+      /** What each market segment would show — see `marketCounts`. */
+      markets,
       rows: result.rows.map((row) => ({
         ...row,
         /** Pieces the producer station has recorded against this order. */
         produced: produced.get(row.id) ?? 0,
       })),
     };
+  }
+
+  /**
+   * How many orders each market segment would show: scope + search + the
+   * active lifecycle chip, ignoring the market itself. The mirror of how
+   * `runListQuery` counts the chips, which ignore the active chip and follow
+   * the market, so neither control zeroes the other — the same contract the
+   * purchase orders list keeps between its chips and its reception state.
+   *
+   * Not inside `runListQuery`'s transaction: its `aggregate` hook flattens
+   * `_sum`-style groups, and a `groupBy` is a different shape. A row created
+   * between the two queries can make a segment count disagree with the page
+   * by one, which is what the chips already accept across a refetch.
+   */
+  private async marketCounts(
+    actor: SessionUser,
+    query: Omit<ListOrdersInput, "market">,
+  ): Promise<Record<"all" | OrderMarket, number>> {
+    const facet = query.filter === "all" ? undefined : orderListDeclaration.facets[query.filter];
+    const where: Prisma.OrderWhereInput = {
+      AND: [
+        this.scopeFor(actor),
+        ...(query.search ? [searchWhere(orderListDeclaration.searchable, query.search)] : []),
+        ...(facet ? [facet] : []),
+      ],
+    };
+    const groups = await this.prisma.order.groupBy({
+      by: ["market"],
+      where,
+      _count: { _all: true },
+    });
+    const counts: Record<OrderMarket, number> = { LOCAL: 0, INTERNATIONAL: 0 };
+    for (const group of groups) counts[group.market] = group._count._all;
+    return { all: counts.LOCAL + counts.INTERNATIONAL, ...counts };
   }
 
   /**
@@ -1152,6 +1200,7 @@ export class OrderService {
       // more, so spreading it here would type as `undefined` on create.
       description: input.description ?? null,
       clientId: input.clientId ?? null,
+      market: input.market,
 
       quantite: input.quantite,
 

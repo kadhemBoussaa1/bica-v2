@@ -8,7 +8,9 @@ import {
   assetUrl,
   canAccess,
   ordersAreScopedFor,
+  ORDER_MARKETS,
   PAGE_SIZES,
+  type OrderMarket,
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { TableSkeleton } from "@repo/ui/skeleton";
@@ -20,6 +22,7 @@ import type { OrderFacet, OrderSortKey } from "api/src/order/order.list";
 import { useCurrentUser } from "../auth/use-auth";
 import { useTRPC } from "../trpc/client";
 import { OrderStatusBadge } from "./order-status";
+import { SegmentedFilter } from "../records/segmented-filter";
 import records from "../records/records.module.css";
 import styles from "./orders.module.css";
 
@@ -27,7 +30,11 @@ interface OrdersGridState extends DataTableState {
   pageSize: (typeof PAGE_SIZES)[number];
   sortBy: OrderSortKey;
   filter: "all" | OrderFacet;
+  /** Local or export, the second filter beside the lifecycle chips. */
+  market: "all" | OrderMarket;
 }
+
+const MARKET_KEYS: readonly ("all" | OrderMarket)[] = ["all", ...ORDER_MARKETS];
 
 const INITIAL_STATE: OrdersGridState = {
   page: 1,
@@ -38,6 +45,7 @@ const INITIAL_STATE: OrdersGridState = {
   sortBy: "numero",
   sortDir: "asc",
   filter: "all",
+  market: "all",
 };
 
 /** Thousands separators, so 52702 reads as 52 702 at a glance. */
@@ -208,6 +216,13 @@ export function OrdersGrid({
             >
               {enums(`typeSac.${p.typeSac}`)}
             </span>
+            <span
+              className={[styles.chip, styles.chipText]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {t(`market.${row.market}`)}
+            </span>
             {canWrite && (
               <span className={styles.cardActions}>
                 <Button
@@ -273,6 +288,24 @@ export function OrdersGrid({
         loading={ordersQuery.isFetching}
         state={state}
         onStateChange={onStateChange}
+        // Local or export, orthogonal to the chips: the server ANDs it into
+        // the scope, so the chip counts follow it and the segment counts
+        // follow the chip. Shown to every role, scoped ones included. Back
+        // to page 1 on change, the rule the chips and the search follow.
+        toolbar={
+          <SegmentedFilter
+            label={t("market.label")}
+            segments={MARKET_KEYS.map((key) => ({
+              key,
+              label: t(`market.${key}`),
+              count: ordersQuery.data.markets[key],
+            }))}
+            value={state.market}
+            onChange={(market) =>
+              setState((current) => ({ ...current, market, page: 1 }))
+            }
+          />
+        }
         searchPlaceholder={t("grid.searchPlaceholder")}
         emptyMessage={t("grid.empty")}
       />

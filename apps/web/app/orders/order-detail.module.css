@@ -131,6 +131,12 @@
   color: var(--bp-ink-muted);
 }
 
+/* Local or export, under the client it was sold to. */
+.market {
+  font: 400 0.84375rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
 .lastEntry {
   margin-top: 8px;
   font: 400 0.8125rem/1.5 var(--bp-font-body);

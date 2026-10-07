@@ -31,6 +31,12 @@
     "archiveBody": "El pedido <strong>{numero}</strong> se ocultará de la lista predeterminada. No se elimina nada: su historial de producción y facturación permanece intacto.",
     "restoreBody": "El pedido <strong>{numero}</strong> volverá a aparecer en la lista."
   },
+  "market": {
+    "label": "Mercado",
+    "all": "Todos",
+    "LOCAL": "Local",
+    "INTERNATIONAL": "Internacional"
+  },
   "filters": {
     "quotes": "Presupuestos",
     "draft": "Borrador",
@@ -142,6 +148,8 @@
     "sectionOrder": "Pedido",
     "orderNumber": "Número de pedido",
     "kind": "Documento",
+    "market": "Mercado",
+    "pickMarket": "Elegir",
     "kindQuoteHint": "Un presupuesto se calcula como un pedido pero queda fuera de producción: no se puede reservar papel ni iniciarlo. Acéptalo desde su página para convertirlo en pedido; conserva su número.",
     "client": "Cliente",
     "quantity": "Cantidad",
@@ -189,12 +197,14 @@
     "needs": "Aún falta: {fields}.",
     "needsNothing": "Todo lo necesario está completo.",
     "needClient": "un cliente",
+    "needMarket": "un mercado",
     "needQuantity": "una cantidad",
     "needProduct": "un producto",
     "needPaperPrice": "un precio del papel",
     "marginWarningTitle": "Revisa esto",
     "marginWarning": "El margen de beneficio ({profit} %) no supera el margen de pérdida ({loss} %), así que este pedido se vende al coste o por debajo.",
     "needClientError": "Elige un cliente",
+    "needMarketError": "Elige un mercado",
     "needQuantityError": "Introduce una cantidad mayor que cero",
     "needProductError": "Elige un producto",
     "needPaperPriceError": "Introduce un precio del papel mayor que cero"
