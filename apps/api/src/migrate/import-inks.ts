@@ -136,6 +136,14 @@ async function main() {
             quantity,
             usedAt: row.date_consommation instanceof Date ? row.date_consommation : new Date(0),
           };
+          // The pair first: a usage line may only name a colour chosen for
+          // its order (the composite FK — docs/order-inks-plan.md §2), and a
+          // re-run's `update` may move a line to another colour.
+          await tx.orderInk.upsert({
+            where: { orderId_colourId: { orderId, colourId } },
+            create: { orderId, colourId },
+            update: {},
+          });
           await tx.inkUsage.upsert({ where: { legacyId }, create: { ...data, legacyId }, update: data });
           usageCount += 1;
         }

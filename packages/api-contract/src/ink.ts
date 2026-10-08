@@ -125,7 +125,26 @@ export const updateInkUsageInput = z.object({
 
 export const inkUsageIdInput = z.object({ id: z.string().min(1) });
 
-export const inkUsageForOrderInput = z.object({ orderId: z.string().min(1) });
+export const orderInksInput = z.object({ orderId: z.string().min(1) });
+
+/**
+ * ADMIN+ chooses the stock colours an order is printed in
+ * (docs/order-inks-plan.md). Usage may only be recorded against a chosen
+ * colour; `canAddOrderInks` / `canChangeOrderInks` say when the set may move.
+ */
+export const addOrderInksInput = z.object({
+  orderId: z.string().min(1),
+  colourIds: z
+    .array(z.string().min(1))
+    .min(1, "Choose a colour")
+    .max(10)
+    .refine((ids) => new Set(ids).size === ids.length, "A colour is listed twice"),
+});
+
+export const removeOrderInkInput = z.object({
+  orderId: z.string().min(1),
+  colourId: z.string().min(1),
+});
 
 export type CreateInkColourInput = z.infer<typeof createInkColourInput>;
 export type UpdateInkColourInput = z.infer<typeof updateInkColourInput>;
@@ -133,6 +152,8 @@ export type RestockInkInput = z.infer<typeof restockInkInput>;
 export type AdjustInkStockInput = z.infer<typeof adjustInkStockInput>;
 export type RecordInkUsageInput = z.infer<typeof recordInkUsageInput>;
 export type UpdateInkUsageInput = z.infer<typeof updateInkUsageInput>;
+export type AddOrderInksInput = z.infer<typeof addOrderInksInput>;
+export type RemoveOrderInkInput = z.infer<typeof removeOrderInkInput>;
 
 /**
  * How a colour's balance reads against its threshold: `out` at or below

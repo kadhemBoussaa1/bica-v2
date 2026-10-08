@@ -313,10 +313,6 @@ export const ORDER_DETAIL_SELECT_PRICED = {
   // model: printing is not assigned to an operator or a machine any more (see
   // the note on the Order model), so this is commercial/spec detail.
   typeImpression: true,
-  colours: {
-    select: { id: true, nom: true, prix: true },
-    orderBy: { createdAt: "asc" },
-  },
 
   // ---- invoicing ----------------------------------------------------------
   // The sales invoice(s) billing this order, for the detail's Invoices list

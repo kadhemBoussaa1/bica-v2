@@ -1,17 +1,21 @@
 import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
 import {
+  canAddOrderInks,
+  canChangeOrderInks,
   inkUnitLabel,
   ordersAreScopedFor,
   PRODUCTION_VISIBLE_ORDER_STATUSES,
+  type AddOrderInksInput,
   type AdjustInkStockInput,
   type CreateInkColourInput,
   type RecordInkUsageInput,
+  type RemoveOrderInkInput,
   type RestockInkInput,
   type UpdateInkColourInput,
   type UpdateInkUsageInput,
 } from "@repo/api-contract";
-import type { Prisma } from "../generated/prisma/client.js";
+import { Prisma } from "../generated/prisma/client.js";
 import type { InkAdjustReason, InkMovementKind } from "../generated/prisma/enums.js";
 import { runListQuery } from "../list/list-query";
 import { dayOrNow } from "../list/period";
@@ -41,6 +45,11 @@ const USAGE_RETURN_SELECT = {
 } as const;
 
 const qty = new Intl.NumberFormat("en-US", { maximumFractionDigits: 3 });
+
+/** A foreign key refused the write — here, the composite one on `InkUsage`. */
+function isForeignKeyError(cause: unknown): boolean {
+  return cause instanceof Prisma.PrismaClientKnownRequestError && cause.code === "P2003";
+}
 
 /** The window "consumption per month" is averaged over. */
 const CONSUMPTION_DAYS = 90;
@@ -293,13 +302,19 @@ export class InkService {
   /**
    * Hard delete, refused once any usage line names the colour: deleting it
    * would erase what an order consumed. Archive instead — the legacy service
-   * made the same call, with a 400 rather than an FK error. A never-used
-   * colour's own movements (its OPENING row, restocks) go with it.
+   * made the same call, with a 400 rather than an FK error. Refused too while
+   * an order has it chosen (`OrderInk`), which the FK would otherwise turn
+   * into a 500. A never-used colour's own movements (its OPENING row,
+   * restocks) go with it.
    */
   async remove(id: string) {
     const colour = await this.prisma.inkColour.findUnique({
       where: { id },
-      select: { id: true, code: true, _count: { select: { usages: true } } },
+      select: {
+        id: true,
+        code: true,
+        _count: { select: { usages: true, orders: true } },
+      },
     });
     if (!colour) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Colour not found" });
@@ -310,6 +325,14 @@ export class InkService {
         message:
           `${colour.code} has been used on ${colour._count.usages} order line(s). ` +
           "Archive it instead, so that history keeps its colour.",
+      });
+    }
+    if (colour._count.orders > 0) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message:
+          `${colour.code} is chosen on ${colour._count.orders} order(s). ` +
+          "Take it off those orders, or archive it instead.",
       });
     }
     await this.prisma.$transaction([
@@ -370,23 +393,167 @@ export class InkService {
     });
   }
 
-  // ---- usage ---------------------------------------------------------------
+  // ---- order colours -------------------------------------------------------
 
-  async usageForOrder(actor: SessionUser, orderId: string) {
-    return this.prisma.inkUsage.findMany({
-      where: { AND: [{ orderId }, this.scopeFor(actor)] },
-      select: INK_USAGE_SELECT,
-      orderBy: [{ usedAt: "desc" }, { id: "asc" }],
+  /**
+   * The order's chosen colours (docs/order-inks-plan.md), each with its usage
+   * lines on this order, newest first, and the total drawn. Scoped like the
+   * usage lines: a PRODUCTION user only reaches the orders on the floor, and
+   * any other order is NOT_FOUND.
+   */
+  async forOrder(actor: SessionUser, orderId: string) {
+    await this.assertOrderInScope(actor, orderId);
+    const inks = await this.prisma.orderInk.findMany({
+      where: { orderId },
+      orderBy: [{ colour: { code: "asc" } }, { id: "asc" }],
+      select: {
+        id: true,
+        colour: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            unit: true,
+            hex: true,
+            active: true,
+            stock: true,
+          },
+        },
+        usages: {
+          select: INK_USAGE_SELECT,
+          orderBy: [{ usedAt: "desc" }, { id: "desc" }],
+        },
+      },
+    });
+    return inks.map((ink) => ({
+      ...ink,
+      used: ink.usages.reduce((sum, line) => sum + line.quantity, 0),
+    }));
+  }
+
+  /**
+   * The "add a colour" picker: every active colour the order does not have
+   * yet. Not `list` — its "all" includes archived colours, its largest page
+   * is 100, and it is audited on every open.
+   */
+  async choicesForOrder(orderId: string) {
+    await this.assertOrderExists(orderId);
+    return this.prisma.inkColour.findMany({
+      where: { active: true, orders: { none: { orderId } } },
+      orderBy: [{ code: "asc" }, { id: "asc" }],
+      select: { id: true, code: true, name: true, unit: true, stock: true },
     });
   }
+
+  /**
+   * ADMIN+ chooses colours for an order, until it is terminal
+   * (`canAddOrderInks`). Archived colours are refused: nobody could draw
+   * from them. Adding one the order already has is a no-op.
+   */
+  async addToOrder(actor: SessionUser, input: AddOrderInksInput) {
+    const order = await this.assertOrderExists(input.orderId);
+    if (!canAddOrderInks(order.kind, order.status)) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message:
+          order.kind === "QUOTE"
+            ? "Colours are chosen once the quote is accepted"
+            : "Colours can no longer be added to this order",
+      });
+    }
+    const colours = await this.prisma.inkColour.findMany({
+      where: { id: { in: input.colourIds } },
+      select: { id: true, code: true, active: true },
+    });
+    if (colours.length !== input.colourIds.length) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Colour not found" });
+    }
+    const archived = colours.find((colour) => !colour.active);
+    if (archived) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `${archived.code} is archived; restore it before choosing it`,
+      });
+    }
+    const created = await this.prisma.orderInk.createMany({
+      data: input.colourIds.map((colourId) => ({
+        orderId: input.orderId,
+        colourId,
+        addedById: actor.id,
+      })),
+      skipDuplicates: true,
+    });
+    return { orderId: input.orderId, added: created.count };
+  }
+
+  /**
+   * Takes a colour off an order: only before production
+   * (`canChangeOrderInks`) and only while no ink was drawn for it. The
+   * delete is conditional on the status, and the composite FK on `InkUsage`
+   * refuses it if a line landed after the count — the count is only there
+   * for the message.
+   */
+  async removeFromOrder(input: RemoveOrderInkInput) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const order = await tx.order.findUnique({
+          where: { id: input.orderId },
+          select: { kind: true, status: true },
+        });
+        if (!order) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+        }
+        if (!canChangeOrderInks(order.kind, order.status)) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Colours can only be removed before production",
+          });
+        }
+        const used = await tx.inkUsage.count({
+          where: { orderId: input.orderId, colourId: input.colourId },
+        });
+        if (used > 0) throw this.colourDrawn();
+        const removed = await tx.orderInk.deleteMany({
+          where: {
+            orderId: input.orderId,
+            colourId: input.colourId,
+            order: { kind: "ORDER", status: "DRAFT" },
+          },
+        });
+        if (removed.count !== 1) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "This colour is not on this order",
+          });
+        }
+        return { orderId: input.orderId, colourId: input.colourId };
+      });
+    } catch (cause) {
+      if (isForeignKeyError(cause)) throw this.colourDrawn();
+      throw cause;
+    }
+  }
+
+  // ---- usage ---------------------------------------------------------------
 
   /**
    * Draws ink from a colour for an order. The decrement and the line are one
    * transaction, and the decrement is conditional on the balance covering
    * it — so a refused draw leaves both untouched.
+   *
+   * Only while the order is IN_PRODUCTION, for every role — the scope holds
+   * PRODUCTION to it already, this holds ADMIN+ too. Only against a colour
+   * chosen for the order (`OrderInk`): checked for the message, guaranteed by
+   * the composite FK if the colour is taken off concurrently.
    */
   async recordUsage(actor: SessionUser, input: RecordInkUsageInput) {
-    await this.assertOrderInScope(actor, input.orderId);
+    const order = await this.assertOrderInScope(actor, input.orderId);
+    if (order.status !== "IN_PRODUCTION") {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Ink is recorded while the order is in production",
+      });
+    }
     const colour = await this.prisma.inkColour.findUnique({
       where: { id: input.colourId },
       select: { id: true, code: true, unit: true, active: true },
@@ -401,20 +568,35 @@ export class InkService {
       });
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      await this.draw(tx, colour.id, input.quantity);
-      return tx.inkUsage.create({
-        data: {
-          orderId: input.orderId,
-          colourId: colour.id,
-          quantity: input.quantity,
-          usedAt: dayOrNow(input.usedAt),
-          note: input.note ?? null,
-          recordedById: actor.id,
-        },
-        select: USAGE_RETURN_SELECT,
+    const notChosen = () =>
+      new TRPCError({
+        code: "BAD_REQUEST",
+        message: `${colour.code} is not one of this order's colours`,
       });
-    });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const chosen = await tx.orderInk.findUnique({
+          where: { orderId_colourId: { orderId: input.orderId, colourId: colour.id } },
+          select: { id: true },
+        });
+        if (!chosen) throw notChosen();
+        await this.draw(tx, colour.id, input.quantity);
+        return tx.inkUsage.create({
+          data: {
+            orderId: input.orderId,
+            colourId: colour.id,
+            quantity: input.quantity,
+            usedAt: dayOrNow(input.usedAt),
+            note: input.note ?? null,
+            recordedById: actor.id,
+          },
+          select: USAGE_RETURN_SELECT,
+        });
+      });
+    } catch (cause) {
+      if (isForeignKeyError(cause)) throw notChosen();
+      throw cause;
+    }
   }
 
   /**
@@ -536,6 +718,13 @@ export class InkService {
     });
   }
 
+  private colourDrawn(): TRPCError {
+    return new TRPCError({
+      code: "CONFLICT",
+      message: "Ink has been drawn for this colour on this order; it cannot be removed",
+    });
+  }
+
   private lineChanged(): TRPCError {
     return new TRPCError({
       code: "CONFLICT",
@@ -560,11 +749,24 @@ export class InkService {
             : {},
         ],
       },
-      select: { id: true },
+      select: { id: true, status: true },
     });
     if (!order) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
     }
+    return order;
+  }
+
+  /** ADMIN+ callers only — no session scope. */
+  private async assertOrderExists(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, kind: true, status: true },
+    });
+    if (!order) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+    }
+    return order;
   }
 
   private async assertUsageInScope(actor: SessionUser, id: string) {

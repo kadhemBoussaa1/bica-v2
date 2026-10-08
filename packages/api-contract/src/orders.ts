@@ -96,16 +96,3 @@ export const positive = z.number().min(0).max(1e9).optional();
  * enums run at module-evaluation time, not lazily. `order-input.ts` is a
  * leaf: nothing in this package imports it.
  */
-
-/** Print colours are edited as a set: the whole list replaces the old one. */
-export const setOrderColoursInput = z.object({
-  orderId: z.string().min(1),
-  colours: z
-    .array(
-      z.object({
-        nom: optionalText(120),
-        prix: money,
-      }),
-    )
-    .max(20),
-});

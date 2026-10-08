@@ -256,6 +256,25 @@ export function kindAllowsTransition(kind: OrderKind, to: OrderStatus): boolean 
   return kind === "ORDER" || to === "CANCELLED" || to === "DRAFT";
 }
 
+/**
+ * When an order's chosen ink colours may be taken off (docs/order-inks-plan.md):
+ * only before production. No transition leads back to DRAFT, so once an order
+ * is released its colours are fixed for good. Orders only — a quote's colours
+ * are chosen after acceptance, like its paper.
+ */
+export function canChangeOrderInks(kind: OrderKind, status: OrderStatus): boolean {
+  return kind === "ORDER" && status === "DRAFT";
+}
+
+/**
+ * When a colour may still be added to an order: until it is terminal.
+ * PRODUCED included on purpose — it can be reopened to IN_PRODUCTION, and
+ * the colour must be chosen before anyone records ink against it.
+ */
+export function canAddOrderInks(kind: OrderKind, status: OrderStatus): boolean {
+  return kind === "ORDER" && !TERMINAL_ORDER_STATUSES.has(status);
+}
+
 /** Every `OrderStatus` that is not terminal — used to render the full pipeline. */
 export const NON_TERMINAL_ORDER_STATUSES: readonly OrderStatus[] = ORDER_STATUSES.filter(
   (s) => !TERMINAL_ORDER_STATUSES.has(s),

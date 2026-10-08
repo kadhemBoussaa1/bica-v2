@@ -19,7 +19,6 @@ import { TableSkeleton } from "@repo/ui/skeleton";
 import { Thumbnail } from "@repo/ui/thumbnail";
 import { useCurrentUser } from "../../auth/use-auth";
 import { useTRPC } from "../../trpc/client";
-import { OrderColours } from "../order-colours";
 import { OrderInks } from "../order-inks";
 import { OrderManufacturing } from "../order-manufacturing";
 import { OrderPaper } from "../order-paper";
@@ -441,10 +440,6 @@ export function OrderDetail({ id }: { id: string }) {
                 />
               </div>
             </Card>
-
-            {/* What the job is printed in. `colours` is only on the priced
-                select, so this card lives inside the priced block. */}
-            <OrderColours orderId={o.id} colours={priced.colours} />
           </>
         )}
 
@@ -455,7 +450,7 @@ export function OrderDetail({ id }: { id: string }) {
         <OrderProduction orderId={o.id} status={o.status} />
 
         {/* Ink drawn from the colour stock — the consumable beside the paper above. */}
-        <OrderInks orderId={o.id} status={o.status} />
+        <OrderInks orderId={o.id} status={o.status} kind={o.kind} />
 
         <Card title={t("detail.lifecycle")}>
           {o.statusChanges.length === 0 && (

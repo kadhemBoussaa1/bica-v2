@@ -1041,31 +1041,6 @@ export class OrderService {
   }
 
   /**
-   * Replaces an order's print colours wholesale.
-   *
-   * A colour has no identity worth preserving — it is a name and a price — so
-   * the set is replaced rather than diffed. Done in a transaction so a failure
-   * cannot leave the order with no colours at all.
-   */
-  async setColours(
-    orderId: string,
-    colours: { nom?: string; prix?: number }[],
-  ) {
-    await this.assertExists(orderId);
-    await this.prisma.$transaction([
-      this.prisma.orderColour.deleteMany({ where: { orderId } }),
-      this.prisma.orderColour.createMany({
-        data: colours.map((colour) => ({
-          orderId,
-          nom: colour.nom ?? null,
-          prix: colour.prix ?? null,
-        })),
-      }),
-    ]);
-    return { orderId, count: colours.length };
-  }
-
-  /**
    * Resolves what `Order.productId` should be, for both create and update.
    *
    * - `mode: "existing"` — must exist; if it belongs to a specific client

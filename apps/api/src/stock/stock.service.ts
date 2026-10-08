@@ -507,9 +507,9 @@ export class StockService {
   /**
    * Replaces the set of reels claiming this shipment as their provenance.
    *
-   * Wholesale rather than diffed, like `OrderService.setColours`: the caller
-   * sends the complete set and anything omitted is detached. Done in a
-   * transaction so a failure cannot leave reels half-reassigned.
+   * Wholesale rather than diffed: the caller sends the complete set and
+   * anything omitted is detached. Done in a transaction so a failure cannot
+   * leave reels half-reassigned.
    *
    * Only reels that are unattached or already on this shipment may be added —
    * silently stealing a reel from another delivery would falsify that

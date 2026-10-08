@@ -72,16 +72,17 @@ import {
   setShipmentActiveInput,
   setShipmentRollsInput,
   shipmentIdInput,
-  setOrderColoursInput,
   updateSupplierFamilyInput,
   updateSupplierInput,
   userIdInput,
+  addOrderInksInput,
   adjustInkStockInput,
   createInkColourInput,
   inkColourIdInput,
-  inkUsageForOrderInput,
   inkUsageIdInput,
+  orderInksInput,
   recordInkUsageInput,
+  removeOrderInkInput,
   restockInkInput,
   setInkColourActiveInput,
   updateInkColourInput,
@@ -799,13 +800,6 @@ export class TrpcRouter {
           this.orderService.setActive(input.id, input.active),
         ),
 
-      /** Replaces the order's print colours wholesale. */
-      setColours: adminProcedure
-        .input(setOrderColoursInput)
-        .mutation(({ input }) =>
-          this.orderService.setColours(input.orderId, input.colours),
-        ),
-
       /**
        * The two lifecycle mutations from docs/order-lifecycle-plan.md §3 and
        * §3.1. Deliberately NOT `adminProcedure`: the transition table's
@@ -1177,14 +1171,14 @@ export class TrpcRouter {
      * Ink stock — the colour catalogue and the ink drawn from it per order
      * (docs/legacy-migration.md "Step 7").
      *
-     * Catalogue writes and the two balance corrections are ADMIN+. `list`
-     * is `shopFloorProcedure` because the floor's usage form needs the
-     * picker; the usage procedures follow the production runs exactly —
-     * record and correct from the floor, delete from ADMIN — and the
-     * service scopes them to the orders on the floor the same way.
+     * The catalogue is ADMIN+, `list` included: the floor never picks a
+     * colour, it records against the ones ADMIN+ chose for the order
+     * (`forOrder`, docs/order-inks-plan.md). The usage procedures follow the
+     * production runs — record and correct from the floor, delete from ADMIN —
+     * and the service scopes them to the orders on the floor the same way.
      */
     ink: router({
-      list: shopFloorProcedure
+      list: adminProcedure
         .input(listInkColoursInput)
         .query(({ input }) => this.inkService.list(input)),
 
@@ -1226,11 +1220,28 @@ export class TrpcRouter {
         .input(adjustInkStockInput)
         .mutation(({ ctx, input }) => this.inkService.adjust(ctx.user, input)),
 
-      usageForOrder: shopFloorProcedure
-        .input(inkUsageForOrderInput)
+      /** The order's chosen colours, each with its usage lines. */
+      forOrder: shopFloorProcedure
+        .input(orderInksInput)
         .query(({ ctx, input }) =>
-          this.inkService.usageForOrder(ctx.user, input.orderId),
+          this.inkService.forOrder(ctx.user, input.orderId),
         ),
+
+      /** The "add a colour" picker; plumbing beside the audited `forOrder`. */
+      choicesForOrder: adminProcedure
+        .meta({ audit: false })
+        .input(orderInksInput)
+        .query(({ input }) => this.inkService.choicesForOrder(input.orderId)),
+
+      addToOrder: adminProcedure
+        .input(addOrderInksInput)
+        .mutation(({ ctx, input }) =>
+          this.inkService.addToOrder(ctx.user, input),
+        ),
+
+      removeFromOrder: adminProcedure
+        .input(removeOrderInkInput)
+        .mutation(({ input }) => this.inkService.removeFromOrder(input)),
 
       recordUsage: shopFloorProcedure
         .input(recordInkUsageInput)

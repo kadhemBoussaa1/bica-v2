@@ -242,10 +242,6 @@ export function OrderForm({
     await go(`/orders/${orderId}`);
   };
 
-  // Print inks moved to `OrderColours` on the detail page (2026-09-18), so a
-  // save is one call again: `order.setColours` is `adminProcedure` while this
-  // form is not, and firing it from here failed for any non-admin editing an
-  // order — as well as making the save two non-atomic writes.
   const create = useMutation(
     trpc.order.create.mutationOptions({
       onSuccess: async (saved) => done(saved.id),

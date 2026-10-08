@@ -47,6 +47,8 @@ model User {
   productionRuns     ProductionRun[]     @relation("ProductionRunRecordedBy")
   /// Ink drawn from stock for an order by this user — see InkUsage.
   inkUsagesRecorded  InkUsage[]          @relation("InkUsageRecordedBy")
+  /// Ink colours this user chose for an order — see OrderInk.
+  orderInksAdded     OrderInk[]          @relation("OrderInkAddedBy")
   /// Deliveries, counts and archive events on ink colours — see InkMovement.
   inkMovements       InkMovement[]       @relation("InkMovementBy")
   rollAllocations    RollAllocation[]    @relation("RollAllocationBy")
@@ -940,6 +942,9 @@ model Order {
   /// counterpart of `allocations` (paper). Empty on every migrated order:
   /// the legacy table was never used.
   inkUsages   InkUsage[]
+  /// The stock colours the job is printed in, chosen by ADMIN+. Usage may
+  /// only be recorded against one of these — see OrderInk.
+  inks        OrderInk[]
   /// The sales invoice lines that bill this order. Empty on every migrated
   /// order; at most one today (`InvoiceService.createFromOrder` refuses a
   /// second) — see docs/sales-invoice-plan.md §3.2 for why the link is on
@@ -2505,6 +2510,9 @@ model InkColour {
 
   usages    InkUsage[]
   movements InkMovement[]
+  /// The orders printed in this colour. Restrict: a chosen colour cannot be
+  /// hard-deleted — see `InkService.remove`.
+  orders    OrderInk[]
 
   /// Legacy bigint primary key — see Client.legacyId.
   legacyId BigInt? @unique
@@ -2602,6 +2610,12 @@ model InkUsage {
   orderId String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
 
+  /// The chosen colour this line draws against. Restrict: a chosen colour
+  /// with usage cannot be taken off the order, and a line cannot name a
+  /// colour the order does not have — whatever the timing of two concurrent
+  /// requests. docs/order-inks-plan.md §1.
+  orderInk OrderInk @relation(fields: [orderId, colourId], references: [orderId, colourId], onDelete: Restrict)
+
   /// Who recorded it — the session, like ProductionRun.recordedBy.
   recordedById String?
   recordedBy   User?   @relation("InkUsageRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
@@ -2616,6 +2630,31 @@ model InkUsage {
   @@index([orderId, usedAt, id])
   @@index([colourId, usedAt, id])
   @@index([recordedById])
+}
+
+/// A colour from the ink stock that an order is printed in, chosen by ADMIN+
+/// (docs/order-inks-plan.md). Usage (`InkUsage`) may only be recorded
+/// against a colour listed here — enforced by the composite foreign key on
+/// `InkUsage`, not just by the service. Removable only while the order is
+/// DRAFT and the colour has no usage; addable until the order is terminal.
+model OrderInk {
+  id String @id @default(cuid())
+
+  orderId  String
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  colourId String
+  colour   InkColour @relation(fields: [colourId], references: [id], onDelete: Restrict)
+
+  addedById String?
+  addedBy   User?   @relation("OrderInkAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+
+  usages InkUsage[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, colourId])
+  @@index([colourId])
+  @@index([addedById])
 }
 
 /// Where a stocktake is in its life. Only one may be OPEN at a time — enforced
