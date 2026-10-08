@@ -260,6 +260,7 @@ export class InkService {
           stock: input.stock,
           alertThreshold: input.alertThreshold ?? null,
           hex: input.hex ?? null,
+          kiloPrice: input.kiloPrice,
         },
         select: RETURN_SELECT,
       });
@@ -277,8 +278,9 @@ export class InkService {
       data: {
         code: input.code,
         name: input.name ?? null,
-        unit: input.unit,
+        // No `unit`: it is fixed at create (`updateInkColourInput`).
         alertThreshold: input.alertThreshold ?? null,
+        kiloPrice: input.kiloPrice,
         // Clearable: null clears the swatch, omitted leaves it.
         ...(input.hex !== undefined ? { hex: input.hex } : {}),
       },
@@ -432,23 +434,58 @@ export class InkService {
   }
 
   /**
+   * The Encres card's money, ADMIN+ only (docs/order-ink-price-plan.md): the
+   * price frozen on each assignment and the cost of what was drawn against
+   * it. Apart from `forOrder` so the floor's query never carries a price and
+   * the gate sits on the procedure. Display only — not the order's margin.
+   */
+  async costForOrder(orderId: string) {
+    await this.assertOrderExists(orderId);
+    const inks = await this.prisma.orderInk.findMany({
+      where: { orderId },
+      select: { id: true, kiloPrice: true, usages: { select: { quantity: true } } },
+    });
+    const byInk = inks.map((ink) => {
+      const used = ink.usages.reduce((sum, line) => sum + line.quantity, 0);
+      return {
+        orderInkId: ink.id,
+        kiloPrice: ink.kiloPrice,
+        cost: ink.kiloPrice === null ? null : used * ink.kiloPrice,
+      };
+    });
+    return {
+      byInk,
+      /** The priced colours only; `unpriced` says how many are left out. */
+      total: byInk.reduce((sum, ink) => sum + (ink.cost ?? 0), 0),
+      unpriced: byInk.filter((ink) => ink.kiloPrice === null).length,
+    };
+  }
+
+  /**
    * The "add a colour" picker: every active colour the order does not have
-   * yet. Not `list` — its "all" includes archived colours, its largest page
-   * is 100, and it is audited on every open.
+   * yet, with the price an assignment would freeze. Not `list` — its "all"
+   * includes archived colours, its largest page is 100, and it is audited on
+   * every open.
    */
   async choicesForOrder(orderId: string) {
     await this.assertOrderExists(orderId);
     return this.prisma.inkColour.findMany({
       where: { active: true, orders: { none: { orderId } } },
       orderBy: [{ code: "asc" }, { id: "asc" }],
-      select: { id: true, code: true, name: true, unit: true, stock: true },
+      select: { id: true, code: true, name: true, unit: true, stock: true, kiloPrice: true },
     });
   }
 
   /**
    * ADMIN+ chooses colours for an order, until it is terminal
    * (`canAddOrderInks`). Archived colours are refused: nobody could draw
-   * from them. Adding one the order already has is a no-op.
+   * from them, and so are unpriced ones, since the assignment freezes the
+   * colour's price (docs/order-ink-price-plan.md). Adding one the order
+   * already has is a no-op that keeps its frozen price.
+   *
+   * The price read and the insert are not one transaction on purpose: an
+   * edit landing between them is indistinguishable from one made a moment
+   * before the assignment.
    */
   async addToOrder(actor: SessionUser, input: AddOrderInksInput) {
     const order = await this.assertOrderExists(input.orderId);
@@ -463,7 +500,7 @@ export class InkService {
     }
     const colours = await this.prisma.inkColour.findMany({
       where: { id: { in: input.colourIds } },
-      select: { id: true, code: true, active: true },
+      select: { id: true, code: true, active: true, kiloPrice: true },
     });
     if (colours.length !== input.colourIds.length) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Colour not found" });
@@ -475,10 +512,18 @@ export class InkService {
         message: `${archived.code} is archived; restore it before choosing it`,
       });
     }
+    const unpriced = colours.find((colour) => colour.kiloPrice === null);
+    if (unpriced) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Set a price on ${unpriced.code} before choosing it`,
+      });
+    }
     const created = await this.prisma.orderInk.createMany({
-      data: input.colourIds.map((colourId) => ({
+      data: colours.map((colour) => ({
         orderId: input.orderId,
-        colourId,
+        colourId: colour.id,
+        kiloPrice: colour.kiloPrice,
         addedById: actor.id,
       })),
       skipDuplicates: true,

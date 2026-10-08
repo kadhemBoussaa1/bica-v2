@@ -241,7 +241,9 @@
 
 /* Dividers between blocks, so the last one does not end on a stray line. */
 .inkBlock + .inkBlock,
-.inkBlock + .inkAdd {
+.inkBlock + .inkAdd,
+.inkBlock + .inkTotal,
+.inkTotal + .inkAdd {
   border-top: 1px solid var(--bp-hairline-soft);
 }
 
@@ -295,6 +297,18 @@
 
 .inkForm {
   margin: var(--bp-space-3) 0;
+}
+
+/* ADMIN+: the ink cost under the last colour, and why it may be partial. */
+.inkTotal {
+  display: flex;
+  gap: var(--bp-space-2);
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: var(--bp-space-3) 0;
+  font: 600 0.9375rem/1.4 var(--bp-font-display);
+  font-variant-numeric: tabular-nums;
 }
 
 .inkAdd {

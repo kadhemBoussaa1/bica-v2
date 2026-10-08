@@ -19,6 +19,7 @@ import { Button } from "@repo/ui/button";
 import { Dialog } from "@repo/ui/dialog";
 import { SelectField, TextField } from "@repo/ui/field";
 import { useCurrentUser } from "../auth/use-auth";
+import { formatPrice } from "../stock/inks/ink-ui";
 import { useTRPC } from "../trpc/client";
 import records from "../records/records.module.css";
 import styles from "./order-detail.module.css";
@@ -27,6 +28,7 @@ import { dateFormat, numberFormat } from "../../i18n/formats";
 type OrderInk = inferRouterOutputs<AppRouter>["ink"]["forOrder"][number];
 type Usage = OrderInk["usages"][number];
 type Colour = OrderInk["colour"];
+type InkCost = inferRouterOutputs<AppRouter>["ink"]["costForOrder"]["byInk"][number];
 
 const qty = () => numberFormat({ maximumFractionDigits: 3 });
 const day = () => dateFormat({ dateStyle: "medium" });
@@ -48,6 +50,10 @@ function today(): string {
  * and PRODUCTION while the order is IN_PRODUCTION; deleting a line is ADMIN+,
  * as with production runs. A colour comes off the order only before
  * production and only while nothing was drawn for it.
+ *
+ * ADMIN+ also sees the price frozen on each colour when it was assigned and
+ * the ink cost (docs/order-ink-price-plan.md), from `costForOrder`, a query
+ * the floor never runs. Display only: not the order's cost price or margin.
  */
 export function OrderInks({
   orderId,
@@ -78,13 +84,14 @@ export function OrderInks({
     status === "IN_PRODUCTION";
   const canAdd = isAdmin && canAddOrderInks(kind, status);
   const canRemove = isAdmin && canChangeOrderInks(kind, status);
+  const costQuery = useQuery({
+    ...trpc.ink.costForOrder.queryOptions({ orderId }),
+    enabled: isAdmin,
+  });
 
-  const refresh = () =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: trpc.ink.forOrder.queryKey() }),
-      queryClient.invalidateQueries({ queryKey: trpc.ink.choicesForOrder.queryKey() }),
-      queryClient.invalidateQueries({ queryKey: trpc.ink.list.queryKey() }),
-    ]);
+  // Every ink query at once — the card, its cost, the picker, the stock page —
+  // so a new one cannot be left stale by a list someone forgot to extend.
+  const refresh = () => queryClient.invalidateQueries({ queryKey: trpc.ink.pathKey() });
 
   const removeLine = useMutation(
     trpc.ink.removeUsage.mutationOptions({
@@ -104,6 +111,9 @@ export function OrderInks({
 
   const inks = inksQuery.data ?? [];
   const unit = (colour: Colour) => enums(`inkUnit.${colour.unit}`);
+  const costs = new Map<string, InkCost>(
+    (costQuery.data?.byInk ?? []).map((cost) => [cost.orderInkId, cost]),
+  );
 
   return (
     <section className={styles.card}>
@@ -159,6 +169,7 @@ export function OrderInks({
                 unit: unit(ink.colour),
               })}
             </span>
+            {costQuery.data && <InkPrice cost={costs.get(ink.id)} unit={unit(ink.colour)} />}
             {!ink.colour.active && <span className={styles.inkArchived}>{t("inks.archived")}</span>}
             {canRecord && ink.colour.active && recording !== ink.colour.id && (
               <Button
@@ -264,6 +275,17 @@ export function OrderInks({
         </div>
       ))}
 
+      {costQuery.data && inks.length > 0 && (
+        <p className={styles.inkTotal}>
+          <span>{t("inks.costTotal", { total: formatPrice(costQuery.data.total) })}</span>
+          {costQuery.data.unpriced > 0 && (
+            <span className={styles.quiet}>
+              {t("inks.unpricedNote", { count: costQuery.data.unpriced })}
+            </span>
+          )}
+        </p>
+      )}
+
       {canAdd && inksQuery.isSuccess && (
         <AddColour orderId={orderId} onAdded={refresh} onError={setError} />
       )}
@@ -286,6 +308,24 @@ export function OrderInks({
           })}
       </Dialog>
     </section>
+  );
+}
+
+/**
+ * The price frozen when the colour was assigned and what the ink drawn
+ * against it cost. Legacy assignments predate prices and have none.
+ */
+function InkPrice({ cost, unit }: { cost: InkCost | undefined; unit: string }) {
+  const t = useTranslations("orders");
+  if (!cost || cost.kiloPrice === null) {
+    return <span className={styles.inkFigures}>{t("inks.noPrice")}</span>;
+  }
+  return (
+    <span className={styles.inkFigures}>
+      {t("inks.price", { price: formatPrice(cost.kiloPrice), unit })}
+      {" · "}
+      {t("inks.cost", { cost: formatPrice(cost.cost ?? 0) })}
+    </span>
   );
 }
 
@@ -343,17 +383,18 @@ function AddColour({
         }
         options={choices.map((c) => {
           const colour = `${c.code}${c.name ? ` — ${c.name}` : ""}`;
-          return {
-            value: c.id,
-            label:
-              c.stock > 0
-                ? t("inks.colourOption", {
-                    colour,
-                    stock: qty().format(c.stock),
-                    unit: enums(`inkUnit.${c.unit}`),
-                  })
-                : t("inks.colourOptionOut", { colour }),
-          };
+          const unit = enums(`inkUnit.${c.unit}`);
+          const stock =
+            c.stock > 0
+              ? t("inks.colourOption", { colour, stock: qty().format(c.stock), unit })
+              : t("inks.colourOptionOut", { colour });
+          // The price the assignment will freeze; an unpriced colour is
+          // refused by the server, so it is shown but cannot be picked.
+          const price =
+            c.kiloPrice === null
+              ? t("inks.optionNoPrice")
+              : t("inks.price", { price: formatPrice(c.kiloPrice), unit });
+          return { value: c.id, label: `${stock} · ${price}`, disabled: c.kiloPrice === null };
         })}
       />
       <Button type="submit" variant="secondary" busy={add.isPending} disabled={!colourId}>

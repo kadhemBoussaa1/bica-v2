@@ -50,7 +50,7 @@ export function InkColourDialog({
   onDone,
 }: {
   /** Absent for a new colour. */
-  colour?: Pick<InkRow, "id" | "code" | "name" | "unit" | "stock" | "alertThreshold" | "hex">;
+  colour?: Pick<InkRow, "id" | "code" | "name" | "unit" | "stock" | "alertThreshold" | "kiloPrice" | "hex">;
   onClose: () => void;
   onDone: (id: string) => void | Promise<void>;
 }) {
@@ -65,6 +65,7 @@ export function InkColourDialog({
   const [unit, setUnit] = useState<InkUnit>(colour?.unit ?? "KG");
   const [opening, setOpening] = useState("");
   const [threshold, setThreshold] = useState(str(colour?.alertThreshold));
+  const [price, setPrice] = useState(str(colour?.kiloPrice));
   const [error, setError] = useState<string | null>(null);
   const unitLabel = units(`inkUnit.${unit}`);
 
@@ -92,9 +93,22 @@ export function InkColourDialog({
     setError(null);
     const alertThreshold = number(t("inks.form.alertThreshold"), threshold);
     if (alertThreshold === false) return;
+    const kiloPrice = number(t("inks.v3.price"), price);
+    if (kiloPrice === false) return;
+    if (kiloPrice === undefined) {
+      setError(t("inks.v3.priceRequired"));
+      return;
+    }
 
     if (colour) {
-      const parsed = updateInkColourInput.safeParse({ id: colour.id, code, name, unit, alertThreshold, hex });
+      const parsed = updateInkColourInput.safeParse({
+        id: colour.id,
+        code,
+        name,
+        alertThreshold,
+        kiloPrice,
+        hex,
+      });
       if (!parsed.success) {
         setError(parsed.error.issues[0]?.message ?? common("checkForm"));
         return;
@@ -104,7 +118,7 @@ export function InkColourDialog({
     }
     const stock = number(t("inks.form.openingBalance"), opening);
     if (stock === false) return;
-    const parsed = createInkColourInput.safeParse({ code, name, unit, stock, alertThreshold, hex });
+    const parsed = createInkColourInput.safeParse({ code, name, unit, stock, alertThreshold, kiloPrice, hex });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? common("checkForm"));
       return;
@@ -240,6 +254,20 @@ export function InkColourDialog({
             placeholder="—"
             value={threshold}
             onChange={(event) => setThreshold(event.target.value)}
+            autoComplete="off"
+            disabled={busy}
+          />
+        </div>
+
+        <div className={styles.twoUp}>
+          <TextField
+            label={t("inks.v3.price")}
+            unit={`/${unitLabel}`}
+            format="numeric"
+            inputMode="decimal"
+            placeholder="—"
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
             autoComplete="off"
             disabled={busy}
           />

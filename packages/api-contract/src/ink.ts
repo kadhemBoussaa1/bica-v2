@@ -74,10 +74,24 @@ export const createInkColourInput = z.object({
   alertThreshold: level.optional(),
   /** `null` clears it on update; omitted leaves it as it is. */
   hex: inkHexSchema.nullable().optional(),
+  /**
+   * Purchase price per `unit` (per kilogram today). Required on create and
+   * on every edit, so a legacy colour without one gets it at its next save;
+   * the column stays nullable only for those imported colours.
+   */
+  kiloPrice: z
+    .number({ error: "Enter the price" })
+    .positive("Enter a price above zero")
+    .max(1e9),
 });
 
+/**
+ * The unit is fixed at create: every figure on the colour — stock, usage
+ * lines, movements, the prices frozen on its orders — is in it, so changing
+ * it would silently re-read them all (docs/order-ink-price-plan.md).
+ */
 export const updateInkColourInput = createInkColourInput
-  .omit({ stock: true })
+  .omit({ stock: true, unit: true })
   .extend({ id: z.string().min(1) });
 
 export const inkColourIdInput = z.object({ id: z.string().min(1) });

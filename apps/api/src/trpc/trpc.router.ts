@@ -1227,6 +1227,16 @@ export class TrpcRouter {
           this.inkService.forOrder(ctx.user, input.orderId),
         ),
 
+      /**
+       * The Encres card's frozen prices and ink cost, ADMIN+ only
+       * (docs/order-ink-price-plan.md); plumbing beside the audited
+       * `forOrder`, which the floor shares and so never carries a price.
+       */
+      costForOrder: adminProcedure
+        .meta({ audit: false })
+        .input(orderInksInput)
+        .query(({ input }) => this.inkService.costForOrder(input.orderId)),
+
       /** The "add a colour" picker; plumbing beside the audited `forOrder`. */
       choicesForOrder: adminProcedure
         .meta({ audit: false })

@@ -26,6 +26,11 @@ export function formatQty(value: number): string {
   return numberFormat({ maximumFractionDigits: 2 }).format(value);
 }
 
+/** A purchase price: two decimals, three when the millimes are there. */
+export function formatPrice(value: number): string {
+  return numberFormat({ minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(value);
+}
+
 /** A signed change: "+60", "−7,5", "±0" (a real minus, not a hyphen). */
 export function formatDelta(value: number): string {
   if (value === 0) return "±0";

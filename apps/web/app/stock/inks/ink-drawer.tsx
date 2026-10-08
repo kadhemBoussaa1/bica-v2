@@ -12,6 +12,7 @@ import records from "../../records/records.module.css";
 import { formatDay } from "../../../i18n/formats";
 import {
   formatDelta,
+  formatPrice,
   formatQty,
   InkMeter,
   inkLevel,
@@ -145,6 +146,10 @@ export function InkDrawer({
                 <Fact
                   label={t("inks.form.alertThreshold")}
                   value={colour.alertThreshold === null ? "—" : `${formatQty(colour.alertThreshold)} ${unit}`}
+                />
+                <Fact
+                  label={t("inks.v3.price")}
+                  value={colour.kiloPrice === null ? "—" : `${formatPrice(colour.kiloPrice)} /${unit}`}
                 />
                 <Fact
                   label={t("inks.v3.perMonth")}

@@ -2486,6 +2486,12 @@ model InkColour {
   stock Float @default(0)
   /// Optional low-stock threshold; the list flags a colour at or under it.
   alertThreshold Float?
+  /// Purchase price per `unit` — per kilogram, as every colour is today; per
+  /// litre for an L colour. Required by `createInkColourInput` on create and
+  /// on every edit; nullable only because the legacy table had none, so the
+  /// imported colours get theirs at their next save. ADMIN+ only, like the
+  /// rest of the catalogue; the floor's selects never carry it.
+  kiloPrice      Float?
 
   /// A swatch for recognising the tin at a glance, "#C8102E". Display only;
   /// legacy colours have none.
@@ -2647,6 +2653,14 @@ model OrderInk {
 
   addedById String?
   addedBy   User?   @relation("OrderInkAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+
+  /// `InkColour.kiloPrice` when the colour was assigned to this order, per the
+  /// colour's `unit` (immutable after create, so the two never disagree).
+  /// Frozen: never updated when the colour's price changes, so an order keeps
+  /// the price it was planned with (docs/order-ink-price-plan.md). Null only
+  /// on assignments made before prices existed — the legacy backfill and the
+  /// importer's pairs. ADMIN+ only, read through `ink.costForOrder`.
+  kiloPrice Float?
 
   usages InkUsage[]
 

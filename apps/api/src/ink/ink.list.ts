@@ -64,6 +64,7 @@ export const INK_SELECT = {
   stock: true,
   stockLevel: true,
   alertThreshold: true,
+  kiloPrice: true,
   active: true,
   createdAt: true,
   updatedAt: true,

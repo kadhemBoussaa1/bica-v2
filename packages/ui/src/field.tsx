@@ -163,8 +163,10 @@ export function TextField({
 /**
  * A bare string is both the value and the label; the object form separates them
  * for stored values that are not display text — an enum like ACCESSOIRE, say.
+ * `disabled` keeps an option visible but unpickable, when the server would
+ * refuse it anyway and the label says why.
  */
-export type SelectOption = string | { value: string; label: string };
+export type SelectOption = string | { value: string; label: string; disabled?: boolean };
 
 interface SelectFieldProps extends Omit<
   SelectHTMLAttributes<HTMLSelectElement>,
@@ -213,8 +215,9 @@ export function SelectField({
         {options.map((option) => {
           const value = typeof option === "string" ? option : option.value;
           const text = typeof option === "string" ? option : option.label;
+          const disabled = typeof option === "string" ? undefined : option.disabled;
           return (
-            <option key={value} value={value}>
+            <option key={value} value={value} disabled={disabled}>
               {text}
             </option>
           );
