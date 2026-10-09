@@ -75,7 +75,13 @@ export const orderListDeclaration: ListDeclaration<
   OrderFacet
 > = {
   sortable: {
-    numero: (dir) => [{ active: "desc" }, { numero: dir }],
+    // By the number, not the text (CMD-99 would follow CMD-746); the few
+    // numbers outside CMD-<n> have no `numeroSeq` and go last, by text.
+    numero: (dir) => [
+      { active: "desc" },
+      { numeroSeq: { sort: dir, nulls: "last" } },
+      { numero: dir },
+    ],
     client: (dir) => [{ active: "desc" }, { client: { name: dir } }],
     product: (dir) => [{ active: "desc" }, { product: { name: dir } }],
     quantite: (dir) => [{ active: "desc" }, { quantite: dir }],

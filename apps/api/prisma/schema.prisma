@@ -764,6 +764,13 @@ model Order {
   /// Business key, e.g. "CMD-12". Unique across all 397 legacy rows.
   numero String @unique
 
+  /// The `<n>` of `CMD-<n>`, what the "number" sort orders by: as text,
+  /// CMD-99 sorts after CMD-746. Kept by a database trigger (migration
+  /// 20261009100000_order_numero_seq) on every write to `numero`, like
+  /// `InkColour.stockLevel`: no code writes it, and a write is overwritten.
+  /// Null for a number outside that shape (TEST-726, legacy names).
+  numeroSeq Int?
+
   description String?
 
   clientId String?
@@ -977,7 +984,7 @@ model Order {
   /// Every list sort leads with `active: "desc"` (archived orders sink) and
   /// ends with the `id` tiebreaker, so each sortable column is (active, col, id).
   /// `client`/`product` sort through a join and are not served by an index here.
-  @@index([active, numero, id])
+  @@index([active, numeroSeq, id])
   @@index([active, createdAt, id])
   @@index([active, quantite, id])
   @@index([active, orderTotal, id])

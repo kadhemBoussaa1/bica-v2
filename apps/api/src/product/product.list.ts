@@ -129,7 +129,7 @@ export const productOrderListDeclaration: ListDeclaration<
   // Every sort carries the `id` tiebreaker `runListQuery` adds, so ties on a
   // low-cardinality column (`status`) cannot reorder across pages.
   sortable: {
-    numero: (dir) => [{ numero: dir }],
+    numero: (dir) => [{ numeroSeq: { sort: dir, nulls: "last" } }, { numero: dir }],
     createdAt: (dir) => [{ createdAt: dir }],
     quantite: (dir) => [{ quantite: dir }],
     status: (dir) => [{ status: dir }],

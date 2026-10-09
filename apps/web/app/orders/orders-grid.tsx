@@ -42,8 +42,9 @@ const INITIAL_STATE: OrdersGridState = {
   // row on every page. Twenty-five is a screenful and a half.
   pageSize: 25,
   search: "",
+  // Newest number first: the orders being worked on now open the list.
   sortBy: "numero",
-  sortDir: "asc",
+  sortDir: "desc",
   filter: "all",
   market: "all",
 };
