@@ -104,8 +104,13 @@ export const NAV_SECTIONS: readonly NavSection[] = [
      * row made you leave the page you were working on to read it.
      *
      * `items.chat` stays in nav.json: the launcher's own label reads from it.
+     *
+     * Overview is hidden from ADMIN (decided 2026-10-09): for that role "/"
+     * is only the welcome page — the dashboard is SUPER_ADMIN's — so the row
+     * led nowhere useful. `only`, because rank would let ADMIN back in. The
+     * route stays reachable through the brand link.
      */
-    items: [{ key: "home", href: "/" }],
+    items: [{ key: "home", href: "/", only: ["SUPER_ADMIN", "PRODUCTION", "MAGASINIER"] }],
   },
   {
     title: "Contact",
