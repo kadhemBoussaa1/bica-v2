@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode } from "react";
@@ -19,6 +19,7 @@ import { TableSkeleton } from "@repo/ui/skeleton";
 import { Thumbnail } from "@repo/ui/thumbnail";
 import { useCurrentUser } from "../../auth/use-auth";
 import { useTRPC } from "../../trpc/client";
+import { ProductImageUpload } from "../../products/product-image-upload";
 import { OrderInks } from "../order-inks";
 import { OrderManufacturing } from "../order-manufacturing";
 import { OrderPaper } from "../order-paper";
@@ -714,32 +715,20 @@ export function OrderDetail({ id }: { id: string }) {
           </Card>
         )}
 
-        {/* Artwork belongs to the product and is edited on its page. */}
+        {/*
+          Artwork belongs to the product: removing or reordering it is done
+          on the product's page, but an admin who forgot it when creating the
+          order can add it from here.
+        */}
         <Card
           title={t("detail.productArtworkCount", { count: Math.max(1, p.images.length) })}
         >
-          <div className={styles.artwork}>
-            {photo ? (
-              <a href={photo} target="_blank" rel="noreferrer">
-                {/* S3 URL from the legacy bucket, opened full size: next/image would re-proxy it. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo} alt={t("detail.artworkAlt", { name: p.name })} />
-              </a>
-            ) : (
-              <span>{t("detail.noArtwork")}</span>
-            )}
-          </div>
-          {p.images.length > 1 && (
-            <div className={styles.artworkMore}>
-              {p.images.slice(1).map((src) => (
-                <Thumbnail
-                  key={src}
-                  size="sm"
-                  src={assetUrl(src)}
-                  href={assetUrl(src)}
-                />
-              ))}
-            </div>
+          {canWrite ? (
+            <ProductArtworkUpload productId={p.id} orderId={o.id} full={p.images.length >= 50}>
+              <ProductArtwork images={p.images} name={p.name} />
+            </ProductArtworkUpload>
+          ) : (
+            <ProductArtwork images={p.images} name={p.name} />
           )}
         </Card>
       </aside>
@@ -760,4 +749,76 @@ type PricedOrder = Extract<OrderDetailData, { orderTotal: unknown }>;
  */
 function hasPricing(order: OrderDetailData): order is PricedOrder {
   return "orderTotal" in order;
+}
+
+/** The rail's artwork: the first image large, the rest as thumbnails. */
+function ProductArtwork({ images, name }: { images: string[]; name: string }) {
+  const t = useTranslations("orders");
+  const photo = assetUrl(images[0]);
+  return (
+    <>
+      <div className={styles.artwork}>
+        {photo ? (
+          <a href={photo} target="_blank" rel="noreferrer">
+            {/* S3 URL from the legacy bucket, opened full size: next/image would re-proxy it. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo} alt={t("detail.artworkAlt", { name })} />
+          </a>
+        ) : (
+          <span>{t("detail.noArtwork")}</span>
+        )}
+      </div>
+      {images.length > 1 && (
+        <div className={styles.artworkMore}>
+          {images.slice(1).map((src) => (
+            <Thumbnail key={src} size="sm" src={assetUrl(src)} href={assetUrl(src)} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * Adds uploaded images straight onto the order's product — saved at once,
+ * no form to submit — then refreshes everything that draws its artwork.
+ */
+function ProductArtworkUpload({
+  productId,
+  orderId,
+  full,
+  children,
+}: {
+  productId: string;
+  orderId: string;
+  full: boolean;
+  children: ReactNode;
+}) {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const addImage = useMutation(
+    trpc.product.addImage.mutationOptions({
+      onSuccess: () =>
+        Promise.all([
+          queryClient.invalidateQueries({ queryKey: trpc.order.byId.queryKey({ id: orderId }) }),
+          queryClient.invalidateQueries({ queryKey: trpc.order.list.queryKey() }),
+          queryClient.invalidateQueries({ queryKey: trpc.product.pathKey() }),
+        ]),
+    }),
+  );
+
+  return (
+    <ProductImageUpload
+      onUploaded={(url) => addImage.mutate({ productId, url })}
+      busy={addImage.isPending}
+      disabled={full}
+    >
+      {children}
+      {addImage.error && (
+        <p className={[records.notice, records.error].filter(Boolean).join(" ")} role="alert">
+          {addImage.error.message}
+        </p>
+      )}
+    </ProductImageUpload>
+  );
 }

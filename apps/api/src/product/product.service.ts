@@ -1,11 +1,17 @@
 import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
-import type { CreateProductInput, ListResult, UpdateProductInput } from "@repo/api-contract";
+import type {
+  AddProductImageInput,
+  CreateProductInput,
+  ListResult,
+  UpdateProductInput,
+} from "@repo/api-contract";
 import { canAccess, normaliseProductSpec, toProductSpec } from "@repo/api-contract";
 import type { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
 import { orderScopeFor } from "../order/order.scope";
 import { PrismaService } from "../prisma.service";
+import { StorageService } from "../storage/storage.service";
 import type { SessionUser } from "../trpc/trpc";
 import { findOrCreateProduct, productMatchWhere, type ProductKey } from "./product.match";
 import {
@@ -33,7 +39,10 @@ function withOrderCount<T extends { _count: { orders: number } }>({
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   async list(query: ListProductsInput) {
     const result = await runListQuery({
@@ -151,6 +160,7 @@ export class ProductService {
    */
   async create(input: CreateProductInput) {
     await this.assertClientAssignable(input.clientId);
+    this.assertImagesUploaded(input.images ?? [], []);
     const key = this.toKey(input);
 
     const existing = await this.prisma.product.findFirst({
@@ -188,8 +198,9 @@ export class ProductService {
    * like this".
    */
   async update(input: UpdateProductInput) {
-    await this.assertExists(input.id);
+    const stored = await this.assertExists(input.id);
     await this.assertClientAssignable(input.clientId);
+    this.assertImagesUploaded(input.images ?? [], stored.images);
     const key = this.toKey(input);
     return this.prisma.product.update({
       where: { id: input.id },
@@ -224,6 +235,40 @@ export class ProductService {
   }
 
   /**
+   * Appends one uploaded image — the order page's "add artwork", which has
+   * the product's id but not its spec. A `push` rather than a read-modify-
+   * write, so two people adding artwork at once both land. The 50 cap is the
+   * one `createProductInput` holds; it is read first, so a race can overshoot
+   * it by one, which nothing depends on.
+   */
+  async addImage(input: AddProductImageInput) {
+    const stored = await this.assertExists(input.productId);
+    this.assertImagesUploaded([input.url], []);
+    if (stored.images.length >= 50) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "A product holds at most 50 images" });
+    }
+    return this.prisma.product.update({
+      where: { id: input.productId },
+      data: { images: { push: input.url } },
+      select: RETURN_SELECT,
+    });
+  }
+
+  /**
+   * Every image this request ADDS must be a file uploaded to this app's
+   * bucket. The URLs are client-supplied and rendered to every user who opens
+   * the product or one of its orders, so an arbitrary link would be shown as
+   * the company's artwork. URLs already on the row are exempt: those include
+   * the migrated legacy ones, and re-saving a product must not refuse them.
+   */
+  private assertImagesUploaded(images: readonly string[], stored: readonly string[]) {
+    const known = new Set(stored);
+    if (images.some((url) => !known.has(url) && !this.storage.isOwnAssetUrl(url))) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Artwork must be an uploaded image" });
+    }
+  }
+
+  /**
    * Archive or restore. Never locked, never deleted: a product with orders
    * stays editable and archiving does not touch them — see the model comment.
    */
@@ -245,15 +290,19 @@ export class ProductService {
     return findOrCreateProduct(db, key, PRODUCT_SELECT);
   }
 
-  /** Existence only — `byId`'s full select and order count are not needed to write. */
+  /**
+   * Existence, plus the stored artwork the image gate compares against —
+   * `byId`'s full select and order count are not needed to write.
+   */
   private async assertExists(id: string) {
     const found = await this.prisma.product.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, images: true },
     });
     if (!found) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Product not found" });
     }
+    return found;
   }
 
   private toKey(input: CreateProductInput): ProductKey {

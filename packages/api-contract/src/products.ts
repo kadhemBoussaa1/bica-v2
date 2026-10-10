@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { TypeSac } from "./orders.js";
 import type { ProductSpec } from "./pricing.js";
 import { productSpecInput } from "./pricing.js";
+import { createUploadInput } from "./storage.js";
 
 /**
  * The canonical spec form. **The one definition** of what "null" vs "0" means
@@ -122,3 +123,33 @@ export const updateProductInput = createProductInput.extend({
 
 export type CreateProductInput = z.infer<typeof createProductInput>;
 export type UpdateProductInput = z.infer<typeof updateProductInput>;
+
+/**
+ * What a product's artwork may be: images a browser draws in an `<img>`,
+ * since every place `images` surfaces (the product page, the order card and
+ * detail) renders it as one. No PDF, and no HEIC or TIFF, which Chrome cannot
+ * display — the same narrowing as an employee's photo, for the same reason.
+ */
+export const PRODUCT_IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+/**
+ * A presigned PUT for one artwork image. No product id: the new-product form
+ * uploads before the record exists, so — like the employee photo — the gate
+ * is the procedure's rank, and the URL is checked against this app's bucket
+ * when it is saved onto a product.
+ */
+export const productImageUploadInput = createUploadInput.extend({
+  contentType: z.enum(PRODUCT_IMAGE_CONTENT_TYPES),
+});
+export type ProductImageUploadInput = z.infer<typeof productImageUploadInput>;
+
+/**
+ * Appends one uploaded image to a product's artwork, for the order page's
+ * "add artwork" — which has the product's id but not its whole spec, so it
+ * cannot go through `updateProductInput` without rewriting every column.
+ */
+export const addProductImageInput = z.object({
+  productId: z.string().min(1),
+  url: z.string().max(1000),
+});
+export type AddProductImageInput = z.infer<typeof addProductImageInput>;

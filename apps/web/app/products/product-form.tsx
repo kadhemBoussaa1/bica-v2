@@ -11,7 +11,9 @@ import { Thumbnail } from "@repo/ui/thumbnail";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import { useTRPC } from "../trpc/client";
+import { ProductImageUpload } from "./product-image-upload";
 import { ProductSpecFields } from "./product-spec-fields";
+import productStyles from "./products.module.css";
 import styles from "../records/records.module.css";
 
 export type ProductFormValues = inferRouterOutputs<AppRouter>["product"]["byId"];
@@ -50,8 +52,8 @@ export function ProductForm({
   const [hasHandle, setHasHandle] = useState(initial?.hasHandle ?? false);
   const [handleWeightG, setHandleWeightG] = useState(str(initial?.handleWeightG));
   /**
-   * Artwork URLs, edited as a list. Held as strings like every other field:
-   * a blank row is dropped on submit rather than saved as an empty URL.
+   * Artwork URLs. Uploaded files are appended as they land on S3, but only
+   * reach the product on submit — cancelling leaves the stored list alone.
    */
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
   const [error, setError] = useState<string | null>(null);
@@ -110,9 +112,8 @@ export function ProductForm({
         paperType: paperType === "" ? undefined : paperType,
         hasHandle,
         handleWeightG: num(t("spec.handleWeight"), handleWeightG),
-        // Always sent, so clearing every row genuinely clears the artwork.
-        // Blank rows are dropped rather than saved as empty URLs.
-        images: images.map((url) => url.trim()).filter((url) => url !== ""),
+        // Always sent, so removing every image genuinely clears the artwork.
+        images,
       };
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : common("checkForm"));
@@ -198,44 +199,34 @@ export function ProductForm({
 
         <span className={styles.formSection}>{t("form.artwork")}</span>
         <div className={styles.formWide}>
-          <p className={styles.hint}>{t("form.artworkHint")}</p>
-          {images.map((url, index) => (
-            <div key={index} className={styles.imageRow}>
-              {/*
-                Live preview, so a mistyped or dead link is visible without
-                opening a tab. A dead URL falls back to a placeholder box.
-              */}
-              <Thumbnail size="sm" src={assetUrl(url)} />
-              <TextField
-                label={index === 0 ? t("form.imageUrl") : ""}
-                value={url}
-                onChange={(e) =>
-                  setImages((current) =>
-                    current.map((u, i) => (i === index ? e.target.value : u)),
-                  )
-                }
-                autoComplete="off"
-                disabled={busy}
-              />
-              <Button
-                className={styles.actionBtn}
-                variant="danger"
-                disabled={busy}
-                onClick={() =>
-                  setImages((current) => current.filter((_, i) => i !== index))
-                }
-              >
-                {t("form.remove")}
-              </Button>
-            </div>
-          ))}
-          <Button
-            className={styles.actionBtn}
+          <ProductImageUpload
+            onUploaded={(url) => setImages((current) => [...current, url])}
             disabled={busy || images.length >= 50}
-            onClick={() => setImages((current) => [...current, ""])}
           >
-            {t("form.addImage")}
-          </Button>
+            <p className={styles.hint}>{t("form.artworkHint")}</p>
+            {images.length > 0 && (
+              <div className={productStyles.imageGrid}>
+                {images.map((url, index) => (
+                  <div key={url} className={productStyles.imageTile}>
+                    <Thumbnail
+                      size="md"
+                      src={assetUrl(url)}
+                      href={assetUrl(url)}
+                      alt={t("form.imageAlt", { index: index + 1 })}
+                    />
+                    <Button
+                      size="dense"
+                      variant="danger"
+                      disabled={busy}
+                      onClick={() => setImages((current) => current.filter((u) => u !== url))}
+                    >
+                      {t("form.remove")}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ProductImageUpload>
         </div>
 
         {initial && (

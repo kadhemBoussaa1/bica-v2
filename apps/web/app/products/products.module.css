@@ -315,3 +315,53 @@
 .ordersSection {
   margin-top: var(--bp-space-5);
 }
+
+/*
+ * Artwork upload (`ProductImageUpload`): the gallery the caller draws, then
+ * the add button. The whole block takes a dropped file; the outline only
+ * shows while one is dragged over it, so at rest it reads as plain content.
+ */
+.imageDrop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+  border-radius: var(--bp-radius-block);
+  outline: 2px dashed transparent;
+  outline-offset: var(--bp-space-1);
+}
+
+.imageDropOver {
+  outline-color: var(--bp-orange-500);
+  background: var(--bp-orange-50);
+}
+
+.imageDropActions {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+}
+
+.imageDropHint {
+  font: 400 0.71875rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.imageDropError {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-danger-text);
+}
+
+/* The product form's gallery: one tile per image, its remove under it. */
+.imageGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-3);
+}
+
+.imageTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bp-space-2);
+}

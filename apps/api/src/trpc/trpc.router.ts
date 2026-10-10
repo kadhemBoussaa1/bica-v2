@@ -61,6 +61,8 @@ import {
   updateMachineInput,
   updateOrderInput,
   updateProductInput,
+  productImageUploadInput,
+  addProductImageInput,
   updateProductionRunInput,
   updateRollInput,
   rollIdInput,
@@ -752,6 +754,21 @@ export class TrpcRouter {
       update: adminProcedure
         .input(updateProductInput)
         .mutation(({ input }) => this.productService.update(input)),
+
+      /**
+       * A presigned PUT for one artwork image. No record-level check, like
+       * the employee photo: the new-product form uploads before the product
+       * exists. `create`, `update` and `addImage` refuse a URL off this
+       * app's bucket, so the capability alone attaches nothing.
+       */
+      createImageUpload: adminProcedure
+        .input(productImageUploadInput)
+        .mutation(({ input }) => this.storageService.createUpload(input)),
+
+      /** One uploaded image onto a product — the order page's "add artwork". */
+      addImage: adminProcedure
+        .input(addProductImageInput)
+        .mutation(({ input }) => this.productService.addImage(input)),
 
       setActive: adminProcedure
         .input(setPartnerActiveInput)
