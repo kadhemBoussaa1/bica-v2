@@ -29,7 +29,9 @@
  *     allocation still RESERVED and unchanged here follows the old app to
  *     CONSUMED or CANCELED.
  *     The old app archives a used-up reel and leaves its reservation open:
- *     such a reservation comes in, or moves, as CONSUMED (user, 2026-10-12).
+ *     such a reservation comes in, or moves, as CONSUMED (user, 2026-10-12),
+ *     the first import's open rows included. A split reel the old app puts
+ *     back in stock stays archived here: its pieces are the stock.
  *
  * Then every reel unchanged here gets its reserve counters rebuilt from its
  * RESERVED allocations in metres (the invariant on
@@ -157,8 +159,9 @@ const fmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 interface Reel {
   id: string;
   numero: string | null;
-  /** Changed here: never rewritten, never given a working reservation. */
+  /** Never rewritten, never given a working reservation — `frozenWhy` says why. */
   frozen: boolean;
+  frozenWhy: string | null;
   live: boolean;
   disponible: boolean;
   metrageRestant: number;
@@ -319,6 +322,11 @@ async function main() {
         const reels = new Map<string, Reel>();
         const oldAppIds = new Set<string>();
 
+        /** Old-app reels that have split pieces. */
+        const oldAppParents = new Set(
+          reelRows.filter((row) => row.parent_id !== null).map((row) => String(row.parent_id)),
+        );
+
         for (const row of reelRows) {
           const legacyKey = String(row.id);
           oldAppIds.add(legacyKey);
@@ -327,7 +335,7 @@ async function main() {
           const data: ReelData = reelData(row, importKey === null ? null : (shipmentIds.get(importKey) ?? null));
           const here = hereByLegacy.get(legacyKey);
           let id: string;
-          let frozen = false;
+          let frozenWhy: string | null = null;
 
           if (!here) {
             const created = await tx.paperRoll.create({
@@ -349,13 +357,21 @@ async function main() {
             id = here.id;
             const changed = changedFields(here, data);
             if (changedHere(here)) {
-              frozen = true;
+              frozenWhy = "reel changed in this app";
               if (changed.length > 0) {
                 count("reels changed here, left");
                 lines.push(
                   `reel ${here.numero ?? legacyKey}: changed in this app, old app's ${changed.join(", ")} not applied`,
                 );
               }
+            } else if (here.archived && !data.archived && oldAppParents.has(legacyKey)) {
+              // The old app put a split reel back in stock while its pieces
+              // are still in stock too (8201007, 12 Oct): the same paper
+              // twice. The pieces are the stock; the reel stays archived
+              // here (user, 2026-10-12).
+              frozenWhy = "split reel the old app put back in stock, kept archived here";
+              count("split reels put back in stock by the old app, left archived");
+              lines.push(`reel ${here.numero ?? legacyKey}: split, but back in stock in the old app — left archived`);
             } else if (changed.length > 0) {
               await tx.paperRoll.update({ where: { id }, data: { ...data, ...synced }, select: { id: true } });
               count("reels updated");
@@ -363,11 +379,13 @@ async function main() {
             }
           }
 
+          const frozen = frozenWhy !== null;
           const current = frozen && here ? here : data;
           reels.set(legacyKey, {
             id,
             numero: current.numero,
             frozen,
+            frozenWhy,
             live: !current.consomme && !current.archived && (here ? here.receivedAt !== null : true),
             disponible: frozen && here ? here.disponible : etlDisponible(row),
             metrageRestant: current.metrageRestant,
@@ -430,6 +448,7 @@ async function main() {
          * its warehouse archives a reel when it is used up and leaves the
          * reservation on it open, so RESERVED on a reel archived with a
          * consumption date is CONSUMED, on that date. `poids` stays the kg.
+         * Applies to the first import's open rows too (user, same day).
          */
         const oldAppState = (row: Row, reel: Reel | undefined) => {
           const state = String(row.etat);
@@ -447,9 +466,6 @@ async function main() {
           const old = oldAppState(row, reel);
           const state = old.state as AllocationState;
           if (here.state === state) continue;
-          // The used-up reading moves only rows this sync made in metres: the
-          // first import's open rows by weight stay as they were imported.
-          if (old.readAsUsed && here.metrageReserve === null) continue;
           if (here.state !== "RESERVED") {
             count("allocations settled here, left");
             lines.push(`allocation ${label(row)}: ${here.state} here, ${state} in the old app — left`);
@@ -540,7 +556,7 @@ async function main() {
           const byWeightBecause = !RESERVABLE_ORDER_STATUSES.has(order.status) || order.kind !== "ORDER" || !order.active
             ? `order is ${order.kind === "ORDER" ? order.status : order.kind}${order.active ? "" : " (archived)"} here`
             : reel.frozen
-              ? "reel changed in this app"
+              ? (reel.frozenWhy ?? "reel changed in this app")
               : !reel.live
                 ? "reel used up or archived"
                 : metres === null
