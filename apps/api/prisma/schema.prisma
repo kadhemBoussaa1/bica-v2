@@ -1383,6 +1383,12 @@ model PaperRoll {
 
   /// Legacy bigint primary key — see Client.legacyId.
   legacyId BigInt? @unique
+  /// When `sync-paper` last wrote this reel from the old app. A reel whose
+  /// `updatedAt` is later than this was changed here since (received, cut,
+  /// reserved, edited), so the next sync leaves it alone and reports it —
+  /// the old app never overwrites work done in this app. Null on a reel made
+  /// here, and on an imported reel already changed here when the column came.
+  legacySyncedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1602,6 +1608,10 @@ model RollAllocation {
 
   /// Legacy bigint primary key — see Client.legacyId.
   legacyId BigInt? @unique
+  /// When `sync-paper` last wrote this allocation — the same rule as
+  /// `PaperRoll.legacySyncedAt`: once consumed or cancelled here, the old
+  /// app's state no longer reaches it.
+  legacySyncedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

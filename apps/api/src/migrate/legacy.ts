@@ -155,6 +155,21 @@ export function jobTitle(raw: unknown): string | null {
   return value === key ? titleCase(value) : value;
 }
 
+/** Ignores spacing and case, so "PERE VALLS" matches "PEREVALLS". */
+export function normaliseSupplierName(name: string): string {
+  return name.replace(/\s+/g, "").toUpperCase();
+}
+
+/**
+ * Legacy supplier names that no normalisation rule reaches. Turkish "ve" is
+ * "and", and the supplier row carries neither that nor the "SA" suffix, so
+ * this one pair is spelled out rather than guessed at. Mirrors the mapping in
+ * 20260903132927_shipment_supplier_required.
+ */
+export const SUPPLIER_NAME_ALIASES = new Map<string, string>([
+  [normaliseSupplierName("DURU SELULOZ VE KAGIT SA"), normaliseSupplierName("DURU SELULOZ & KAGIT")],
+]);
+
 /**
  * The legacy connection string. Kept separate from DATABASE_URL so a mistyped
  * env var can never point the importer at the new database and read itself.

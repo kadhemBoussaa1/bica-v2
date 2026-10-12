@@ -32,7 +32,13 @@ import type {
   PaperType as PrismaPaperType,
   ProductionUnit as PrismaProductionUnit,
 } from "../generated/prisma/enums.js";
-import { legacyDate, legacyPool, text } from "./legacy.js";
+import {
+  legacyDate,
+  legacyPool,
+  normaliseSupplierName,
+  SUPPLIER_NAME_ALIASES,
+  text,
+} from "./legacy.js";
 
 function num(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -94,21 +100,6 @@ function enumValue<T extends string>(
 const PRODUCTION_UNITS = ["PIECE", "METER"] as const;
 /** Legacy enum `EtatAllocation`. CANCELED keeps the legacy single-L spelling. */
 const ALLOCATION_STATES = ["RESERVED", "CONSUMED", "CANCELED"] as const;
-
-/** Ignores spacing and case, so "PERE VALLS" matches "PEREVALLS". */
-function normaliseSupplierName(name: string): string {
-  return name.replace(/\s+/g, "").toUpperCase();
-}
-
-/**
- * Legacy supplier names that no normalisation rule reaches. Turkish "ve" is
- * "and", and the supplier row carries neither that nor the "SA" suffix, so
- * this one pair is spelled out rather than guessed at. Mirrors the mapping in
- * 20260903132927_shipment_supplier_required.
- */
-const SUPPLIER_NAME_ALIASES = new Map<string, string>([
-  [normaliseSupplierName("DURU SELULOZ VE KAGIT SA"), normaliseSupplierName("DURU SELULOZ & KAGIT")],
-]);
 
 /**
  * Legacy id -> new cuid, for each table orders/rolls/production point at.
