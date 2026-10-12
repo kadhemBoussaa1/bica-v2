@@ -442,6 +442,10 @@ export const ROLL_LABEL_SELECT = {
   paperGrade: true,
   grammage: true,
   laize: true,
+  // As delivered, never the `…Restant` figures: a sticker outlives every cut,
+  // so a printed remaining amount would be wrong after the first run.
+  poids: true,
+  metrage: true,
   importShipment: {
     select: { numeroImport: true, supplier: { select: { name: true } } },
   },

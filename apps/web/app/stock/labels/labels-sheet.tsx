@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { rollScanUrl } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { EmptyState } from "@repo/ui/empty-state";
+import { numberFormat } from "../../../i18n/formats";
 import { useTRPC } from "../../trpc/client";
 import { labelOrigin } from "./label-origin";
 import records from "../../records/records.module.css";
@@ -16,7 +17,7 @@ import styles from "./labels.module.css";
  *
  * The QR encodes the reel id and nothing else — a URL, so a phone camera
  * opens the reel without the app being involved, and short enough to stay
- * readable at error-correction level M on a 52 mm square. Everything else on
+ * readable at error-correction level M on a 48 mm square. Everything else on
  * the label is for a human holding a reel whose code will not scan, which is
  * also why the full id is printed in the corner.
  */
@@ -76,6 +77,15 @@ export function LabelsSheet({
           ]
             .filter(Boolean)
             .join(" · ");
+          // What the reel weighed and measured on arrival — see ROLL_LABEL_SELECT.
+          const figures = [
+            roll.poids === null ? null : `${numberFormat({ maximumFractionDigits: 1 }).format(roll.poids)} kg`,
+            roll.metrage === null
+              ? null
+              : `${numberFormat({ maximumFractionDigits: 0 }).format(roll.metrage)} m`,
+          ]
+            .filter(Boolean)
+            .join(" · ");
           const provenance = [
             roll.importShipment?.numeroImport,
             roll.importShipment?.supplier.name,
@@ -87,11 +97,17 @@ export function LabelsSheet({
             <article key={roll.id} className={styles.label}>
               <span className={styles.numero}>{roll.numero ?? "—"}</span>
               <span className={styles.qr}>
-                <QRCodeSVG value={rollScanUrl(origin, roll.id)} level="M" size={196} />
+                <QRCodeSVG value={rollScanUrl(origin, roll.id)} level="M" size={180} />
               </span>
               <span>
                 <span className={styles.spec}>{spec}</span>
                 <br />
+                {figures && (
+                  <>
+                    <span className={styles.figures}>{figures}</span>
+                    <br />
+                  </>
+                )}
                 <span className={styles.provenance}>{provenance}</span>
                 <br />
                 <span className={styles.id}>{roll.id}</span>

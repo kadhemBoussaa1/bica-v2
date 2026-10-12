@@ -60,6 +60,14 @@
   line-height: 1.35;
 }
 
+/* Weight and length: what a forklift driver reads first, so set heavier. */
+.figures {
+  font-size: 4.4mm;
+  font-weight: 700;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
 .provenance {
   font-size: 3.4mm;
   color: #333;
