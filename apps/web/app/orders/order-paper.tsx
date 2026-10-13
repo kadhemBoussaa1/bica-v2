@@ -16,6 +16,7 @@ import { useTRPC } from "../trpc/client";
 import records from "../records/records.module.css";
 import styles from "./order-detail.module.css";
 import { dateFormat } from "../../i18n/formats";
+import { decimal } from "../records/decimal";
 
 type Paper = inferRouterOutputs<AppRouter>["allocation"]["forOrder"];
 type Allocation = Paper["allocations"][number];
@@ -111,11 +112,11 @@ export function OrderPaper({
     if (!consuming) return;
     setError(null);
     const trimmed = metresUsed.trim();
-    if (trimmed === "" || Number.isNaN(Number(trimmed))) {
+    if (trimmed === "" || Number.isNaN(decimal(trimmed))) {
       setError(t("paper.mustBeNumber"));
       return;
     }
-    consume.mutate({ id: consuming.id, metresUsed: Number(trimmed) });
+    consume.mutate({ id: consuming.id, metresUsed: decimal(trimmed) });
   }
 
   return (

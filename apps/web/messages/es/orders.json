@@ -139,9 +139,9 @@
     "baseAdhesivePerUnit": "Adhesivo del fondo / unidad",
     "kilosPerParcel": "Kilos / bulto",
     "piecesPerParcel": "Piezas / bulto",
-    "parcelPrice": "Precio del bulto",
-    "transportPerParcel": "Transporte / bulto",
-    "transport": "Transporte",
+    "parcelPrice": "Precio del cartón",
+    "transportPerParcel": "Coste de transporte",
+    "transport": "Coste de transporte",
     "paperNeeded": "Papel necesario",
     "paperReserved": "Papel reservado",
     "paperUsed": "Papel utilizado",
@@ -155,7 +155,9 @@
     "parcelBase": "Bulto, base",
     "parcelFinal": "Bulto, final",
     "parcels": "Bultos",
-    "total": "Total"
+    "total": "Total",
+    "gluePrice": "Precio",
+    "glueWeight": "Cantidad por unidad"
   },
   "form": {
     "sectionOrder": "Pedido",

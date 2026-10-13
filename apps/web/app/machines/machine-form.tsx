@@ -17,6 +17,7 @@ import { FileLink } from "@repo/ui/file-link";
 import { Thumbnail } from "@repo/ui/thumbnail";
 import { useTRPC } from "../trpc/client";
 import styles from "../records/records.module.css";
+import { decimal } from "../records/decimal";
 
 export interface MachineFormValues {
   id: string;
@@ -143,15 +144,15 @@ export function MachineForm({
     for (const [key, value] of Object.entries(caps)) {
       const trimmed = value.trim();
       if (trimmed === "") continue;
-      if (Number.isNaN(Number(trimmed))) {
+      if (Number.isNaN(decimal(trimmed))) {
         setError(t("form.mustBeNumber", { field: t(`measures.${key}`) }));
         return;
       }
-      numbers[key] = Number(trimmed);
+      numbers[key] = decimal(trimmed);
     }
 
     const trimmedPrice = price.trim();
-    if (trimmedPrice !== "" && Number.isNaN(Number(trimmedPrice))) {
+    if (trimmedPrice !== "" && Number.isNaN(decimal(trimmedPrice))) {
       setError(t("form.priceMustBeNumber"));
       return;
     }
@@ -161,7 +162,7 @@ export function MachineForm({
       name,
       type: type === "" ? undefined : type,
       brand,
-      price: trimmedPrice === "" ? undefined : Number(trimmedPrice),
+      price: trimmedPrice === "" ? undefined : decimal(trimmedPrice),
       purchaseDate,
       imageUrl,
       invoiceUrl,

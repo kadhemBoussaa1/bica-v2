@@ -13,6 +13,7 @@ import { useTRPC } from "../trpc/client";
 import { invalidateRollQueries } from "./roll-queries";
 import styles from "../records/records.module.css";
 import { numberFormat } from "../../i18n/formats";
+import { decimal } from "../records/decimal";
 
 const metresFmt = () => numberFormat({ maximumFractionDigits: 2 });
 
@@ -73,11 +74,11 @@ export function RollCutForm({
     event.preventDefault();
     setError(null);
     const trimmed = metres.trim();
-    if (trimmed === "" || Number.isNaN(Number(trimmed))) {
+    if (trimmed === "" || Number.isNaN(decimal(trimmed))) {
       setError(t("mustBeNumber", { label: t("rolls.cut.metres") }));
       return;
     }
-    const parsed = cutRollInput.safeParse({ rollId, metres: Number(trimmed) });
+    const parsed = cutRollInput.safeParse({ rollId, metres: decimal(trimmed) });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? common("checkForm"));
       return;

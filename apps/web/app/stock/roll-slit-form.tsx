@@ -14,6 +14,7 @@ import { useTRPC } from "../trpc/client";
 import { invalidateRollQueries } from "./roll-queries";
 import styles from "../records/records.module.css";
 import { numberFormat } from "../../i18n/formats";
+import { decimal } from "../records/decimal";
 
 type Roll = inferRouterOutputs<AppRouter>["stock"]["rollById"];
 
@@ -88,7 +89,7 @@ function SlitFields({
     }),
   );
 
-  const numbers = widths.map((w) => (w.trim() === "" ? 0 : Number(w)));
+  const numbers = widths.map((w) => (w.trim() === "" ? 0 : decimal(w)));
   const sum = numbers.reduce((total, n) => total + (Number.isFinite(n) ? n : 0), 0);
   const trim = laize === null ? null : laize - sum;
   const name = roll.numero ?? t("rolls.detail.thisReel");
@@ -100,7 +101,7 @@ function SlitFields({
     event.preventDefault();
     setError(null);
     for (const [index, w] of widths.entries()) {
-      if (w.trim() === "" || Number.isNaN(Number(w))) {
+      if (w.trim() === "" || Number.isNaN(decimal(w))) {
         setError(t("mustBeNumber", { label: t("rolls.slit.width", { n: index + 1 }) }));
         return;
       }
@@ -111,7 +112,7 @@ function SlitFields({
     }
     const parsed = slitRollInput.safeParse({
       rollId: roll.id,
-      widthsMm: widths.map((w) => Number(w)),
+      widthsMm: widths.map((w) => decimal(w)),
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? common("checkForm"));

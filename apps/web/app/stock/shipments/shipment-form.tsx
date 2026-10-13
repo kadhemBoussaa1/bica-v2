@@ -12,6 +12,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import { useTRPC } from "../../trpc/client";
 import styles from "../../records/records.module.css";
+import { decimal } from "../../records/decimal";
 
 /**
  * What the form seeds from.
@@ -117,7 +118,7 @@ export function ShipmentForm({
     const num = (label: string, value: string): number | undefined => {
       const trimmed = value.trim();
       if (trimmed === "") return undefined;
-      const parsed = Number(trimmed);
+      const parsed = decimal(trimmed);
       if (Number.isNaN(parsed)) throw new Error(t("mustBeNumber", { label }));
       return parsed;
     };

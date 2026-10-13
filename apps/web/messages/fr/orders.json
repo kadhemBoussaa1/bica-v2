@@ -139,9 +139,9 @@
     "baseAdhesivePerUnit": "Colle de fond / unité",
     "kilosPerParcel": "Kilos / colis",
     "piecesPerParcel": "Pièces / colis",
-    "parcelPrice": "Prix du colis",
-    "transportPerParcel": "Transport / colis",
-    "transport": "Transport",
+    "parcelPrice": "Prix du carton",
+    "transportPerParcel": "Coût transport",
+    "transport": "Coût transport",
     "paperNeeded": "Papier nécessaire",
     "paperReserved": "Papier réservé",
     "paperUsed": "Papier utilisé",
@@ -155,7 +155,9 @@
     "parcelBase": "Colis, base",
     "parcelFinal": "Colis, final",
     "parcels": "Colis",
-    "total": "Total"
+    "total": "Total",
+    "gluePrice": "Prix",
+    "glueWeight": "Quantité par unité"
   },
   "form": {
     "sectionOrder": "Commande",

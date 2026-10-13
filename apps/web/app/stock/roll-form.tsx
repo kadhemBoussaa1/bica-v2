@@ -13,6 +13,7 @@ import type { AppRouter } from "api/src/trpc/trpc.router";
 import { useTRPC } from "../trpc/client";
 import { rollMoney } from "./roll-queries";
 import styles from "../records/records.module.css";
+import { decimal } from "../records/decimal";
 
 export type RollFormValues = inferRouterOutputs<AppRouter>["stock"]["rollById"];
 
@@ -125,7 +126,7 @@ export function RollForm({
     const num = (label: string, value: string): number | undefined => {
       const trimmed = value.trim();
       if (trimmed === "") return undefined;
-      const parsed = Number(trimmed);
+      const parsed = decimal(trimmed);
       if (Number.isNaN(parsed)) throw new Error(t("mustBeNumber", { label }));
       return parsed;
     };
@@ -163,11 +164,11 @@ export function RollForm({
           : {
               poidsRestant: (() => {
                 const t = poidsRestant.trim();
-                return t === "" ? undefined : Number(t);
+                return t === "" ? undefined : decimal(t);
               })(),
               metrageRestant: (() => {
                 const t = metrageRestant.trim();
-                return t === "" ? undefined : Number(t);
+                return t === "" ? undefined : decimal(t);
               })(),
             }),
       });

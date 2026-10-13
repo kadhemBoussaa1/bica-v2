@@ -13,6 +13,7 @@ import { Button } from "@repo/ui/button";
 import { SelectField, TextField } from "@repo/ui/field";
 import { useTRPC } from "../trpc/client";
 import styles from "../records/records.module.css";
+import { decimal } from "../records/decimal";
 
 /** Today as YYYY-MM-DD in local time — `toISOString` would shift the date near midnight. */
 function today(): string {
@@ -184,11 +185,11 @@ export function RunForm({
     for (const field of STAGE_FIELDS[stage]) {
       const raw = (values[field.key] ?? "").trim();
       if (raw === "") continue;
-      if (Number.isNaN(Number(raw))) {
+      if (Number.isNaN(decimal(raw))) {
         setError(t("mustBeNumber", { field: t(field.labelKey) }));
         return;
       }
-      payload[field.key] = Number(raw);
+      payload[field.key] = decimal(raw);
     }
 
     const parsed = createProductionRunInput.safeParse(payload);

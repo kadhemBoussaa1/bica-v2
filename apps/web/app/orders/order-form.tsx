@@ -21,6 +21,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import { ProductSpecFields } from "../products/product-spec-fields";
 import { useTRPC } from "../trpc/client";
+import { decimal } from "../records/decimal";
 import styles from "../records/records.module.css";
 import orderStyles from "./orders.module.css";
 import { bagSize } from "../products/bag-size";
@@ -284,7 +285,7 @@ export function OrderForm({
     ) {
       return null;
     }
-    const num = (v: string) => (v.trim() === "" ? null : Number(v));
+    const num = (v: string) => (v.trim() === "" ? null : decimal(v));
     const width = num(newWidthCm);
     const length = num(newLengthCm);
     const grammage = num(newGrammage);
@@ -321,7 +322,7 @@ export function OrderForm({
     // declare, whereas `nums` is the actual reactive value it needs.
     const num = (key: (typeof NUM_KEYS)[number]) => {
       const trimmed = nums[key].trim();
-      return trimmed === "" ? undefined : Number(trimmed);
+      return trimmed === "" ? undefined : decimal(trimmed);
     };
     const line = (
       kiloKey: (typeof NUM_KEYS)[number],
@@ -370,16 +371,36 @@ export function OrderForm({
     event.preventDefault();
     setError(null);
 
-    // Parse every numeric field once, naming the first bad key.
+    // What each key is called on screen, for the error below. The glue
+    // fields use their long names: in the form they sit under a heading
+    // that says which glue they are, but a message has no heading.
+    const fieldLabel: Record<(typeof NUM_KEYS)[number], string> = {
+      quantite: t("form.quantity"),
+      paperKiloPrice: t("pricing.paperPrice"),
+      profitMarginPct: t("pricing.profitMargin"),
+      lossMarginPct: t("pricing.lossMargin"),
+      handleGlueKiloPrice: t("pricing.handleGluePrice"),
+      handleGlueWeightG: t("pricing.handleGluePerUnit"),
+      sideGlueKiloPrice: t("pricing.sideGluePrice"),
+      sideGlueWeightG: t("pricing.sideGluePerUnit"),
+      baseAdhesiveKiloPrice: t("pricing.baseAdhesivePrice"),
+      baseAdhesiveWeightG: t("pricing.baseAdhesivePerUnit"),
+      piecesPerParcel: t("pricing.piecesPerParcel"),
+      kilosPerParcel: t("pricing.kilosPerParcel"),
+      parcelPrice: t("pricing.parcelPrice"),
+      transportCost: t("pricing.transportPerParcel"),
+    };
+
+    // Parse every numeric field once, naming the first bad one.
     const parsed: Partial<Record<(typeof NUM_KEYS)[number], number>> = {};
     for (const key of NUM_KEYS) {
       const trimmed = n(key).trim();
       if (trimmed === "") continue;
-      if (Number.isNaN(Number(trimmed))) {
-        setError(t("form.mustBeNumber", { field: key }));
+      if (Number.isNaN(decimal(trimmed))) {
+        setError(t("form.mustBeNumber", { field: fieldLabel[key] }));
         return;
       }
-      parsed[key] = Number(trimmed);
+      parsed[key] = decimal(trimmed);
     }
 
     if (productMode === "existing" && existingProductId === "") {
@@ -414,27 +435,27 @@ export function OrderForm({
               clientId: clientId === "" ? undefined : clientId,
               typeSac: newTypeSac === "" ? undefined : newTypeSac,
               widthCm:
-                newWidthCm.trim() === "" ? undefined : Number(newWidthCm),
+                newWidthCm.trim() === "" ? undefined : decimal(newWidthCm),
               lengthCm:
-                newLengthCm.trim() === "" ? undefined : Number(newLengthCm),
+                newLengthCm.trim() === "" ? undefined : decimal(newLengthCm),
               gussetCm:
-                newGussetCm.trim() === "" ? undefined : Number(newGussetCm),
+                newGussetCm.trim() === "" ? undefined : decimal(newGussetCm),
               pleatWidthCm:
                 newPleatWidthCm.trim() === ""
                   ? undefined
-                  : Number(newPleatWidthCm),
+                  : decimal(newPleatWidthCm),
               pleatLengthCm:
                 newPleatLengthCm.trim() === ""
                   ? undefined
-                  : Number(newPleatLengthCm),
+                  : decimal(newPleatLengthCm),
               grammage:
-                newGrammage.trim() === "" ? undefined : Number(newGrammage),
+                newGrammage.trim() === "" ? undefined : decimal(newGrammage),
               paperType: newPaperType === "" ? undefined : newPaperType,
               hasHandle: newHasHandle,
               handleWeightG:
                 newHandleWeightG.trim() === ""
                   ? undefined
-                  : Number(newHandleWeightG),
+                  : decimal(newHandleWeightG),
             },
       quantite: parsed.quantite ?? 0,
       paperKiloPrice: parsed.paperKiloPrice,
@@ -497,6 +518,18 @@ export function OrderForm({
     />
   );
 
+  const glue = (
+    name: string,
+    kiloKey: (typeof NUM_KEYS)[number],
+    weightKey: (typeof NUM_KEYS)[number],
+  ) => (
+    <fieldset className={orderStyles.glueGroup}>
+      <legend className={orderStyles.glueName}>{name}</legend>
+      {money$(kiloKey, t("pricing.gluePrice"), "/kg")}
+      {money$(weightKey, t("pricing.glueWeight"), "g")}
+    </fieldset>
+  );
+
   const section = (title: string, hint?: ReactNode) => (
     <>
       <span className={styles.formSection}>{title}</span>
@@ -524,7 +557,7 @@ export function OrderForm({
    * is what turns the offending fields red. Arriving at a step fresh never
    * shows errors for fields nobody has filled in yet.
    */
-  const stepQuantity = Number(n("quantite").trim());
+  const stepQuantity = decimal(n("quantite").trim());
   const stepValid: Record<1 | 2 | 3, boolean> = {
     1:
       clientId !== "" &&
@@ -535,7 +568,7 @@ export function OrderForm({
     // product needs a pick, a new one needs enough spec to price — which is
     // exactly what `liveSpec` already means.
     2: productMode === "existing" ? existingProductId !== "" : liveSpec !== null,
-    3: liveSpec !== null && Number(n("paperKiloPrice").trim()) > 0,
+    3: liveSpec !== null && decimal(n("paperKiloPrice").trim()) > 0,
   };
 
   /*
@@ -548,7 +581,7 @@ export function OrderForm({
   if (market === "") missing.push(t("form.needMarket"));
   if (!(stepQuantity > 0)) missing.push(t("form.needQuantity"));
   if (!stepValid[2]) missing.push(t("form.needProduct"));
-  if (!(Number(n("paperKiloPrice").trim()) > 0)) missing.push(t("form.needPaperPrice"));
+  if (!(decimal(n("paperKiloPrice").trim()) > 0)) missing.push(t("form.needPaperPrice"));
 
   /*
    * Selling at or below cost. The handoff warns when the profit margin does
@@ -560,8 +593,8 @@ export function OrderForm({
    * Only once both are actually entered: two empty fields are 0 and 0, which
    * is not a margin mistake, just an unfilled form.
    */
-  const profitPct = Number(n("profitMarginPct").trim());
-  const lossPct = Number(n("lossMarginPct").trim());
+  const profitPct = decimal(n("profitMarginPct").trim());
+  const lossPct = decimal(n("lossMarginPct").trim());
   const marginWarning =
     n("profitMarginPct").trim() !== "" &&
     Number.isFinite(profitPct) &&
@@ -885,22 +918,18 @@ export function OrderForm({
             "paperKiloPrice",
             t("pricing.paperPrice"),
             "/kg",
-            touched && !(Number(n("paperKiloPrice").trim()) > 0)
+            touched && !(decimal(n("paperKiloPrice").trim()) > 0)
               ? t("form.needPaperPriceError")
               : undefined,
           )}
           {money$("profitMarginPct", t("pricing.profitMargin"), "%")}
           {money$("lossMarginPct", t("pricing.lossMargin"), "%")}
-          {(!liveSpec || liveSpec.hasHandle) && (
-            <>
-              {money$("handleGlueKiloPrice", t("pricing.handleGluePrice"), "/kg")}
-              {money$("handleGlueWeightG", t("pricing.handleGluePerUnit"), "g")}
-            </>
-          )}
-          {money$("sideGlueKiloPrice", t("pricing.sideGluePrice"), "/kg")}
-          {money$("sideGlueWeightG", t("pricing.sideGluePerUnit"), "g")}
-          {money$("baseAdhesiveKiloPrice", t("pricing.baseAdhesivePrice"), "/kg")}
-          {money$("baseAdhesiveWeightG", t("pricing.baseAdhesivePerUnit"), "g")}
+          {/* One group per glue, named once in its legend, so each field
+              only says what it is: a price per kg, or grams per bag. */}
+          {(!liveSpec || liveSpec.hasHandle) &&
+            glue(t("pricing.handleGlue"), "handleGlueKiloPrice", "handleGlueWeightG")}
+          {glue(t("pricing.sideGlue"), "sideGlueKiloPrice", "sideGlueWeightG")}
+          {glue(t("pricing.baseAdhesive"), "baseAdhesiveKiloPrice", "baseAdhesiveWeightG")}
           {initial?.legacyGlueCostPerUnit != null && (
             <p
               className={[styles.hint, styles.formWide]

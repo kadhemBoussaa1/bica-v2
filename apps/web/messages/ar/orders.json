@@ -139,9 +139,9 @@
     "baseAdhesivePerUnit": "غراء القاع / وحدة",
     "kilosPerParcel": "كيلوغرام / طرد",
     "piecesPerParcel": "قطع / طرد",
-    "parcelPrice": "سعر الطرد",
-    "transportPerParcel": "النقل / طرد",
-    "transport": "النقل",
+    "parcelPrice": "سعر الكرتون",
+    "transportPerParcel": "تكلفة النقل",
+    "transport": "تكلفة النقل",
     "paperNeeded": "الورق المطلوب",
     "paperReserved": "الورق المحجوز",
     "paperUsed": "الورق المستخدم",
@@ -155,7 +155,9 @@
     "parcelBase": "الطرد، الأساسي",
     "parcelFinal": "الطرد، النهائي",
     "parcels": "الطرود",
-    "total": "الإجمالي"
+    "total": "الإجمالي",
+    "gluePrice": "السعر",
+    "glueWeight": "الكمية لكل وحدة"
   },
   "form": {
     "sectionOrder": "الطلبية",

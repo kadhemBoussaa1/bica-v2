@@ -15,6 +15,7 @@ import { ProductImageUpload } from "./product-image-upload";
 import { ProductSpecFields } from "./product-spec-fields";
 import productStyles from "./products.module.css";
 import styles from "../records/records.module.css";
+import { decimal } from "../records/decimal";
 
 export type ProductFormValues = inferRouterOutputs<AppRouter>["product"]["byId"];
 
@@ -92,7 +93,7 @@ export function ProductForm({
     const num = (label: string, value: string): number | undefined => {
       const trimmed = value.trim();
       if (trimmed === "") return undefined;
-      const parsed = Number(trimmed);
+      const parsed = decimal(trimmed);
       if (Number.isNaN(parsed)) throw new Error(t("form.mustBeNumber", { field: label }));
       return parsed;
     };

@@ -24,6 +24,7 @@ import { useTRPC } from "../trpc/client";
 import records from "../records/records.module.css";
 import styles from "./order-detail.module.css";
 import { dateFormat, numberFormat } from "../../i18n/formats";
+import { decimal } from "../records/decimal";
 
 type OrderInk = inferRouterOutputs<AppRouter>["ink"]["forOrder"][number];
 type Usage = OrderInk["usages"][number];
@@ -451,11 +452,11 @@ function InkUsageForm({
     event.preventDefault();
     setError(null);
     const trimmed = quantity.trim();
-    if (trimmed === "" || Number.isNaN(Number(trimmed))) {
+    if (trimmed === "" || Number.isNaN(decimal(trimmed))) {
       setError(t("inks.quantityMustBeNumber"));
       return;
     }
-    const base = { quantity: Number(trimmed), usedAt, note };
+    const base = { quantity: decimal(trimmed), usedAt, note };
     if (initial) {
       const parsed = updateInkUsageInput.safeParse({ id: initial.id, ...base });
       if (!parsed.success) {

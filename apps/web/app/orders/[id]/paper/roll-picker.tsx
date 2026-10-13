@@ -18,6 +18,7 @@ import { invalidateRollQueries } from "../../../stock/roll-queries";
 import { useTRPC } from "../../../trpc/client";
 import records from "../../../records/records.module.css";
 import styles from "../../order-detail.module.css";
+import { decimal } from "../../../records/decimal";
 
 type Candidate = inferRouterOutputs<AppRouter>["allocation"]["candidates"]["rows"][number];
 
@@ -326,14 +327,14 @@ function ReserveForm({
     event.preventDefault();
     setError(null);
     const trimmed = metres.trim();
-    if (trimmed === "" || Number.isNaN(Number(trimmed))) {
+    if (trimmed === "" || Number.isNaN(decimal(trimmed))) {
       setError(t("paper.mustBeNumber"));
       return;
     }
     const parsed = reserveRollInput.safeParse({
       orderId,
       rollId: row.id,
-      metres: Number(trimmed),
+      metres: decimal(trimmed),
       dateAllocation,
     });
     if (!parsed.success) {

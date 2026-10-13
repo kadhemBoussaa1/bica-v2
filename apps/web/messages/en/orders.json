@@ -139,9 +139,9 @@
     "baseAdhesivePerUnit": "Base adhesive / unit",
     "kilosPerParcel": "Kilos / parcel",
     "piecesPerParcel": "Pieces / parcel",
-    "parcelPrice": "Parcel price",
-    "transportPerParcel": "Transport / parcel",
-    "transport": "Transport",
+    "parcelPrice": "Carton price",
+    "transportPerParcel": "Transport cost",
+    "transport": "Transport cost",
     "paperNeeded": "Paper needed",
     "paperReserved": "Paper reserved",
     "paperUsed": "Paper used",
@@ -155,7 +155,9 @@
     "parcelBase": "Parcel, base",
     "parcelFinal": "Parcel, final",
     "parcels": "Parcels",
-    "total": "Total"
+    "total": "Total",
+    "gluePrice": "Price",
+    "glueWeight": "Amount per unit"
   },
   "form": {
     "sectionOrder": "Order",

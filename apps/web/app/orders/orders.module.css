@@ -361,3 +361,25 @@
 .stepPanel[hidden] {
   display: none;
 }
+
+/*
+ * One glue on the pricing step: its name, then its price and its weight per
+ * bag stacked under it. Each group takes one column of the form grid, so the
+ * three glues read side by side and the field labels need not repeat the name.
+ */
+.glueGroup {
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--bp-space-4);
+  border: 1px solid var(--bp-hairline-soft);
+  border-radius: var(--bp-radius-block);
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+.glueName {
+  padding: 0;
+  font: 600 0.75rem/1.2 var(--bp-font-display);
+  color: var(--bp-ink);
+}
