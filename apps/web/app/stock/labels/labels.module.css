@@ -1,5 +1,5 @@
 /*
- * Reel labels, 10 × 10 cm self-adhesive, one per sheet.
+ * Reel labels, 10 × 5 cm self-adhesive, one per sheet.
  *
  * Sized in millimetres throughout: this is the rare page whose output is
  * physical, and a label printed at 96 mm does not sit on a 100 mm sheet.
@@ -26,66 +26,195 @@
   gap: var(--bp-space-4);
 }
 
-/* One physical label. */
+/*
+ * One physical label, 100 × 50 mm: the "Roll Label" 1b handoff. Pure black
+ * on white — a thermal printer prints nothing else, so no grey and no
+ * orange. Type sizes are the handoff's points converted to mm (1pt ≈ 0.353mm).
+ * Sides are logical, so the sticker mirrors when printed in Arabic.
+ */
 .label {
   inline-size: 100mm;
-  block-size: 100mm;
-  padding: 6mm;
+  block-size: 50mm;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 2mm;
+  grid-template-columns: 44mm 1fr;
+  overflow: hidden;
   box-sizing: border-box;
   background: #fff;
   color: #000;
   /* On screen only — the printed sheet has no border of its own. */
-  border: 1px solid var(--bp-tint-strong);
-  border-radius: var(--bp-radius-block);
+  outline: 1px solid var(--bp-tint-strong);
 }
 
-.numero {
-  font-family: var(--bp-font-mono);
-  font-size: 8mm;
-  font-weight: 700;
-  line-height: 1.1;
-  word-break: break-all;
+.qrColumn {
+  min-inline-size: 0;
+  padding: 3mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  border-inline-end: 0.4mm solid #000;
 }
 
 .qr {
-  display: grid;
-  place-items: center;
-}
-
-.spec {
-  font-size: 4mm;
-  line-height: 1.35;
-}
-
-/* What is left on the reel: what a forklift driver reads first. */
-.figures {
-  font-size: 4.4mm;
-  font-weight: 700;
-  line-height: 1.35;
-  font-variant-numeric: tabular-nums;
-}
-
-/* The reel's size on arrival, under the remaining figures once it was cut. */
-.initial {
-  font-size: 3.4mm;
-  color: #333;
-  font-variant-numeric: tabular-nums;
-}
-
-.provenance {
-  font-size: 3.4mm;
-  color: #333;
+  inline-size: 36mm;
+  block-size: 36mm;
+  display: block;
 }
 
 /* The id in full: the fallback when the QR is scuffed past reading. */
 .id {
+  max-inline-size: 38mm;
+  overflow: hidden;
+  white-space: nowrap;
   font-family: var(--bp-font-mono);
-  font-size: 2.6mm;
-  color: #666;
-  word-break: break-all;
+  font-size: 1.76mm;
+  line-height: 1;
+}
+
+.body {
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.head {
+  background: #000;
+  color: #fff;
+  padding: 2.2mm 3mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2mm;
+  /* A thermal head prints the black band only if the browser sends it. */
+  print-color-adjust: exact;
+}
+
+.numero {
+  min-inline-size: 0;
+  font-family: var(--bp-font-mono);
+  font-size: 6.7mm;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+/* Child reels run to "20250203124620/10": step down before they overflow. */
+.numeroLong {
+  font-size: 5mm;
+}
+
+.numeroLonger {
+  font-size: 3.2mm;
+}
+
+/* …and the grade beside it steps down with them, so both stay whole. */
+.numeroLonger + .grade {
+  font-size: 3mm;
+}
+
+/* The legacy grade code ("KRP-80", "5."), not a sequence number. */
+.grade {
+  flex-shrink: 1;
+  min-inline-size: 0;
+  max-inline-size: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--bp-font-mono);
+  font-size: 3.9mm;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.spec {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-block-end: 0.3mm solid #000;
+}
+
+.cell {
+  padding: 1.8mm 3mm;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8mm;
+}
+
+.cell + .cell {
+  border-inline-start: 0.3mm solid #000;
+}
+
+.key {
+  font-family: var(--bp-font-mono);
+  font-size: 1.95mm;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Tracking pulls Arabic letters apart and breaks their joins. */
+:global([dir="rtl"]) .key {
+  letter-spacing: 0;
+}
+
+.specValue {
+  font-family: var(--bp-font-display);
+  font-size: 4.6mm;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.remaining {
+  flex: 1;
+  padding: 1.8mm 3mm;
+  display: flex;
+  flex-direction: column;
+  gap: 1mm;
+}
+
+.figures {
+  font-family: var(--bp-font-mono);
+  font-size: 3.9mm;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.initial {
+  font-family: var(--bp-font-mono);
+  font-size: 2.1mm;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.origin {
+  padding: 1.5mm 3mm;
+  border-block-start: 0.3mm solid #000;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2mm;
+}
+
+.supplier {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--bp-font-display);
+  font-size: 2.8mm;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.shipment {
+  flex-shrink: 0;
+  font-family: var(--bp-font-mono);
+  font-size: 2.3mm;
+  font-weight: 600;
+  line-height: 1;
 }
 
 @media print {
@@ -99,8 +228,7 @@
   }
 
   .label {
-    border: none;
-    border-radius: 0;
+    outline: none;
     /* One label per sheet, as the stock is die-cut. */
     break-after: page;
   }

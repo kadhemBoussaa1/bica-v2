@@ -102,8 +102,8 @@ body::after {
  * Print: the reel labels are the only page meant for paper.
  *
  * The app's chrome and its three blurred glows exist to make glass surfaces
- * read on screen; on a 10 x 10 cm die-cut sheet they are ink on a label that
- * has 6 mm of margin to spare. The shell's sidebar padding goes too, or every
+ * read on screen; on a 10 x 5 cm die-cut sheet they are ink on a label that
+ * has 3 mm of margin to spare. The shell's sidebar padding goes too, or every
  * label prints 236px in from the edge.
  */
 @media print {
@@ -122,7 +122,8 @@ body::after {
     padding-inline-start: 0;
   }
 
-  /* The rail and the top bar: navigation has no meaning on paper. */
+  /* The rail and the top bar: navigation has no meaning on paper. The rail's
+     own module repeats this for itself; see sidebar.module.css. */
   aside,
   .shell > header {
     display: none;

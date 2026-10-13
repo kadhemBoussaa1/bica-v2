@@ -426,14 +426,17 @@
   },
   "labels": {
     "title": "Étiquettes de bobines",
-    "subtitle": "Une étiquette 10 × 10 cm par feuille. Le QR ouvre la bobine ; le texte sert si le code ne se lit plus.",
+    "subtitle": "Une étiquette 10 × 5 cm par feuille. Le QR ouvre la bobine ; le texte sert si le code ne se lit plus.",
     "count": "{count, plural, one {# étiquette} other {# étiquettes}}",
     "print": "Imprimer",
-    "sheetNote": "Chargez des feuilles autocollantes 10 × 10 cm, une étiquette par feuille.",
+    "sheetNote": "Chargez des feuilles autocollantes 10 × 5 cm, une étiquette par feuille.",
     "missingParams": "Rien à imprimer — ouvrez cette page depuis un arrivage ou une bobine.",
     "loading": "Chargement des étiquettes…",
     "empty": "Aucune bobine à étiqueter.",
-    "initial": "Initial : {figures}"
+    "grammage": "G/m²",
+    "width": "Laize mm",
+    "remaining": "Reste",
+    "initialOf": "sur"
   },
   "inks": {
     "title": "Stock d’encre",

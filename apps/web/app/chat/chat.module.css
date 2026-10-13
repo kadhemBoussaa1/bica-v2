@@ -793,3 +793,11 @@
     inset-block-end: calc(var(--bp-space-4) + var(--bp-safe-bottom));
   }
 }
+
+/* The floating launcher is fixed to the viewport, so it printed on top of
+   every reel label. */
+@media print {
+  .launcherDock {
+    display: none;
+  }
+}

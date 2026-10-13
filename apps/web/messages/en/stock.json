@@ -426,14 +426,17 @@
   },
   "labels": {
     "title": "Reel labels",
-    "subtitle": "One 10 × 10 cm label per sheet. The QR opens the reel; the text is for a reel whose code will not scan.",
+    "subtitle": "One 10 × 5 cm label per sheet. The QR opens the reel; the text is for a reel whose code will not scan.",
     "count": "{count, plural, one {# label} other {# labels}}",
     "print": "Print",
-    "sheetNote": "Load 10 × 10 cm self-adhesive sheets, one label per sheet.",
+    "sheetNote": "Load 10 × 5 cm self-adhesive sheets, one label per sheet.",
     "missingParams": "Nothing to print — open this from a shipment or a reel.",
     "loading": "Loading labels…",
     "empty": "No reels to label.",
-    "initial": "Initial: {figures}"
+    "grammage": "G/m²",
+    "width": "Width mm",
+    "remaining": "Remaining",
+    "initialOf": "of"
   },
   "inks": {
     "title": "Ink stock",

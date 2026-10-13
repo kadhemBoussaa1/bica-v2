@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { LabelsSheet } from "./labels-sheet";
 
 /**
- * Printable reel labels — one 10 × 10 cm sheet per reel.
+ * Printable reel labels — one 10 × 5 cm sheet per reel.
  *
  * `@page` is declared inline here rather than in a CSS module: a module's
  * `@page` is not scoped by the module system (it is an at-rule, not a class),
@@ -19,7 +19,7 @@ export default async function LabelsPage({
 
   return (
     <>
-      <style>{"@page{size:100mm 100mm;margin:0}"}</style>
+      <style>{"@page{size:100mm 50mm;margin:0}"}</style>
       <LabelsSheet
         shipmentId={shipment}
         rollIds={rolls ? rolls.split(",").filter(Boolean) : undefined}

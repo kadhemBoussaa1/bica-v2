@@ -568,3 +568,14 @@ a.row:hover {
     animation: none;
   }
 }
+
+/*
+ * Off paper. globals.css hides `aside` in print, but that element selector
+ * loses to `.sidebar { display: flex }` here, and the rail's shadow then
+ * printed as a grey band down the edge of every reel label.
+ */
+@media print {
+  .sidebar {
+    display: none;
+  }
+}

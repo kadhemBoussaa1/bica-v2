@@ -426,14 +426,17 @@
   },
   "labels": {
     "title": "Etiquetas de bobinas",
-    "subtitle": "Una etiqueta de 10 × 10 cm por hoja. El QR abre la bobina; el texto sirve si el código no se lee.",
+    "subtitle": "Una etiqueta de 10 × 5 cm por hoja. El QR abre la bobina; el texto sirve si el código no se lee.",
     "count": "{count, plural, one {# etiqueta} other {# etiquetas}}",
     "print": "Imprimir",
-    "sheetNote": "Cargue hojas autoadhesivas de 10 × 10 cm, una etiqueta por hoja.",
+    "sheetNote": "Cargue hojas autoadhesivas de 10 × 5 cm, una etiqueta por hoja.",
     "missingParams": "Nada que imprimir — abra esta página desde una llegada o una bobina.",
     "loading": "Cargando etiquetas…",
     "empty": "No hay bobinas que etiquetar.",
-    "initial": "Inicial: {figures}"
+    "grammage": "G/m²",
+    "width": "Ancho mm",
+    "remaining": "Restante",
+    "initialOf": "de"
   },
   "inks": {
     "title": "Stock de tinta",
