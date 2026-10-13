@@ -17,6 +17,7 @@ import { useCurrentUser } from "../auth/use-auth";
 import { useTRPC } from "../trpc/client";
 import styles from "../records/records.module.css";
 import grid from "./products.module.css";
+import { bagSize } from "./bag-size";
 
 interface ProductsTableState extends DataTableState {
   pageSize: (typeof PAGE_SIZES)[number];
@@ -142,11 +143,7 @@ export function ProductsTable({
     setTableState((current) => ({ ...current, page: pageCount }));
   }
 
-  /** `w×L(×g)`: SOUS_PLAT has no gusset, so the third figure is omitted. */
-  const dims = (row: ProductRow) =>
-    row.typeSac === "SOUS_PLAT"
-      ? `${row.widthCm}×${row.lengthCm}`
-      : `${row.widthCm}×${row.lengthCm}×${row.gussetCm ?? 0}`;
+  const dims = (row: ProductRow) => bagSize(row);
 
   const columns: ReadonlyArray<Column<ProductRow>> = [
     {

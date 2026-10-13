@@ -102,6 +102,18 @@ export function ProductSpecFields({
         autoComplete="off"
         disabled={disabled}
       />
+      {/* Width, gusset, length: the order the size is read and printed in (bag-size.ts). */}
+      {!isSheet && (
+        <TextField
+          label={t("spec.gusset")}
+          unit="cm"
+          format="numeric"
+          value={gussetCm}
+          onChange={(e) => setGussetCm(e.target.value)}
+          autoComplete="off"
+          disabled={disabled}
+        />
+      )}
       <TextField
         label={t("spec.length")}
         unit="cm"
@@ -113,15 +125,6 @@ export function ProductSpecFields({
       />
       {!isSheet && (
         <>
-          <TextField
-            label={t("spec.gusset")}
-            unit="cm"
-            format="numeric"
-            value={gussetCm}
-            onChange={(e) => setGussetCm(e.target.value)}
-            autoComplete="off"
-            disabled={disabled}
-          />
           <TextField
             label={t("spec.foldWidth")}
             unit="cm"

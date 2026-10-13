@@ -25,6 +25,7 @@ import { OrderStatusBadge } from "./order-status";
 import { SegmentedFilter } from "../records/segmented-filter";
 import records from "../records/records.module.css";
 import styles from "./orders.module.css";
+import { bagSize } from "../products/bag-size";
 
 interface OrdersGridState extends DataTableState {
   pageSize: (typeof PAGE_SIZES)[number];
@@ -126,10 +127,7 @@ export function OrdersGrid({
   /** One order. */
   function OrderCard({ row }: { row: OrderRow }) {
     const p = row.product;
-    const dims =
-      p.typeSac === "SOUS_PLAT"
-        ? `${p.widthCm}×${p.lengthCm}`
-        : `${p.widthCm}×${p.lengthCm}×${p.gussetCm ?? 0}`;
+    const dims = bagSize(p);
     const unit = row.quantityUnit === "KILOGRAMS" ? "kg" : "pcs";
     // Capped at 100: a run can exceed the order, and the ring should read
     // "done", not spill past its own circle.

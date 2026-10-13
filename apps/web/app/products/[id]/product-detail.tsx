@@ -22,6 +22,7 @@ import { dateFormat } from "../../../i18n/formats";
 import { Row, Val } from "../../records/record-ui";
 import styles from "../../records/records.module.css";
 import grid from "../products.module.css";
+import { bagSize } from "../bag-size";
 
 const int = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 const money = new Intl.NumberFormat("fr-FR", {
@@ -95,11 +96,7 @@ export function ProductDetail({ id }: { id: string }) {
   }
 
   const p = productQuery.data;
-  /** `w×L(×g)`: SOUS_PLAT has no gusset, so the third figure is omitted. */
-  const dims =
-    p.typeSac === "SOUS_PLAT"
-      ? `${p.widthCm}×${p.lengthCm}`
-      : `${p.widthCm}×${p.lengthCm}×${p.gussetCm ?? 0}`;
+  const dims = bagSize(p);
   // The same rule the list flags with: a spec missing any of these cannot be
   // priced, and 11 migrated products carry a grammage of 0.
   const incomplete = p.widthCm <= 0 || p.lengthCm <= 0 || p.grammage <= 0;
@@ -207,10 +204,10 @@ export function ProductDetail({ id }: { id: string }) {
           <h2 className={styles.detailTitle}>{t("detail.specPanel")}</h2>
           <Row label={t("table.type")}>{enums(`typeSac.${p.typeSac}`)}</Row>
           <Row label={t("detail.width")}><Val value={p.widthCm} suffix="cm" /></Row>
-          <Row label={t("detail.length")}><Val value={p.lengthCm} suffix="cm" /></Row>
           {p.typeSac !== "SOUS_PLAT" && (
             <Row label={t("detail.gusset")}><Val value={p.gussetCm} suffix="cm" /></Row>
           )}
+          <Row label={t("detail.length")}><Val value={p.lengthCm} suffix="cm" /></Row>
           <Row label={t("table.grammage")}><Val value={p.grammage} suffix="g/m²" /></Row>
           <Row label={t("detail.paper")}>
             <Val value={p.paperType ? enums(`paperType.${p.paperType}`) : null} />

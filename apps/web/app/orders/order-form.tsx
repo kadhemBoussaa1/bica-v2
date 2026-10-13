@@ -23,6 +23,7 @@ import { ProductSpecFields } from "../products/product-spec-fields";
 import { useTRPC } from "../trpc/client";
 import styles from "../records/records.module.css";
 import orderStyles from "./orders.module.css";
+import { bagSize } from "../products/bag-size";
 
 /**
  * The order as the edit form needs it — the PRICED shape.
@@ -786,17 +787,13 @@ export function OrderForm({
                       .filter((p) => p.clientId !== null)
                       .map((p) => ({
                         value: p.id,
-                        label: `${p.name} — ${p.widthCm}×${p.lengthCm}${
-                          p.typeSac === "SOUS_PLAT" ? "" : `×${p.gussetCm ?? 0}`
-                        } ${p.grammage}g`,
+                        label: `${p.name} — ${bagSize(p)} ${p.grammage}g`,
                       })),
                     ...clientProducts
                       .filter((p) => p.clientId === null)
                       .map((p) => ({
                         value: p.id,
-                        label: `${p.name} — ${p.widthCm}×${p.lengthCm}${
-                          p.typeSac === "SOUS_PLAT" ? "" : `×${p.gussetCm ?? 0}`
-                        } ${p.grammage}g ${t("form.sharedSuffix")}`,
+                        label: `${p.name} — ${bagSize(p)} ${p.grammage}g ${t("form.sharedSuffix")}`,
                       })),
                     ...(initial?.product &&
                     !clientProducts.some((p) => p.id === initial.product.id)
@@ -812,10 +809,7 @@ export function OrderForm({
                 {selectedProduct && (
                   <p className={styles.hint}>
                     {enums(`typeSac.${selectedProduct.typeSac}`)} ·{" "}
-                    {selectedProduct.widthCm}×{selectedProduct.lengthCm}
-                    {selectedProduct.typeSac !== "SOUS_PLAT"
-                      ? `×${selectedProduct.gussetCm ?? 0}`
-                      : ""}{" "}
+                    {bagSize(selectedProduct)}{" "}
                     · {selectedProduct.grammage} g/m²
                     {selectedProduct.hasHandle
                       ? ` · ${t("form.handleWithWeight", {

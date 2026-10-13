@@ -29,6 +29,7 @@ import { OrderTransitions } from "../order-transitions";
 import records from "../../records/records.module.css";
 import styles from "../order-detail.module.css";
 import { dateFormat, numberFormat } from "../../../i18n/formats";
+import { bagSize } from "../../products/bag-size";
 
 /**
  * The `order.byId` payload — a UNION: the server picks a narrower select for
@@ -160,10 +161,7 @@ export function OrderDetail({ id }: { id: string }) {
     o.quantite > 0
       ? Math.min(100, Math.round((produced / o.quantite) * 100))
       : 0;
-  const dims =
-    p.typeSac === "SOUS_PLAT"
-      ? `${p.widthCm}×${p.lengthCm}`
-      : `${p.widthCm}×${p.lengthCm}×${p.gussetCm ?? 0}`;
+  const dims = bagSize(p);
   // Newest by the day the work happened, then by when it was typed in.
   const lastRun = [...runs].sort(
     (a, b) =>
@@ -296,10 +294,12 @@ export function OrderDetail({ id }: { id: string }) {
           <div className={styles.specGrid}>
             <Spec label={t("spec.type")} value={enums(`typeSac.${p.typeSac}`)} />
             <Spec label={t("spec.width")} value={p.widthCm} unit="cm" />
+            {p.typeSac !== "SOUS_PLAT" && (
+              <Spec label={t("spec.gusset")} value={p.gussetCm} unit="cm" />
+            )}
             <Spec label={t("spec.length")} value={p.lengthCm} unit="cm" />
             {p.typeSac !== "SOUS_PLAT" && (
               <>
-                <Spec label={t("spec.gusset")} value={p.gussetCm} unit="cm" />
                 <Spec label={t("spec.foldWidth")} value={p.pleatWidthCm} unit="cm" />
                 <Spec label={t("spec.foldLength")} value={p.pleatLengthCm} unit="cm" />
               </>
