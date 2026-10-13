@@ -436,7 +436,8 @@
     "grammage": "G/m²",
     "width": "Width mm",
     "remaining": "Remaining",
-    "initialOf": "of"
+    "initialOf": "of",
+    "printFailed": "The labels could not be printed. Try again."
   },
   "inks": {
     "title": "Ink stock",

@@ -12,9 +12,9 @@ import { LabelsSheet } from "./labels-sheet";
 export default async function LabelsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shipment?: string; rolls?: string }>;
+  searchParams: Promise<{ shipment?: string; rolls?: string; print?: string }>;
 }) {
-  const { shipment, rolls } = await searchParams;
+  const { shipment, rolls, print } = await searchParams;
   const t = await getTranslations("stock");
 
   return (
@@ -24,6 +24,8 @@ export default async function LabelsPage({
         shipmentId={shipment}
         rollIds={rolls ? rolls.split(",").filter(Boolean) : undefined}
         title={t("labels.title")}
+        // The label dialog's hidden frame (labels-dialog.tsx).
+        autoPrint={print === "1"}
       />
     </>
   );

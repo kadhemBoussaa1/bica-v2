@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import { rollScanUrl } from "@repo/api-contract";
@@ -24,11 +25,15 @@ const kgFmt = () => numberFormat({ minimumFractionDigits: 1, maximumFractionDigi
  * "1 970,77 m · 163,2 kg", one `<bdi>` per figure so Arabic keeps each value
  * beside its unit. A figure that is not known is left out; null when neither is.
  */
-function Figures({ metres, kg }: { metres: number | null; kg: number | null }) {
-  const parts = [
+function figureParts(metres: number | null, kg: number | null): string[] {
+  return [
     metres === null ? null : `${metresFmt().format(metres)} m`,
     kg === null ? null : `${kgFmt().format(kg)} kg`,
   ].filter((part): part is string => part !== null);
+}
+
+function Figures({ metres, kg }: { metres: number | null; kg: number | null }) {
+  const parts = figureParts(metres, kg);
   if (parts.length === 0) return null;
   return parts.map((part, index) => (
     <span key={part}>
@@ -49,6 +54,10 @@ function shareText(share: number): string {
   return formatPercent(share);
 }
 
+/** What the hidden print frame tells the dialog that opened it. */
+export const LABELS_PRINT_MESSAGE = "bp-labels-print";
+export type LabelsPrintOutcome = "printed" | "failed";
+
 /**
  * The printable sheet: one 100 × 50 mm sticker per reel ("Roll Label" 1b in
  * the design project), pure black on white for a thermal printer.
@@ -56,19 +65,32 @@ function shareText(share: number): string {
  * The QR encodes the reel id and nothing else — a URL, so a phone camera
  * opens the reel without the app being involved, and short enough to stay
  * readable at error-correction level M on a 36 mm square. Everything else on
- * the label is for a human holding a reel whose code will not scan, which is
- * also why the full id is printed under it.
+ * the label is for a human holding a reel whose code will not scan: the reel
+ * number finds it in the app's search.
  */
 export function LabelsSheet({
   shipmentId,
   rollIds,
   title,
+  onPrint = () => window.print(),
+  printing = false,
+  autoPrint = false,
+  onClose,
 }: {
   shipmentId?: string;
   rollIds?: readonly string[];
-  title: string;
+  /** The page's heading; left out in the dialog, whose head already says it. */
+  title?: string;
+  /** The dialog prints through a frame (`LabelsDialog`); the page prints itself. */
+  onPrint?: () => void;
+  printing?: boolean;
+  /** Print as soon as the stickers are drawn — the dialog's hidden frame. */
+  autoPrint?: boolean;
+  /** In the dialog: puts the actions under the preview, with Close beside Print. */
+  onClose?: () => void;
 }) {
   const t = useTranslations("stock");
+  const common = useTranslations("common");
   const trpc = useTRPC();
 
   const hasTarget = Boolean(shipmentId) !== Boolean(rollIds && rollIds.length > 0);
@@ -78,6 +100,36 @@ export function LabelsSheet({
     ),
     enabled: hasTarget,
   });
+
+  const drawn = labelsQuery.data !== undefined && labelsQuery.data.length > 0;
+  const failed = labelsQuery.isError || labelsQuery.data?.length === 0 || !hasTarget;
+  useEffect(() => {
+    if (!autoPrint) return;
+    let sent = false;
+    const report = (outcome: LabelsPrintOutcome) => {
+      if (sent || window.parent === window) return;
+      sent = true;
+      window.parent.postMessage({ type: LABELS_PRINT_MESSAGE, outcome }, window.location.origin);
+    };
+    if (failed) {
+      report("failed");
+      return;
+    }
+    if (!drawn) return;
+    let cancelled = false;
+    // Fonts first, or the sticker prints in a fallback face with other widths.
+    void document.fonts.ready.then(() => {
+      if (cancelled) return;
+      window.addEventListener("afterprint", () => report("printed"), { once: true });
+      window.print();
+      // Desktop browsers return once the print dialog closes; some return at
+      // once and fire `afterprint` later. `sent` keeps it to one report.
+      report("printed");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [autoPrint, drawn, failed]);
 
   if (!hasTarget) return <EmptyState title={t("labels.missingParams")} />;
   if (labelsQuery.isPending) return <p className={records.muted}>{t("labels.loading")}</p>;
@@ -94,23 +146,47 @@ export function LabelsSheet({
 
   const origin = labelOrigin();
 
+  const count = (
+    <span className={styles.note}>
+      {t("labels.count", { count: labelsQuery.data.length })} — {t("labels.sheetNote")}
+    </span>
+  );
+  const print = (
+    <Button variant="primary" onClick={onPrint} busy={printing}>
+      {t("labels.print")}
+    </Button>
+  );
+  const sheet = (
+    <div className={styles.sheet}>
+      {labelsQuery.data.map((roll) => (
+        <RollLabel key={roll.id} roll={roll} origin={origin} />
+      ))}
+    </div>
+  );
+
+  if (onClose) {
+    return (
+      <>
+        {count}
+        {sheet}
+        <div className={records.formActions}>
+          <Button variant="secondary" onClick={onClose}>
+            {common("close")}
+          </Button>
+          {print}
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className={styles.toolbar}>
-        <h1>{title}</h1>
-        <span className={styles.note}>
-          {t("labels.count", { count: labelsQuery.data.length })} — {t("labels.sheetNote")}
-        </span>
-        <Button variant="primary" onClick={() => window.print()}>
-          {t("labels.print")}
-        </Button>
+        {title && <h1>{title}</h1>}
+        {count}
+        {print}
       </div>
-
-      <div className={styles.sheet}>
-        {labelsQuery.data.map((roll) => (
-          <RollLabel key={roll.id} roll={roll} origin={origin} />
-        ))}
-      </div>
+      {sheet}
     </>
   );
 }
@@ -143,7 +219,6 @@ function RollLabel({ roll, origin }: { roll: LabelRoll; origin: string }) {
           level="M"
           size={136}
         />
-        <span className={styles.id}>{roll.id}</span>
       </div>
 
       <div className={styles.body}>
@@ -183,7 +258,15 @@ function RollLabel({ roll, origin }: { roll: LabelRoll; origin: string }) {
               </>
             )}
           </span>
-          <span className={styles.figures}>
+          <span
+            className={[
+              styles.figures,
+              // "17 873,02 m · 1 126,0 kg" is wider than the column at full size.
+              figureParts(metresLeft, kgLeft).join(" · ").length > 18 ? styles.figuresLong : null,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
             {known ? <Figures metres={metresLeft} kg={kgLeft} /> : "—"}
           </span>
           {known && (

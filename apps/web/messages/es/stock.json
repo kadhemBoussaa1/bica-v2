@@ -436,7 +436,8 @@
     "grammage": "G/m²",
     "width": "Ancho mm",
     "remaining": "Restante",
-    "initialOf": "de"
+    "initialOf": "de",
+    "printFailed": "No se pudieron imprimir las etiquetas. Inténtelo de nuevo."
   },
   "inks": {
     "title": "Stock de tinta",

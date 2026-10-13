@@ -436,7 +436,8 @@
     "grammage": "غ/م²",
     "width": "العرض مم",
     "remaining": "المتبقي",
-    "initialOf": "من"
+    "initialOf": "من",
+    "printFailed": "تعذّرت طباعة الملصقات. حاول مرة أخرى."
   },
   "inks": {
     "title": "مخزون الحبر",

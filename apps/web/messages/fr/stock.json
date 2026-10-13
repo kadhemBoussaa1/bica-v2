@@ -436,7 +436,8 @@
     "grammage": "G/m²",
     "width": "Laize mm",
     "remaining": "Reste",
-    "initialOf": "sur"
+    "initialOf": "sur",
+    "printFailed": "Les étiquettes n’ont pas pu être imprimées. Réessayez."
   },
   "inks": {
     "title": "Stock d’encre",

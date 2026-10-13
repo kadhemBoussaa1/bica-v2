@@ -51,7 +51,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   border-inline-end: 0.4mm solid #000;
 }
 
@@ -59,16 +59,6 @@
   inline-size: 36mm;
   block-size: 36mm;
   display: block;
-}
-
-/* The id in full: the fallback when the QR is scuffed past reading. */
-.id {
-  max-inline-size: 38mm;
-  overflow: hidden;
-  white-space: nowrap;
-  font-family: var(--bp-font-mono);
-  font-size: 1.76mm;
-  line-height: 1;
 }
 
 .body {
@@ -181,6 +171,10 @@
   white-space: nowrap;
 }
 
+.figuresLong {
+  font-size: 3.2mm;
+}
+
 .initial {
   font-family: var(--bp-font-mono);
   font-size: 2.1mm;
@@ -215,6 +209,30 @@
   font-size: 2.3mm;
   font-weight: 600;
   line-height: 1;
+}
+
+/* In the dialog: centred, and scaled to fit a phone. Preview only — the
+   print comes from the frame below, at full size. */
+.preview .sheet {
+  justify-content: center;
+  margin-block-start: var(--bp-space-4);
+}
+
+@media (max-width: 600px) {
+  .preview .label {
+    zoom: 0.85;
+  }
+}
+
+/* The page that prints for the dialog: laid out, never seen. */
+.printFrame {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 0;
+  block-size: 0;
+  border: 0;
+  visibility: hidden;
 }
 
 @media print {
