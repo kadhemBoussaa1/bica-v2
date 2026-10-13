@@ -164,7 +164,8 @@
       "metres": "Longitud a cortar",
       "free": "{metres} m de {reel} están libres.",
       "childHint": "El trozo pasa a ser una bobina propia, numerada a partir de {reel}, con la misma calidad, ancho y procedencia.",
-      "submit": "Cortar"
+      "submit": "Cortar",
+      "labelsHint": "Tras el corte se abren las etiquetas de las dos bobinas, listas para imprimir: pegue la nueva en el trozo y sustituya la de esta bobina por una que indique lo que queda."
     },
     "slit": {
       "title": "Cortar en bandas",
@@ -431,7 +432,8 @@
     "sheetNote": "Cargue hojas autoadhesivas de 10 × 10 cm, una etiqueta por hoja.",
     "missingParams": "Nada que imprimir — abra esta página desde una llegada o una bobina.",
     "loading": "Cargando etiquetas…",
-    "empty": "No hay bobinas que etiquetar."
+    "empty": "No hay bobinas que etiquetar.",
+    "initial": "Inicial: {figures}"
   },
   "inks": {
     "title": "Stock de tinta",

@@ -164,7 +164,8 @@
       "metres": "Length to cut",
       "free": "{metres} m of {reel} are free.",
       "childHint": "The piece becomes its own reel, numbered after {reel}, with the same grade, width and provenance.",
-      "submit": "Cut"
+      "submit": "Cut",
+      "labelsHint": "Once cut, the labels of both reels open ready to print: stick the new one on the piece, and replace this reel's label with one showing what is left."
     },
     "slit": {
       "title": "Slit reel",
@@ -431,7 +432,8 @@
     "sheetNote": "Load 10 × 10 cm self-adhesive sheets, one label per sheet.",
     "missingParams": "Nothing to print — open this from a shipment or a reel.",
     "loading": "Loading labels…",
-    "empty": "No reels to label."
+    "empty": "No reels to label.",
+    "initial": "Initial: {figures}"
   },
   "inks": {
     "title": "Ink stock",

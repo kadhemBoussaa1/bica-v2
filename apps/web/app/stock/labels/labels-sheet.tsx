@@ -12,12 +12,25 @@ import { labelOrigin } from "./label-origin";
 import records from "../../records/records.module.css";
 import styles from "./labels.module.css";
 
+const metresFmt = () => numberFormat({ maximumFractionDigits: 2 });
+const kgFmt = () => numberFormat({ maximumFractionDigits: 1 });
+
+/** "1 970,77 m · 163,2 kg", leaving out a figure that is not known. */
+function figuresText(metres: number | null, kg: number | null): string {
+  return [
+    metres === null ? null : `${metresFmt().format(metres)} m`,
+    kg === null ? null : `${kgFmt().format(kg)} kg`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 /**
  * The printable sheet.
  *
  * The QR encodes the reel id and nothing else — a URL, so a phone camera
  * opens the reel without the app being involved, and short enough to stay
- * readable at error-correction level M on a 48 mm square. Everything else on
+ * readable at error-correction level M on a 45 mm square. Everything else on
  * the label is for a human holding a reel whose code will not scan, which is
  * also why the full id is printed in the corner.
  */
@@ -77,15 +90,14 @@ export function LabelsSheet({
           ]
             .filter(Boolean)
             .join(" · ");
-          // What the reel weighed and measured on arrival — see ROLL_LABEL_SELECT.
-          const figures = [
-            roll.poids === null ? null : `${numberFormat({ maximumFractionDigits: 1 }).format(roll.poids)} kg`,
-            roll.metrage === null
-              ? null
-              : `${numberFormat({ maximumFractionDigits: 0 }).format(roll.metrage)} m`,
-          ]
-            .filter(Boolean)
-            .join(" · ");
+          // A legacy reel can have no recorded length or weight, and its
+          // `…Restant` column then reads 0 — leave that figure out rather than
+          // print "0 m" on a full reel.
+          const remaining = figuresText(
+            roll.metrage === null ? null : roll.metrageRestant,
+            roll.poids === null ? null : roll.poidsRestant,
+          );
+          const initial = figuresText(roll.metrage, roll.poids);
           const provenance = [
             roll.importShipment?.numeroImport,
             roll.importShipment?.supplier.name,
@@ -97,14 +109,21 @@ export function LabelsSheet({
             <article key={roll.id} className={styles.label}>
               <span className={styles.numero}>{roll.numero ?? "—"}</span>
               <span className={styles.qr}>
-                <QRCodeSVG value={rollScanUrl(origin, roll.id)} level="M" size={180} />
+                <QRCodeSVG value={rollScanUrl(origin, roll.id)} level="M" size={170} />
               </span>
               <span>
                 <span className={styles.spec}>{spec}</span>
                 <br />
-                {figures && (
+                {remaining && (
                   <>
-                    <span className={styles.figures}>{figures}</span>
+                    <span className={styles.figures}>{remaining}</span>
+                    <br />
+                  </>
+                )}
+                {/* Only once something has been cut off: a fresh reel's two lines would match. */}
+                {initial !== remaining && (
+                  <>
+                    <span className={styles.initial}>{t("labels.initial", { figures: initial })}</span>
                     <br />
                   </>
                 )}

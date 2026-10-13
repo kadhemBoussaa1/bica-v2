@@ -33,7 +33,7 @@
   padding: 6mm;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 3mm;
+  gap: 2mm;
   box-sizing: border-box;
   background: #fff;
   color: #000;
@@ -60,11 +60,18 @@
   line-height: 1.35;
 }
 
-/* Weight and length: what a forklift driver reads first, so set heavier. */
+/* What is left on the reel: what a forklift driver reads first. */
 .figures {
   font-size: 4.4mm;
   font-weight: 700;
   line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The reel's size on arrival, under the remaining figures once it was cut. */
+.initial {
+  font-size: 3.4mm;
+  color: #333;
   font-variant-numeric: tabular-nums;
 }
 

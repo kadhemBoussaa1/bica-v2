@@ -164,7 +164,8 @@
       "metres": "Longueur à couper",
       "free": "{metres} m de {reel} sont libres.",
       "childHint": "Le morceau devient une bobine à part entière, numérotée d’après {reel}, avec la même qualité, laize et provenance.",
-      "submit": "Couper"
+      "submit": "Couper",
+      "labelsHint": "Après la découpe, les étiquettes des deux bobines s’ouvrent, prêtes à imprimer : collez la nouvelle sur le morceau et remplacez celle de cette bobine par une qui indique ce qui reste."
     },
     "slit": {
       "title": "Refendre la bobine",
@@ -431,7 +432,8 @@
     "sheetNote": "Chargez des feuilles autocollantes 10 × 10 cm, une étiquette par feuille.",
     "missingParams": "Rien à imprimer — ouvrez cette page depuis un arrivage ou une bobine.",
     "loading": "Chargement des étiquettes…",
-    "empty": "Aucune bobine à étiqueter."
+    "empty": "Aucune bobine à étiqueter.",
+    "initial": "Initial : {figures}"
   },
   "inks": {
     "title": "Stock d’encre",

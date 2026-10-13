@@ -4,9 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { cutRollInput } from "@repo/api-contract";
+import { canAccess, cutRollInput } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { TextField } from "@repo/ui/field";
+import { useCurrentUser } from "../auth/use-auth";
 import type { FormNav } from "../records/form-nav";
 import { useTRPC } from "../trpc/client";
 import { invalidateRollQueries } from "./roll-queries";
@@ -19,6 +20,8 @@ const metresFmt = () => numberFormat({ maximumFractionDigits: 2 });
  * Cut a length off a reel into a new child reel (`stock.cut`). Opened from
  * the reel's page as a route modal, and from the order's reel picker for a
  * plain cut. The reel's free length is the ceiling; the server enforces it.
+ * Lands on the label sheet for the piece and the mother, ready to print —
+ * for whoever may print labels; anyone else lands on the new reel.
  */
 export function RollCutForm({
   rollId,
@@ -32,6 +35,10 @@ export function RollCutForm({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const rollQuery = useQuery(trpc.stock.rollById.queryOptions({ id: rollId }));
+  const { user } = useCurrentUser();
+  // `stock.rollLabels` is ADMIN+ ("the office prints"); MAGASINIER may cut
+  // but would land on a refused sheet, so it goes to the new reel instead.
+  const canPrint = user !== null && canAccess(user.role, "ADMIN");
   const [metres, setMetres] = useState(defaultMetres === undefined ? "" : String(defaultMetres));
   const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +47,11 @@ export function RollCutForm({
 
   const cut = useMutation(
     trpc.stock.cut.mutationOptions({
+      // Straight to both labels: the piece needs its first one, and the
+      // mother's old label now overstates what is left on it.
       onSuccess: async (child) => {
         await invalidateRollQueries(queryClient, trpc);
-        await go(`/stock/${child.id}`);
+        await go(canPrint ? `/stock/labels?rolls=${child.id},${rollId}` : `/stock/${child.id}`);
       },
       onError: (cause) => setError(cause.message),
     }),
@@ -101,6 +110,7 @@ export function RollCutForm({
         />
         <div className={styles.formWide}>
           <p className={styles.hint}>{t("rolls.cut.childHint", { reel: name })}</p>
+          {canPrint && <p className={styles.hint}>{t("rolls.cut.labelsHint")}</p>}
         </div>
       </div>
       <div className={styles.formActions}>
