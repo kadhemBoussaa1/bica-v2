@@ -316,9 +316,11 @@ export class AllocationService {
    * Puts a cut back — for a cut recorded by mistake while the piece is still
    * whole. The piece's metres and weight return to the reel it was cut from,
    * any reservation still holding the piece is cancelled, and the piece is
-   * retired (consumed and archived at 0 m, the way a slit retires its
-   * mother) rather than deleted: its cancelled reservations stay on the
-   * order's history, and those rows reference it.
+   * retired — archived at 0 m — rather than deleted: its cancelled
+   * reservations stay on the order's history, and those rows reference it.
+   * Archived, NOT consumed (unlike a slit's mother): none of its paper was
+   * used, it went back into the mother, so it must not read as "used up" or
+   * count towards consumed paper.
    *
    * Lives here rather than in `StockService` because it cancels
    * reservations, and `cancelIn` is this service's.
@@ -469,12 +471,10 @@ export class AllocationService {
           metrageRestant: 0,
           poidsRestant: 0,
           poidsReserve: 0,
-          consomme: true,
           archived: true,
           disponible: false,
           reserved: false,
           partiel: true,
-          dateConsommation: new Date(),
           consumedByNote: this.appendNote(piece.consumedByNote, `Put back into ${motherName}`),
         },
       });
