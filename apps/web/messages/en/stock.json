@@ -156,7 +156,12 @@
       "lineageFree": "Free to cut",
       "lineageNothingLeft": "Nothing left",
       "lineageFreeMeta": "What is left once the reservation is honoured",
-      "lineageUntouchedMeta": "Nothing has been cut from this reel yet"
+      "lineageUntouchedMeta": "Nothing has been cut from this reel yet",
+      "undoCut": "Undo cut",
+      "undoCutTitle": "Undo this cut?",
+      "undoCutBody": "<strong>{metres} m</strong> go back into <strong>{mother}</strong>, and <strong>{name}</strong> is retired from stock.",
+      "undoCutReserved": "Its reservation for <strong>{orders}</strong> is cancelled.",
+      "undoCutLabels": "Throw away the piece's label and print a new one for {mother} showing its full length."
     },
     "cut": {
       "title": "Cut reel",

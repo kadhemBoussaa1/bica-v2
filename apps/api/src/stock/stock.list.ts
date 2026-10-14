@@ -173,7 +173,12 @@ export const ROLL_DETAIL_SELECT = {
   /// Null on a backfilled receipt: the reel predates receiving, so it has a
   /// stamp but nobody scanned it.
   receivedBy: { select: { id: true, name: true } },
-  parent: { select: { id: true, numero: true, paperGrade: true } },
+  /// `laize` and `archived` let the page offer "undo cut" only where
+  /// `AllocationService.undoCut` would accept it: not on a slit band (a
+  /// narrower width), not into an archived mother.
+  parent: {
+    select: { id: true, numero: true, paperGrade: true, laize: true, archived: true },
+  },
   children: {
     select: {
       id: true,

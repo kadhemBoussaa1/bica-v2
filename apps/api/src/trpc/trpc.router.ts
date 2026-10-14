@@ -96,6 +96,7 @@ import {
   cutRollInput,
   reserveRollInput,
   slitRollInput,
+  undoCutInput,
   openStockCountInput,
   countScanInput,
   stockCountIdInput,
@@ -967,6 +968,15 @@ export class TrpcRouter {
       slit: warehouseProcedure
         .input(slitRollInput)
         .mutation(({ input }) => this.stockService.slit(input)),
+
+      /**
+       * Put a mistaken cut back into its mother, cancelling any reservation
+       * on the piece. Same gate as `cut`; served by `AllocationService`
+       * because it cancels reservations.
+       */
+      undoCut: warehouseProcedure
+        .input(undoCutInput)
+        .mutation(({ input }) => this.allocationService.undoCut(input)),
 
       /**
        * Receiving — docs/receiving-plan.md.

@@ -47,6 +47,14 @@ export const cutRollInput = z.object({
 });
 
 /**
+ * Put a cut back: the piece's metres return to the reel it was cut from and
+ * the piece is retired. `rollId` is the PIECE (the child), not its mother.
+ */
+export const undoCutInput = z.object({
+  rollId: z.string().min(1),
+});
+
+/**
  * Slit a reel into bands of these widths. Two at least — one band is not a
  * slit — and eight at most, which is more than any slitter here has knives.
  * The sum may be below the reel's width; the difference is trim.
@@ -81,6 +89,7 @@ export const allocationIdInput = z.object({ id: z.string().min(1) });
 export const allocationForOrderInput = z.object({ orderId: z.string().min(1) });
 
 export type CutRollInput = z.infer<typeof cutRollInput>;
+export type UndoCutInput = z.infer<typeof undoCutInput>;
 export type SlitRollInput = z.infer<typeof slitRollInput>;
 export type ReserveRollInput = z.infer<typeof reserveRollInput>;
 export type CutAndReserveInput = z.infer<typeof cutAndReserveInput>;

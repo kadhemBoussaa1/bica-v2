@@ -96,6 +96,7 @@ export function RollDetail({ id }: { id: string }) {
   const canWrite = me ? canAccess(me.role, "ADMIN") : false;
   const canCut = me ? canAccessAny(me.role, ["ADMIN", "MAGASINIER"]) : false;
   const [pending, setPending] = useState<"archive" | "delete" | null>(null);
+  const [confirmUndo, setConfirmUndo] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const rollQuery = useQuery(trpc.stock.rollById.queryOptions({ id }));
@@ -137,6 +138,21 @@ export function RollDetail({ id }: { id: string }) {
         await queryClient.invalidateQueries({ queryKey: trpc.nav.counts.queryKey() });
       },
       onError: (cause) => setActionError(cause.message),
+    }),
+  );
+  // Lands on the mother: the piece is retired, and the mother is the reel
+  // that now carries the metres (and needs its label reprinted).
+  const undoCut = useMutation(
+    trpc.stock.undoCut.mutationOptions({
+      onSuccess: async (result) => {
+        setConfirmUndo(false);
+        await invalidate();
+        router.push(`/stock/${result.id}`);
+      },
+      onError: (cause) => {
+        setConfirmUndo(false);
+        setActionError(cause.message);
+      },
     }),
   );
   const busy = setArchived.isPending || remove.isPending;
@@ -199,6 +215,28 @@ export function RollDetail({ id }: { id: string }) {
     !r.consomme;
   // A used-up or archived reel has nothing left to cut.
   const cuttable = canCut && !r.consomme && !r.archived;
+  /*
+   * A piece whose cut can be put back — the same conditions
+   * `AllocationService.undoCut` checks, so the button is never a dead end:
+   * still whole, nothing consumed or cut from it, never counted, cut (not
+   * slit: a band is narrower than its mother) from a mother still in stock.
+   * A reservation on it does not block: the undo cancels it.
+   */
+  const reservedFor = r.allocations
+    .filter((alloc) => alloc.state === "RESERVED")
+    .map((alloc) => alloc.order.numero);
+  const undoable =
+    canCut &&
+    r.parent !== null &&
+    !r.parent.archived &&
+    r.parent.laize === r.laize &&
+    !r.consomme &&
+    !r.archived &&
+    r.children.length === 0 &&
+    r._count.countLines === 0 &&
+    r.metrage !== null &&
+    Math.abs(r.metrageRestant - r.metrage) <= 1e-6 &&
+    !r.allocations.some((alloc) => alloc.state === "CONSUMED");
   // Offered only where the server would accept it: the warehouse's to do, on
   // a live reel that has a delivery to be received against.
   const receivable =
@@ -568,6 +606,20 @@ export function RollDetail({ id }: { id: string }) {
                 <Link className={styles.inlineLink} href={`/stock/${r.parent.id}`}>
                   {r.parent.numero ?? r.parent.paperGrade ?? t("rolls.detail.rollFallback")}
                 </Link>
+                {undoable && (
+                  <>
+                    {" "}
+                    <Button
+                      size="dense"
+                      onClick={() => {
+                        setActionError(null);
+                        setConfirmUndo(true);
+                      }}
+                    >
+                      {t("rolls.detail.undoCut")}
+                    </Button>
+                  </>
+                )}
               </Row>
             )}
             {r.children.map((child) => (
@@ -799,6 +851,40 @@ export function RollDetail({ id }: { id: string }) {
           { name, strong: (chunks) => <strong>{chunks}</strong> },
         )}
       </Dialog>
+
+      {r.parent && (
+        <Dialog
+          open={confirmUndo}
+          title={t("rolls.detail.undoCutTitle")}
+          confirmLabel={t("rolls.detail.undoCut")}
+          destructive
+          busy={undoCut.isPending}
+          onConfirm={() => undoCut.mutate({ rollId: id })}
+          onClose={() => !undoCut.isPending && setConfirmUndo(false)}
+        >
+          <p>
+            {t.rich("rolls.detail.undoCutBody", {
+              metres: metres().format(r.metrageRestant),
+              name,
+              mother: r.parent.numero ?? t("rolls.detail.rollFallback"),
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
+          </p>
+          {reservedFor.length > 0 && (
+            <p>
+              {t.rich("rolls.detail.undoCutReserved", {
+                orders: reservedFor.join(", "),
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
+            </p>
+          )}
+          <p>
+            {t("rolls.detail.undoCutLabels", {
+              mother: r.parent.numero ?? t("rolls.detail.rollFallback"),
+            })}
+          </p>
+        </Dialog>
+      )}
     </>
   );
 }

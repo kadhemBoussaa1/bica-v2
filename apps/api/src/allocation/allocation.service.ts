@@ -8,6 +8,7 @@ import {
   type ConsumeAllocationInput,
   type CutAndReserveInput,
   type ReserveRollInput,
+  type UndoCutInput,
 } from "@repo/api-contract";
 import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
@@ -312,6 +313,205 @@ export class AllocationService {
   }
 
   /**
+   * Puts a cut back — for a cut recorded by mistake while the piece is still
+   * whole. The piece's metres and weight return to the reel it was cut from,
+   * any reservation still holding the piece is cancelled, and the piece is
+   * retired (consumed and archived at 0 m, the way a slit retires its
+   * mother) rather than deleted: its cancelled reservations stay on the
+   * order's history, and those rows reference it.
+   *
+   * Lives here rather than in `StockService` because it cancels
+   * reservations, and `cancelIn` is this service's.
+   *
+   * Refused unless the piece is exactly what the cut made: its full length,
+   * nothing consumed from it, nothing cut or slit from it, never counted in a
+   * stocktake as a reel of its own. A slit band is refused too — it is
+   * narrower than its mother, so its metres cannot rejoin it.
+   *
+   * A mother the cut used up is revived. One used up in production since is
+   * not: the paper the piece would rejoin has left the floor.
+   */
+  async undoCut(input: UndoCutInput) {
+    return this.prisma.$transaction(async (tx) => {
+      const piece = await tx.paperRoll.findUnique({
+        where: { id: input.rollId },
+        select: {
+          id: true,
+          numero: true,
+          metrage: true,
+          metrageRestant: true,
+          poidsRestant: true,
+          laize: true,
+          consomme: true,
+          archived: true,
+          consumedByNote: true,
+          createdAt: true,
+          parent: {
+            select: {
+              id: true,
+              numero: true,
+              laize: true,
+              consomme: true,
+              archived: true,
+              consumedByNote: true,
+            },
+          },
+          allocations: {
+            select: {
+              id: true,
+              state: true,
+              orderId: true,
+              paperRollId: true,
+              metrageReserve: true,
+              poidsReserve: true,
+              order: { select: { numero: true } },
+            },
+          },
+          _count: { select: { children: true, countLines: true } },
+        },
+      });
+      if (!piece) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Roll not found" });
+      }
+      const name = piece.numero ?? "This reel";
+      const mother = piece.parent;
+      if (!mother) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `${name} was not cut from another reel`,
+        });
+      }
+      const motherName = mother.numero ?? "the reel it was cut from";
+      if (piece.consomme || piece.archived) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `${name} is ${piece.consomme ? "used up" : "archived"}`,
+        });
+      }
+      if (mother.archived) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `${motherName} is archived — restore it first`,
+        });
+      }
+      if (piece.laize !== mother.laize) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `${name} was slit from ${motherName}, not cut — a band cannot be put back`,
+        });
+      }
+      if (piece._count.children > 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `${piece._count.children} reel(s) were cut from ${name} — undo those first`,
+        });
+      }
+      if (piece._count.countLines > 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `${name} was counted in a stocktake as a reel of its own`,
+        });
+      }
+      const consumed = piece.allocations.find((a) => a.state === "CONSUMED");
+      if (consumed) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Paper from ${name} was already consumed by ${consumed.order.numero}`,
+        });
+      }
+      if (piece.metrage === null || Math.abs(piece.metrageRestant - piece.metrage) > 1e-6) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            piece.metrage === null
+              ? `${name} has no length recorded`
+              : `${name} is no longer whole: ${metresFmt.format(piece.metrageRestant)} of ` +
+                `${metresFmt.format(piece.metrage)} m left`,
+        });
+      }
+      if (mother.consomme) {
+        const usedSince = await tx.rollAllocation.count({
+          where: {
+            paperRollId: mother.id,
+            state: "CONSUMED",
+            dateConsommation: { gte: piece.createdAt },
+          },
+        });
+        if (usedSince > 0) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: `${motherName} was used up in production since the cut — ${name} cannot go back to it`,
+          });
+        }
+      }
+
+      const released: string[] = [];
+      for (const allocation of piece.allocations) {
+        if (allocation.state !== "RESERVED") continue;
+        if (!(await this.cancelIn(tx, allocation))) throw this.alreadySettled();
+        released.push(allocation.orderId);
+      }
+
+      // The piece first, guarded on the length read above and on nothing
+      // being held, so a reservation or cut landing in between fails the
+      // whole undo before the mother moves.
+      const metres = piece.metrageRestant;
+      const kg = piece.poidsRestant;
+      const retired = await tx.paperRoll.updateMany({
+        where: {
+          id: piece.id,
+          consomme: false,
+          archived: false,
+          metrageReserve: 0,
+          metrageRestant: metres,
+        },
+        data: {
+          metrageRestant: 0,
+          poidsRestant: 0,
+          poidsReserve: 0,
+          consomme: true,
+          archived: true,
+          disponible: false,
+          reserved: false,
+          partiel: true,
+          dateConsommation: new Date(),
+          consumedByNote: this.appendNote(piece.consumedByNote, `Put back into ${motherName}`),
+        },
+      });
+      if (retired.count !== 1) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `${name} changed while you were undoing the cut — reload and retry`,
+        });
+      }
+
+      const after = await moveRollCounters(
+        tx,
+        mother.id,
+        Prisma.sql`"metrageRestant" = "metrageRestant" + ${metres},
+          "poidsRestant" = "poidsRestant" + ${kg},
+          "consomme" = false, "dateConsommation" = NULL`,
+        Prisma.sql`"archived" = false`,
+      );
+      if (!after) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `${motherName} changed while you were undoing the cut — reload and retry`,
+        });
+      }
+      await writeRollFlags(tx, after, {
+        consumedByNote: this.appendNote(
+          mother.consumedByNote,
+          `${metresFmt.format(metres)} m put back from ${name}`,
+        ),
+      });
+      // The mother is the audit row's entity; the input's `rollId` makes
+      // the piece its parent, so the undo shows on both reels' timelines.
+      return { id: mother.id, numero: mother.numero, releasedOrderIds: released };
+    });
+  }
+
+  /**
    * Every open reservation of an order is cancelled. Called by
    * `OrderService.transitionIn` on `→ CANCELLED`, inside its transaction, so
    * an order cannot be cancelled while still holding paper.
@@ -445,6 +645,10 @@ export class AllocationService {
       orderId: allocation.orderId,
       paperRollId: allocation.paperRollId,
     };
+  }
+
+  private appendNote(existing: string | null, line: string): string {
+    return existing ? `${existing}; ${line}` : line;
   }
 
   private alreadySettled(): TRPCError {

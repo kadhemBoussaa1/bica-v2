@@ -156,7 +156,12 @@
       "lineageFree": "متاحة للقطع",
       "lineageNothingLeft": "لم يتبقَّ شيء",
       "lineageFreeMeta": "ما يتبقّى بعد تلبية الحجز",
-      "lineageUntouchedMeta": "لم يُقطع شيء من هذه البكرة بعد"
+      "lineageUntouchedMeta": "لم يُقطع شيء من هذه البكرة بعد",
+      "undoCut": "إلغاء القص",
+      "undoCutTitle": "إلغاء هذا القص؟",
+      "undoCutBody": "تعود <strong>{metres} م</strong> إلى <strong>{mother}</strong>، وتُسحب <strong>{name}</strong> من المخزون.",
+      "undoCutReserved": "يُلغى حجزها للطلبية <strong>{orders}</strong>.",
+      "undoCutLabels": "تخلّص من ملصق القطعة واطبع ملصقًا جديدًا لـ {mother} يبيّن طولها الكامل."
     },
     "cut": {
       "title": "قصّ البكرة",

@@ -156,7 +156,12 @@
       "lineageFree": "Libre à couper",
       "lineageNothingLeft": "Plus rien",
       "lineageFreeMeta": "Ce qui reste une fois la réservation honorée",
-      "lineageUntouchedMeta": "Rien n'a encore été coupé sur cette bobine"
+      "lineageUntouchedMeta": "Rien n'a encore été coupé sur cette bobine",
+      "undoCut": "Annuler la coupe",
+      "undoCutTitle": "Annuler cette coupe ?",
+      "undoCutBody": "<strong>{metres} m</strong> reviennent dans <strong>{mother}</strong>, et <strong>{name}</strong> est retirée du stock.",
+      "undoCutReserved": "Sa réservation pour <strong>{orders}</strong> est annulée.",
+      "undoCutLabels": "Jetez l'étiquette de la pièce et imprimez-en une nouvelle pour {mother} avec sa longueur complète."
     },
     "cut": {
       "title": "Couper la bobine",

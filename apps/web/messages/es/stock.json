@@ -156,7 +156,12 @@
       "lineageFree": "Libre para cortar",
       "lineageNothingLeft": "No queda nada",
       "lineageFreeMeta": "Lo que queda una vez atendida la reserva",
-      "lineageUntouchedMeta": "Todavía no se ha cortado nada de esta bobina"
+      "lineageUntouchedMeta": "Todavía no se ha cortado nada de esta bobina",
+      "undoCut": "Deshacer corte",
+      "undoCutTitle": "¿Deshacer este corte?",
+      "undoCutBody": "<strong>{metres} m</strong> vuelven a <strong>{mother}</strong> y <strong>{name}</strong> se retira del stock.",
+      "undoCutReserved": "Se cancela su reserva para <strong>{orders}</strong>.",
+      "undoCutLabels": "Tire la etiqueta de la pieza e imprima una nueva para {mother} con su longitud completa."
     },
     "cut": {
       "title": "Cortar bobina",
