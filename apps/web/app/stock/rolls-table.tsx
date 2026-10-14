@@ -16,6 +16,7 @@ import { useToast } from "@repo/ui/toast";
 import { useTRPC } from "../trpc/client";
 import styles from "../records/records.module.css";
 import stock from "./stock.module.css";
+import { numberFormat } from "../../i18n/formats";
 
 /**
  * The facet chip plus the four advanced dimensions.
@@ -79,6 +80,27 @@ function Kpi({
         <span className={[stock.kpiValue, tone].filter(Boolean).join(" ")}>{value}</span>
         {unit && <span className={stock.kpiUnit}>{unit}</span>}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Length left against the length cut or received, in metres — the figure a
+ * cut is entered in, beside the weight the Remaining column shows. No bar:
+ * the weight's bar already draws the same proportion. `metrage` is null on
+ * migrated reels whose length was never entered, so the remainder then
+ * stands alone.
+ */
+function LengthCell({ remaining, total }: { remaining: number; total: number | null }) {
+  const m = numberFormat({ maximumFractionDigits: 1 });
+  return (
+    <div className={stock.remainingFigures}>
+      <span className={stock.remainingValue}>{m.format(remaining)}</span>
+      {total !== null ? (
+        <span className={stock.remainingOf}>/ {m.format(total)} m</span>
+      ) : (
+        <span className={stock.remainingOf}>m</span>
+      )}
     </div>
   );
 }
@@ -403,6 +425,12 @@ export function RollsTable({
       // Remaining against received, with the proportion drawn: a part-used
       // reel reads at a glance instead of asking the reader to divide.
       cell: (row) => <RemainingCell remaining={row.poidsRestant} received={row.poids} />,
+    },
+    {
+      key: "metrageRestant",
+      header: t("rolls.columns.length"),
+      width: "170px",
+      cell: (row) => <LengthCell remaining={row.metrageRestant} total={row.metrage} />,
     },
     {
       key: "shipment",
