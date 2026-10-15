@@ -81,14 +81,17 @@
       "createCustomsUpload": "Dépôt du scan de douane demandé",
       "updateCustoms": "Douane de l'expédition modifiée",
       "ship": "Expédié",
-      "discardDraft": "Brouillon d'expédition abandonné"
+      "discardDraft": "Brouillon d'expédition abandonné",
+      "createFromInvoice": "Brouillon d'expédition créé depuis une facture"
     },
     "salesInvoice": {
       "createFromOrder": "Brouillon de facture de vente créé",
       "updateDraft": "Brouillon de facture modifié",
       "refreshFromPackaging": "Facture actualisée depuis l'emballage",
       "issue": "Facture de vente émise",
-      "discardDraft": "Brouillon de facture abandonné"
+      "discardDraft": "Brouillon de facture abandonné",
+      "create": "Brouillon de facture de vente créé",
+      "removeOrder": "Commande retirée d'un brouillon de facture"
     },
     "purchaseInvoice": {
       "create": "Facture d'achat enregistrée",

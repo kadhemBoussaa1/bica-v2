@@ -90,7 +90,6 @@
     "sumCurrency": "Somme des lignes ({currency})",
     "add": "Ajouter une ligne",
     "remove": "Retirer",
-    "billsOrder": "Facture la commande",
     "aria": {
       "product": "Produit de la ligne {n}",
       "description": "Désignation de la ligne {n}",
@@ -187,7 +186,7 @@
   },
   "sales": {
     "title": "Factures de vente",
-    "subtitle": "Ce que nous avons facturé aux clients, et les brouillons en attente d’émission. Créez-en une ici, ou depuis la page d’une commande facturable.",
+    "subtitle": "Ce que nous avons facturé aux clients, et les brouillons en attente d'émission. Créez-en une ici : cochez les commandes prêtes à facturer — d'un client ou de plusieurs.",
     "back": "← Factures de vente",
     "detailTitle": "Facture de vente",
     "detailSubtitle": "Une facture adressée à un client : montants, paiement, lignes, et la commande et l'expédition auxquelles elle se rattache. Un brouillon reste modifiable ; une facture émise est définitive.",
@@ -221,13 +220,20 @@
       "priceChanged": "Le prix de la commande est désormais {price} — ajustez le prix unitaire si la facture doit le suivre"
     },
     "new": "Nouvelle facture de vente",
-    "newSubtitle": "Facturez un client pour autre chose qu'une commande : une prestation, une vente ponctuelle, un frais refacturé. Saisissez les lignes vous-même ; le brouillon prend son numéro à l'émission.",
+    "newSubtitle": "Cochez les commandes à facturer — d'un client ou de plusieurs — chacune devient une ligne à son prix par colis et à ses colis emballés, tous deux modifiables ; puis ajoutez d'autres lignes si besoin. Le brouillon reçoit son numéro à l'émission.",
     "draftCreated": "Brouillon de facture créé pour {client}",
     "form": {
       "chooseClient": "Choisir un client",
       "clientHint": "Client absent de la liste ? <link>Créez-le</link> d'abord.",
       "linesSection": "Lignes",
-      "submit": "Créer le brouillon"
+      "submit": "Créer le brouillon",
+      "ordersSection": "Commandes à facturer",
+      "noLines": "Cochez une commande ou ajoutez une ligne.",
+      "noLinesYet": "Aucune ligne pour l'instant — cochez une commande ci-dessus, ou ajoutez une ligne.",
+      "clients": "Clients",
+      "severalClientsHint": "Les commandes appartiennent à plusieurs clients : le cadre « Facturé à » de la facture les liste tous.",
+      "clientFromOrders": "Défini par les commandes cochées.",
+      "noClient": "Choisissez le client facturé, ou cochez une commande."
     },
     "previewPage": "Aperçu de la facture, page {page}",
     "previewError": "L'aperçu n'a pas pu être affiché.",
@@ -261,7 +267,30 @@
       "title": "Aucune facture",
       "text": "Rien ne correspond à ce filtre et cette recherche à la fois.",
       "reset": "Réinitialiser"
-    }
+    },
+    "orders": {
+      "loading": "Chargement des commandes du client…",
+      "none": "Aucune commande n'est prête à facturer.",
+      "packedOf": "{packed} colis emballés sur {planned}",
+      "nothingPacked": "rien d'emballé encore, {planned} colis prévus",
+      "invoicedBefore": "{count} déjà facturés",
+      "perParcel": "{price} par colis",
+      "blocked": {
+        "noClient": "La commande n'a pas de client — renseignez-le d'abord dans son formulaire",
+        "noPrice": "Pas encore de prix par colis — enregistrez la commande dans son formulaire pour le calculer",
+        "fullyInvoiced": "Tous les colis prévus sont déjà facturés"
+      },
+      "add": "Ajouter une commande",
+      "addTitle": "Ajouter des commandes",
+      "addBody": "Cochez les commandes du client que cette facture couvre. Chacune devient une ligne ; rien ne change avant l'enregistrement du brouillon.",
+      "done": "Terminé",
+      "leaving": "À l'enregistrement, {orders} quittent cette facture et reviennent à facturer.",
+      "filter": "Client",
+      "allClients": "Tous les clients ({count})",
+      "noClientGroup": "Sans client"
+    },
+    "createShipment": "Créer l'expédition",
+    "shipmentCreated": "Expédition brouillon créée"
   },
   "mention": {
     "label": "Mention produit",

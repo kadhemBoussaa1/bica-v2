@@ -171,6 +171,18 @@ function ShippedRecord({ shipment: s }: { shipment: Shipment }) {
   const orders = [
     ...new Map(s.lines.flatMap((l) => (l.order ? [[l.order.id, l.order] as const] : []))).values(),
   ];
+  // A shipment of several clients' orders has no client of its own: it
+  // names each order's, in line order.
+  const clients = s.client
+    ? [s.client]
+    : [
+        ...new Map(
+          s.lines.flatMap((l) =>
+            l.order?.client ? [[l.order.client.id, l.order.client] as const] : [],
+          ),
+        ).values(),
+      ];
+  const clientNames = clients.map((client) => client.name).join(", ");
   const exportDay = s.exportDate === null ? "—" : formatDay(s.exportDate);
   const invoiceNumero = s.salesInvoice?.numero ?? null;
 
@@ -200,8 +212,8 @@ function ShippedRecord({ shipment: s }: { shipment: Shipment }) {
           </div>
           <p className={styles.draftLede}>
             {invoiceNumero
-              ? t("record.lede", { date: exportDay, client: s.client.name, invoice: invoiceNumero })
-              : t("record.ledeNoInvoice", { date: exportDay, client: s.client.name })}
+              ? t("record.lede", { date: exportDay, client: clientNames, invoice: invoiceNumero })
+              : t("record.ledeNoInvoice", { date: exportDay, client: clientNames })}
           </p>
         </div>
 
@@ -381,6 +393,8 @@ function ShippedRecord({ shipment: s }: { shipment: Shipment }) {
                   line.units !== null && line.quantity > 0 ? line.units / line.quantity : null;
                 const meta = [
                   line.order?.numero ?? null,
+                  // Whose goods, when the shipment carries several clients'.
+                  s.client === null ? (line.order?.client?.name ?? null) : null,
                   per === null
                     ? null
                     : t("editor.cargo.perParcel", {
@@ -458,8 +472,10 @@ function ShippedRecord({ shipment: s }: { shipment: Shipment }) {
             <h2 className={styles.railTitle}>{t("editor.links.title")}</h2>
             <FactRow label={t("fields.number")}>{s.numero}</FactRow>
             <FactRow label={t("fields.client")}>
-              {s.client.name}
-              {!s.client.active && <span className={records.archivedTag}>{t("archived")}</span>}
+              {clientNames}
+              {s.client && !s.client.active && (
+                <span className={records.archivedTag}>{t("archived")}</span>
+              )}
             </FactRow>
             <FactRow label={t("fields.exportDate")}>{exportDay}</FactRow>
             <FactRow label={t("fields.invoice")}>
@@ -483,11 +499,14 @@ function ShippedRecord({ shipment: s }: { shipment: Shipment }) {
                   href={commercial ? `/invoices/sales/${s.salesInvoice.id}` : null}
                 />
               )}
-              <RailLink
-                label={t("fields.client")}
-                value={s.client.name}
-                href={commercial ? `/clients/${s.client.id}` : null}
-              />
+              {clients.map((client) => (
+                <RailLink
+                  key={client.id}
+                  label={t("fields.client")}
+                  value={client.name}
+                  href={commercial ? `/clients/${client.id}` : null}
+                />
+              ))}
               {commercial && (
                 <RailLink
                   label={t("editor.links.journal")}

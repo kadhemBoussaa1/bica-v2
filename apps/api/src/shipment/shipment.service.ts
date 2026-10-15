@@ -29,7 +29,7 @@ import {
   type ListExportShipmentsInput,
 } from "./shipment.list";
 
-/** What `createFromOrder` reads off the order before writing. */
+/** What raising a shipment reads off each order it carries. */
 const EXPORTABLE_ORDER_SELECT = {
   id: true,
   numero: true,
@@ -97,10 +97,10 @@ type DraftLine = Prisma.ShipmentGetPayload<{ select: typeof DRAFT_SELECT }>["lin
 
 /**
  * Outbound shipments — docs/export-plan.md. A draft is raised from an
- * `INVOICED` order and paired with its latest issued invoice, edited by
- * the warehouse, then shipped: it takes its number from `ShipmentCounter`,
- * freezes, and the order either completes (every parcel gone) or returns
- * to `INVOICEABLE` for the next invoice + shipment pair.
+ * issued invoice and carries every order it bills — one truck per invoice —
+ * edited by the warehouse, then shipped: it takes its number from
+ * `ShipmentCounter`, freezes, and each order either completes (every parcel
+ * gone) or returns to `INVOICEABLE` for the next invoice + shipment pair.
  *
  * Every mutation that touches an order's status goes through
  * `OrderService.transition` on the same transaction, so the shipment and
@@ -159,6 +159,15 @@ export class ShipmentService {
         ...row,
         parcels: lines.reduce((sum, line) => sum + line.quantity, 0),
         orderNumeros: lines.flatMap((line) => (line.order ? [line.order.numero] : [])),
+        // Named when the shipment carries several clients' orders and so has
+        // no client of its own; in line order, without repeats.
+        orderClients: [
+          ...new Map(
+            lines.flatMap((line) =>
+              line.order?.client ? [[line.order.client.id, line.order.client] as const] : [],
+            ),
+          ).values(),
+        ],
         // The packing-list snapshot, summed. Null when no line carries one —
         // the row then shows the order count alone rather than a bare "0 pcs".
         units: lines.some((line) => line.units !== null)
@@ -225,21 +234,30 @@ export class ShipmentService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Raises a DRAFT from an `INVOICED` order and moves the order to
-   * `READY_FOR_EXPORT` in the same transaction. Pairs it with the most
-   * recently issued invoice that has no shipment yet, and prefills one line
-   * with that invoice's parcels, capped at the order's un-shipped balance.
+   * Raises a DRAFT carrying every order an ISSUED invoice bills — the goods
+   * of one invoice leave on one truck — and moves each order to
+   * `READY_FOR_EXPORT` in the same transaction. One line per order, at the
+   * invoice line's parcels, capped at what that order still has to ship.
    *
-   * Guards fire in the order a user can act on them. A concurrent second
-   * click is caught by the compare-and-set inside `transition`: the second
-   * transaction finds the order already `READY_FOR_EXPORT`, throws
-   * CONFLICT, and its shipment rolls back with it.
+   * A concurrent second click is caught twice over: the invoice's shipment
+   * check, and the compare-and-set inside `transition`, which finds the
+   * orders already `READY_FOR_EXPORT` and rolls the duplicate back.
+   */
+  async createFromInvoice(actor: SessionUser, invoiceId: string) {
+    return this.prisma.$transaction((tx) => this.createFromInvoiceIn(actor, invoiceId, tx));
+  }
+
+  /**
+   * The order page's "Create shipment": finds the order's issued invoice
+   * that has not travelled yet and raises the shipment from it — so it
+   * carries that invoice's other orders too, exactly as `createFromInvoice`
+   * would. The order's own checks come first, worded for its page.
    */
   async createFromOrder(actor: SessionUser, orderId: string) {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
-        select: EXPORTABLE_ORDER_SELECT,
+        select: { id: true, numero: true, status: true },
       });
       if (!order) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
@@ -250,30 +268,10 @@ export class ShipmentService {
           message: `Order ${order.numero} is ${order.status}, not ready for export`,
         });
       }
-      if (order.clientId === null) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Set the order's client first — a shipment needs a consignee",
-        });
-      }
-      const existingDraft = await tx.shipmentLine.findFirst({
-        where: { orderId, shipment: { status: "DRAFT" } },
-        select: { shipmentId: true },
-      });
-      if (existingDraft) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: `A draft shipment already exists for ${order.numero}`,
-        });
-      }
       const invoiceLine = await tx.salesInvoiceLine.findFirst({
         where: { orderId, invoice: { status: "ISSUED", shipments: { none: {} } } },
         orderBy: [{ invoice: { issuedAt: "desc" } }, { invoice: { createdAt: "desc" } }],
-        select: {
-          quantity: true,
-          mention: true,
-          invoice: { select: { id: true, numero: true } },
-        },
+        select: { invoiceId: true },
       });
       if (!invoiceLine) {
         throw new TRPCError({
@@ -281,59 +279,135 @@ export class ShipmentService {
           message: `Every issued invoice for ${order.numero} already has a shipment — issue the next invoice first`,
         });
       }
+      return this.createFromInvoiceIn(actor, invoiceLine.invoiceId, tx);
+    });
+  }
+
+  private async createFromInvoiceIn(actor: SessionUser, invoiceId: string, tx: Db) {
+    const invoice = await tx.salesInvoice.findUnique({
+      where: { id: invoiceId },
+      select: {
+        id: true,
+        numero: true,
+        status: true,
+        clientId: true,
+        shipments: { select: { id: true }, take: 1 },
+        lines: {
+          where: { orderId: { not: null } },
+          select: {
+            quantity: true,
+            mention: true,
+            order: { select: EXPORTABLE_ORDER_SELECT },
+          },
+          orderBy: { position: "asc" },
+        },
+      },
+    });
+    if (!invoice) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Invoice not found" });
+    }
+    if (invoice.status !== "ISSUED") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Issue the invoice before creating its shipment",
+      });
+    }
+    if (invoice.shipments.length > 0) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: `Invoice ${invoice.numero ?? ""} already has a shipment`,
+      });
+    }
+    const lines = invoice.lines.flatMap((line) =>
+      line.order ? [{ ...line, order: line.order }] : [],
+    );
+    if (lines.length === 0) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: `Invoice ${invoice.numero ?? ""} bills no order — there is nothing to ship`,
+      });
+    }
+
+    const orderIds = lines.map((line) => line.order.id);
+    const drafts = await tx.shipmentLine.findMany({
+      where: { orderId: { in: orderIds }, shipment: { status: "DRAFT" } },
+      select: { order: { select: { numero: true } } },
+    });
+    const inDraft = drafts[0]?.order?.numero;
+    if (inDraft) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: `A draft shipment already exists for ${inDraft}`,
+      });
+    }
+    const elsewhere = await this.shippedElsewhere(orderIds, tx);
+
+    const kinds: ShipmentKind[] = [];
+    const rows = [];
+    for (const [index, line] of lines.entries()) {
+      const { order } = line;
+      if (order.status !== "INVOICED") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Order ${order.numero} is ${order.status}, not ready for export`,
+        });
+      }
       const planned = plannedParcels(order.parcelCount);
       if (planned === null || planned <= 0) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "The order has no planned parcel count — price it before shipping",
+          message: `Order ${order.numero} has no planned parcel count — price it before shipping`,
         });
       }
       // `shippedElsewhere` seeds every requested order at 0, so the fallback never fires.
-      const balance = planned - ((await this.shippedElsewhere([orderId], tx)).get(orderId) ?? 0);
+      const balance = planned - (elsewhere.get(order.id) ?? 0);
       if (balance <= 0) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
           message: `Every parcel of ${order.numero} has shipped (${planned} parcels)`,
         });
       }
-
       // The invoice's figure, whole, never above what is left to ship.
-      const quantity = Math.min(Math.max(1, Math.ceil(invoiceLine.quantity ?? 0)), balance);
+      const quantity = Math.min(Math.max(1, Math.ceil(line.quantity ?? 0)), balance);
       const unitsPerParcel =
         order.quantityUnit === "KILOGRAMS" ? order.kilosPerParcel : order.piecesPerParcel;
-
-      const shipment = await tx.shipment.create({
-        data: {
-          status: "DRAFT",
-          kind: deriveShipmentKind(quantity, balance),
-          clientId: order.clientId,
-          salesInvoiceId: invoiceLine.invoice.id,
-          createdById: actor.id,
-          lines: {
-            create: [
-              {
-                position: 1,
-                orderId,
-                description: describeProductSpec(
-                  { ...productSpecFromRow(order.product), paperType: order.product.paperType },
-                  unitsPerParcel,
-                  order.quantityUnit,
-                ),
-                // The issued line's mention, so the packing list reads like the invoice.
-                mention: invoiceLine.mention,
-                quantity,
-                units: unitsPerParcel === null ? null : quantity * unitsPerParcel,
-              },
-            ],
-          },
-        },
-        select: { id: true },
+      kinds.push(deriveShipmentKind(quantity, balance));
+      rows.push({
+        position: index + 1,
+        orderId: order.id,
+        description: describeProductSpec(
+          { ...productSpecFromRow(order.product), paperType: order.product.paperType },
+          unitsPerParcel,
+          order.quantityUnit,
+        ),
+        // The issued line's mention, so the packing list reads like the invoice.
+        mention: line.mention,
+        quantity,
+        units: unitsPerParcel === null ? null : quantity * unitsPerParcel,
       });
+    }
 
-      // After the insert, so the guard sees the DRAFT line.
-      await this.orders.transition(actor, { orderId, to: "READY_FOR_EXPORT", note: undefined }, tx);
-      return shipment;
+    // The consignee is the orders' client when they share one; none when the
+    // invoice bills several, each line then naming its own through its order.
+    const consignees = new Set(lines.map((line) => line.order.clientId));
+    const [consignee] = consignees;
+    const shipment = await tx.shipment.create({
+      data: {
+        status: "DRAFT",
+        kind: kinds.every((kind) => kind === "COMPLETE") ? "COMPLETE" : "PARTIAL",
+        clientId: consignees.size === 1 ? (consignee ?? null) : null,
+        salesInvoiceId: invoice.id,
+        createdById: actor.id,
+        lines: { create: rows },
+      },
+      select: { id: true },
     });
+
+    // After the insert, so each guard sees its order's DRAFT line.
+    for (const orderId of orderIds) {
+      await this.orders.transition(actor, { orderId, to: "READY_FOR_EXPORT", note: undefined }, tx);
+    }
+    return shipment;
   }
 
   /**

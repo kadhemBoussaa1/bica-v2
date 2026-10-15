@@ -81,14 +81,17 @@
       "createCustomsUpload": "طلب رفع نسخة التصريح الجمركي",
       "updateCustoms": "تعديل بيانات جمارك الشحنة",
       "ship": "شحن",
-      "discardDraft": "إلغاء مسودة شحنة"
+      "discardDraft": "إلغاء مسودة شحنة",
+      "createFromInvoice": "إنشاء مسودة شحنة من فاتورة"
     },
     "salesInvoice": {
       "createFromOrder": "إنشاء مسودة فاتورة بيع",
       "updateDraft": "تعديل مسودة فاتورة",
       "refreshFromPackaging": "تحديث الفاتورة من التعبئة",
       "issue": "إصدار فاتورة بيع",
-      "discardDraft": "إلغاء مسودة فاتورة"
+      "discardDraft": "إلغاء مسودة فاتورة",
+      "create": "إنشاء مسودة فاتورة بيع",
+      "removeOrder": "إزالة طلبية من مسودة فاتورة"
     },
     "purchaseInvoice": {
       "create": "تسجيل فاتورة شراء",

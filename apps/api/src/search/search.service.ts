@@ -433,7 +433,8 @@ const SOURCES: readonly Source[] = [
       id: row.id,
       title: row.numero,
       alt: null,
-      detail: row.client.name,
+      // No client on a shipment carrying several clients' orders.
+      detail: row.client?.name ?? null,
       date: row.exportDate,
       archived: false,
     }),

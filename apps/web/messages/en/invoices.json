@@ -90,7 +90,6 @@
     "sumCurrency": "Sum of lines ({currency})",
     "add": "Add line",
     "remove": "Remove",
-    "billsOrder": "Bills the order",
     "aria": {
       "product": "Line {n} product",
       "description": "Line {n} designation",
@@ -187,7 +186,7 @@
   },
   "sales": {
     "title": "Sales invoices",
-    "subtitle": "What we billed clients, and the drafts waiting to be issued. Create one here, or from an invoiceable order's page.",
+    "subtitle": "What we billed clients, and the drafts waiting to be issued. Create one here: tick the orders ready for invoicing — of one client or several.",
     "back": "← Sales invoices",
     "detailTitle": "Sales invoice",
     "detailSubtitle": "An invoice to a client: its amounts, payment, lines, and the order and shipment it belongs to. A draft can still be edited; an issued invoice is final.",
@@ -221,13 +220,20 @@
       "priceChanged": "The order's price is now {price} — adjust the unit price if the invoice should follow it"
     },
     "new": "New sales invoice",
-    "newSubtitle": "Bill a client for anything that is not a job order — a service, a one-off sale, a re-invoiced cost. Type the lines yourself; the draft takes its number when you issue it.",
+    "newSubtitle": "Tick the orders to bill — of one client or several — each becomes a line at its parcel price and packed parcels, both editable; then add any other line. The draft takes its number when you issue it.",
     "draftCreated": "Draft invoice created for {client}",
     "form": {
       "chooseClient": "Choose a client",
       "clientHint": "Client not listed? <link>Create it</link> first.",
       "linesSection": "Lines",
-      "submit": "Create draft"
+      "submit": "Create draft",
+      "ordersSection": "Orders to invoice",
+      "noLines": "Tick an order or add a line.",
+      "noLinesYet": "No line yet — tick an order above, or add a line.",
+      "clients": "Clients",
+      "severalClientsHint": "The orders belong to several clients: the invoice's \"bill to\" box lists them all.",
+      "clientFromOrders": "Set by the ticked orders.",
+      "noClient": "Choose the client this invoice bills, or tick an order."
     },
     "previewPage": "Invoice preview, page {page}",
     "previewError": "The preview could not be drawn.",
@@ -261,7 +267,30 @@
       "title": "No invoices",
       "text": "Nothing matches this filter and this search at once.",
       "reset": "Reset"
-    }
+    },
+    "orders": {
+      "loading": "Loading the client's orders…",
+      "none": "No order is ready for invoicing.",
+      "packedOf": "{packed} of {planned} parcels packed",
+      "nothingPacked": "nothing packed yet, {planned} parcels planned",
+      "invoicedBefore": "{count} already invoiced",
+      "perParcel": "{price} per parcel",
+      "blocked": {
+        "noClient": "No client on the order — set one in its edit form first",
+        "noPrice": "No parcel price yet — save the order in its edit form to compute one",
+        "fullyInvoiced": "Every planned parcel is already invoiced"
+      },
+      "add": "Add an order",
+      "addTitle": "Add orders",
+      "addBody": "Tick the client's orders this invoice bills. Each one becomes a line; nothing changes until you save the draft.",
+      "done": "Done",
+      "leaving": "On save, {orders} leave this invoice and return to ready for invoicing.",
+      "filter": "Client",
+      "allClients": "All clients ({count})",
+      "noClientGroup": "No client"
+    },
+    "createShipment": "Create shipment",
+    "shipmentCreated": "Draft shipment created"
   },
   "mention": {
     "label": "Product mention",

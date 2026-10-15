@@ -83,12 +83,12 @@ export const ORDER_TRANSITIONS: readonly OrderTransition[] = [
     noteRequired: false,
     description: "Release to invoicing",
   },
-  // Reached only by raising a sales invoice: `InvoiceService.createFromOrder`
-  // inserts the invoice and then runs this transition in the same
-  // transaction, and `OrderService.transition` refuses it when no invoice
-  // line references the order — so a bare `order.transition` can never get
-  // here. The rail dispatches this row to the create-invoice action rather
-  // than the generic dialog (docs/sales-invoice-plan.md §7).
+  // Reached only by putting the order on a draft sales invoice:
+  // `InvoiceService` writes the order's line and then runs this transition
+  // in the same transaction, and `OrderService.transition` refuses it when
+  // no DRAFT line references the order — so a bare `order.transition` can
+  // never get here. Invoices are raised from the invoices page, where the
+  // client's orders are picked, so the rail does not offer this row.
   {
     from: "INVOICEABLE",
     to: "INVOICED",
@@ -96,9 +96,9 @@ export const ORDER_TRANSITIONS: readonly OrderTransition[] = [
     noteRequired: false,
     description: "Create invoice",
   },
-  // Reached only by raising a shipment: `ShipmentService.createFromOrder`
-  // inserts the draft and then runs this transition in the same
-  // transaction, and `OrderService.transition` refuses it when no DRAFT
+  // Reached only by raising a shipment: `ShipmentService` inserts the draft
+  // (every order of one issued invoice) and then runs this transition in the
+  // same transaction, and `OrderService.transition` refuses it when no DRAFT
   // shipment line references the order. The warehouse raises the shipment,
   // so the row admits MAGASINIER as well as ADMIN+ (docs/export-plan.md).
   {
@@ -136,15 +136,16 @@ export const ORDER_TRANSITIONS: readonly OrderTransition[] = [
   },
   // The third audited reopen: only while the order's invoice is still a
   // DRAFT (guarded in `OrderService.transition`), and only through
-  // `InvoiceService.discardDraft`, which deletes the draft in the same
-  // transaction. An issued invoice is never deleted, so an INVOICED order
-  // with one cannot come back this way.
+  // `InvoiceService` taking the order off that draft — `removeOrder` from
+  // the order's page, an edit that drops its line, or `discardDraft` — in
+  // the same transaction. An issued invoice is never deleted, so an
+  // INVOICED order with one cannot come back this way.
   {
     from: "INVOICED",
     to: "INVOICEABLE",
     role: adminOrAbove,
     noteRequired: true,
-    description: "Discard draft invoice",
+    description: "Remove from draft invoice",
   },
   // The fourth audited reopen, the shipment's twin of the row above: only
   // while a DRAFT shipment exists, and only through

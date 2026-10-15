@@ -1828,6 +1828,11 @@ model SalesInvoice {
   /// — including every export invoice in EUR/USD — were raised without one.
   /// That is a gap in the source data, not a modelling choice: the UI marks
   /// these as "no client" rather than hiding them.
+  ///
+  /// On an invoice raised here it is derived from the orders it bills: their
+  /// client when they share one, null when they belong to several (each
+  /// line's order then names its own, and the PDF lists them all). Typed by
+  /// hand only on an invoice that bills no order.
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Restrict)
 
@@ -2012,10 +2017,13 @@ model Shipment {
   /// editable on the draft beforehand.
   exportDate DateTime? @db.Date
 
-  /// The consignee. Restrict, like `SalesInvoice.client`: an export names a
-  /// client and that client cannot be deleted from under it.
-  clientId String
-  client   Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  /// The consignee: the client of every order on board. Null when the
+  /// orders belong to several clients — an invoice may bill several, and its
+  /// goods leave on one truck — each line then names its own through the
+  /// order. Restrict, like `SalesInvoice.client`: a named client cannot be
+  /// deleted from under the export.
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: Restrict)
 
   /// The issued invoice the goods travel with. Nullable and not unique on
   /// purpose: a discarded draft must free the invoice to be paired again,

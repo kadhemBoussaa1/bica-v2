@@ -23,7 +23,11 @@ import {
   type DocumentLine,
 } from "./pdf.document";
 import { SalesInvoiceDocument } from "./pdf.blocks.sales-invoice";
-import { SALES_INVOICE_PDF_SELECT, toSalesInvoiceModel } from "./sales-invoice.model";
+import {
+  CLIENT_BLOCK_SELECT,
+  SALES_INVOICE_PDF_SELECT,
+  toSalesInvoiceModel,
+} from "./sales-invoice.model";
 import { salesInvoiceLayoutFor } from "../template/template.defaults";
 
 /**
@@ -373,8 +377,29 @@ export class PdfService {
         message: "An issued invoice has no preview — open its PDF instead",
       });
     }
+    // Orders the unsaved draft adds: named on the preview only when a save
+    // could attach them — still INVOICEABLE, with a client.
+    const onDraft = new Set(invoice.lines.flatMap((line) => (line.orderId ? [line.orderId] : [])));
+    const asked = draft.lines.flatMap((line) =>
+      line.orderId && !onDraft.has(line.orderId) ? [line.orderId] : [],
+    );
+    const attachable =
+      asked.length === 0
+        ? []
+        : await this.prisma.order.findMany({
+            where: { id: { in: asked }, status: "INVOICEABLE", clientId: { not: null } },
+            select: { id: true, numero: true, client: { select: CLIENT_BLOCK_SELECT } },
+          });
     const layout = await salesInvoiceLayoutFor(this.prisma, null);
-    return this.renderSalesInvoice(toSalesInvoiceModel(invoice, draft), layout, locale);
+    return this.renderSalesInvoice(
+      toSalesInvoiceModel(
+        invoice,
+        draft,
+        new Map(attachable.map(({ id, ...order }) => [id, order])),
+      ),
+      layout,
+      locale,
+    );
   }
 
   /**

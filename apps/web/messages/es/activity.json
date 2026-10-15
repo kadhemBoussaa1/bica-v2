@@ -81,14 +81,17 @@
       "createCustomsUpload": "Subida del escaneo de aduana solicitada",
       "updateCustoms": "Aduana del envío editada",
       "ship": "Enviado",
-      "discardDraft": "Borrador de envío descartado"
+      "discardDraft": "Borrador de envío descartado",
+      "createFromInvoice": "Borrador de envío creado desde una factura"
     },
     "salesInvoice": {
       "createFromOrder": "Borrador de factura de venta creado",
       "updateDraft": "Borrador de factura editado",
       "refreshFromPackaging": "Factura actualizada desde el embalaje",
       "issue": "Factura de venta emitida",
-      "discardDraft": "Borrador de factura descartado"
+      "discardDraft": "Borrador de factura descartado",
+      "create": "Borrador de factura de venta creado",
+      "removeOrder": "Pedido quitado de un borrador de factura"
     },
     "purchaseInvoice": {
       "create": "Factura de compra registrada",

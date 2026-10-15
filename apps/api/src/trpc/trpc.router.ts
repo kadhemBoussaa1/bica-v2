@@ -4,6 +4,7 @@ import {
   canAccess,
   canAccessAny,
   acceptQuoteInput,
+  createShipmentFromInvoiceInput,
   createShipmentFromOrderInput,
   createUploadInput,
   discardShipmentDraftInput,
@@ -16,7 +17,8 @@ import {
   updateShipmentCustomsInput,
   updateShipmentDraftInput,
   createPurchaseInvoiceInput,
-  createSalesInvoiceFromOrderInput,
+  invoiceableOrdersInput,
+  removeOrderFromSalesInvoiceInput,
   createSalesInvoiceInput,
   discardSalesInvoiceDraftInput,
   purchaseInvoiceIdInput,
@@ -1458,9 +1460,9 @@ export class TrpcRouter {
 
     /**
      * Sales invoices: the migrated history plus the write path from
-     * docs/sales-invoice-plan.md — a draft raised from an INVOICEABLE order,
-     * edited, issued (numbered) or discarded. ADMIN and above throughout:
-     * every mutation moves money or an order's lifecycle.
+     * docs/sales-invoice-plan.md — a draft billing one or more of a client's
+     * INVOICEABLE orders, edited, issued (numbered) or discarded. ADMIN and
+     * above throughout: every mutation moves money or an order's lifecycle.
      */
     salesInvoice: router({
       list: adminProcedure
@@ -1471,26 +1473,23 @@ export class TrpcRouter {
         .input(salesInvoiceIdInput)
         .query(({ input }) => this.invoiceService.salesById(input.id)),
 
-      /** Draft + order -> INVOICED, one transaction. Returns the draft's id. */
-      createFromOrder: adminProcedure
-        .input(createSalesInvoiceFromOrderInput)
-        .mutation(({ ctx, input }) =>
-          this.invoiceService.createFromOrder(ctx.user, input),
-        ),
+      /** A client's INVOICEABLE orders, each with the line it would start as. */
+      invoiceableOrders: adminProcedure
+        .input(invoiceableOrdersInput)
+        .query(({ input }) => this.invoiceService.invoiceableOrders(input)),
 
       /**
-       * A draft billing something other than a job order — the ordinary case
-       * in the migrated data, where 47 of 48 invoices name no order. No order
-       * is touched, so this has none of `createFromOrder`'s lifecycle; the
-       * draft then goes through the same `updateDraft` / `issue` / `discardDraft`.
+       * A draft billing the client's chosen orders (each -> INVOICED, one
+       * transaction) and any typed lines. Returns the draft's id.
        */
       create: adminProcedure
         .input(createSalesInvoiceInput)
         .mutation(({ ctx, input }) => this.invoiceService.createSales(ctx.user, input)),
 
+      /** Lines and header; an order line added attaches it, one dropped detaches it. */
       updateDraft: adminProcedure
         .input(updateSalesInvoiceDraftInput)
-        .mutation(({ input }) => this.invoiceService.updateDraft(input)),
+        .mutation(({ ctx, input }) => this.invoiceService.updateDraft(ctx.user, input)),
 
       refreshFromPackaging: adminProcedure
         .input(salesInvoiceIdInput)
@@ -1504,6 +1503,11 @@ export class TrpcRouter {
       discardDraft: adminProcedure
         .input(discardSalesInvoiceDraftInput)
         .mutation(({ ctx, input }) => this.invoiceService.discardDraft(ctx.user, input)),
+
+      /** One order off a draft (back to INVOICEABLE, note required); deletes a draft left empty. */
+      removeOrder: adminProcedure
+        .input(removeOrderFromSalesInvoiceInput)
+        .mutation(({ ctx, input }) => this.invoiceService.removeOrder(ctx.user, input)),
     }),
 
     /**
@@ -1522,11 +1526,21 @@ export class TrpcRouter {
         .input(exportShipmentIdInput)
         .query(({ input }) => this.shipmentService.byId(input.id)),
 
-      /** Draft + order -> READY_FOR_EXPORT, one transaction. Returns the draft's id. */
+      /**
+       * Draft from the order's untravelled issued invoice, carrying every
+       * order that invoice bills (each -> READY_FOR_EXPORT). Returns its id.
+       */
       createFromOrder: warehouseProcedure
         .input(createShipmentFromOrderInput)
         .mutation(({ ctx, input }) =>
           this.shipmentService.createFromOrder(ctx.user, input.orderId),
+        ),
+
+      /** The same draft, raised from the issued invoice's own page. */
+      createFromInvoice: warehouseProcedure
+        .input(createShipmentFromInvoiceInput)
+        .mutation(({ ctx, input }) =>
+          this.shipmentService.createFromInvoice(ctx.user, input.invoiceId),
         ),
 
       updateDraft: warehouseProcedure

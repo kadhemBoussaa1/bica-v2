@@ -68,6 +68,12 @@ export const createShipmentFromOrderInput = z.object({
 });
 export type CreateShipmentFromOrderInput = z.infer<typeof createShipmentFromOrderInput>;
 
+/** A draft shipment carrying every order an issued invoice bills. */
+export const createShipmentFromInvoiceInput = z.object({
+  invoiceId: z.string().min(1),
+});
+export type CreateShipmentFromInvoiceInput = z.infer<typeof createShipmentFromInvoiceInput>;
+
 /** ISO date, `YYYY-MM-DD`, as the `@db.Date` columns are exchanged. */
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 

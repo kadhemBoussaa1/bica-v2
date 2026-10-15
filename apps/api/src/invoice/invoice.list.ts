@@ -304,6 +304,9 @@ export function salesInvoiceListDeclaration(): ListDeclaration<
         { lines: { some: { OR: [{ product: contains(term) }, { description: contains(term) }] } } },
         // "CMD-319" finds the invoice billing that order.
         { lines: { some: { order: { numero: contains(term) } } } },
+        // An invoice billing several clients names none itself: find it by
+        // any of its orders' clients.
+        { lines: { some: { order: { client: { name: contains(term) } } } } },
       ],
     }),
     facets: SALES_FACETS,
@@ -329,8 +332,13 @@ export const SALES_INVOICE_SELECT = {
   // What the invoice is for, in one line under the client: the order(s) it
   // bills, or failing that the first line's product. Folded into `subject`
   // by the service; the lines themselves are not shipped to the list.
+  // `client` names the clients of an invoice that bills several (its own
+  // `client` is then null).
   lines: {
-    select: { product: true, order: { select: { numero: true } } },
+    select: {
+      product: true,
+      order: { select: { numero: true, client: { select: { id: true, name: true } } } },
+    },
     orderBy: { position: "asc" },
   },
 } satisfies Prisma.SalesInvoiceSelect;
@@ -373,6 +381,7 @@ export const SALES_INVOICE_DETAIL_SELECT = {
           status: true,
           parcelCount: true,
           finalParcelPrice: true,
+          client: { select: { id: true, name: true, active: true } },
         },
       },
     },

@@ -90,7 +90,6 @@
     "sumCurrency": "Suma de líneas ({currency})",
     "add": "Añadir línea",
     "remove": "Quitar",
-    "billsOrder": "Factura el pedido",
     "aria": {
       "product": "Producto de la línea {n}",
       "description": "Descripción de la línea {n}",
@@ -187,7 +186,7 @@
   },
   "sales": {
     "title": "Facturas de venta",
-    "subtitle": "Lo que hemos facturado a los clientes, y los borradores pendientes de emitir. Crea una aquí, o desde la página de un pedido facturable.",
+    "subtitle": "Lo que facturamos a los clientes y los borradores pendientes de emitir. Cree una aquí: marque los pedidos listos para facturar — de un cliente o de varios.",
     "back": "← Facturas de venta",
     "detailTitle": "Factura de venta",
     "detailSubtitle": "Una factura a un cliente: importes, pago, líneas, y el pedido y el envío a los que pertenece. Un borrador aún puede editarse; una factura emitida es definitiva.",
@@ -221,13 +220,20 @@
       "priceChanged": "El precio del pedido ahora es {price} — ajusta el precio unitario si la factura debe seguirlo"
     },
     "new": "Nueva factura de venta",
-    "newSubtitle": "Factura a un cliente por algo que no es un pedido: un servicio, una venta puntual, un gasto refacturado. Escribe tú las líneas; el borrador toma su número al emitirse.",
+    "newSubtitle": "Marque los pedidos a facturar — de un cliente o de varios — cada uno se convierte en una línea a su precio por bulto y con sus bultos embalados, ambos editables; luego añada otras líneas si hace falta. El borrador recibe su número al emitirse.",
     "draftCreated": "Borrador de factura creado para {client}",
     "form": {
       "chooseClient": "Elegir un cliente",
       "clientHint": "¿El cliente no aparece? <link>Créalo</link> primero.",
       "linesSection": "Líneas",
-      "submit": "Crear borrador"
+      "submit": "Crear borrador",
+      "ordersSection": "Pedidos a facturar",
+      "noLines": "Marque un pedido o añada una línea.",
+      "noLinesYet": "Aún no hay líneas — marque un pedido arriba o añada una línea.",
+      "clients": "Clientes",
+      "severalClientsHint": "Los pedidos pertenecen a varios clientes: el recuadro «Facturar a» de la factura los lista todos.",
+      "clientFromOrders": "Definido por los pedidos marcados.",
+      "noClient": "Elija el cliente facturado, o marque un pedido."
     },
     "previewPage": "Vista previa de la factura, página {page}",
     "previewError": "No se pudo mostrar la vista previa.",
@@ -261,7 +267,30 @@
       "title": "Ninguna factura",
       "text": "Nada coincide con este filtro y esta búsqueda a la vez.",
       "reset": "Restablecer"
-    }
+    },
+    "orders": {
+      "loading": "Cargando los pedidos del cliente…",
+      "none": "Ningún pedido está listo para facturar.",
+      "packedOf": "{packed} de {planned} bultos embalados",
+      "nothingPacked": "nada embalado aún, {planned} bultos previstos",
+      "invoicedBefore": "{count} ya facturados",
+      "perParcel": "{price} por bulto",
+      "blocked": {
+        "noClient": "El pedido no tiene cliente — indíquelo primero en su formulario",
+        "noPrice": "Aún sin precio por bulto — guarde el pedido en su formulario para calcularlo",
+        "fullyInvoiced": "Todos los bultos previstos ya están facturados"
+      },
+      "add": "Añadir un pedido",
+      "addTitle": "Añadir pedidos",
+      "addBody": "Marque los pedidos del cliente que factura esta factura. Cada uno se convierte en una línea; nada cambia hasta que guarde el borrador.",
+      "done": "Listo",
+      "leaving": "Al guardar, {orders} salen de esta factura y vuelven a listos para facturar.",
+      "filter": "Cliente",
+      "allClients": "Todos los clientes ({count})",
+      "noClientGroup": "Sin cliente"
+    },
+    "createShipment": "Crear envío",
+    "shipmentCreated": "Borrador de envío creado"
   },
   "mention": {
     "label": "Mención del producto",

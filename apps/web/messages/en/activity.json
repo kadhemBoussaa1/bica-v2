@@ -81,14 +81,17 @@
       "createCustomsUpload": "Customs scan upload requested",
       "updateCustoms": "Edited shipment customs",
       "ship": "Shipped",
-      "discardDraft": "Discarded shipment draft"
+      "discardDraft": "Discarded shipment draft",
+      "createFromInvoice": "Drafted shipment from invoice"
     },
     "salesInvoice": {
       "createFromOrder": "Drafted sales invoice",
       "updateDraft": "Edited invoice draft",
       "refreshFromPackaging": "Refreshed invoice from packaging",
       "issue": "Issued sales invoice",
-      "discardDraft": "Discarded invoice draft"
+      "discardDraft": "Discarded invoice draft",
+      "create": "Drafted sales invoice",
+      "removeOrder": "Removed order from invoice draft"
     },
     "purchaseInvoice": {
       "create": "Recorded purchase invoice",

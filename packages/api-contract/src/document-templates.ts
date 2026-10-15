@@ -133,6 +133,7 @@ export const SAMPLE_SALES_INVOICE: SalesInvoiceModel = (() => {
       phone: "+216 00 000 000",
       email: "achats@example.com",
     },
+    clients: [],
     orderNumeros: ["260123"],
     lines,
     totals: { totalHt, vatAmount: totalHt * 0.19, totalTtc: totalHt * 1.19 },

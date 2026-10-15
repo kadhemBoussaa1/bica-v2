@@ -44,6 +44,15 @@ export const salesInvoiceModelLine = z.object({
 });
 export type SalesInvoiceModelLine = z.infer<typeof salesInvoiceModelLine>;
 
+/** A billed client as the "bill to" box prints it. */
+const clientBlock = z.object({
+  name: text(300),
+  address: text(1000).nullable(),
+  taxId: text(100).nullable(),
+  phone: text(100).nullable(),
+  email: text(300).nullable(),
+});
+
 export const salesInvoiceModelSchema = z.object({
   snapshotVersion: z.literal(SALES_INVOICE_SNAPSHOT_VERSION),
   status: z.enum(SALES_INVOICE_STATUSES),
@@ -62,16 +71,18 @@ export const salesInvoiceModelSchema = z.object({
     website: text(200),
     taxId: text(50),
   }),
-  /** Null on the 24 legacy rows raised without one. */
-  client: z
-    .object({
-      name: text(300),
-      address: text(1000).nullable(),
-      taxId: text(100).nullable(),
-      phone: text(100).nullable(),
-      email: text(300).nullable(),
-    })
-    .nullable(),
+  /**
+   * The one client billed. Null on the 24 legacy rows raised without one,
+   * and on an invoice whose orders belong to several clients — `clients`
+   * then holds them all.
+   */
+  client: clientBlock.nullable(),
+  /**
+   * Every client of the invoice's orders, in line order, when there are
+   * several; empty otherwise. Added 2026-10-15 with a default, so snapshots
+   * frozen before it still parse — they print `client` alone.
+   */
+  clients: z.array(clientBlock).max(50).default([]),
   /** The orders the lines bill, in line order, without repeats. */
   orderNumeros: z.array(text(100)).max(100),
   lines: z.array(salesInvoiceModelLine).max(100),

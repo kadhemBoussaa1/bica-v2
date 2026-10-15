@@ -1,8 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@repo/ui/button";
+import { useToast } from "@repo/ui/toast";
 import {
   Documents,
   formatDay,
@@ -15,6 +19,7 @@ import { DocumentPreview } from "../../../purchasing/document-preview";
 import { useCurrentUser } from "../../../auth/use-auth";
 import { useTRPC } from "../../../trpc/client";
 import { SalesInvoiceDraft } from "./sales-invoice-draft";
+import { BilledClients, billedClients } from "../billed-clients";
 import styles from "../../../records/records.module.css";
 
 /**
@@ -29,6 +34,28 @@ export function SalesInvoiceDetail({ id }: { id: string }) {
   const { user } = useCurrentUser();
   const admin = user !== null && canAccess(user.role, "ADMIN");
   const invoiceQuery = useQuery(trpc.salesInvoice.byId.queryOptions({ id }));
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const { push } = useToast();
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  // One truck per invoice: the shipment carries every order the invoice bills.
+  const createShipment = useMutation(
+    trpc.shipment.createFromInvoice.mutationOptions({
+      onSuccess: async (created) => {
+        push({ title: t("sales.shipmentCreated"), tone: "success" });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: trpc.salesInvoice.byId.queryKey() }),
+          queryClient.invalidateQueries({ queryKey: trpc.shipment.list.queryKey() }),
+          queryClient.invalidateQueries({ queryKey: trpc.order.byId.queryKey() }),
+          queryClient.invalidateQueries({ queryKey: trpc.order.list.queryKey() }),
+          queryClient.invalidateQueries({ queryKey: trpc.nav.counts.queryKey() }),
+        ]);
+        router.push(`/shipments/${created.id}`);
+      },
+      onError: (cause) => setActionError(cause.message),
+    }),
+  );
 
   if (invoiceQuery.isPending) return <p className={styles.muted}>{t("loadingInvoice")}</p>;
 
@@ -49,6 +76,9 @@ export function SalesInvoiceDetail({ id }: { id: string }) {
   }
 
   const orders = inv.lines.flatMap((line) => (line.order ? [line.order] : []));
+  // Issued, billing orders, and not yet on a truck — the server re-checks
+  // every order and says why if one is not ready.
+  const shippable = orders.length > 0 && inv.shipments.length === 0;
 
   // Issued here, so it has a generated PDF — loading it is also what mints
   // the stored file for this language the first time. A migrated invoice has
@@ -68,16 +98,7 @@ export function SalesInvoiceDetail({ id }: { id: string }) {
           <span className={styles.mono}>{inv.numero}</span>
         </Row>
         <Row label={t("fields.client")}>
-          {inv.client ? (
-            <>
-              <Link className={styles.inlineLink} href={`/clients/${inv.client.id}`}>
-                {inv.client.name}
-              </Link>
-              {!inv.client.active && <span className={styles.archivedTag}>{t("archived")}</span>}
-            </>
-          ) : (
-            <span className={styles.muted}>{t("noClient")}</span>
-          )}
+          <BilledClients clients={billedClients(inv)} />
         </Row>
         {orders.map((order) => (
           <Row key={order.id} label={t("fields.order")}>
@@ -94,6 +115,21 @@ export function SalesInvoiceDetail({ id }: { id: string }) {
             </Link>
           </Row>
         ))}
+        {shippable && (
+          <Row label={t("fields.shipment")}>
+            <Button
+              size="dense"
+              variant="primary"
+              busy={createShipment.isPending}
+              onClick={() => {
+                setActionError(null);
+                createShipment.mutate({ invoiceId: inv.id });
+              }}
+            >
+              {t("sales.createShipment")}
+            </Button>
+          </Row>
+        )}
         <Row label={t("fields.issued")}>
           <Val value={formatDay(inv.issuedAt)} />
           {inv.issuedBy && <span className={styles.muted}> · {inv.issuedBy.name}</span>}
@@ -148,9 +184,16 @@ export function SalesInvoiceDetail({ id }: { id: string }) {
     </div>
   );
 
+  const notice = actionError && (
+    <p className={[styles.notice, styles.error].filter(Boolean).join(" ")} role="alert">
+      {actionError}
+    </p>
+  );
+
   if (!generated || inv.numero === null) {
     return (
       <div className={styles.detailStack}>
+        {notice}
         {record}
         {lines}
       </div>
@@ -161,6 +204,7 @@ export function SalesInvoiceDetail({ id }: { id: string }) {
   // only scroll sideways, and the PDF already shows them.
   return (
     <div className={styles.detailStack}>
+      {notice}
       <div className={styles.detailLayout}>
         <div className={styles.detailMain}>{record}</div>
         <aside className={styles.detailRail}>

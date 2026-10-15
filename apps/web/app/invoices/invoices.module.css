@@ -178,8 +178,42 @@
 
 .linesFoot {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
+  gap: var(--bp-space-2);
   margin-top: var(--bp-space-3);
+}
+
+/* The orders to tick: the client filter, then a group per client. */
+.orderPickerWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+}
+
+.orderPickerFilter {
+  max-width: 360px;
+}
+
+.orderPickerGroup {
+  font: 600 0.78125rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+  margin-top: var(--bp-space-1);
+}
+
+/* One client's orders, two to a row where there is room. */
+.orderPicker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--bp-space-2);
+}
+
+/* The order a line bills, under its product. */
+.lineOrder {
+  display: block;
+  margin-top: var(--bp-space-1);
+  font-size: 0.71875rem;
+  color: var(--bp-ink-muted);
 }
 
 .hints {

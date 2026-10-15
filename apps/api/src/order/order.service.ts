@@ -825,16 +825,17 @@ export class OrderService {
       (line) => line.invoice.status === "ISSUED" && line.invoice.shipments.length === 0,
     )?.invoice;
 
-    // Only ever reached from `InvoiceService.createFromOrder`, which has
-    // just inserted the draft in this same transaction. A bare
-    // `order.transition` finds nothing and is refused — there is no
-    // legitimate "invoiced without an invoice", so no admin bypass. Scoped
+    // Only ever reached from `InvoiceService` putting the order on a draft
+    // (`createSales`, `updateDraft`), which has just written its line in
+    // this same transaction. A bare `order.transition` finds nothing and is
+    // refused — there is no legitimate "invoiced without an invoice", so no
+    // admin bypass. Scoped
     // on `from`: the `READY_FOR_EXPORT -> INVOICED` shipment discard shares
     // the `to` and legitimately finds only issued invoices.
     if (from === "INVOICEABLE" && to === "INVOICED" && !draft) {
       throw new TRPCError({
         code: "PRECONDITION_FAILED",
-        message: "An order becomes invoiced by creating an invoice from it, not by marking it",
+        message: "An order becomes invoiced by adding it to an invoice, not by marking it",
       });
     }
     if (from === "INVOICED" && to === "INVOICEABLE" && !draft) {
@@ -874,7 +875,7 @@ export class OrderService {
    * keep today's bare "Mark exported".
    *
    * `to === "READY_FOR_EXPORT"` is reached only from
-   * `ShipmentService.createFromOrder`; `READY_FOR_EXPORT -> INVOICEABLE` and
+   * `ShipmentService` raising a draft from an issued invoice; `READY_FOR_EXPORT -> INVOICEABLE` and
    * the with-lines branch of `-> COMPLETED` only from `ShipmentService.ship`,
    * because outside that transaction an order at `READY_FOR_EXPORT` always
    * has a DRAFT shipment (or none), and both refuse a DRAFT.

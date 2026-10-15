@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import {
   PRODUCT_MENTIONS,
@@ -24,8 +25,13 @@ import styles from "./invoices.module.css";
  */
 export interface EditableLine {
   key: number;
-  /** A sales line billing an order: locked in place, never removable. */
+  /**
+   * A sales line billing an order. Removing it takes the order off the
+   * draft — the server sends it back to INVOICEABLE on save.
+   */
   orderId: string | null;
+  /** The order's number, shown on its line; null on a typed line. */
+  orderNumero: string | null;
   /** Only meaningful on a line billing an order — the one place it can be chosen. */
   mention: ProductMention | null;
   product: string;
@@ -48,6 +54,7 @@ function seed(value: number | null, fallback = ""): string {
 export function toEditable(
   line: {
     orderId?: string | null;
+    order?: { numero: string } | null;
     mention?: ProductMention | null;
     product: string | null;
     description: string | null;
@@ -61,6 +68,7 @@ export function toEditable(
   return {
     key,
     orderId: line.orderId ?? null,
+    orderNumero: line.order?.numero ?? null,
     mention: line.mention ?? null,
     product: line.product ?? "",
     description: line.description ?? "",
@@ -75,6 +83,7 @@ export function newEditableLine(key: number, taxPct = 0): EditableLine {
   return {
     key,
     orderId: null,
+    orderNumero: null,
     mention: null,
     product: "",
     description: "",
@@ -124,6 +133,10 @@ export function InvoiceLinesEditor({
   maxLines = 100,
   /** The default VAT rate a new line starts with. */
   newLineTaxPct = 0,
+  /** Lines may all be removed — a form that can still gain one elsewhere. */
+  allowEmpty = false,
+  /** More buttons beside "Add a line" (the sales draft's "Add an order"). */
+  actions,
 }: {
   lines: EditableLine[];
   onChange: (next: EditableLine[]) => void;
@@ -131,6 +144,8 @@ export function InvoiceLinesEditor({
   busy: boolean;
   maxLines?: number;
   newLineTaxPct?: number;
+  allowEmpty?: boolean;
+  actions?: ReactNode;
 }) {
   const t = useTranslations("invoices");
   const edit = (key: number, patch: Partial<EditableLine>) =>
@@ -179,6 +194,11 @@ export function InvoiceLinesEditor({
                       disabled={busy}
                       aria-label={t("lines.aria.product", { n })}
                     />
+                    {line.orderNumero !== null && (
+                      <span className={[records.mono, styles.lineOrder].filter(Boolean).join(" ")}>
+                        {line.orderNumero}
+                      </span>
+                    )}
                   </td>
                   <td className={styles.description}>
                     <div className={styles.descriptionCell}>
@@ -257,18 +277,14 @@ export function InvoiceLinesEditor({
                     {amount.format(figures.total)}
                   </td>
                   <td>
-                    {line.orderId === null ? (
-                      <Button
-                        size="dense"
-                        variant="secondary"
-                        onClick={() => remove(line.key)}
-                        disabled={busy || lines.length === 1}
-                      >
-                        {t("lines.remove")}
-                      </Button>
-                    ) : (
-                      <span className={records.hint}>{t("lines.billsOrder")}</span>
-                    )}
+                    <Button
+                      size="dense"
+                      variant="secondary"
+                      onClick={() => remove(line.key)}
+                      disabled={busy || (!allowEmpty && lines.length === 1)}
+                    >
+                      {t("lines.remove")}
+                    </Button>
                   </td>
                 </tr>
               );
@@ -291,6 +307,7 @@ export function InvoiceLinesEditor({
         <Button size="dense" variant="secondary" onClick={add} disabled={busy || lines.length >= maxLines}>
           {t("lines.add")}
         </Button>
+        {actions}
       </div>
     </>
   );

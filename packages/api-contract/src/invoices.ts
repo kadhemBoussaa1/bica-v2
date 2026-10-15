@@ -39,10 +39,9 @@ const percent = z.number().min(0).max(100);
 /**
  * One line as an editor submits it — the same shape for both invoice kinds.
  *
- * The sales variant adds `orderId`, accepted only so an edit round-trips the
- * link the server wrote at creation; the service keeps the stored value per
- * position and refuses a changed or newly added one (plan §4) — attaching a
- * second order to a draft is a later feature.
+ * The sales variant adds `orderId`: a line that bills an order. Adding one to
+ * a draft attaches that order (it moves to `INVOICED`), dropping one detaches
+ * it (back to `INVOICEABLE`) — the service owns both moves and their guards.
  */
 export const invoiceLineInput = z.object({
   position: z.number().int().min(1).max(100),
@@ -157,45 +156,45 @@ export function describeProductSpec(
 
 export const salesInvoiceIdInput = z.object({ id: z.string().min(1) });
 
-export const createSalesInvoiceFromOrderInput = z.object({
-  orderId: z.string().min(1),
-  /** Optional: the certification mention the draft's line starts with. */
-  mention: z.enum(PRODUCT_MENTIONS).nullable().optional(),
+/**
+ * The orders an invoice can bill right now, for the picker in the
+ * new-invoice dialog and the draft's "Add an order" — every client's, since
+ * one invoice may bill orders of several; `clientId` narrows to one.
+ */
+export const invoiceableOrdersInput = z.object({
+  clientId: z.string().min(1).optional(),
 });
-export type CreateSalesInvoiceFromOrderInput = z.infer<typeof createSalesInvoiceFromOrderInput>;
+export type InvoiceableOrdersInput = z.infer<typeof invoiceableOrdersInput>;
 
 /** ISO date, `YYYY-MM-DD`, as the `@db.Date` columns are exchanged. */
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 
 /**
- * A sales invoice typed from scratch, billing whatever the client is being
- * charged for — not a job order.
+ * A new sales invoice: the `INVOICEABLE` orders it bills, one line each
+ * (`orderId` set, quantity and price as the user left them), plus any typed
+ * lines billing something else. The orders may belong to several clients.
  *
- * This is the ordinary case, not an edge one: 314 of the 315 migrated lines
- * carry no `orderId` and 47 of the 48 invoices name no order anywhere, so
- * `createFromOrder` is the special path and this is the general one. Nothing
- * in the model had to change to allow it — `SalesInvoice` has no order column
- * at all, and the link is per line.
+ * Typed lines are the ordinary case in the migrated data — 47 of 48 invoices
+ * name no order — so an invoice need not bill one. Each order line attaches
+ * its order: the service checks it is `INVOICEABLE`, has a client and a
+ * price and is on no other draft, and moves it to `INVOICED` in the same
+ * transaction.
  *
- * The lines go in with `orderId` null, which is why `salesInvoiceLineInput`
- * is not reused here: accepting one would let a caller attach an order
- * without any of the lifecycle `createFromOrder` owns (the order's
- * `INVOICEABLE -> INVOICED` transition, the one-draft-per-order guard, the
- * un-invoiced balance). Raising an invoice for an order stays that path's job.
- *
- * `clientId` is required even though the column is nullable: the 24 migrated
- * rows without one are a gap in the source data (see the schema comment), and
- * a newly typed invoice with nobody to bill is a mistake, not a case to
- * support. The draft then joins the same DRAFT -> ISSUED lifecycle and takes
- * its number from the same `SalesInvoiceCounter` as every other sales invoice.
+ * `clientId` is read only when no line bills an order: the invoice's client
+ * is otherwise derived from its orders (their client when they share one,
+ * none when they are several), and the service then ignores it. An invoice
+ * of typed lines alone must name one — a new invoice with nobody to bill is
+ * a mistake, not a case to support. The draft then joins the same DRAFT ->
+ * ISSUED lifecycle and takes its number from the same `SalesInvoiceCounter`
+ * as every other sales invoice.
  */
 export const createSalesInvoiceInput = z.object({
-  clientId: z.string().min(1, "Choose a client"),
+  clientId: z.string().min(1).nullable().optional(),
   currency: z.enum(CURRENCIES).nullable().optional(),
   dueAt: isoDate.nullable().optional(),
   paymentMethod: z.enum(PAYMENT_METHODS).nullable().optional(),
   category: z.string().trim().max(200).nullable().optional(),
-  lines: z.array(invoiceLineInput).min(1).max(50),
+  lines: z.array(salesInvoiceLineInput).min(1, "Tick an order or add a line").max(50),
 });
 export type CreateSalesInvoiceInput = z.infer<typeof createSalesInvoiceInput>;
 
@@ -227,6 +226,18 @@ export const discardSalesInvoiceDraftInput = z.object({
   note: z.string().trim().min(1, "A note is required").max(500),
 });
 export type DiscardSalesInvoiceDraftInput = z.infer<typeof discardSalesInvoiceDraftInput>;
+
+/**
+ * Takes one order off a draft — the order page's action. The order returns
+ * to `INVOICEABLE` with the note; the draft keeps its other lines, or is
+ * deleted when that order was all it billed.
+ */
+export const removeOrderFromSalesInvoiceInput = z.object({
+  id: z.string().min(1),
+  orderId: z.string().min(1),
+  note: z.string().trim().min(1, "A note is required").max(500),
+});
+export type RemoveOrderFromSalesInvoiceInput = z.infer<typeof removeOrderFromSalesInvoiceInput>;
 
 // ---------------------------------------------------------------------------
 // Purchase invoices — a supplier's document, recorded as received

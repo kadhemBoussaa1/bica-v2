@@ -57,6 +57,8 @@ export const exportShipmentListDeclaration: ListDeclaration<
       { salesInvoice: { numero: contains(term) } },
       { lines: { some: { order: { numero: contains(term) } } } },
       { lines: { some: { description: contains(term) } } },
+      // A shipment of several clients' orders names none itself.
+      { lines: { some: { order: { client: { name: contains(term) } } } } },
     ],
   }),
   facets: {
@@ -90,7 +92,13 @@ export const EXPORT_SHIPMENT_SELECT = {
     select: {
       quantity: true,
       units: true,
-      order: { select: { numero: true, quantityUnit: true } },
+      order: {
+        select: {
+          numero: true,
+          quantityUnit: true,
+          client: { select: { id: true, name: true } },
+        },
+      },
     },
   },
 } satisfies Prisma.ShipmentSelect;
@@ -136,6 +144,8 @@ export const EXPORT_SHIPMENT_DETAIL_SELECT = {
           status: true,
           quantityUnit: true,
           parcelCount: true,
+          // Shown on the line when the shipment carries several clients' orders.
+          client: { select: { id: true, name: true } },
         },
       },
     },

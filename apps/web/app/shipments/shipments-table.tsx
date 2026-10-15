@@ -141,16 +141,23 @@ export function ShipmentsTable({
               </span>
               <span className={shipments.rowMeta}>{formatDay(row.exportDate) ?? ""}</span>
             </span>
-            <span
-              className={[shipments.rowClient, row.client.active ? null : styles.archivedRow]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {row.client.name}
-              {!row.client.active && (
-                <span className={styles.archivedTag}>{t("archivedShort")}</span>
-              )}
-            </span>
+            {row.client ? (
+              <span
+                className={[shipments.rowClient, row.client.active ? null : styles.archivedRow]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {row.client.name}
+                {!row.client.active && (
+                  <span className={styles.archivedTag}>{t("archivedShort")}</span>
+                )}
+              </span>
+            ) : (
+              // Several clients' orders on one truck: name them all.
+              <span className={shipments.rowClient}>
+                {row.orderClients.map((client) => client.name).join(", ")}
+              </span>
+            )}
           </span>
         </span>
       ),

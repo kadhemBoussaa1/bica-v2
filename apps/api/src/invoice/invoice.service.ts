@@ -2,12 +2,13 @@ import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
 import type {
   CreatePurchaseInvoiceInput,
-  CreateSalesInvoiceFromOrderInput,
   CreateSalesInvoiceInput,
   DiscardSalesInvoiceDraftInput,
   InvoiceLineInput,
+  InvoiceableOrdersInput,
   IssueSalesInvoiceInput,
   ProductMention,
+  RemoveOrderFromSalesInvoiceInput,
   SalesInvoiceLineInput,
   UpdatePurchaseInvoiceInput,
   UpdateSalesInvoiceDraftInput,
@@ -46,12 +47,20 @@ import {
   type ListSalesInvoicesInput,
 } from "./invoice.list";
 
-/** What `createFromOrder` reads off the order before writing. */
+/**
+ * The note an order's `INVOICED -> INVOICEABLE` move carries when an edit of
+ * the draft drops its line — that reopen requires one, and the editor has no
+ * field for it. The order page's "Remove from draft invoice" asks for its own.
+ */
+const REMOVED_FROM_DRAFT_NOTE = "removed from the draft invoice";
+
+/** What attaching an order, and the order picker, read off it. */
 const INVOICEABLE_ORDER_SELECT = {
   id: true,
   numero: true,
   status: true,
   clientId: true,
+  market: true,
   quantityUnit: true,
   piecesPerParcel: true,
   kilosPerParcel: true,
@@ -104,9 +113,10 @@ const DRAFT_SELECT = {
  * customers).
  *
  * Purchase invoices are still read-only migrated history. Sales invoices are
- * the write path from docs/sales-invoice-plan.md: a draft raised from an
- * `INVOICEABLE` order, edited, then issued — at which point it takes its
- * number from `SalesInvoiceCounter` and freezes. Every mutation that touches
+ * the write path from docs/sales-invoice-plan.md: a draft billing one or more
+ * of a client's `INVOICEABLE` orders (and any typed lines), edited, then
+ * issued — at which point it takes its number from `SalesInvoiceCounter` and
+ * freezes. Every mutation that touches
  * an order's status goes through `OrderService.transition` on the same
  * transaction, so the invoice and the lifecycle can never disagree.
  */
@@ -121,6 +131,22 @@ function invoiceSubject(
   const orders = [...new Set(lines.flatMap((line) => (line.order ? [line.order.numero] : [])))];
   if (orders.length > 0) return orders.join(", ");
   return lines[0]?.product ?? null;
+}
+
+/**
+ * The clients of the orders an invoice bills, in line order without
+ * repeats — what a row shows when the invoice bills several and so names
+ * no client of its own.
+ */
+function orderClients(
+  lines: ReadonlyArray<{ order: { client: { id: string; name: string } | null } | null }>,
+): { id: string; name: string }[] {
+  const seen = new Map<string, { id: string; name: string }>();
+  for (const line of lines) {
+    const client = line.order?.client;
+    if (client && !seen.has(client.id)) seen.set(client.id, client);
+  }
+  return [...seen.values()];
 }
 
 @Injectable()
@@ -265,47 +291,47 @@ export class InvoiceService {
   }
 
   /**
-   * A sales invoice typed from scratch — billing whatever the client is being
-   * charged for, with no job order behind it.
+   * A new draft: the orders it bills, one line each — of one client or of
+   * several — and any typed lines billing something else (the ordinary case
+   * in the migrated data — 314 of 315 lines name no order).
    *
-   * This is the general case, not an exception: 314 of the 315 migrated lines
-   * carry no `orderId`, and `SalesInvoice` has no order column at all. So
-   * there is nothing to reconcile here and no lifecycle to drive — unlike
-   * `createFromOrder`, which must also move the order to `INVOICED` and keep
-   * the un-invoiced balance straight. No order is touched, so no
-   * `OrderService.transition` and no reason to open a transaction: the nested
-   * `lines: { create }` is already atomic.
-   *
-   * The lines go in with `orderId` null, and that is enforced by the input's
-   * shape rather than by code here: `createSalesInvoiceInput` uses the plain
-   * `invoiceLineInput`, which has no `orderId` key, so `lineRow`'s
-   * `"orderId" in line` test is false and the column falls to its default.
-   * Attaching an order stays `createFromOrder`'s job, with its guards.
-   *
-   * The draft then joins the ordinary DRAFT -> ISSUED flow: `updateDraft`,
-   * `issue` and `discardDraft` all tolerate order-free lines already (each
-   * derives its order ids with a `line.orderId ? … : []` filter), and the
-   * number comes from the same `SalesInvoiceCounter` at issue.
+   * The client is derived from the orders (`billedClient`); only an invoice
+   * of typed lines alone takes the one the caller picked. Each order line
+   * attaches its order — `attachOrders` checks it and moves it to
+   * `INVOICED` — after the insert, because the transition's guard looks for
+   * the DRAFT line. One transaction, so an order that fails its checks takes
+   * the whole invoice with it.
    */
   async createSales(actor: SessionUser, input: CreateSalesInvoiceInput) {
-    await this.assertClientBillable(input.clientId);
-    return this.prisma.salesInvoice.create({
-      data: {
-        status: "DRAFT",
-        createdById: actor.id,
-        clientId: input.clientId,
-        currency: input.currency ?? null,
-        dueAt: input.dueAt ? new Date(input.dueAt) : null,
-        paymentMethod: input.paymentMethod ?? null,
-        category: input.category ?? null,
-        documents: [],
-        ...invoiceTotals(input.lines),
-        lines: { create: input.lines.map((line) => this.lineRow(line)) },
-      },
-      // `numero` is null until issued, so the caller gets the id to navigate
-      // to; the toast names the client instead of a number that does not
-      // exist yet.
-      select: { id: true, clientId: true },
+    const orderIds = this.settleOrderLines([], input.lines);
+    if (orderIds.length === 0) {
+      if (!input.clientId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Choose the client this invoice bills" });
+      }
+      await this.assertClientBillable(input.clientId);
+    }
+    return this.prisma.$transaction(async (tx) => {
+      const clientId = await this.billedClient(orderIds, input.clientId ?? null, tx);
+      const invoice = await tx.salesInvoice.create({
+        data: {
+          status: "DRAFT",
+          createdById: actor.id,
+          clientId,
+          currency: input.currency ?? null,
+          dueAt: input.dueAt ? new Date(input.dueAt) : null,
+          paymentMethod: input.paymentMethod ?? null,
+          category: input.category ?? null,
+          documents: [],
+          ...invoiceTotals(input.lines),
+          lines: { create: input.lines.map((line) => this.lineRow(line)) },
+        },
+        // `numero` is null until issued, so the caller gets the id to navigate
+        // to; the toast names the client instead of a number that does not
+        // exist yet.
+        select: { id: true, clientId: true },
+      });
+      await this.attachOrders(actor, invoice.id, orderIds, tx);
+      return invoice;
     });
   }
 
@@ -496,6 +522,7 @@ export class InvoiceService {
         ...row,
         lineCount: _count.lines,
         subject: invoiceSubject(lines),
+        orderClients: orderClients(lines),
         /**
          * Issued, unpaid, and past its due date on the server's day. Sent
          * rather than derived on the client so the row's badge can never
@@ -642,145 +669,139 @@ export class InvoiceService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Raises a DRAFT from an `INVOICEABLE` order and moves the order to
-   * `INVOICED` in the same transaction. One line: the parcels not yet billed
-   * by an ISSUED invoice — the whole planned count on the first cycle, the
-   * remainder after a partial export (docs/export-plan.md) — at the order's
-   * final parcel price. The packed figure stays a hint on the draft page.
+   * The orders a new line can bill, for the order picker: active, confirmed
+   * and `INVOICEABLE` — an order already on a draft is `INVOICED`, so it is
+   * never offered twice. Every client's, grouped by client name, since one
+   * invoice may bill several; `clientId` narrows to one. Each comes with
+   * the line it would start as: the order's product, its parcel price, and
+   * its packed parcels less what issued invoices already bill, capped at
+   * the un-invoiced balance (the planned remainder while packaging has
+   * closed nothing).
    *
-   * The guards each carry a precise message and fire in this order so the
-   * reason a user sees is the one they can act on first. A concurrent second
-   * click is caught by the compare-and-set inside `transition`: the second
-   * transaction's status write finds the order already `INVOICED`, throws
-   * CONFLICT, and its invoice rolls back with it.
+   * An order that cannot be billed is listed with the reason rather than
+   * hidden, so nobody hunts for a missing one: no client, no parcel price
+   * yet, or every planned parcel already invoiced.
+   *
+   * `clientCurrency` is the order's client's last invoice currency, to seed
+   * a new invoice — nothing on an order or a client says what it trades in
+   * (plan §2.3).
    */
-  async createFromOrder(actor: SessionUser, input: CreateSalesInvoiceFromOrderInput) {
-    const { orderId } = input;
-    return this.prisma.$transaction(async (tx) => {
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-        select: INVOICEABLE_ORDER_SELECT,
-      });
-      if (!order) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
-      }
-      if (order.status !== "INVOICEABLE") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Order ${order.numero} is ${order.status}, not ready for invoicing`,
-        });
-      }
-      if (order.clientId === null) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Set the order's client first — an invoice needs someone to bill",
-        });
-      }
-      if (order.finalParcelPrice === null || order.finalParcelPrice <= 0) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message:
-            "The order has no parcel price — open it in the edit form and save it to compute one",
-        });
-      }
-      // One draft at a time; issued invoices from earlier cycles are fine.
-      const existing = await tx.salesInvoiceLine.findFirst({
-        where: { orderId, invoice: { status: "DRAFT" } },
-        select: { invoice: { select: { id: true } } },
-      });
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: `A draft invoice already exists for ${order.numero}`,
-        });
-      }
-
-      // The un-invoiced balance: planned parcels minus what ISSUED invoices
-      // already bill. `parcelCount` is null only when the order is unpriced,
-      // which the price guard above has already refused.
-      const planned = plannedParcels(order.parcelCount) ?? 0;
-      const issued = (await this.invoicedElsewhere([orderId], tx)).get(orderId) ?? 0;
-      const quantity = Math.max(0, planned - issued);
-      if (quantity <= 0) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message:
-            planned <= 0
-              ? "The order has no planned parcel count to bill"
-              : `Order ${order.numero} is fully invoiced (${planned} parcels)`,
-        });
-      }
-
-      // The client's last currency, or none: nothing on the order or the
-      // client says what it trades in (plan §2.3).
-      const last = await tx.salesInvoice.findFirst({
-        where: { clientId: order.clientId, currency: { not: null } },
-        orderBy: [{ issuedAt: "desc" }, { createdAt: "desc" }],
-        select: { currency: true },
-      });
-      const currency = last?.currency ?? null;
-
-      const unitsPerParcel =
-        order.quantityUnit === "KILOGRAMS" ? order.kilosPerParcel : order.piecesPerParcel;
-      const line: SalesInvoiceLineInput = {
-        position: 1,
-        orderId,
-        product: order.product.name,
-        description: describeProductSpec(
-          { ...productSpecFromRow(order.product), paperType: order.product.paperType },
-          unitsPerParcel,
-          order.quantityUnit,
-        ),
-        mention: input.mention ?? null,
-        quantity,
-        unitPrice: order.finalParcelPrice,
-        discountPct: 0,
-        taxPct: defaultTaxPct(currency),
-      };
-
-      const invoice = await tx.salesInvoice.create({
-        data: {
-          status: "DRAFT",
-          numero: null,
-          clientId: order.clientId,
-          currency,
-          createdById: actor.id,
-          documents: [],
-          ...invoiceTotals([line]),
-          lines: { create: [this.lineRow(line)] },
-        },
-        select: { id: true },
-      });
-
-      await this.orders.transition(actor, { orderId, to: "INVOICED", note: undefined }, tx);
-      return invoice;
+  async invoiceableOrders(input: InvoiceableOrdersInput) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        status: "INVOICEABLE",
+        kind: "ORDER",
+        active: true,
+        ...(input.clientId ? { clientId: input.clientId } : {}),
+      },
+      select: { ...INVOICEABLE_ORDER_SELECT, client: { select: { id: true, name: true } } },
+      orderBy: [{ client: { name: "asc" } }, { numeroSeq: "asc" }, { id: "asc" }],
     });
+    const ids = orders.map((order) => order.id);
+    const clientIds = [
+      ...new Set(orders.flatMap((order) => (order.clientId ? [order.clientId] : []))),
+    ];
+    const [packed, invoiced, currencies] = await Promise.all([
+      this.orders.packedFor(ids),
+      this.invoicedElsewhere(ids, this.prisma),
+      this.lastCurrencies(clientIds),
+    ]);
+
+    return {
+      orders: orders.map((order) => {
+        const planned = plannedParcels(order.parcelCount);
+        const before = invoiced.get(order.id) ?? 0;
+        const remaining = planned === null ? 0 : Math.max(0, planned - before);
+        const priced = order.finalParcelPrice !== null && order.finalParcelPrice > 0;
+        const fromPacking = (packed.get(order.id) ?? 0) - before;
+        const unitsPerParcel =
+          order.quantityUnit === "KILOGRAMS" ? order.kilosPerParcel : order.piecesPerParcel;
+        const currency = order.clientId ? (currencies.get(order.clientId) ?? null) : null;
+        return {
+          id: order.id,
+          numero: order.numero,
+          client: order.client,
+          clientCurrency: currency,
+          market: order.market,
+          quantityUnit: order.quantityUnit,
+          planned,
+          packed: packed.get(order.id) ?? 0,
+          invoicedBefore: before,
+          remaining,
+          /** Why the order cannot be billed yet; null when it can. */
+          blocked:
+            order.client === null
+              ? ("noClient" as const)
+              : !priced || planned === null || planned <= 0
+                ? ("noPrice" as const)
+                : remaining <= 0
+                  ? ("fullyInvoiced" as const)
+                  : null,
+          /** The line it starts as: editable before saving, like any other. */
+          line: {
+            orderId: order.id,
+            product: order.product.name,
+            description: describeProductSpec(
+              { ...productSpecFromRow(order.product), paperType: order.product.paperType },
+              unitsPerParcel,
+              order.quantityUnit,
+            ),
+            quantity: fromPacking > 0 ? Math.min(fromPacking, remaining) : remaining,
+            unitPrice: order.finalParcelPrice ?? 0,
+            discountPct: 0,
+            taxPct: defaultTaxPct(currency),
+          },
+        };
+      }),
+    };
   }
 
   /**
    * Replaces the header fields and the lines of a DRAFT. Lines are replaced
-   * wholesale, like order colours; the order links are the one thing the
-   * caller cannot change — every stored `orderId` must come back on exactly
-   * one line, and no new one may appear (plan §4).
+   * wholesale, like order colours, and the order lines are diffed against
+   * what is stored: an order whose line is gone returns to `INVOICEABLE`, a
+   * new one is attached (`attachOrders`), the rest stay as they are.
+   *
+   * The order moves straddle the replace on purpose. Each transition's
+   * guard looks for the order's DRAFT line, so the detaches run while the
+   * old lines still exist and the attaches once the new ones do.
    */
-  async updateDraft(input: UpdateSalesInvoiceDraftInput) {
+  async updateDraft(actor: SessionUser, input: UpdateSalesInvoiceDraftInput) {
     return this.prisma.$transaction(async (tx) => {
       const draft = await this.assertDraft(input.id, tx);
-      this.assertOrderLinksPreserved(draft.lines, input.lines);
-      this.resolveMentions(draft.lines, input.lines);
+      const submitted = this.settleOrderLines(draft.lines, input.lines);
 
       const positions = new Set(input.lines.map((line) => line.position));
       if (positions.size !== input.lines.length) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Line positions must be unique" });
       }
 
+      const stored = new Set(draft.lines.flatMap((line) => (line.orderId ? [line.orderId] : [])));
+      const kept = new Set(submitted);
+      for (const orderId of stored) {
+        if (kept.has(orderId)) continue;
+        await this.orders.transition(
+          actor,
+          { orderId, to: "INVOICEABLE", note: REMOVED_FROM_DRAFT_NOTE },
+          tx,
+        );
+      }
+
       await tx.salesInvoiceLine.deleteMany({ where: { invoiceId: input.id } });
       await tx.salesInvoiceLine.createMany({
         data: input.lines.map((line) => ({ invoiceId: input.id, ...this.lineRow(line) })),
       });
+      await this.attachOrders(
+        actor,
+        draft.id,
+        submitted.filter((orderId) => !stored.has(orderId)),
+        tx,
+      );
       return tx.salesInvoice.update({
         where: { id: input.id },
         data: {
+          // Follows the orders: a draft whose orders change client changes too.
+          clientId: await this.billedClient(submitted, draft.clientId, tx),
           ...(input.currency !== undefined ? { currency: input.currency } : {}),
           ...(input.dueAt !== undefined
             ? { dueAt: input.dueAt === null ? null : new Date(input.dueAt) }
@@ -869,6 +890,15 @@ export class InvoiceService {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Set the invoice's currency before issuing it",
+        });
+      }
+      // Reachable only when every order line was removed from a draft that
+      // billed several clients: nothing is left to say whom it bills.
+      if (draft.clientId === null && !draft.lines.some((line) => line.orderId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "This invoice names no client and bills no order — discard it and create it again with a client",
         });
       }
       if (draft.totalTtc === null || draft.totalTtc <= 0) {
@@ -969,6 +999,63 @@ export class InvoiceService {
     });
   }
 
+  /**
+   * Takes one order off a draft, from the order's page: the order returns to
+   * `INVOICEABLE` with the caller's note, and the draft keeps its other
+   * lines — renumbered, totals recomputed — or is deleted when that order's
+   * line was all it had. Same ordering rule as `updateDraft`: the transition
+   * runs while the line still exists, because its guard looks for it.
+   */
+  async removeOrder(actor: SessionUser, input: RemoveOrderFromSalesInvoiceInput) {
+    return this.prisma.$transaction(async (tx) => {
+      const draft = await this.assertDraft(input.id, tx);
+      const line = draft.lines.find((l) => l.orderId === input.orderId);
+      if (!line) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "That order is not on this draft invoice",
+        });
+      }
+      await this.orders.transition(
+        actor,
+        { orderId: input.orderId, to: "INVOICEABLE", note: input.note },
+        tx,
+      );
+
+      const rest = draft.lines.filter((l) => l.id !== line.id);
+      if (rest.length === 0) {
+        await tx.salesInvoice.delete({ where: { id: input.id } });
+        return { id: input.id, deleted: true };
+      }
+      await tx.salesInvoiceLine.delete({ where: { id: line.id } });
+      for (const [index, kept] of rest.entries()) {
+        if (kept.position === index + 1) continue;
+        await tx.salesInvoiceLine.update({
+          where: { id: kept.id },
+          data: { position: index + 1 },
+          select: { id: true },
+        });
+      }
+      const remaining = rest.flatMap((kept) => (kept.orderId ? [kept.orderId] : []));
+      await tx.salesInvoice.update({
+        where: { id: input.id },
+        data: {
+          clientId: await this.billedClient(remaining, draft.clientId, tx),
+          ...invoiceTotals(
+            rest.map((kept) => ({
+              quantity: kept.quantity ?? 0,
+              unitPrice: kept.unitPrice ?? 0,
+              discountPct: kept.discountPct ?? 0,
+              taxPct: kept.taxPct ?? 0,
+            })),
+          ),
+        },
+        select: { id: true },
+      });
+      return { id: input.id, deleted: false };
+    });
+  }
+
   // ---------------------------------------------------------------------------
 
   /**
@@ -1054,59 +1141,133 @@ export class InvoiceService {
   }
 
   /**
-   * The stored order links must survive an edit unchanged: each comes back
-   * on exactly one line, and nothing new appears. A line whose `orderId` is
-   * omitted keeps the link its position had — the editor need not echo it.
+   * Checks an order's line may be added to this draft, then moves the order
+   * to `INVOICED`. Called once the lines are written: the transition's guard
+   * looks for the order's DRAFT line. The checks fire in the order a user
+   * can act on them; the compare-and-set inside `transition` is the backstop
+   * against two drafts racing for one order (the second finds it `INVOICED`
+   * and rolls back).
    */
-  private assertOrderLinksPreserved(
-    stored: readonly { position: number; orderId: string | null }[],
-    submitted: SalesInvoiceLineInput[],
-  ): void {
-    const byPosition = new Map(stored.map((line) => [line.position, line.orderId]));
-    const seen = new Set<string>();
-    for (const line of submitted) {
-      const kept = byPosition.get(line.position) ?? null;
-      if (line.orderId === undefined) {
-        line.orderId = kept;
-      } else if (line.orderId !== kept) {
+  private async attachOrders(
+    actor: SessionUser,
+    invoiceId: string,
+    orderIds: string[],
+    db: Db,
+  ): Promise<void> {
+    if (orderIds.length === 0) return;
+    const [orders, issued, otherDrafts] = await Promise.all([
+      db.order.findMany({ where: { id: { in: orderIds } }, select: INVOICEABLE_ORDER_SELECT }),
+      this.invoicedElsewhere(orderIds, db),
+      db.salesInvoiceLine.findMany({
+        where: {
+          orderId: { in: orderIds },
+          invoice: { status: "DRAFT", id: { not: invoiceId } },
+        },
+        select: { orderId: true },
+      }),
+    ]);
+    const byId = new Map(orders.map((order) => [order.id, order]));
+    const onOtherDraft = new Set(otherDrafts.map((line) => line.orderId));
+
+    for (const orderId of orderIds) {
+      const order = byId.get(orderId);
+      if (!order) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+      }
+      if (order.status !== "INVOICEABLE") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "A line's order link cannot be changed — discard the draft instead",
+          message: `Order ${order.numero} is ${order.status}, not ready for invoicing`,
         });
       }
-      if (line.orderId) {
-        if (seen.has(line.orderId)) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "An order can be billed by one line only",
-          });
-        }
-        seen.add(line.orderId);
-      }
-    }
-    for (const line of stored) {
-      if (line.orderId && !seen.has(line.orderId)) {
+      if (order.clientId === null) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "The line billing the order cannot be removed — discard the draft instead",
+          code: "PRECONDITION_FAILED",
+          message: `Set the client of order ${order.numero} first — an invoice needs someone to bill`,
         });
       }
+      if (order.finalParcelPrice === null || order.finalParcelPrice <= 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Order ${order.numero} has no parcel price — open it in the edit form and save it to compute one`,
+        });
+      }
+      if (onOtherDraft.has(orderId)) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Order ${order.numero} is already on another draft invoice`,
+        });
+      }
+      const planned = plannedParcels(order.parcelCount) ?? 0;
+      if (planned - (issued.get(orderId) ?? 0) <= 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            planned <= 0
+              ? `Order ${order.numero} has no planned parcel count to bill`
+              : `Order ${order.numero} is fully invoiced (${planned} parcels)`,
+        });
+      }
+      await this.orders.transition(actor, { orderId, to: "INVOICED", note: undefined }, db);
     }
   }
 
   /**
-   * Settles each submitted line's mention before the wholesale replace. An
-   * omitted one keeps what its position stores — the lines are deleted and
-   * recreated, so without this a caller that does not echo the field would
-   * wipe it. Runs after `assertOrderLinksPreserved`, which has filled in
-   * every `orderId`; a mention on a line billing no order is refused.
+   * The client an invoice bills, from the orders on its lines: theirs when
+   * they share one, null when they belong to several (the PDF then lists
+   * them all). An invoice billing no order keeps `fallback` — the client
+   * picked for it, or the one it already had.
    */
-  private resolveMentions(
-    stored: readonly { position: number; mention: ProductMention | null }[],
+  private async billedClient(
+    orderIds: string[],
+    fallback: string | null,
+    db: Db,
+  ): Promise<string | null> {
+    if (orderIds.length === 0) return fallback;
+    const clients = await db.order.findMany({
+      where: { id: { in: orderIds } },
+      select: { clientId: true },
+      distinct: ["clientId"],
+    });
+    return clients.length === 1 ? (clients[0]?.clientId ?? null) : null;
+  }
+
+  /** Each client's most recent invoice currency; clients with none are absent. */
+  private async lastCurrencies(clientIds: string[]): Promise<Map<string, string>> {
+    const result = new Map<string, string>();
+    if (clientIds.length === 0) return result;
+    const rows = await this.prisma.salesInvoice.findMany({
+      where: { clientId: { in: clientIds }, currency: { not: null } },
+      orderBy: [{ issuedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+      distinct: ["clientId"],
+      select: { clientId: true, currency: true },
+    });
+    for (const row of rows) {
+      if (row.clientId && row.currency) result.set(row.clientId, row.currency);
+    }
+    return result;
+  }
+
+  /**
+   * Settles the submitted lines' order links and mentions before a write,
+   * and returns the orders they bill. A line whose `orderId` is omitted
+   * keeps the order its position stores (the editor need not echo it); an
+   * order may appear on one line only. An omitted mention keeps the one
+   * stored for that order — the lines are deleted and recreated, so without
+   * this a caller that does not echo the field would wipe it — and a
+   * mention on a line billing no order is refused.
+   */
+  private settleOrderLines(
+    stored: readonly { position: number; orderId: string | null; mention: ProductMention | null }[],
     submitted: SalesInvoiceLineInput[],
-  ): void {
-    const byPosition = new Map(stored.map((line) => [line.position, line.mention]));
+  ): string[] {
+    const orderByPosition = new Map(stored.map((line) => [line.position, line.orderId]));
+    const mentionByOrder = new Map(
+      stored.flatMap((line) => (line.orderId ? [[line.orderId, line.mention] as const] : [])),
+    );
+    const seen = new Set<string>();
     for (const line of submitted) {
+      if (line.orderId === undefined) line.orderId = orderByPosition.get(line.position) ?? null;
       if (!line.orderId) {
         if (line.mention) {
           throw new TRPCError({
@@ -1115,10 +1276,18 @@ export class InvoiceService {
           });
         }
         line.mention = null;
-      } else if (line.mention === undefined) {
-        line.mention = byPosition.get(line.position) ?? null;
+        continue;
       }
+      if (seen.has(line.orderId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "An order can be billed by one line only",
+        });
+      }
+      seen.add(line.orderId);
+      if (line.mention === undefined) line.mention = mentionByOrder.get(line.orderId) ?? null;
     }
+    return [...seen];
   }
 
   /** One line as stored, with its tax-inclusive total computed here, never trusted from input. */

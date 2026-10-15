@@ -175,6 +175,11 @@ export function SalesInvoicesTable({
                     <span className={records.archivedTag}>{t("archivedTag")}</span>
                   )}
                 </bdi>
+              ) : invoice.orderClients.length > 0 ? (
+                // Billing several clients' orders, the invoice names none itself.
+                <bdi className={shell.subStrong}>
+                  {invoice.orderClients.map((client) => client.name).join(", ")}
+                </bdi>
               ) : (
                 <bdi className={shell.subMuted}>{t("noClient")}</bdi>
               )}

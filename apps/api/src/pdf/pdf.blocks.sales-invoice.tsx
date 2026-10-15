@@ -182,6 +182,8 @@ function PartiesBlock({ block, context }: { block: BlockOf<"parties">; context: 
   const { model, rtl, t } = context;
   const textAlign = physicalAlign(block.placement.align, rtl);
   const width = `${100 / block.props.boxes.length}%`;
+  // Every client of the orders billed when they are several; else the one.
+  const billed = model.clients.length > 0 ? model.clients : model.client ? [model.client] : [];
 
   return (
     <View style={{ flexDirection: rtl ? "row-reverse" : "row" }}>
@@ -200,31 +202,36 @@ function PartiesBlock({ block, context }: { block: BlockOf<"parties">; context: 
           </PartyBox>
         ) : (
           <PartyBox key={box} title={t("invoice.billTo")} rtl={rtl} width={width}>
-            {model.client === null ? (
+            {billed.length === 0 ? (
               <Text style={{ textAlign, color: INK.footer }}>{t("invoice.noClient")}</Text>
             ) : (
-              <>
-                <Text style={[styles.boxStrong, { textAlign }]}>{model.client.name}</Text>
-                {model.client.address !== null && (
-                  <Text style={{ textAlign }}>{model.client.address}</Text>
-                )}
-                {/* Empty on every migrated client: the row is omitted, not dashed. */}
-                {model.client.taxId !== null && (
-                  <Text style={{ textAlign }}>
-                    {t("invoice.taxIdLabel")} {ltrIsolate(model.client.taxId)}
-                  </Text>
-                )}
-                {model.client.phone !== null && (
-                  <Text style={{ textAlign }}>
-                    {t("phone")} {ltrIsolate(model.client.phone)}
-                  </Text>
-                )}
-                {model.client.email !== null && (
-                  <Text style={{ textAlign }}>
-                    {t("email")} {ltrIsolate(model.client.email)}
-                  </Text>
-                )}
-              </>
+              billed.map((client, index) => (
+                // Several clients when the orders billed are theirs: one
+                // block each, a gap between them, in line order.
+                <View
+                  key={`${index}:${client.name}`}
+                  style={index > 0 ? { marginTop: 4 } : undefined}
+                >
+                  <Text style={[styles.boxStrong, { textAlign }]}>{client.name}</Text>
+                  {client.address !== null && <Text style={{ textAlign }}>{client.address}</Text>}
+                  {/* Empty on every migrated client: the row is omitted, not dashed. */}
+                  {client.taxId !== null && (
+                    <Text style={{ textAlign }}>
+                      {t("invoice.taxIdLabel")} {ltrIsolate(client.taxId)}
+                    </Text>
+                  )}
+                  {client.phone !== null && (
+                    <Text style={{ textAlign }}>
+                      {t("phone")} {ltrIsolate(client.phone)}
+                    </Text>
+                  )}
+                  {client.email !== null && (
+                    <Text style={{ textAlign }}>
+                      {t("email")} {ltrIsolate(client.email)}
+                    </Text>
+                  )}
+                </View>
+              ))
             )}
           </PartyBox>
         ),

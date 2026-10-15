@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
@@ -331,6 +331,17 @@ export function ExportShipmentDraft({ shipment }: { shipment: Shipment }) {
       lines.flatMap((l) => (l.line.order ? [[l.line.order.id, l.line.order] as const] : [])),
     ).values(),
   ];
+  // A shipment of several clients' orders has no client of its own: it
+  // names each order's, in line order.
+  const clients = shipment.client
+    ? [shipment.client]
+    : [
+        ...new Map(
+          orders.flatMap((order) =>
+            order.client ? [[order.client.id, order.client] as const] : [],
+          ),
+        ).values(),
+      ];
   const unitLabel = (line: Line) =>
     line.order?.quantityUnit === "KILOGRAMS" ? t("units.kg") : t("units.pcs");
 
@@ -414,13 +425,18 @@ export function ExportShipmentDraft({ shipment }: { shipment: Shipment }) {
           <Section title={t("editor.truck.title")} meta={t("editor.truck.meta")}>
             <div className={styles.facts}>
               <Fact label={t("fields.client")}>
-                {isAdmin ? (
-                  <Link className={records.inlineLink} href={`/clients/${shipment.client.id}`}>
-                    {shipment.client.name}
-                  </Link>
-                ) : (
-                  shipment.client.name
-                )}
+                {clients.map((client, index) => (
+                  <Fragment key={client.id}>
+                    {index > 0 && ", "}
+                    {isAdmin ? (
+                      <Link className={records.inlineLink} href={`/clients/${client.id}`}>
+                        {client.name}
+                      </Link>
+                    ) : (
+                      client.name
+                    )}
+                  </Fragment>
+                ))}
               </Fact>
               <Fact label={t("fields.invoice")}>
                 {shipment.salesInvoice ? (
@@ -610,6 +626,8 @@ export function ExportShipmentDraft({ shipment }: { shipment: Shipment }) {
                 // The order's figures, from the same arithmetic the server checks.
                 const meta = [
                   order?.numero ?? null,
+                  // Whose goods, when the shipment carries several clients'.
+                  shipment.client === null ? (order?.client?.name ?? null) : null,
                   per === null
                     ? null
                     : t("editor.cargo.perParcel", {
@@ -765,7 +783,9 @@ export function ExportShipmentDraft({ shipment }: { shipment: Shipment }) {
             <FactRow label={t("fields.number")}>
               <span className={styles.factMuted}>{t("editor.numberPending")}</span>
             </FactRow>
-            <FactRow label={t("fields.client")}>{shipment.client.name}</FactRow>
+            <FactRow label={t("fields.client")}>
+              {clients.map((client) => client.name).join(", ")}
+            </FactRow>
             <FactRow label={t("fields.invoice")}>
               {shipment.salesInvoice ? (shipment.salesInvoice.numero ?? t("draftInvoice")) : <span className={records.absent} />}
             </FactRow>
@@ -781,11 +801,14 @@ export function ExportShipmentDraft({ shipment }: { shipment: Shipment }) {
                   href={isAdmin ? `/invoices/sales/${shipment.salesInvoice.id}` : null}
                 />
               )}
-              <RailLink
-                label={t("fields.client")}
-                value={shipment.client.name}
-                href={isAdmin ? `/clients/${shipment.client.id}` : null}
-              />
+              {clients.map((client) => (
+                <RailLink
+                  key={client.id}
+                  label={t("fields.client")}
+                  value={client.name}
+                  href={isAdmin ? `/clients/${client.id}` : null}
+                />
+              ))}
               {isAdmin && (
                 <RailLink
                   label={t("editor.links.journal")}

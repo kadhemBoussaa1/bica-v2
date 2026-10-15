@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -20,6 +20,8 @@ import {
   type EditableLine,
 } from "../../invoice-lines-editor";
 import { formatMoney } from "../../invoice-ui";
+import { InvoiceOrderPicker, orderLine } from "../invoice-order-picker";
+import { BilledClients, billedClients } from "../billed-clients";
 import { Panel, Row } from "../../../records/record-ui";
 import { PdfCanvas } from "../../../documents/pdf-canvas";
 import { usePdfPreview } from "../../../documents/use-pdf-preview";
@@ -54,10 +56,12 @@ function dateInput(value: string | Date | null): string {
  * `invoiceTotals` the server writes with, and the three actions: save,
  * issue (which saves first if anything is dirty), discard.
  *
- * The line billing an order keeps its link and cannot be removed — the
- * server refuses both, so the editor does not offer them; the quantity and
- * price on it are editable, since the snapshot is what the business signs
- * off, not what the engine computed.
+ * Orders come and go with their lines: "Add an order" ticks more of the
+ * client's invoiceable orders onto the draft, and removing an order's line
+ * takes it off. Neither touches an order until the draft is saved — the
+ * server then moves the added ones to INVOICED and the removed ones back to
+ * INVOICEABLE. The quantity and price on an order line are editable, since
+ * the snapshot is what the business signs off, not what the engine computed.
  */
 export function SalesInvoiceDraft({ invoice }: { invoice: Invoice }) {
   const trpc = useTRPC();
@@ -77,14 +81,35 @@ export function SalesInvoiceDraft({ invoice }: { invoice: Invoice }) {
   );
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<"issue" | "discard" | null>(null);
+  const [dialog, setDialog] = useState<"issue" | "discard" | "orders" | null>(null);
+  /** The lines as the order picker found them, so its Cancel can put them back. */
+  const [beforePicking, setBeforePicking] = useState<{
+    lines: EditableLine[];
+    dirty: boolean;
+  } | null>(null);
   const [issuedAt, setIssuedAt] = useState(today());
   const [note, setNote] = useState("");
+
+  // Loaded when the picker opens: the draft page itself does not need it.
+  // Every client's: one invoice may bill orders of several.
+  const ordersQuery = useQuery({
+    ...trpc.salesInvoice.invoiceableOrders.queryOptions({}),
+    enabled: dialog === "orders",
+  });
+  const selected = new Set(lines.flatMap((line) => (line.orderId ? [line.orderId] : [])));
+  // Orders saved on the draft whose line has been removed here: they go
+  // back to invoiceable on save, which is worth saying before it happens.
+  const leaving = invoice.lines.flatMap((line) =>
+    line.order && !selected.has(line.order.id) ? [line.order.numero] : [],
+  );
 
   const invalidate = () =>
     Promise.all([
       queryClient.invalidateQueries({
         queryKey: trpc.salesInvoice.byId.queryKey(),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: trpc.salesInvoice.invoiceableOrders.queryKey(),
       }),
       queryClient.invalidateQueries({
         queryKey: trpc.salesInvoice.list.queryKey(),
@@ -276,7 +301,26 @@ export function SalesInvoiceDraft({ invoice }: { invoice: Invoice }) {
             currency={shownCurrency}
             busy={busy}
             maxLines={50}
+            actions={
+              <Button
+                size="dense"
+                variant="secondary"
+                disabled={busy || lines.length >= 50}
+                onClick={() => {
+                  setError(null);
+                  setBeforePicking({ lines, dirty });
+                  setDialog("orders");
+                }}
+              >
+                {t("sales.orders.add")}
+              </Button>
+            }
           />
+          {leaving.length > 0 && (
+            <p className={records.hint}>
+              {t("sales.orders.leaving", { orders: leaving.join(", ") })}
+            </p>
+          )}
           {orderHints.map(({ order, messages }) => (
             <ul key={order.id} className={styles.hints}>
               {messages.map((message) => (
@@ -292,13 +336,7 @@ export function SalesInvoiceDraft({ invoice }: { invoice: Invoice }) {
             <div className={records.detailGrid}>
               <Panel title={t("panels.invoice")}>
                 <Row label={t("fields.client")}>
-                  {invoice.client ? (
-                    <Link className={records.inlineLink} href={`/clients/${invoice.client.id}`}>
-                      {invoice.client.name}
-                    </Link>
-                  ) : (
-                    <span className={records.muted}>{t("noClient")}</span>
-                  )}
+                  <BilledClients clients={billedClients(invoice)} />
                 </Row>
                 {orderHints.map(({ order }) => (
                   <Row key={order.id} label={t("fields.order")}>
@@ -466,6 +504,47 @@ export function SalesInvoiceDraft({ invoice }: { invoice: Invoice }) {
           value={issuedAt}
           onChange={(e) => setIssuedAt(e.target.value)}
           disabled={busy}
+        />
+      </Dialog>
+
+      <Dialog
+        open={dialog === "orders"}
+        title={t("sales.orders.addTitle")}
+        confirmLabel={t("sales.orders.done")}
+        onConfirm={() => {
+          // Cleared first: closing the <dialog> fires `onClose` too, which
+          // must not undo what was just confirmed.
+          setBeforePicking(null);
+          setDialog(null);
+        }}
+        onClose={() => {
+          if (beforePicking) {
+            setLines(beforePicking.lines);
+            setDirty(beforePicking.dirty);
+            setBeforePicking(null);
+          }
+          setDialog(null);
+        }}
+      >
+        <p className={records.muted}>{t("sales.orders.addBody")}</p>
+        <InvoiceOrderPicker
+          // Starts on the invoice's client when it bills one.
+          key={invoice.client?.id ?? ""}
+          initialClientId={invoice.client?.id ?? ""}
+          orders={ordersQuery.data?.orders ?? []}
+          pending={ordersQuery.isPending}
+          selected={selected}
+          currency={shownCurrency}
+          busy={busy}
+          onToggle={(order, checked) => {
+            const nextKey = lines.reduce((max, line) => Math.max(max, line.key), 0) + 1;
+            setLines(
+              checked
+                ? [...lines, orderLine(order, nextKey)]
+                : lines.filter((line) => line.orderId !== order.id),
+            );
+            setDirty(true);
+          }}
         />
       </Dialog>
 
