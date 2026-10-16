@@ -209,15 +209,21 @@
   border-bottom: 1px solid var(--bp-hairline-soft);
 }
 
+/*
+  The label keeps its automatic min-width (its longest word) and the value
+  may shrink and wrap: a long text value such as a printing type then breaks
+  onto a second line instead of running over a label squeezed to nothing.
+*/
 .specLabel {
   flex: 1;
-  min-width: 0;
   font: 400 0.84375rem/1.4 var(--bp-font-body);
   color: var(--bp-ink-strong);
 }
 
 .specValue {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font: 600 0.8125rem/1.4 var(--bp-font-mono);
   color: var(--bp-ink);
   font-variant-numeric: tabular-nums;
