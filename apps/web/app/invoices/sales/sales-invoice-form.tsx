@@ -13,6 +13,7 @@ import {
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { SelectField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useToast } from "@repo/ui/toast";
 import {
   InvoiceLinesEditor,
@@ -239,12 +240,10 @@ export function SalesInvoiceForm({
           allowEmpty
           disabled={busy}
         />
-        <TextField
+        <DateField
           label={t("fields.due")}
-          type="date"
-          format="mono"
           value={dueAt}
-          onChange={(e) => setDueAt(e.target.value)}
+          onChange={setDueAt}
           disabled={busy}
         />
         <SelectField

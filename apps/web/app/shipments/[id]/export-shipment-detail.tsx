@@ -15,6 +15,7 @@ import {
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { FileDropzone } from "@repo/ui/file-dropzone";
 import { useToast } from "@repo/ui/toast";
 import { useCurrentUser } from "../../auth/use-auth";
@@ -346,12 +347,11 @@ function ShippedRecord({ shipment: s }: { shipment: Shipment }) {
                         autoComplete="off"
                         disabled={busy}
                       />
-                      <TextField
+                      <DateField
                         label={t("fields.declarationDate")}
                         size="dense"
-                        type="date"
                         value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        onChange={setDate}
                         disabled={busy}
                       />
                     </div>

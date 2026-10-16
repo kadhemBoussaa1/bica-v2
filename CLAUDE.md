@@ -200,6 +200,10 @@ The rules below still hold.
   refetch (`loading`), and is `density="dense"` only for mouse-driven lists.
 - New primitives: `Tabs`, `ToastProvider`/`useToast`, `EmptyState`, `Tooltip`,
   `Skeleton`. Pass `busy` to a submit `Button` instead of swapping its label.
+- Dates are typed in `DateField` (or bare `DateInput`) from `@repo/ui/date-field`,
+  never `<input type="date">`: the native control draws the browser's locale
+  (mm/dd/yyyy in an English Chrome) and no page can change that. The value is
+  still the native `yyyy-mm-dd` / `""`; the field shows dd/mm/yyyy.
 
 ## Translations
 

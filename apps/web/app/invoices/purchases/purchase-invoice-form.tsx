@@ -16,6 +16,7 @@ import {
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { SelectField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useToast } from "@repo/ui/toast";
 import {
   InvoiceLinesEditor,
@@ -248,20 +249,16 @@ export function PurchaseInvoiceForm({
           </p>
         </div>
 
-        <TextField
+        <DateField
           label={t("fields.issued")}
-          type="date"
-          format="mono"
           value={issuedAt}
-          onChange={(e) => setIssuedAt(e.target.value)}
+          onChange={setIssuedAt}
           disabled={busy}
         />
-        <TextField
+        <DateField
           label={t("fields.due")}
-          type="date"
-          format="mono"
           value={dueAt}
-          onChange={(e) => setDueAt(e.target.value)}
+          onChange={setDueAt}
           disabled={busy}
         />
 
@@ -341,12 +338,10 @@ export function PurchaseInvoiceForm({
           disabled={busy}
         />
         <div />
-        <TextField
+        <DateField
           label={t("fields.paidOn")}
-          type="date"
-          format="mono"
           value={paidAt}
-          onChange={(e) => setPaidAt(e.target.value)}
+          onChange={setPaidAt}
           disabled={busy}
         />
         <SelectField

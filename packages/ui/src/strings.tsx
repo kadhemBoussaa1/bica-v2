@@ -25,6 +25,12 @@ export interface UiStrings {
   zeroOfZero: string;
   /** Labels the pager's rows-per-page picker. */
   perPage: string;
+  /** The empty date field's mask, "jj/mm/aaaa" in French. */
+  datePlaceholder: string;
+  /** Under a date field whose text names no real day. */
+  invalidDate: string;
+  /** The date field's calendar button. */
+  openCalendar: string;
 }
 
 export const ENGLISH_UI_STRINGS: UiStrings = {
@@ -41,6 +47,9 @@ export const ENGLISH_UI_STRINGS: UiStrings = {
   rangeOf: (start, end, total) => `${start}–${end} of ${total}`,
   zeroOfZero: "0 of 0",
   perPage: "Per page",
+  datePlaceholder: "dd/mm/yyyy",
+  invalidDate: "Enter a date as dd/mm/yyyy",
+  openCalendar: "Open calendar",
 };
 
 const UiStringsContext = createContext<UiStrings>(ENGLISH_UI_STRINGS);

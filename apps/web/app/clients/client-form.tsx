@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { createClientInput, updateClientInput } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useTRPC } from "../trpc/client";
 import { formatDay } from "../../i18n/formats";
 import records from "../records/records.module.css";
@@ -194,11 +195,10 @@ export function ClientForm({
             autoComplete="off"
             disabled={busy}
           />
-          <TextField
+          <DateField
             label={t("fields.since")}
-            type="date"
             value={registeredAt}
-            onChange={(e) => setRegisteredAt(e.target.value)}
+            onChange={setRegisteredAt}
             disabled={busy}
           />
 

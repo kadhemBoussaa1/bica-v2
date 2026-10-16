@@ -68,7 +68,7 @@ interface FieldShellProps {
   children: ReactNode;
 }
 
-function FieldShell({
+export function FieldShell({
   label,
   unit,
   error,
@@ -102,7 +102,7 @@ function FieldShell({
 /** Numeric aligns right with tabular figures; mono keeps dates fixed-width. */
 type ControlFormat = "text" | "numeric" | "mono";
 
-function controlClasses(
+export function controlClasses(
   format: ControlFormat,
   size: FieldSize,
   error?: string,

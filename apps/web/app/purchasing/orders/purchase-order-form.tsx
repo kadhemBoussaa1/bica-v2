@@ -14,6 +14,7 @@ import {
 import type { PurchaseCategory } from "api/src/purchasing/purchasing.list";
 import { Button } from "@repo/ui/button";
 import { SelectField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useToast } from "@repo/ui/toast";
 import {
   OrderLinesEditor,
@@ -218,20 +219,16 @@ export function PurchaseOrderForm({
           disabled={busy}
         />
 
-        <TextField
+        <DateField
           label={t("fields.issued")}
-          type="date"
-          format="mono"
           value={issuedAt}
-          onChange={(e) => setIssuedAt(e.target.value)}
+          onChange={setIssuedAt}
           disabled={busy}
         />
-        <TextField
+        <DateField
           label={t("fields.expected")}
-          type="date"
-          format="mono"
           value={expectedAt}
-          onChange={(e) => setExpectedAt(e.target.value)}
+          onChange={setExpectedAt}
           disabled={busy}
         />
         <TextField

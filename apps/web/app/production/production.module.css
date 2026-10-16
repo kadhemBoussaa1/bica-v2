@@ -130,6 +130,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The day as typed text: ten mono figures, the padding, and the calendar
+   button's 44px at the end (DateInput's own padding). */
+.dayDate {
+  width: calc(11ch + var(--bp-space-4) + 46px);
+}
+
 .dayInput:focus {
   outline: 2px solid var(--bp-focus);
   outline-offset: -1px;

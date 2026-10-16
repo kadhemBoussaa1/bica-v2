@@ -18,6 +18,7 @@ import {
 import { Button } from "@repo/ui/button";
 import { Dialog } from "@repo/ui/dialog";
 import { SelectField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useCurrentUser } from "../auth/use-auth";
 import { formatPrice } from "../stock/inks/ink-ui";
 import { useTRPC } from "../trpc/client";
@@ -492,11 +493,10 @@ function InkUsageForm({
           autoFocus
           disabled={busy}
         />
-        <TextField
+        <DateField
           label={t("inks.date")}
-          type="date"
           value={usedAt}
-          onChange={(e) => setUsedAt(e.target.value)}
+          onChange={setUsedAt}
           disabled={busy}
         />
         <TextField

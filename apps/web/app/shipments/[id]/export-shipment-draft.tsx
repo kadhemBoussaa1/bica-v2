@@ -17,6 +17,7 @@ import {
 import { Button } from "@repo/ui/button";
 import { Dialog } from "@repo/ui/dialog";
 import { CheckboxField, TextAreaField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { FileDropzone } from "@repo/ui/file-dropzone";
 import { useToast } from "@repo/ui/toast";
 import { useCurrentUser } from "../../auth/use-auth";
@@ -461,13 +462,12 @@ export function ExportShipmentDraft({ shipment }: { shipment: Shipment }) {
             </div>
 
             <div className={styles.fieldGrid}>
-              <TextField
+              <DateField
                 label={t("fields.exportDate")}
                 unit={t("editor.required")}
-                type="date"
                 value={exportDate}
-                onChange={(e) => {
-                  setExportDate(e.target.value);
+                onChange={(value) => {
+                  setExportDate(value);
                   setDirty(true);
                 }}
                 disabled={busy}
@@ -497,13 +497,12 @@ export function ExportShipmentDraft({ shipment }: { shipment: Shipment }) {
                 disabled={busy}
                 aria-invalid={customsNumber.trim() === "" ? true : undefined}
               />
-              <TextField
+              <DateField
                 label={t("fields.declarationDate")}
                 unit={t("editor.required")}
-                type="date"
                 value={customsDate}
-                onChange={(e) => {
-                  setCustomsDate(e.target.value);
+                onChange={(value) => {
+                  setCustomsDate(value);
                   setDirty(true);
                 }}
                 disabled={busy}
@@ -878,11 +877,10 @@ export function ExportShipmentDraft({ shipment }: { shipment: Shipment }) {
             : t("shipDialog.allOn")}
           {dirty && ` ${t("shipDialog.unsavedFirst")}`}
         </p>
-        <TextField
+        <DateField
           label={t("fields.exportDate")}
-          type="date"
           value={shipDate}
-          onChange={(e) => setShipDate(e.target.value)}
+          onChange={setShipDate}
           disabled={busy}
         />
         {isAdmin && parcelsShort > 0 && (

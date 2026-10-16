@@ -11,6 +11,7 @@ import { DEFAULT_PAGE_SIZE, PAGE_SIZES, reserveRollInput } from "@repo/api-contr
 import { Button } from "@repo/ui/button";
 import { DataTable, type Column, type DataTableState } from "@repo/ui/data-table";
 import { TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { FormDialog } from "@repo/ui/form-dialog";
 import type { FormNav } from "../../../records/form-nav";
 import { RollSlitForm } from "../../../stock/roll-slit-form";
@@ -371,11 +372,10 @@ function ReserveForm({
           autoFocus
           disabled={busy}
         />
-        <TextField
+        <DateField
           label={t("picker.date")}
-          type="date"
           value={dateAllocation}
-          onChange={(e) => setDateAllocation(e.target.value)}
+          onChange={setDateAllocation}
           disabled={busy}
         />
       </div>

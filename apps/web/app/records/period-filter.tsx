@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import type { Period } from "api/src/list/period";
 import styles from "./list-header.module.css";
 
@@ -81,21 +81,17 @@ export function PeriodFilter({
 
       {state.period === "custom" && (
         <span className={styles.periodRange}>
-          <TextField
+          <DateField
             label={t("from")}
             size="dense"
-            type="date"
-            format="mono"
             value={state.from ?? ""}
-            onChange={(e) => onChange({ ...state, from: e.target.value || undefined })}
+            onChange={(value) => onChange({ ...state, from: value || undefined })}
           />
-          <TextField
+          <DateField
             label={t("to")}
             size="dense"
-            type="date"
-            format="mono"
             value={state.to ?? ""}
-            onChange={(e) => onChange({ ...state, to: e.target.value || undefined })}
+            onChange={(value) => onChange({ ...state, to: value || undefined })}
           />
         </span>
       )}

@@ -15,6 +15,7 @@ import {
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useFileUpload } from "@repo/ui/file-upload";
 import { useToast } from "@repo/ui/toast";
 import { useCurrentUser } from "../auth/use-auth";
@@ -643,19 +644,17 @@ export function EmployeeDrawer({
             </div>
 
             <div className={styles.fieldGridNarrow}>
-              <TextField
+              <DateField
                 label={t("hired")}
-                type="date"
                 value={hireDate}
-                onChange={(e) => setHireDate(e.target.value)}
+                onChange={setHireDate}
                 disabled={busy}
               />
               {showsEnd && (
-                <TextField
+                <DateField
                   label={t("contractEnds")}
-                  type="date"
                   value={contractEndDate}
-                  onChange={(e) => setContractEndDate(e.target.value)}
+                  onChange={setContractEndDate}
                   disabled={busy}
                 />
               )}
@@ -764,11 +763,10 @@ export function EmployeeDrawer({
             </div>
             {suspended && (
               <div className={styles.suspension}>
-                <TextField
+                <DateField
                   label={t("suspendedOn")}
-                  type="date"
                   value={suspendedAt}
-                  onChange={(e) => setSuspendedAt(e.target.value)}
+                  onChange={setSuspendedAt}
                   disabled={busy}
                 />
                 <TextField
@@ -801,11 +799,10 @@ export function EmployeeDrawer({
                 autoComplete="off"
                 disabled={busy}
               />
-              <TextField
+              <DateField
                 label={t("birthDate")}
-                type="date"
                 value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
+                onChange={setBirthDate}
                 disabled={busy}
               />
               <TextField

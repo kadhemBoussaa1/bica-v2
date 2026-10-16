@@ -13,6 +13,7 @@ import {
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { SelectField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { FileLink } from "@repo/ui/file-link";
 import { Thumbnail } from "@repo/ui/thumbnail";
 import { useTRPC } from "../trpc/client";
@@ -257,11 +258,10 @@ export function MachineForm({
           autoComplete="off"
           disabled={busy}
         />
-        <TextField
+        <DateField
           label={t("form.purchaseDate")}
-          type="date"
           value={purchaseDate}
-          onChange={(e) => setPurchaseDate(e.target.value)}
+          onChange={setPurchaseDate}
           disabled={busy}
         />
 

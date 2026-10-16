@@ -11,6 +11,7 @@ import { CURRENCIES, PAYMENT_METHODS, invoiceTotals } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { Dialog } from "@repo/ui/dialog";
 import { SelectField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useToast } from "@repo/ui/toast";
 import {
   InvoiceLinesEditor,
@@ -360,13 +361,12 @@ export function SalesInvoiceDraft({ invoice }: { invoice: Invoice }) {
                     }}
                     disabled={busy}
                   />
-                  <TextField
+                  <DateField
                     label={t("fields.due")}
                     size="dense"
-                    type="date"
                     value={dueAt}
-                    onChange={(e) => {
-                      setDueAt(e.target.value);
+                    onChange={(value) => {
+                      setDueAt(value);
                       setDirty(true);
                     }}
                     disabled={busy}
@@ -498,11 +498,10 @@ export function SalesInvoiceDraft({ invoice }: { invoice: Invoice }) {
           {t("sales.issueBody", { year: issuedAt.slice(0, 4) })}
           {dirty && ` ${t("sales.unsavedSavedFirst")}`}
         </p>
-        <TextField
+        <DateField
           label={t("fields.issueDate")}
-          type="date"
           value={issuedAt}
-          onChange={(e) => setIssuedAt(e.target.value)}
+          onChange={setIssuedAt}
           disabled={busy}
         />
       </Dialog>

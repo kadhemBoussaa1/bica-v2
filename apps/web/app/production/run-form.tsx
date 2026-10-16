@@ -11,6 +11,7 @@ import {
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { SelectField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useTRPC } from "../trpc/client";
 import styles from "../records/records.module.css";
 import { decimal } from "../records/decimal";
@@ -259,12 +260,10 @@ export function RunForm({
             label: enums(`workshopStage.${v}`),
           }))}
         />
-        <TextField
+        <DateField
           label={t("date")}
-          type="date"
-          format="mono"
           value={dateProduction}
-          onChange={(e) => setDateProduction(e.target.value)}
+          onChange={setDateProduction}
           disabled={busy}
         />
         {stageMachineTypes && (

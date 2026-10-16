@@ -30,6 +30,9 @@ function UiStringsFromMessages({ children }: { children: ReactNode }) {
     rangeOf: (start, end, total) => t("rangeOf", { start, end, total }),
     zeroOfZero: t("zeroOfZero"),
     perPage: t("perPage"),
+    datePlaceholder: t("datePlaceholder"),
+    invalidDate: t("invalidDate"),
+    openCalendar: t("openCalendar"),
   };
   return <UiStringsProvider value={strings}>{children}</UiStringsProvider>;
 }

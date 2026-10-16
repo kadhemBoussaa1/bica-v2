@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { canAccessAny, type WorkshopStage } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
+import { DateInput } from "@repo/ui/date-field";
 import { useCurrentUser } from "../auth/use-auth";
 import { DailyProduction, DayMeta, isoDay } from "./daily-production";
 import {
@@ -129,11 +130,10 @@ export function ProductionViews() {
             >
               {t("previousDay")}
             </Button>
-            <input
-              type="date"
-              className={styles.dayInput}
+            <DateInput
+              className={[styles.dayInput, styles.dayDate].filter(Boolean).join(" ")}
               value={date}
-              onChange={(e) => e.target.value && setDate(e.target.value)}
+              onChange={(value) => value && setDate(value)}
               aria-label={t("productionDay")}
             />
             <Button

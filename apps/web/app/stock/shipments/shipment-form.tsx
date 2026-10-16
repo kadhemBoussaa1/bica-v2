@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { createShipmentInput, updateShipmentInput } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { CheckboxField, SelectField, TextAreaField, TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import { useTRPC } from "../../trpc/client";
@@ -183,12 +184,10 @@ export function ShipmentForm({
           autoComplete="off"
           disabled={busy}
         />
-        <TextField
+        <DateField
           label={t("shipments.form.arrived")}
-          type="date"
-          format="mono"
           value={dateImport}
-          onChange={(e) => setDateImport(e.target.value)}
+          onChange={setDateImport}
           disabled={busy}
         />
 

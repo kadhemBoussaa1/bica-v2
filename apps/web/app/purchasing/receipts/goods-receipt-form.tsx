@@ -10,6 +10,7 @@ import type { AppRouter } from "api/src/trpc/trpc.router";
 import { updateGoodsReceiptInput } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { TextField } from "@repo/ui/field";
+import { DateField } from "@repo/ui/date-field";
 import { useToast } from "@repo/ui/toast";
 import {
   ReceiptLinesEditor,
@@ -159,20 +160,16 @@ export function GoodsReceiptForm({
         </div>
         <div />
 
-        <TextField
+        <DateField
           label={t("fields.raised")}
-          type="date"
-          format="mono"
           value={issuedAt}
-          onChange={(e) => setIssuedAt(e.target.value)}
+          onChange={setIssuedAt}
           disabled={busy}
         />
-        <TextField
+        <DateField
           label={t("fields.received")}
-          type="date"
-          format="mono"
           value={receivedAt}
-          onChange={(e) => setReceivedAt(e.target.value)}
+          onChange={setReceivedAt}
           disabled={busy}
         />
 
