@@ -308,6 +308,8 @@
     "allocate": "Asignar",
     "cutAndAllocate": "Cortar y asignar",
     "slit": "Cortar en bandas",
+    "allocated": "Asignada",
+    "allocatedHint": "Parte de esta bobina está reservada para un pedido — no se puede cortar en bandas hasta que ese papel se consuma o se libere.",
     "done": "Hecho",
     "searchPlaceholder": "Buscar n.º de bobina",
     "empty": "Ninguna bobina de este gramaje es lo bastante ancha. Revise el stock o el papel del producto.",

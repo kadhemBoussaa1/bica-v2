@@ -308,6 +308,8 @@
     "allocate": "Allouer",
     "cutAndAllocate": "Couper et allouer",
     "slit": "Refendre",
+    "allocated": "Allouée",
+    "allocatedHint": "Une partie de cette bobine est réservée pour une commande — elle ne peut pas être refendue avant que ce papier soit consommé ou libéré.",
     "done": "Terminé",
     "searchPlaceholder": "Rechercher un n° de bobine",
     "empty": "Aucune bobine de ce grammage n’est assez large. Vérifiez le stock ou le papier du produit.",

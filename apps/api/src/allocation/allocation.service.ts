@@ -128,11 +128,17 @@ export class AllocationService {
   }
 
   /**
-   * Reels that could serve the order: live, received, with length left, the
-   * product's grammage (or none recorded — a third of the live stock, shown
-   * rather than hidden), the product's paper type when it has one, and at
-   * least the production width less the tolerance. `fit` says whether a reel
-   * goes on as-is or needs slitting first.
+   * Reels that could serve the order: live, received, with free length left,
+   * the product's grammage (or none recorded — a third of the live stock,
+   * shown rather than hidden), the product's paper type when it has one, and
+   * at least the production width less the tolerance. `fit` says whether a
+   * reel goes on as-is or needs slitting first.
+   *
+   * Free, not merely remaining: a reel promised in full to orders (every
+   * cut-and-allocate piece) still has all its metres until they are
+   * consumed, and nothing can be done with it here — allocate and cut need
+   * free metres, slit needs none reserved. A part-reserved wide reel still
+   * shows; the picker labels it rather than offering a slit that would fail.
    *
    * Pending reels are excluded: the picker offers paper someone is about to
    * walk to, and a reel nobody has scanned in may not be on the floor at all
@@ -160,7 +166,9 @@ export class AllocationService {
       consomme: false,
       archived: false,
       receivedAt: { not: null },
-      metrageRestant: { gt: 0 },
+      // Free length > 0; `metrageReserve` is never negative, so this also
+      // means length remains.
+      metrageRestant: { gt: this.prisma.paperRoll.fields.metrageReserve },
       laize: { gte: widthCm * 10 - WIDTH_TOLERANCE_MM },
       AND: [
         // A product with no grammage cannot be matched on it; show the width.

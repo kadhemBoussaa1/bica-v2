@@ -308,6 +308,8 @@
     "allocate": "Allocate",
     "cutAndAllocate": "Cut & allocate",
     "slit": "Slit",
+    "allocated": "Allocated",
+    "allocatedHint": "Part of this reel is reserved for an order — it cannot be slit until that paper is consumed or released.",
     "done": "Done",
     "searchPlaceholder": "Search reel no.",
     "empty": "No reel of this grammage is wide enough. Check the stock, or the product's paper.",

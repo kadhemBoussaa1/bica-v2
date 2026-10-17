@@ -175,6 +175,14 @@ export function RollPicker({ orderId, onDone }: { orderId: string } & FormNav) {
                 </Button>
               )}
             </>
+          ) : row.metrageReserve > 0 ? (
+            // The server refuses to slit a reel with paper reserved on it.
+            <span
+              className={[records.statusBadge, records.statusNeutral].filter(Boolean).join(" ")}
+              title={t("picker.allocatedHint")}
+            >
+              {t("picker.allocated")}
+            </span>
           ) : (
             <Button className={records.actionBtn} onClick={() => setAction({ kind: "slit", row })}>
               {t("picker.slit")}
