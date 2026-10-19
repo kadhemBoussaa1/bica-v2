@@ -27,6 +27,7 @@ import {
   writeRollFlags,
   type RollCounters,
 } from "../stock/roll-math";
+import { setStockContext } from "../stock-api/stock-context";
 import { StockService } from "../stock/stock.service";
 import type { SessionUser } from "../trpc/trpc";
 import {
@@ -262,6 +263,7 @@ export class AllocationService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      await setStockContext(tx, "CONSUME", allocation.order.numero);
       const roll = await this.loadRoll(tx, allocation.paperRollId);
       const usedKg = used * kgPerMetre(roll);
       // Claim the row first. The state check above ran outside this
@@ -455,6 +457,7 @@ export class AllocationService {
         }
       }
 
+      await setStockContext(tx, "UNDO_CUT", piece.numero);
       const released: string[] = [];
       for (const allocation of piece.allocations) {
         if (allocation.state !== "RESERVED") continue;

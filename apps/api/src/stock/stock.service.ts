@@ -17,6 +17,7 @@ import type { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
 import { COUNTABLE_ROLL_WHERE } from "../inventory/inventory.list";
 import { PrismaService } from "../prisma.service";
+import { setStockContext } from "../stock-api/stock-context";
 import {
   ROLL_COUNTER_SELECT,
   freeGuard,
@@ -701,6 +702,8 @@ export class StockService {
         });
       }
 
+      // The stamp puts the reel on hand: BICA Expert sees it arrive.
+      await setStockContext(tx, "RECEIPT", shipment.numeroImport);
       const stamped =
         roll.receivedAt === null
           ? await tx.paperRoll.updateMany({
@@ -919,26 +922,31 @@ export class StockService {
 
     if (wantsWeightChange) this.assertRollWeightsEditable(roll);
 
-    return this.prisma.paperRoll.update({
-      where: { id: input.id },
-      data: {
-        ...this.writableRoll(input),
-        importShipmentId: input.importShipmentId,
-        // Weights are written only when the guard above allowed it, so an
-        // edit to a label on an in-use reel cannot smuggle one through. A
-        // blank weight arrives as `undefined` (the contract has no null for
-        // them) and means "leave alone": writing it as null would clear the
-        // weight of an in-use reel without ever passing the guard.
-        ...(wantsWeightChange
-          ? {
-              ...(input.poids !== undefined ? { poids: input.poids } : {}),
-              ...(input.metrage !== undefined ? { metrage: input.metrage } : {}),
-              poidsRestant: input.poidsRestant ?? input.poids ?? roll.poidsRestant,
-              metrageRestant: input.metrageRestant ?? input.metrage ?? roll.metrageRestant,
-            }
-          : {}),
-      },
-      select: ROLL_RETURN_SELECT,
+    // A transaction for the stock context alone: a weight, price, grammage
+    // or width edit on a reel on hand is a stock movement.
+    return this.prisma.$transaction(async (tx) => {
+      await setStockContext(tx, "EDIT");
+      return tx.paperRoll.update({
+        where: { id: input.id },
+        data: {
+          ...this.writableRoll(input),
+          importShipmentId: input.importShipmentId,
+          // Weights are written only when the guard above allowed it, so an
+          // edit to a label on an in-use reel cannot smuggle one through. A
+          // blank weight arrives as `undefined` (the contract has no null for
+          // them) and means "leave alone": writing it as null would clear the
+          // weight of an in-use reel without ever passing the guard.
+          ...(wantsWeightChange
+            ? {
+                ...(input.poids !== undefined ? { poids: input.poids } : {}),
+                ...(input.metrage !== undefined ? { metrage: input.metrage } : {}),
+                poidsRestant: input.poidsRestant ?? input.poids ?? roll.poidsRestant,
+                metrageRestant: input.metrageRestant ?? input.metrage ?? roll.metrageRestant,
+              }
+            : {}),
+        },
+        select: ROLL_RETURN_SELECT,
+      });
     });
   }
 
@@ -983,6 +991,9 @@ export class StockService {
     }
 
     const kg = input.metres * kgPerMetre(mother);
+    const numero = this.childLabel(mother, 1);
+    // Both legs of the cut name the piece it makes.
+    await setStockContext(tx, "CUT", numero);
     const after = await moveRollCounters(
       tx,
       mother.id,
@@ -997,7 +1008,6 @@ export class StockService {
       });
     }
 
-    const numero = this.childLabel(mother, 1);
     const child = await tx.paperRoll.create({
       data: {
         ...this.inherited(mother),
@@ -1097,6 +1107,7 @@ export class StockService {
         `Slit into ${bands.map((b) => `${b.numero} (${b.width} mm)`).join(", ")}` +
         (trim > 0 ? `; trim ${trim} mm` : "");
 
+      await setStockContext(tx, "SLIT", mother.numero);
       // The mother first, so a concurrent reservation fails the whole slit
       // before any band exists.
       const retired = await tx.paperRoll.updateMany({
@@ -1235,14 +1246,18 @@ export class StockService {
 
   /**
    * Archive or restore a reel. Always allowed: archiving is how a reel in use
-   * is retired, and it changes no quantity.
+   * is retired, and it changes none of its counters. It does take the reel
+   * off hand for BICA Expert (and restoring puts it back), hence the context.
    */
   async setRollArchived(id: string, archived: boolean) {
     await this.assertRollExists(id);
-    return this.prisma.paperRoll.update({
-      where: { id },
-      data: { archived },
-      select: ROLL_RETURN_SELECT,
+    return this.prisma.$transaction(async (tx) => {
+      await setStockContext(tx, archived ? "ARCHIVE" : "RESTORE");
+      return tx.paperRoll.update({
+        where: { id },
+        data: { archived },
+        select: ROLL_RETURN_SELECT,
+      });
     });
   }
 
@@ -1278,7 +1293,11 @@ export class StockService {
           "Archive it instead — deleting it would break records that reference it.",
       });
     }
-    await this.prisma.paperRoll.delete({ where: { id } });
+    // A received reel deleted unused leaves stock: the trigger records it.
+    await this.prisma.$transaction(async (tx) => {
+      await setStockContext(tx, "DELETE");
+      await tx.paperRoll.delete({ where: { id } });
+    });
     return { id };
   }
 

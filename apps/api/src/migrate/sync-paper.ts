@@ -45,6 +45,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PAPER_TYPES } from "@repo/api-contract";
 import { PrismaClient, type Prisma } from "../generated/prisma/client.js";
 import type { AllocationState, PaperType } from "../generated/prisma/enums.js";
+import { setStockContext } from "../stock-api/stock-context.js";
 import { kgPerMetre } from "../stock/roll-math.js";
 import {
   legacyRawPool,
@@ -215,6 +216,9 @@ async function main() {
 
     await prisma.$transaction(
       async (tx) => {
+        // Whatever the old app did to stock reaches BICA Expert as
+        // LEGACY_SYNC adjustments (the trigger records them either way).
+        await setStockContext(tx, "LEGACY_SYNC");
         const stamp = new Date();
         const synced = { legacySyncedAt: stamp, updatedAt: stamp };
 

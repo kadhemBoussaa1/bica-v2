@@ -19,6 +19,8 @@ import { getAuth } from "./auth/auth";
 import { NotificationService } from "./notification/notification.service";
 import { PdfService, type RenderedPdf } from "./pdf/pdf.service";
 import { PrismaService } from "./prisma.service";
+import { mountStockApi } from "./stock-api/stock-api.http";
+import { StockApiService } from "./stock-api/stock-api.service";
 import { TrpcRouter } from "./trpc/trpc.router";
 import type { SessionUser } from "./trpc/trpc";
 
@@ -260,6 +262,10 @@ async function bootstrap() {
     }
     notifications.openStream(user.id, res);
   });
+
+  // The paper stock read API for BICA Expert (docs/erp-stock-api.md): bearer
+  // keys, not sessions, and its own error shapes — see stock-api.http.ts.
+  mountStockApi(http, app.get(StockApiService));
 
   app.use(
     "/trpc",

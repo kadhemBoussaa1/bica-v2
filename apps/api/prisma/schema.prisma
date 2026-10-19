@@ -3555,3 +3555,104 @@ model ManufacturingActionComment {
   @@index([actionId, createdAt])
   @@index([authorId])
 }
+
+// ---------------------------------------------------------------------------
+// Stock integration — BICA Expert reads the paper stock (docs/erp-stock-api.md)
+// ---------------------------------------------------------------------------
+
+enum StockEventType {
+  /// One reel's on-hand weight changed.
+  MOVEMENT
+  /// Every SKU's level at one instant; `payload` holds it.
+  SNAPSHOT
+}
+
+/// The contract's movement types, spelled as BICA Expert spells them.
+/// SHIPMENT and COUNT are never written today: paper leaves only through
+/// production, and a stocktake records what was seen without moving stock.
+enum StockMovementType {
+  RECEIPT
+  SHIPMENT
+  ADJUSTMENT
+  TRANSFER_IN
+  TRANSFER_OUT
+  PRODUCTION_IN
+  PRODUCTION_OUT
+  COUNT
+}
+
+/// The paper stock's event log, which BICA Expert pulls
+/// (`/integration/v1/stock/movements`) and is pushed (`StockPushService`).
+///
+/// **Written only by Postgres.** The `paper_stock_event` trigger on
+/// `PaperRoll` inserts a MOVEMENT whenever a reel's on-hand weight, SKU or
+/// unit cost changes, in the transaction that changed it — so no write path
+/// (a service, `sync-paper`, a hand-typed UPDATE) can move stock without a
+/// row here, and a rolled-back change takes its row with it. Services only
+/// say WHY, through `setStockContext`; the trigger falls back to ADJUSTMENT.
+///
+/// `sequence` comes from `StockEventCounter`, whose row lock is held until
+/// commit: numbers are gap-free and a reader never sees N+1 before N. The
+/// price is that stock-moving transactions are serialised, which a paper
+/// warehouse's volume never notices.
+///
+/// Quantities are Float like the rest of the schema; the trigger rounds them
+/// to 3 decimals in numeric, and the API prints them with `toFixed`, which
+/// gives the rounded value back exactly.
+model StockEvent {
+  sequence BigInt         @id
+  eventId  String         @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type     StockEventType
+  /// When the change was committed here, UTC, read after the counter lock so
+  /// it never runs backwards against `sequence`.
+  occurredAt DateTime
+
+  // ---- MOVEMENT -------------------------------------------------------------
+
+  movementType StockMovementType?
+  /// `paper_stock_sku(paperType, grammage, laize)`: "KRAFT-90G-920MM".
+  sku          String?
+  paperType    PaperType?
+  grammage     Int?
+  laizeMm      Int?
+  /// The reel (lot). No foreign key: the log is history and must outlive a
+  /// deleted reel.
+  lotId        String?
+  lotNumber    String?
+  /// Signed change to the SKU's on-hand kilograms, and the metres with it.
+  quantity     Float?
+  metres       Float?
+  /// The reel's purchase price per kg (`PaperRoll.price`, 0 when unset).
+  unitCost     Float?
+  /// The SKU's on-hand kilograms and value right after this movement.
+  resultingQuantity Float?
+  resultingValue    Float?
+  /// What caused it ("PRODUCTION_ORDER", "CMD-812") — `setStockContext`.
+  sourceType   String?
+  sourceNumber String?
+
+  // ---- SNAPSHOT -------------------------------------------------------------
+
+  /// The contract's snapshot body, frozen as sent.
+  payload Json?
+
+  // ---- push delivery --------------------------------------------------------
+
+  deliveredAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime?
+  lastError     String?
+
+  /// A SKU's history and its level at a past instant.
+  @@index([sku, sequence])
+  /// The push worker's queue: undelivered rows in order.
+  @@index([deliveredAt, sequence])
+  @@index([occurredAt])
+}
+
+/// The single row (`id = 1`) `StockEvent.sequence` is drawn from. Never
+/// written by the app.
+model StockEventCounter {
+  id   Int    @id
+  last BigInt @default(0)
+}

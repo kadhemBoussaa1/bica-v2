@@ -97,6 +97,11 @@ services:
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-BICA-PACK - Système de Gestion}
       MAIL_TO_BOSS: ${MAIL_TO_BOSS:-}
       MAIL_TO_CREATIONS: ${MAIL_TO_CREATIONS:-}
+      # Paper stock API for BICA Expert (docs/erp-stock-api.md), optional the
+      # same way: no keys answers 503, no webhook leaves push off.
+      STOCK_API_KEYS: ${STOCK_API_KEYS:-}
+      STOCK_WEBHOOK_URL: ${STOCK_WEBHOOK_URL:-}
+      STOCK_WEBHOOK_SECRET: ${STOCK_WEBHOOK_SECRET:-}
       # Kept out of the environment on purpose: AUDIT_PURGE_DAYS and
       # NOTIFICATION_PURGE_DAYS have no default, and both purges are run by
       # hand (docs/deployment.md).
