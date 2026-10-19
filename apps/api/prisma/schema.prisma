@@ -89,6 +89,8 @@ model User {
   /// ones their actions caused (SetNull: the row outlives its actor).
   notifications      Notification[] @relation("NotificationRecipient")
   notificationsActed Notification[] @relation("NotificationActor")
+  /// How far into the bell this user has looked — see NotificationSeen.
+  notificationSeen   NotificationSeen?
   /// The browsers this user turned phone notifications on in — docs/pwa-plan.md.
   pushSubscriptions  PushSubscription[]
   /// OFs this user opened / cancelled and the comments they wrote on actions —
@@ -3290,6 +3292,19 @@ model Notification {
   @@index([createdAt])
   /// Foreign key: Postgres does not index one on its own.
   @@index([actorId])
+}
+
+/// The bell's "seen" stamp, one row per account — docs/notifications-plan.md
+/// decision 18. The badge counts unread rows newer than it, and opening the
+/// bell advances it. Apart from `Notification.readAt`, which only a click on
+/// the row (or "Mark all as read") sets: a row keeps its dot after the badge
+/// has cleared.
+model NotificationSeen {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// `createdAt` of the newest row the bell has shown this user.
+  lastSeenAt DateTime
 }
 
 /// One browser's Web Push subscription — docs/pwa-plan.md, phase 2. The

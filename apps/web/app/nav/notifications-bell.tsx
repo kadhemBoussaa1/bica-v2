@@ -59,7 +59,9 @@ function BellIcon() {
  * stream closed; the stream (`useNotificationStream`) only makes it
  * immediate. The panel lists the caller's rows newest first — the API
  * scopes them to the kinds this role may read — and opens on the page the
- * row is about, marking it read on the way.
+ * row is about, marking it read on the way. The badge counts rows not yet
+ * SEEN, so opening the panel clears it without reading anything (plan
+ * decision 18).
  *
  * The toast kinds (the personal ones, and production entries for admins)
  * also pop a toast. The stream says only which row and
@@ -92,7 +94,7 @@ export function NotificationsBell({ role, userId }: { role: Role; userId: string
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const countQuery = useQuery({
-    ...trpc.notification.unreadCount.queryOptions(),
+    ...trpc.notification.counts.queryOptions(),
     staleTime: 10_000,
     refetchInterval: 20_000,
     refetchOnWindowFocus: true,
@@ -107,8 +109,14 @@ export function NotificationsBell({ role, userId }: { role: Role; userId: string
     trpc.notification.markRead.mutationOptions({
       onSettled: () => {
         void queryClient.invalidateQueries({ queryKey: trpc.notification.list.queryKey() });
-        void queryClient.invalidateQueries({ queryKey: trpc.notification.unreadCount.queryKey() });
+        void queryClient.invalidateQueries({ queryKey: trpc.notification.counts.queryKey() });
       },
+    }),
+  );
+  const { mutate: markSeen } = useMutation(
+    trpc.notification.markSeen.mutationOptions({
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: trpc.notification.counts.queryKey() }),
     }),
   );
 
@@ -175,23 +183,38 @@ export function NotificationsBell({ role, userId }: { role: Role; userId: string
     };
   }, [open, close]);
 
-  const unread = countQuery.data ?? 0;
+  // The badge is `unseen`, not `unread` (plan decision 18): opening the bell
+  // clears it, while each row keeps its dot until it is clicked. `unread`
+  // only decides whether "Mark all as read" has anything to do.
+  const unread = countQuery.data?.unread ?? 0;
+  const unseen = countQuery.data?.unseen ?? 0;
 
-  // The installed app's icon badge (iOS Home Screen, desktop). Only while
-  // the app is open — a push cannot know the count — so it can lag until
-  // the next launch; it is cleared on sign-out (use-auth.ts).
+  // The installed app's icon badge (iOS Home Screen, desktop), the same
+  // number as the bell's. Only while the app is open — a push cannot know
+  // the count — so it can lag until the next launch; it is cleared on
+  // sign-out (use-auth.ts).
   const counted = countQuery.data !== undefined;
   useEffect(() => {
     if (!counted || !("setAppBadge" in navigator)) return;
-    const badged = unread > 0 ? navigator.setAppBadge(unread) : navigator.clearAppBadge();
+    const badged = unseen > 0 ? navigator.setAppBadge(unseen) : navigator.clearAppBadge();
     badged.catch(() => {});
-  }, [counted, unread]);
+  }, [counted, unseen]);
 
   const badge =
-    unread > NOTIFICATION_BADGE_MAX
+    unseen > NOTIFICATION_BADGE_MAX
       ? `${numberFormat().format(NOTIFICATION_BADGE_MAX)}+`
-      : numberFormat().format(unread);
+      : numberFormat().format(unseen);
   const items = listQuery.data?.pages.flatMap((page) => page.items) ?? [];
+
+  // Seen is what the open panel shows: its newest row becomes the stamp,
+  // once the list has settled (a cached page from the last opening would
+  // stamp an older row first), and again when a newer row arrives while it
+  // is open. The newest row covers every unseen one in both chips, since an
+  // unseen row is unread. Nothing is sent once the badge is clear.
+  const newestShown = open && !listQuery.isFetching ? items[0]?.id : undefined;
+  useEffect(() => {
+    if (newestShown && unseen > 0) markSeen({ id: newestShown });
+  }, [newestShown, unseen, markSeen]);
 
   return (
     <div className={styles.wrap} ref={wrapRef}>
@@ -202,11 +225,11 @@ export function NotificationsBell({ role, userId }: { role: Role; userId: string
         onClick={() => setOpenedOn(open ? null : pathname)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={unread > 0 ? t("bellUnread", { count: unread }) : t("bell")}
+        aria-label={unseen > 0 ? t("bellUnseen", { count: unseen }) : t("bell")}
         title={t("bell")}
       >
         <BellIcon />
-        {unread > 0 && (
+        {unseen > 0 && (
           <span className={styles.badge} aria-hidden="true">
             {badge}
           </span>

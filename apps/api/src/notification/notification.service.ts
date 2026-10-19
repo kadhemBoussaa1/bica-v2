@@ -8,6 +8,7 @@ import {
   visibleNotificationKinds,
   type ListNotificationsInput,
   type MarkNotificationsReadInput,
+  type MarkNotificationsSeenInput,
   type NotificationEvent,
   type NotificationKind,
   type NotificationPayload,
@@ -98,9 +99,9 @@ interface EmitInput {
  * Three jobs. Emission: one row per recipient on the caller's transaction,
  * called from the service choke points (OrderService.create / transition,
  * ShiftService.publish and the ticket writes, ProductionService.create),
- * never from the router or the
- * audit middleware. Reads: the bell's list, count and mark-read, scoped to
- * the caller's own rows and to the kinds their role may read NOW. Streams:
+ * never from the router or the audit middleware. Reads: the bell's list,
+ * counts, mark-read and mark-seen, scoped to the caller's own rows and to
+ * the kinds their role may read NOW. Streams:
  * the open `GET /events` responses, per account, in this process — the API
  * runs as one container; a second replica would need a shared bus here.
  */
@@ -291,9 +292,56 @@ export class NotificationService implements BeforeApplicationShutdown {
     };
   }
 
-  unreadCount(actor: SessionUser): Promise<number> {
-    return this.prisma.notification.count({
-      where: { AND: [this.scopeFor(actor), { readAt: null }] },
+  /**
+   * The bell's two numbers (plan decision 18). `unseen` is the badge: unread
+   * rows newer than the seen stamp, which opening the bell advances.
+   * `unread` is every unread row, for "Mark all as read". An account with no
+   * stamp yet has seen nothing, so the two are one count.
+   */
+  async counts(actor: SessionUser): Promise<{ unread: number; unseen: number }> {
+    const unreadWhere: Prisma.NotificationWhereInput = {
+      AND: [this.scopeFor(actor), { readAt: null }],
+    };
+    const seen = await this.prisma.notificationSeen.findUnique({
+      where: { userId: actor.id },
+      select: { lastSeenAt: true },
+    });
+    if (!seen) {
+      const unread = await this.prisma.notification.count({ where: unreadWhere });
+      return { unread, unseen: unread };
+    }
+    const [unread, unseen] = await Promise.all([
+      this.prisma.notification.count({ where: unreadWhere }),
+      this.prisma.notification.count({
+        where: { AND: [unreadWhere, { createdAt: { gt: seen.lastSeenAt } }] },
+      }),
+    ]);
+    return { unread, unseen };
+  }
+
+  /**
+   * Advances the seen stamp to one row's `createdAt`, never rewinds it: a
+   * late call from a list fetched before a newer row arrived must not bring
+   * the badge back for rows already shown. The row is looked up among the
+   * caller's own, like the list cursor, so anyone else's id or a purged one
+   * changes nothing. Upsert then conditional update, as `ChatService.markRead`:
+   * two tabs opening the bell at once cannot race the row in twice.
+   */
+  async markSeen(actor: SessionUser, input: MarkNotificationsSeenInput): Promise<void> {
+    const row = await this.prisma.notification.findFirst({
+      where: { AND: [this.scopeFor(actor), { id: input.id }] },
+      select: { createdAt: true },
+    });
+    if (!row) return;
+    await this.prisma.notificationSeen.upsert({
+      where: { userId: actor.id },
+      create: { userId: actor.id, lastSeenAt: row.createdAt },
+      update: {},
+      select: { userId: true },
+    });
+    await this.prisma.notificationSeen.updateMany({
+      where: { userId: actor.id, lastSeenAt: { lt: row.createdAt } },
+      data: { lastSeenAt: row.createdAt },
     });
   }
 

@@ -1,6 +1,6 @@
 {
   "bell": "Notifications",
-  "bellUnread": "Notifications, {count, plural, one {# non lue} other {# non lues}}",
+  "bellUnseen": "Notifications, {count, plural, one {# nouvelle} other {# nouvelles}}",
   "title": "Notifications",
   "filter": "Afficher",
   "all": "Toutes",

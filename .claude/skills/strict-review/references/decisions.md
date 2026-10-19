@@ -50,9 +50,9 @@ session, or the next review will report it.
   `settings.summary` (the settings rail's figures, polled every 60 s like
   `nav.counts`),
   `chat.unread` and `chat.markRead`, and `notification.list`,
-  `notification.unreadCount` and `notification.markRead` (the bell: polled
-  on every page, opened with the bell, and a read receipt — plan §4.3,
-  decision 14). `audit.byId` stays audited. Reads are logged despite
+  `notification.counts`, `notification.markRead` and `notification.markSeen`
+  (the bell: polled on every page, opened with the bell, and read receipts —
+  plan §4.3, decisions 14 and 18). `audit.byId` stays audited. Reads are logged despite
   refetch volume; the purge is the hand-run `db:audit:purge`.
 - **Notifications** (docs/notifications-plan.md, built 2026-09-25): rows
   are written on the business transaction and pushed after commit through
@@ -117,9 +117,13 @@ session, or the next review will report it.
 - **Chat**: server-side read stamp (`ChatRead`), own notices never count,
   launcher polls every 20 s and on focus. Do not reintroduce a browser
   stamp.
-- **Bell** (docs/notifications-plan.md §5): `notification.unreadCount`
-  polls at 20 s with `staleTime` 10 s and refetch on focus, the chat
-  launcher's shape; the stream only makes it immediate. One `EventSource`
+- **Bell** (docs/notifications-plan.md §5): `notification.counts`
+  (`{ unread, unseen }`) polls at 20 s with `staleTime` 10 s and refetch on
+  focus, the chat launcher's shape. The badge is `unseen` (decision 18,
+  2026-10-19): opening the panel stamps its newest row as seen
+  (`NotificationSeen`, monotonic, looked up among the caller's rows) and
+  clears the badge, while rows stay unread with their dot until clicked or
+  "Mark all as read" — two states on purpose, do not merge them; the stream only makes it immediate. One `EventSource`
   per visible tab, closed when hidden (decision 15); the hook owns
   reconnection (5–60 s jittered backoff, `me` invalidated on a CLOSED error,
   decision 16). A toast re-reads the newest unread page (`take: 10`) to word

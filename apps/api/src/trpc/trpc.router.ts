@@ -129,6 +129,7 @@ import {
   myWeekInput,
   listNotificationsInput,
   markNotificationsReadInput,
+  markNotificationsSeenInput,
   pushSubscriptionInput,
   pushUnsubscribeInput,
   globalSearchInput,
@@ -426,10 +427,14 @@ export class TrpcRouter {
      *
      * `protectedProcedure` throughout: every role has a bell, and the
      * service scopes each call to the caller's own rows and to the kinds
-     * their role may read now. All three are out of the activity trace, the
-     * chat reasoning: the count is polled on every page, the list opens
-     * with the bell, and marking read is a read receipt rather than an act
-     * with intent — a mark-on-click would otherwise trace every click.
+     * their role may read now. All four are out of the activity trace, the
+     * chat reasoning: the counts are polled on every page, the list opens
+     * with the bell, and marking read or seen is a read receipt rather than
+     * an act with intent — a mark-on-click would otherwise trace every click.
+     *
+     * Read and seen are two states (plan decision 18): opening the bell
+     * marks what it shows as seen, which clears the badge; a row stays
+     * unread, with its dot, until it is clicked or "Mark all as read".
      *
      * The rows are written by the services that make the changes (orders,
      * shifts); the push is `GET /events` in main.ts, not a procedure.
@@ -440,14 +445,19 @@ export class TrpcRouter {
         .input(listNotificationsInput)
         .query(({ ctx, input }) => this.notificationService.list(ctx.user, input)),
 
-      unreadCount: protectedProcedure
+      counts: protectedProcedure
         .meta({ audit: false })
-        .query(({ ctx }) => this.notificationService.unreadCount(ctx.user)),
+        .query(({ ctx }) => this.notificationService.counts(ctx.user)),
 
       markRead: protectedProcedure
         .meta({ audit: false })
         .input(markNotificationsReadInput)
         .mutation(({ ctx, input }) => this.notificationService.markRead(ctx.user, input)),
+
+      markSeen: protectedProcedure
+        .meta({ audit: false })
+        .input(markNotificationsSeenInput)
+        .mutation(({ ctx, input }) => this.notificationService.markSeen(ctx.user, input)),
     }),
 
     /**

@@ -219,6 +219,17 @@ export const markNotificationsReadInput = z.union([
 ]);
 export type MarkNotificationsReadInput = z.infer<typeof markNotificationsReadInput>;
 
+/**
+ * "The bell has shown me up to here": the id of the newest row on screen
+ * (plan decision 18). An id rather than a date, so the stamp is a row's own
+ * `createdAt` and never a client clock; the server looks it up among the
+ * caller's rows and keeps the stamp monotonic.
+ */
+export const markNotificationsSeenInput = z.object({
+  id: z.string().min(1),
+});
+export type MarkNotificationsSeenInput = z.infer<typeof markNotificationsSeenInput>;
+
 // ---- the stream -------------------------------------------------------------
 
 /**

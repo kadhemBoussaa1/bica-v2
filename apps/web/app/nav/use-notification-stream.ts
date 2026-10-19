@@ -55,7 +55,7 @@ export function useNotificationStream({
 
     const refresh = () => {
       void queryClient.invalidateQueries({ queryKey: trpc.notification.list.queryKey() });
-      void queryClient.invalidateQueries({ queryKey: trpc.notification.unreadCount.queryKey() });
+      void queryClient.invalidateQueries({ queryKey: trpc.notification.counts.queryKey() });
     };
 
     const disconnect = () => {
