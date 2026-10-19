@@ -171,6 +171,21 @@ export function formatPercent(ratio: number): string {
   return numberFormat({ style: "percent", maximumFractionDigits: 0 }).format(ratio);
 }
 
+/** The smallest share `formatShare` writes as a figure; below it, "< 0,1 %". */
+const SHARE_FLOOR = 0.001;
+
+/**
+ * A part of a whole, to one decimal ("98,1 %", "1,7 %", "100 %"), for
+ * figures read side by side: whole percents round 50 pieces out of 35 000
+ * to "0 %", which reads as none. A part that is not zero never prints as
+ * "0 %"; under a tenth of a percent it says "< 0,1 %".
+ */
+export function formatShare(ratio: number): string {
+  const format = numberFormat({ style: "percent", maximumFractionDigits: 1 });
+  if (ratio > 0 && ratio < SHARE_FLOOR) return `< ${format.format(SHARE_FLOOR)}`;
+  return format.format(ratio);
+}
+
 /**
  * A change between two figures, as a signed percentage: `0.12` is "+12 %".
  * Wrap the result in `<bdi>` — in Arabic a leading sign is a neutral

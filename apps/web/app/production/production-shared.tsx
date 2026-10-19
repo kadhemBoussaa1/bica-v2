@@ -10,7 +10,7 @@ import {
   formatMonth,
   formatMonthName,
   formatMonthShort,
-  formatPercent,
+  formatShare,
   numberFormat,
 } from "../../i18n/formats";
 
@@ -144,6 +144,11 @@ const FLOW = [
  * breakdown does not have to add up (see the schema note on those columns),
  * so whatever is left over is drawn as its own "not broken down" segment
  * rather than silently stretched over.
+ *
+ * The rate leads, then a small table carries every figure in words and
+ * numbers; the bar under it only shows the proportion. A part of a few
+ * pieces is a hairline on the bar, so the table — not the bar — is where
+ * it is read, which is why shares keep one decimal (`formatShare`).
  */
 export function FlowPanel({
   title,
@@ -168,6 +173,9 @@ export function FlowPanel({
       : []),
   ];
   const rate = whole > 0 ? totals.goodPieces / whole : 0;
+  // Nothing declared good or to fix: a rate would read "0 % conformes",
+  // which says the day was all bad when it only says nobody broke it down.
+  const brokenDown = totals.goodPieces + totals.piecesToFix > 0;
 
   return (
     <section className={styles.panel} aria-label={title}>
@@ -204,52 +212,92 @@ export function FlowPanel({
 
       {produced > 0 && (
         <div className={styles.quality}>
-          <div className={styles.qualityHead}>
-            <span className={styles.eyebrow}>{t("qualityTitle")}</span>
-            <span
-              className={[styles.qualityRate, rate >= 0.9 ? styles.qualityRateGood : null]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {t("conformRate", {
-                percent: formatPercent(rate),
-                count: int().format(produced),
-              })}
-            </span>
+          <div className={[styles.eyebrow, styles.qualityTitle].filter(Boolean).join(" ")}>
+            {t("qualityTitle")}
           </div>
-          <div className={styles.qualityBar} aria-hidden="true">
-            {parts.map((part) => (
-              <span
-                key={part.key}
-                className={[styles.qualitySeg, part.className].filter(Boolean).join(" ")}
-                style={{ width: `${(part.value / whole) * 100}%` }}
-              />
-            ))}
-          </div>
-          <div className={styles.qualityLegend}>
-            {parts.map((part) => (
-              <span
-                key={part.key}
-                className={[styles.legendItem, part.className].filter(Boolean).join(" ")}
-              >
-                <i className={styles.legendDot} aria-hidden="true" />
-                <span className={styles.legendLabel}>{part.label}</span>
-                <span className={styles.legendValue}>{int().format(part.value)}</span>
-                <span className={styles.unit}>{formatPercent(part.value / whole)}</span>
+          <div className={styles.qualityBody}>
+            <div className={styles.qualitySummary}>
+              {brokenDown ? (
+                <span className={styles.qualityFigure}>
+                  <bdi
+                    className={[styles.qualityRate, rate >= 0.9 ? styles.qualityRateGood : null]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {formatShare(rate)}
+                  </bdi>
+                  <span className={styles.qualityRateWord}>{t("conformWord")}</span>
+                </span>
+              ) : (
+                <span className={styles.qualityNone}>{t("notBrokenDown")}</span>
+              )}
+              <span className={styles.qualityBase}>
+                {t.rich(brokenDown ? "conformBase" : "noBreakdownBase", {
+                  good: int().format(totals.goodPieces),
+                  count: int().format(produced),
+                  b: (chunks) => <bdi className={styles.qualityBaseFigure}>{chunks}</bdi>,
+                })}
               </span>
-            ))}
-            <span
-              className={[styles.legendItem, styles.legendApart, styles.waste]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <i className={styles.legendDot} aria-hidden="true" />
-              <span className={styles.legendLabel}>{t("waste")}</span>
-              <span className={styles.legendValue}>{int().format(totals.wastePieces)}</span>
-              <span className={styles.unit}>{t("outsideProduced")}</span>
-            </span>
+            </div>
+
+            <table className={styles.qualityTable} aria-label={t("qualityTitle")}>
+              <thead className="sr-only">
+                <tr>
+                  <th scope="col">{t("qualityCategory")}</th>
+                  <th scope="col">{t("qualityPieces")}</th>
+                  <th scope="col">{t("qualityShare")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parts.map((part) => (
+                  <tr
+                    key={part.key}
+                    data-part={part.key}
+                    className={[styles.qualityRow, part.className].filter(Boolean).join(" ")}
+                  >
+                    <th scope="row" className={styles.qualityLabel}>
+                      <i className={styles.legendDot} aria-hidden="true" />
+                      {part.label}
+                    </th>
+                    <td className={styles.qualityCount}>{int().format(part.value)}</td>
+                    <td className={styles.qualityShare}>
+                      <bdi>{formatShare(part.value / whole)}</bdi>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {/* Its own body: waste is counted beside the produced figure, not inside it. */}
+              <tbody className={styles.qualityApart}>
+                <tr
+                  data-part="waste"
+                  className={[styles.qualityRow, styles.waste].filter(Boolean).join(" ")}
+                >
+                  <th scope="row" className={styles.qualityLabel}>
+                    <i className={styles.legendDot} aria-hidden="true" />
+                    {t("waste")}
+                  </th>
+                  <td className={styles.qualityCount}>{int().format(totals.wastePieces)}</td>
+                  <td className={styles.qualityShare}>
+                    <span className={styles.qualityAside}>{t("outsideProduced")}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          {gap > 0 && (
+
+          <div className={styles.qualityBar} aria-hidden="true">
+            {parts
+              .filter((part) => part.value > 0)
+              .map((part) => (
+                <span
+                  key={part.key}
+                  data-part={part.key}
+                  className={[styles.qualitySeg, part.className].filter(Boolean).join(" ")}
+                  style={{ "--grow": part.value } as React.CSSProperties}
+                />
+              ))}
+          </div>
+          {gap > 0 && brokenDown && (
             <p className={styles.qualityNote}>
               {t("gapNote", { count: int().format(gap) })}
             </p>

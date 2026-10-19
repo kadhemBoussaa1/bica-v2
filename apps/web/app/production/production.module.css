@@ -271,28 +271,182 @@
 
 /* --- how the produced pieces broke down --- */
 
+/* A size container: the rate and its table sit side by side while both
+   fit, and stack on a phone or beside a wide sidebar. */
 .quality {
+  container: quality / inline-size;
   margin-top: var(--bp-space-4);
   border-top: 1px solid var(--bp-hairline);
   padding-top: var(--bp-space-4);
 }
 
-.qualityHead {
+.qualityTitle {
+  margin-bottom: var(--bp-space-3);
+}
+
+.qualityBody {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: var(--bp-space-4) var(--bp-space-7);
+}
+
+@container quality (max-width: 640px) {
+  .qualityBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The rate leads: the one figure in the section read from across the room. */
+.qualitySummary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  min-width: 0;
+}
+
+.qualityFigure {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--bp-space-3);
   flex-wrap: wrap;
-  margin-bottom: var(--bp-space-2);
+  gap: var(--bp-space-2);
 }
 
 .qualityRate {
-  font: 400 0.78125rem/1.4 var(--bp-font-mono);
+  font: 700 2.75rem/1 var(--bp-font-display);
+  letter-spacing: -0.03em;
   color: var(--bp-orange-800);
 }
 
 .qualityRateGood {
   color: var(--bp-success-text);
+}
+
+/* No breakdown entered: said in words at the rate's place, without the
+   rate's colour, since nothing is known to be good or bad. */
+.qualityNone {
+  font: 700 1.75rem/1.1 var(--bp-font-display);
+  letter-spacing: -0.02em;
+  color: var(--bp-ink-muted);
+}
+
+.qualityRateWord {
+  font: 600 0.9375rem/1.2 var(--bp-font-body);
+  color: var(--bp-ink-strong);
+}
+
+.qualityBase {
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.qualityBaseFigure {
+  font-weight: 600;
+  color: var(--bp-ink);
+}
+
+/* Every figure in words and numbers. The label in the body face at a size
+   that reads, the figures in mono so their columns line up. */
+.qualityTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.qualityRow > * {
+  padding: var(--bp-space-2);
+  border-top: 1px solid var(--bp-hairline-soft);
+  transition:
+    opacity 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.qualityTable > tbody:first-of-type > .qualityRow:first-child > * {
+  border-top: 0;
+}
+
+/* Waste after a firmer line: counted beside the produced figure, so it
+   closes the table rather than continuing the split. */
+.qualityApart > .qualityRow > * {
+  border-top-color: var(--bp-tint-strong);
+}
+
+.qualityLabel {
+  font: 500 0.875rem/1.4 var(--bp-font-body);
+  text-align: start;
+  color: var(--bp-ink);
+}
+
+.qualityLabel > .legendDot {
+  display: inline-block;
+  margin-inline-end: var(--bp-space-2);
+  vertical-align: 0.05em;
+}
+
+.qualityCount {
+  font: 600 0.9375rem/1.4 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  white-space: nowrap;
+  color: var(--bp-ink);
+}
+
+/* Wide enough for "100 %" and "< 0,1 %" on one line; the waste row's
+   words wrap inside it. */
+.qualityShare {
+  width: 9.5rem;
+  font: 400 0.8125rem/1.4 var(--bp-font-mono);
+  text-align: end;
+  white-space: nowrap;
+  color: var(--bp-ink-muted);
+}
+
+/* Words, not a share: the body face, and they wrap onto a second line
+   rather than widen the column and squeeze the labels on a phone. */
+.qualityAside {
+  display: inline-block;
+  max-width: 6rem;
+  font-family: var(--bp-font-body);
+  white-space: normal;
+}
+
+/* On a phone the labels need the room more than the shares do. After the
+   rule above, which it overrides at the same specificity. */
+@container quality (max-width: 640px) {
+  .qualityShare {
+    width: auto;
+  }
+
+  .qualityRow > * {
+    padding-inline: var(--bp-space-1);
+  }
+
+  .qualityLabel {
+    white-space: nowrap;
+  }
+}
+
+/* A 320px phone: wrapping a label beats spilling out of the panel. */
+@container quality (max-width: 260px) {
+  .qualityLabel {
+    white-space: normal;
+  }
+}
+
+/* A row and its segment light up together, so a hairline segment can be
+   found from its row and the other way round. */
+.qualityRow:hover > * {
+  background: var(--bp-tint);
+}
+
+.quality:has([data-part]:hover) [data-part] {
+  opacity: 0.4;
+}
+
+.quality:has([data-part="good"]:hover) [data-part="good"],
+.quality:has([data-part="fix"]:hover) [data-part="fix"],
+.quality:has([data-part="gap"]:hover) [data-part="gap"],
+.quality:has([data-part="waste"]:hover) [data-part="waste"] {
+  opacity: 1;
 }
 
 .qualityBar,
@@ -302,6 +456,22 @@
   border-radius: var(--bp-radius-pill);
   overflow: hidden;
   background: var(--bp-tint);
+}
+
+/* The proportion only — the table carries the figures. Segments share the
+   width by their counts (`flex-grow`), with the panel's own surface in the
+   2px gaps; a part of a few pieces keeps a visible sliver. */
+.quality > .qualityBar {
+  gap: 2px;
+  height: 10px;
+  margin-top: var(--bp-space-4);
+  background: none;
+}
+
+.quality > .qualityBar > .qualitySeg {
+  flex: var(--grow) 1 0;
+  min-width: 4px;
+  transition: opacity 150ms ease-out;
 }
 
 .splitBar {
@@ -332,7 +502,6 @@
   --shape: 2px;
 }
 
-.qualityLegend,
 .splitLegend {
   display: flex;
   gap: var(--bp-space-4);
@@ -356,28 +525,14 @@
   background: var(--seg);
 }
 
-.legendLabel {
-  font: 600 0.59375rem/1.4 var(--bp-font-mono);
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: var(--bp-ink-muted);
-}
-
 .legendValue {
   font: 600 0.8125rem/1.4 var(--bp-font-mono);
   font-variant-numeric: tabular-nums;
 }
 
-/* Waste sits apart from the split: it is counted beside the produced
-   figure, not inside it. */
-.legendApart {
-  border-inline-start: 1px solid var(--bp-hairline);
-  padding-inline-start: var(--bp-space-4);
-}
-
 .qualityNote {
   margin: var(--bp-space-2) 0 0;
-  font: 400 0.71875rem/1.5 var(--bp-font-mono);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
   color: var(--bp-orange-800);
 }
 
