@@ -94,33 +94,73 @@
   },
   "families": {
     "title": "Familias de proveedores",
-    "subtitle": "Categorías de compra de los proveedores. Añade una cuando un proveedor no encaje en las existentes. El código es la clave estable que usan los filtros de proveedores y no puede cambiarse; renombra la etiqueta en su lugar.",
+    "subtitle": "Categorías de compra que sirven para clasificar y filtrar a los proveedores.",
     "loading": "Cargando familias…",
     "genericError": "Algo ha fallado",
-    "checkValues": "Revisa los valores e inténtalo de nuevo",
-    "newFamily": "Nueva familia",
-    "labelPlaceholder": "Emballage",
-    "codePlaceholder": "EMBALLAGE",
+    "figures": {
+      "families": "Familias",
+      "classified": "Clasificados",
+      "unassigned": "Sin familia"
+    },
+    "searchPlaceholder": "Buscar una familia",
+    "tabs": {
+      "label": "Familias mostradas",
+      "active": "Activas",
+      "archived": "Archivadas"
+    },
     "columns": {
       "family": "Familia",
       "code": "Código",
       "suppliers": "Proveedores"
     },
+    "newTag": "Nueva",
+    "codeLocked": "Código fijo: los filtros y el historial se refieren a él",
     "rename": "Renombrar",
-    "codeError": "Solo A-Z, 0-9 y _",
-    "adding": "Añadiendo…",
-    "addFamily": "Añadir familia",
+    "renameLabel": "Nueva etiqueta de «{name}»",
+    "ok": "OK",
+    "actions": "Acciones de «{name}»",
+    "viewSuppliers": "{count, plural, one {Ver el proveedor} other {Ver los # proveedores}}",
+    "archive": "Archivar…",
+    "delete": "Eliminar…",
+    "empty": {
+      "search": "Ninguna familia coincide con «{query}».",
+      "archived": "No hay familias archivadas.",
+      "active": "No hay familias."
+    },
+    "footnote": "Haz clic en una etiqueta para renombrarla. El código no cambia, así que los filtros y el historial no se rompen.",
+    "create": {
+      "eyebrow": "Nueva familia",
+      "lead": "Créala cuando un proveedor no encaje en ninguna de las familias existentes.",
+      "label": "Etiqueta",
+      "placeholder": "p. ej. Embalaje",
+      "code": "Código",
+      "codeHint": "generado · no modificable",
+      "submit": "Crear la familia",
+      "dupLabel": "«{name}» ya existe.",
+      "dupArchived": "«{name}» ya existe entre las archivadas. Mejor restáurala.",
+      "dupCode": "El código {code} ya lo usa «{name}».",
+      "similar": "Parecida a «{name}». Comprueba que no sea la misma familia."
+    },
+    "archiveNote": "Una familia archivada deja de ofrecerse en el formulario de proveedor. Sus proveedores la conservan hasta que los muevas.",
+    "archiveDialog": {
+      "title": "¿Archivar «{name}»?",
+      "body": "{count, plural, one {# proveedor usa esta familia. ¿Dónde lo colocamos?} other {# proveedores usan esta familia. ¿Dónde los colocamos?}}",
+      "optionsLabel": "Destino de los proveedores",
+      "keep": "Mantener en «{name}» (archivada)",
+      "moveTo": "Mover a {name}"
+    },
+    "toast": {
+      "created": "Familia «{name}» creada",
+      "renamed": "Renombrada como «{name}» · código sin cambios",
+      "archived": "«{name}» archivada",
+      "archivedMoved": "«{name}» archivada · {count, plural, one {# proveedor movido} other {# proveedores movidos}} a {target}",
+      "archivedKept": "«{name}» archivada · {count, plural, one {su proveedor la conserva} other {sus # proveedores la conservan}}",
+      "restored": "«{name}» restaurada",
+      "deleted": "«{name}» eliminada"
+    },
     "deleteDialog": {
       "title": "¿Eliminar familia?",
       "body": "<strong>{name}</strong> se eliminará definitivamente. Ningún proveedor la usa, así que nada más cambia."
-    },
-    "archiveDialog": {
-      "title": "¿Archivar familia?",
-      "body": "<strong>{name}</strong> dejará de ofrecerse para nuevos proveedores. Los que ya la tienen la conservan y siguen mostrándola en la lista — nada queda sin categoría."
-    },
-    "restoreDialog": {
-      "title": "¿Restaurar familia?",
-      "body": "<strong>{name}</strong> volverá a ofrecerse al clasificar proveedores."
     }
   }
 }

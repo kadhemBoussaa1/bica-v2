@@ -8,7 +8,7 @@ import { LanguagePicker } from "../../i18n/language-picker";
 import { useCurrentUser, useSignOut } from "../auth/use-auth";
 import { OfflineBanner } from "../pwa/offline-banner";
 import { GlobalSearch } from "./global-search";
-import { NAV_SECTIONS, activeChild, isActive } from "./nav-items";
+import { NAV_SECTIONS, activeChild, isActive, isChildActive } from "./nav-items";
 import { initials } from "./initials";
 import { MenuIcon, SignOutIcon } from "./nav-icons";
 import { NotificationsBell } from "./notifications-bell";
@@ -35,7 +35,10 @@ function crumbsFor(
       if (section.title) crumbs.push(nav(`items.${item.key}`));
       // A module with pages inside it names the page too, and what follows
       // is read relative to that page: /settings/users/new → … / Users / New.
-      const child = activeChild(pathname, item);
+      const child =
+        activeChild(pathname, item) ??
+        item.pages?.find((page) => isChildActive(pathname, page)) ??
+        null;
       if (child) crumbs.push(nav(`items.${child.key}`));
       const rest = pathname.slice(child ? child.href.length : item.href.length);
       if (rest.endsWith("/new")) crumbs.push(shell("new"));

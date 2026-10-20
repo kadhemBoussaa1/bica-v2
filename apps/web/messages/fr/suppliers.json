@@ -94,33 +94,73 @@
   },
   "families": {
     "title": "Familles de fournisseurs",
-    "subtitle": "Catégories d'achat des fournisseurs. Ajoutez-en une dès qu'un fournisseur ne rentre pas dans l'existant. Le code est la clé stable utilisée par les filtres fournisseurs et ne peut pas changer ; renommez plutôt le libellé.",
+    "subtitle": "Catégories d'achat utilisées pour classer et filtrer les fournisseurs.",
     "loading": "Chargement des familles…",
     "genericError": "Une erreur s'est produite",
-    "checkValues": "Vérifiez les valeurs et réessayez",
-    "newFamily": "Nouvelle famille",
-    "labelPlaceholder": "Emballage",
-    "codePlaceholder": "EMBALLAGE",
+    "figures": {
+      "families": "Familles",
+      "classified": "Classés",
+      "unassigned": "Sans famille"
+    },
+    "searchPlaceholder": "Rechercher une famille",
+    "tabs": {
+      "label": "Familles affichées",
+      "active": "Actives",
+      "archived": "Archivées"
+    },
     "columns": {
       "family": "Famille",
       "code": "Code",
       "suppliers": "Fournisseurs"
     },
+    "newTag": "Nouveau",
+    "codeLocked": "Code fixe : les filtres et les historiques s'y réfèrent",
     "rename": "Renommer",
-    "codeError": "A-Z, 0-9 et _ uniquement",
-    "adding": "Ajout…",
-    "addFamily": "Ajouter la famille",
+    "renameLabel": "Nouveau libellé de « {name} »",
+    "ok": "OK",
+    "actions": "Actions pour « {name} »",
+    "viewSuppliers": "{count, plural, one {Voir le fournisseur} other {Voir les # fournisseurs}}",
+    "archive": "Archiver…",
+    "delete": "Supprimer…",
+    "empty": {
+      "search": "Aucune famille ne correspond à « {query} ».",
+      "archived": "Aucune famille archivée.",
+      "active": "Aucune famille."
+    },
+    "footnote": "Cliquez sur un libellé pour le renommer. Le code reste fixe, donc les filtres et les historiques ne cassent pas.",
+    "create": {
+      "eyebrow": "Nouvelle famille",
+      "lead": "À créer quand aucun fournisseur ne rentre dans les familles existantes.",
+      "label": "Libellé",
+      "placeholder": "ex. Emballage",
+      "code": "Code",
+      "codeHint": "généré · non modifiable",
+      "submit": "Créer la famille",
+      "dupLabel": "« {name} » existe déjà.",
+      "dupArchived": "« {name} » existe déjà dans les archivées. Restaurez-la plutôt.",
+      "dupCode": "Le code {code} est déjà pris par « {name} ».",
+      "similar": "Proche de « {name} ». Vérifiez qu'il ne s'agit pas de la même famille."
+    },
+    "archiveNote": "Une famille archivée n'est plus proposée dans le formulaire fournisseur. Ses fournisseurs la gardent tant que vous ne les déplacez pas.",
+    "archiveDialog": {
+      "title": "Archiver « {name} » ?",
+      "body": "{count, plural, one {# fournisseur utilise cette famille. Où le placer ?} other {# fournisseurs utilisent cette famille. Où les placer ?}}",
+      "optionsLabel": "Destination des fournisseurs",
+      "keep": "Garder dans « {name} » (archivée)",
+      "moveTo": "Déplacer vers {name}"
+    },
+    "toast": {
+      "created": "Famille « {name} » créée",
+      "renamed": "Renommée en « {name} » · code inchangé",
+      "archived": "« {name} » archivée",
+      "archivedMoved": "« {name} » archivée · {count, plural, one {# fournisseur déplacé} other {# fournisseurs déplacés}} vers {target}",
+      "archivedKept": "« {name} » archivée · {count, plural, one {son fournisseur la garde} other {ses # fournisseurs la gardent}}",
+      "restored": "« {name} » restaurée",
+      "deleted": "« {name} » supprimée"
+    },
     "deleteDialog": {
       "title": "Supprimer la famille ?",
       "body": "<strong>{name}</strong> sera définitivement supprimée. Aucun fournisseur ne l'utilise, rien d'autre ne change."
-    },
-    "archiveDialog": {
-      "title": "Archiver la famille ?",
-      "body": "<strong>{name}</strong> ne sera plus proposée pour les nouveaux fournisseurs. Ceux qui y sont déjà la conservent et l'affichent toujours dans la liste — rien ne devient sans catégorie."
-    },
-    "restoreDialog": {
-      "title": "Restaurer la famille ?",
-      "body": "<strong>{name}</strong> sera de nouveau proposée lors du classement des fournisseurs."
     }
   }
 }

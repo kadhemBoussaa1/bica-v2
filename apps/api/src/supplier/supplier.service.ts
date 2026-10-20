@@ -88,7 +88,7 @@ export class SupplierService {
    * counts the second phone too: it is a real number to call.
    */
   async stats() {
-    const [total, reachable, archived] = await this.prisma.$transaction([
+    const [total, reachable, archived, unassigned] = await this.prisma.$transaction([
       this.prisma.supplier.count({ where: { active: true } }),
       this.prisma.supplier.count({
         where: {
@@ -101,6 +101,9 @@ export class SupplierService {
         },
       }),
       this.prisma.supplier.count({ where: { active: false } }),
+      // The `unassigned` facet's rows, so the families page's "no family"
+      // figure matches the chip its link opens.
+      this.prisma.supplier.count({ where: { active: true, familyId: null } }),
     ]);
     const lookAlikes = await this.lookAlikes();
     return {
@@ -109,6 +112,7 @@ export class SupplierService {
       missing: total - reachable,
       duplicates: lookAlikes.size,
       archived,
+      unassigned,
     };
   }
 

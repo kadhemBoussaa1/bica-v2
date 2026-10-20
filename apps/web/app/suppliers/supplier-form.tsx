@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { createSupplierInput, updateSupplierInput } from "@repo/api-contract";
-import Link from "next/link";
 import { Button } from "@repo/ui/button";
 import { SelectField, TextField } from "@repo/ui/field";
 import { useTRPC } from "../trpc/client";
@@ -254,9 +253,11 @@ export function SupplierForm({
             />
             <p className={records.hint}>
               {t("form.missingCategory")}{" "}
-              <Link className={records.inlineLink} href="/suppliers/families">
+              {/* `<a>`, not `Link` — see `SecondaryRecordButton`. */}
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+              <a className={records.inlineLink} href="/suppliers/families">
                 {t("form.manageFamilies")}
-              </Link>
+              </a>
             </p>
           </div>
 

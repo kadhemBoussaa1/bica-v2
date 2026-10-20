@@ -590,7 +590,7 @@ export class TrpcRouter {
       setActive: adminProcedure
         .input(setSupplierFamilyActiveInput)
         .mutation(({ input }) =>
-          this.supplierFamilyService.setActive(input.id, input.active),
+          this.supplierFamilyService.setActive(input.id, input.active, input.moveToId),
         ),
 
       /** Refused while any supplier still references it — archive instead. */

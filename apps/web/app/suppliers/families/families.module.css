@@ -1,0 +1,582 @@
+/*
+ * Supplier families, from `Familles Fournisseurs.dc.html`: the list in a
+ * glass panel, the create form in a narrower one beside it, three figures in
+ * the page header. Radii and gaps snapped to the toolkit's scales; sides are
+ * logical for Arabic.
+ */
+
+/* --- header figures --- */
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-6);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  color: var(--bp-ink);
+}
+
+.figureLabel {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.figureValue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--bp-space-1);
+  font: 700 1.375rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* "No family" is the one figure that is work to do, and it opens that chip. */
+.figureLink .figureLabel {
+  color: var(--bp-warning-text);
+}
+
+.figureLink .figureValue {
+  color: var(--bp-orange-700);
+}
+
+.figureLink:hover .figureValue {
+  color: var(--bp-orange-800);
+}
+
+.figureLink:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 4px;
+  border-radius: var(--bp-radius-dense);
+}
+
+[dir="rtl"] .arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* --- layout --- */
+
+/* The container the layout answers to: the page column, not the viewport. */
+.manager {
+  container-type: inline-size;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--bp-space-5);
+  align-items: start;
+}
+
+.panel,
+.createCard {
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+/* The rows below answer to the panel's own width. */
+.panel {
+  container-type: inline-size;
+}
+
+/* --- list --- */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-4);
+  border-bottom: 1px solid var(--bp-hairline);
+}
+
+.search {
+  flex: 1;
+  min-width: 160px;
+  height: var(--bp-control-h-dense);
+  padding: 0 var(--bp-space-3);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-control-bg);
+  font: 400 0.8125rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.search:hover {
+  border-color: var(--bp-control-border-hover);
+}
+
+.search:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+  border-color: var(--bp-focus);
+}
+
+.head,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) 150px minmax(0, 1fr) 44px;
+  gap: var(--bp-space-4);
+  align-items: center;
+  padding-inline: var(--bp-space-4);
+}
+
+.head {
+  padding-block: var(--bp-space-3);
+  background: var(--bp-tint);
+  border-bottom: 1px solid var(--bp-hairline);
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  min-height: 56px;
+  border-bottom: 1px solid var(--bp-hairline-soft);
+  transition: background-color 120ms;
+}
+
+.row:hover {
+  background: rgb(242 145 0 / 0.06);
+}
+
+.rowEditing,
+.rowEditing:hover {
+  background: rgb(242 145 0 / 0.1);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  min-width: 0;
+}
+
+/* `--family` is set per row: see FAMILY_COLOURS. */
+.swatch {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 3px;
+  background: var(--family);
+}
+
+/* The label is the rename control: a click opens the field in its place. */
+.label {
+  min-width: 0;
+  padding: var(--bp-space-1) 0;
+  border: 0;
+  background: none;
+  font: 600 0.8125rem/1.2 var(--bp-font-body);
+  color: var(--bp-ink);
+  text-align: start;
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.label:hover {
+  text-decoration: underline dotted var(--bp-ink-faint);
+  text-underline-offset: 3px;
+}
+
+.label:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.labelArchived,
+.labelArchived:hover {
+  color: var(--bp-ink-muted);
+  cursor: default;
+  text-decoration: none;
+}
+
+.newTag {
+  flex: none;
+  padding: 3px 8px;
+  border: 1px solid rgb(46 125 79 / 0.3);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-success-bg);
+  color: var(--bp-success-text);
+  font: 600 0.5625rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rename {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-width: 0;
+}
+
+.renameInput {
+  flex: 1;
+  min-width: 0;
+  height: var(--bp-control-h-dense);
+  padding: 0 var(--bp-space-3);
+  border: 1.5px solid var(--bp-orange-500);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-control-bg);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.renameInput:focus {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -1px;
+}
+
+.code {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-width: 0;
+  font: 500 0.6875rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.code svg {
+  flex: none;
+}
+
+.codeText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: var(--bp-space-3);
+  align-items: center;
+}
+
+.countValue {
+  font: 600 0.75rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.bar {
+  display: block;
+  height: 6px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint-strong);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--family);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--bp-space-7) var(--bp-space-4);
+  text-align: center;
+  font: 400 0.75rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.footnote {
+  margin: 0;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  font: 400 0.6875rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* --- row menu --- */
+
+.menuWrap {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.menuButton {
+  width: var(--bp-control-h-dense);
+  height: var(--bp-control-h-dense);
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  font: 700 1rem/1 var(--bp-font-body);
+  letter-spacing: 1px;
+  color: var(--bp-ink-muted);
+  cursor: pointer;
+}
+
+.menuButton:hover,
+.menuButton[aria-expanded="true"] {
+  background: var(--bp-tint-strong);
+  color: var(--bp-ink);
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.menu {
+  position: absolute;
+  inset-block-start: calc(100% + var(--bp-space-1));
+  inset-inline-end: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 230px;
+  padding: var(--bp-space-2);
+  border-radius: var(--bp-radius);
+  background: var(--bp-surface);
+  box-shadow:
+    var(--bp-shadow-float),
+    0 0 0 1px var(--bp-hairline);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  min-height: var(--bp-control-h-dense);
+  padding: 0 var(--bp-space-3);
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  font: 500 0.75rem/1.2 var(--bp-font-body);
+  color: var(--bp-ink);
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.menuItem:hover,
+.menuItem:focus-visible {
+  outline: none;
+  background: var(--bp-orange-50);
+}
+
+.menuDanger {
+  color: var(--bp-danger-text);
+}
+
+.menuDanger:hover,
+.menuDanger:focus-visible {
+  background: var(--bp-danger-bg);
+}
+
+.menuRule {
+  height: 1px;
+  margin: var(--bp-space-1) var(--bp-space-2);
+  border: 0;
+  background: var(--bp-hairline);
+}
+
+/* --- create form --- */
+
+.aside {
+  position: sticky;
+  inset-block-start: var(--bp-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+}
+
+.createCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  padding: var(--bp-space-5);
+}
+
+.createIntro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+}
+
+.createEyebrow {
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-orange-700);
+}
+
+.createLead {
+  margin: 0;
+  font: 400 0.75rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.codeField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+}
+
+/* The toolkit's field label, with the "generated" note at the far end. */
+.codeLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bp-space-2);
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.codeHint {
+  font: 400 0.6875rem/1 var(--bp-font-body);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--bp-ink-faint);
+}
+
+.codePreview {
+  display: flex;
+  align-items: center;
+  min-height: var(--bp-control-h);
+  padding: var(--bp-space-2) var(--bp-space-4);
+  border-radius: var(--bp-radius);
+  background: var(--bp-tint);
+  font: 600 0.75rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.04em;
+  color: var(--bp-ink);
+  overflow-wrap: anywhere;
+}
+
+.codeEmpty {
+  color: var(--bp-ink-faint);
+}
+
+.warning {
+  margin: 0;
+  padding: var(--bp-space-3);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-warning-bg);
+  color: var(--bp-warning-text);
+  font: 500 0.75rem/1.45 var(--bp-font-body);
+}
+
+.warningDanger {
+  background: var(--bp-danger-bg);
+  color: var(--bp-danger-text);
+}
+
+.submit {
+  width: 100%;
+}
+
+.asideNote {
+  margin: 0;
+  padding: var(--bp-space-1) var(--bp-space-2);
+  font: 400 0.6875rem/1.55 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  text-wrap: pretty;
+}
+
+/* --- archive dialog --- */
+
+.dialogText {
+  margin: 0 0 var(--bp-space-3);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  max-height: 288px;
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  min-height: var(--bp-control-h-dense);
+  padding: var(--bp-space-2) var(--bp-space-3);
+  border: 1.5px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-control-bg);
+  font: 500 0.75rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink);
+  cursor: pointer;
+}
+
+.optionOn {
+  border-color: var(--bp-orange-500);
+  background: var(--bp-orange-50);
+}
+
+.radio {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--bp-orange-500);
+}
+
+/* --- narrow --- */
+
+/* Under the panel's own 560px: name and menu on one line, code and count under. */
+@container (max-width: 560px) {
+  .head {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name name menu"
+      "code count count";
+    row-gap: var(--bp-space-2);
+    padding-block: var(--bp-space-3);
+  }
+
+  .name {
+    grid-area: name;
+  }
+
+  .code {
+    grid-area: code;
+  }
+
+  .count {
+    grid-area: count;
+  }
+
+  .menuWrap {
+    grid-area: menu;
+  }
+}
+
+/* Under 860px of page column the form drops below the list. */
+@container (max-width: 860px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .aside {
+    position: static;
+  }
+}

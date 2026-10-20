@@ -8,8 +8,21 @@ import {
 } from "../records/new-record-button";
 import styles from "../records/records.module.css";
 
-export default async function SuppliersPage({ searchParams }: ListPageProps) {
+/**
+ * `?filter=` opens the table on one chip — a family code or `unassigned`,
+ * which the families page links to. Initial only, like `?search=`; the server
+ * still checks it against the facets that exist.
+ */
+export default async function SuppliersPage({
+  searchParams,
+}: {
+  searchParams: Promise<
+    Awaited<ListPageProps["searchParams"]> & { filter?: string | string[] }
+  >;
+}) {
   const search = await initialSearchOf(searchParams);
+  const { filter: filterParam } = await searchParams;
+  const filter = (Array.isArray(filterParam) ? filterParam[0] : filterParam) ?? "all";
   const t = await getTranslations("suppliers");
   return (
     <div className={styles.page}>
@@ -30,7 +43,11 @@ export default async function SuppliersPage({ searchParams }: ListPageProps) {
         </RecordActions>
       </header>
 
-      <SuppliersTable key={search} initialSearch={search} />
+      <SuppliersTable
+        key={`${search}\n${filter}`}
+        initialSearch={search}
+        initialFilter={filter}
+      />
     </div>
   );
 }

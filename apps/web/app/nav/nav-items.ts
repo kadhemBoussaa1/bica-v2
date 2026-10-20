@@ -34,6 +34,12 @@ export interface NavItem {
    * jump box name them. Only the settings module has them today.
    */
   children?: readonly NavChild[];
+  /**
+   * Static pages inside the module that are neither sidebar rows nor
+   * children: no tiles, no tab strip, only a name for the breadcrumb, which
+   * would otherwise read the segment as a record id and say "Detail".
+   */
+  pages?: readonly { key: string; href: string }[];
 }
 
 /**
@@ -124,6 +130,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         key: "suppliers",
         href: "/suppliers",
         requires: ["ADMIN"],
+        pages: [{ key: "supplierFamilies", href: "/suppliers/families" }],
       },
     ],
   },
@@ -334,8 +341,8 @@ export function isActive(pathname: string, href: string): boolean {
   );
 }
 
-/** True when `pathname` is on `child` or one of its sub-pages. */
-export function isChildActive(pathname: string, child: NavChild): boolean {
+/** True when `pathname` is on `child` (or a module page) or one of its sub-pages. */
+export function isChildActive(pathname: string, child: { href: string }): boolean {
   return pathname === child.href || pathname.startsWith(`${child.href}/`);
 }
 

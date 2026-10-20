@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
-import type {
-  CreateSupplierFamilyInput,
-  UpdateSupplierFamilyInput,
+import {
+  supplierFamilyCode,
+  type CreateSupplierFamilyInput,
+  type UpdateSupplierFamilyInput,
 } from "@repo/api-contract";
 import { PrismaService } from "../prisma.service";
 
@@ -47,12 +48,18 @@ export class SupplierFamilyService {
     }));
   }
 
+  /** The code is derived from the label, never typed — see `supplierFamilyCode`. */
   async create(input: CreateSupplierFamilyInput) {
-    await this.assertCodeFree(input.code);
+    const taken = await this.prisma.supplierFamily.findMany({ select: { code: true } });
+    const code = supplierFamilyCode(
+      input.label,
+      taken.map((family) => family.code),
+    );
+    await this.assertCodeFree(code);
     await this.assertLabelFree(input.label);
     return this.prisma.supplierFamily.create({
       data: {
-        code: input.code,
+        code,
         label: input.label,
         // Default puts a new family after the seeded ones (which use 10..80)
         // rather than silently first.
@@ -78,14 +85,39 @@ export class SupplierFamilyService {
 
   /**
    * Archive or restore. Archiving keeps the suppliers assigned to it — they
-   * still display their family; it simply stops being offered for new ones.
+   * still display their family; it simply stops being offered for new ones —
+   * unless `moveToId` names an active family to move them all to first, in
+   * the same transaction, so no supplier is ever left in neither.
+   *
+   * `moved` counts archived suppliers too: they are moved with the rest, or
+   * restoring one would bring back a family nobody else uses.
    */
-  async setActive(id: string, active: boolean) {
+  async setActive(id: string, active: boolean, moveToId?: string) {
     await this.byId(id);
-    return this.prisma.supplierFamily.update({
-      where: { id },
-      data: { active },
-      select: FAMILY_SELECT,
+    return this.prisma.$transaction(async (tx) => {
+      let moved = 0;
+      if (moveToId !== undefined) {
+        const target = await tx.supplierFamily.findUnique({
+          where: { id: moveToId },
+          select: { active: true },
+        });
+        if (!target?.active) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "The family to move these suppliers to is archived or no longer exists",
+          });
+        }
+        ({ count: moved } = await tx.supplier.updateMany({
+          where: { familyId: id },
+          data: { familyId: moveToId },
+        }));
+      }
+      const family = await tx.supplierFamily.update({
+        where: { id },
+        data: { active },
+        select: FAMILY_SELECT,
+      });
+      return { ...family, moved };
     });
   }
 

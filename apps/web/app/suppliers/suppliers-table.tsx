@@ -49,9 +49,12 @@ const INITIAL_STATE: SuppliersTableState = {
 
 export function SuppliersTable({
   initialSearch = "",
+  initialFilter = "all",
 }: {
   /** The page's `?search=`, the table's first search — see list-search.ts. */
   initialSearch?: string;
+  /** The page's `?filter=`, the table's first chip. */
+  initialFilter?: string;
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -61,6 +64,7 @@ export function SuppliersTable({
   const [tableState, setTableState] = useState<SuppliersTableState>({
     ...INITIAL_STATE,
     search: initialSearch,
+    filter: initialFilter.slice(0, 40),
   });
   const [error, setError] = useState<string | null>(null);
 

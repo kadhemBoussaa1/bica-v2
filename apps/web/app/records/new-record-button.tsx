@@ -48,6 +48,12 @@ export function RecordActions({ children }: { children: ReactNode }) {
  * A secondary action alongside the primary one — currently "Supplier families",
  * which is reached from the suppliers page rather than the sidebar: it is a
  * sub-page of that module, not a peer of it.
+ *
+ * A plain `<a>`, not `Link`: a sub-page sits beside its module's `[id]`, and
+ * the edit modal at `@modal/(.)suppliers/[id]` intercepts every in-app
+ * navigation to `/suppliers/<segment>` — `families` included — so a soft
+ * navigation opened "Edit supplier" for an id of "families" and 404ed. A full
+ * load is never intercepted and renders the real page.
  */
 export function SecondaryRecordButton({
   href,
@@ -58,9 +64,9 @@ export function SecondaryRecordButton({
 }) {
   return (
     <AdminOnly>
-      <Link href={href}>
+      <a href={href}>
         <Button variant="secondary">{label}</Button>
-      </Link>
+      </a>
     </AdminOnly>
   );
 }

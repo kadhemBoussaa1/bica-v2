@@ -26,10 +26,37 @@ export const supplierFamilyCodeSchema = z
     "Use uppercase letters, digits and underscores, e.g. EMBALLAGE",
   );
 
+/**
+ * The code a new family is given, derived from its label rather than typed:
+ * accents dropped, upper-cased, every run of anything else one underscore —
+ * "Hygiène & soins" -> HYGIENE_SOINS. Shared so the create form previews
+ * exactly what the server will store.
+ *
+ * A label that slugs to nothing the code rule accepts (Arabic script, a
+ * leading digit, a single letter) gets FAMILLE_<n>, the first number not in
+ * `takenCodes`: the code is a machine key, and a neutral one beats refusing
+ * the label. A slug that is valid but taken is returned as is — that is the
+ * same family spelled differently, and the caller refuses it.
+ */
+export function supplierFamilyCode(label: string, takenCodes: readonly string[]): string {
+  const slug = label
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .slice(0, 40)
+    .replace(/^_+|_+$/g, "");
+  if (supplierFamilyCodeSchema.safeParse(slug).success) return slug;
+  const taken = new Set(takenCodes);
+  let n = 1;
+  while (taken.has(`FAMILLE_${n}`)) n++;
+  return `FAMILLE_${n}`;
+}
+
 const label = z.string().trim().min(1, "Label is required").max(60);
 
+/** No `code`: the server derives it with `supplierFamilyCode`. */
 export const createSupplierFamilyInput = z.object({
-  code: supplierFamilyCodeSchema,
   label,
   sortOrder: z.number().int().min(0).max(9999).optional(),
 });
@@ -47,10 +74,25 @@ export const updateSupplierFamilyInput = z.object({
 
 export const supplierFamilyIdInput = z.object({ id: z.string().min(1) });
 
-export const setSupplierFamilyActiveInput = z.object({
-  id: z.string().min(1),
-  active: z.boolean(),
-});
+/**
+ * Archive or restore. `moveToId` is for archiving only: the family's
+ * suppliers go to that (active) family in the same transaction. Left out,
+ * they keep the archived family — nothing is ever uncategorised by this.
+ */
+export const setSupplierFamilyActiveInput = z
+  .object({
+    id: z.string().min(1),
+    active: z.boolean(),
+    moveToId: z.string().min(1).optional(),
+  })
+  .refine((input) => input.moveToId === undefined || !input.active, {
+    message: "Suppliers are only moved when a family is archived",
+    path: ["moveToId"],
+  })
+  .refine((input) => input.moveToId !== input.id, {
+    message: "Suppliers cannot be moved to the family being archived",
+    path: ["moveToId"],
+  });
 
 export type CreateSupplierFamilyInput = z.infer<typeof createSupplierFamilyInput>;
 export type UpdateSupplierFamilyInput = z.infer<typeof updateSupplierFamilyInput>;

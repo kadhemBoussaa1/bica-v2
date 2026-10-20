@@ -11,6 +11,7 @@
     "chat": "Chat",
     "clients": "Clients",
     "suppliers": "Suppliers",
+    "supplierFamilies": "Families",
     "products": "Products",
     "job-orders": "Job orders",
     "manufacturing-orders": "Manufacturing orders",
