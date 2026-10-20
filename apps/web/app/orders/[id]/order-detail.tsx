@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import {
@@ -20,6 +20,7 @@ import { Thumbnail } from "@repo/ui/thumbnail";
 import { useCurrentUser } from "../../auth/use-auth";
 import { useTRPC } from "../../trpc/client";
 import { ProductImageUpload } from "../../products/product-image-upload";
+import { ProductImageViewer } from "../../products/product-image-viewer";
 import { OrderInks } from "../order-inks";
 import { OrderManufacturing } from "../order-manufacturing";
 import { OrderPaper } from "../order-paper";
@@ -134,6 +135,8 @@ export function OrderDetail({ id }: { id: string }) {
   const runsQuery = useQuery(
     trpc.production.forOrder.queryOptions({ orderId: id }),
   );
+  /** The header photo opens the artwork viewer on the first image. */
+  const [viewing, setViewing] = useState(false);
 
   if (orderQuery.isPending) return <TableSkeleton rows={8} />;
 
@@ -196,13 +199,27 @@ export function OrderDetail({ id }: { id: string }) {
           <div className={styles.headRow}>
             <div className={styles.thumb}>
               {photo ? (
-                // S3 URL from the legacy bucket, already sized: next/image would re-proxy it.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photo} alt="" />
+                <button
+                  type="button"
+                  className={styles.zoomButton}
+                  onClick={() => setViewing(true)}
+                  aria-label={t("detail.viewArtwork", { name: p.name })}
+                >
+                  {/* S3 URL from the legacy bucket, already sized: next/image would re-proxy it. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photo} alt="" />
+                </button>
               ) : (
                 <span>{t("detail.artworkPlaceholder")}</span>
               )}
             </div>
+            {viewing && (
+              <ProductImageViewer
+                images={p.images}
+                name={p.name}
+                onClose={() => setViewing(false)}
+              />
+            )}
             <div className={styles.headMeta}>
               <div className={styles.noRow}>
                 <span className={styles.no}>{o.numero}</span>
@@ -751,29 +768,54 @@ function hasPricing(order: OrderDetailData): order is PricedOrder {
   return "orderTotal" in order;
 }
 
-/** The rail's artwork: the first image large, the rest as thumbnails. */
+/**
+ * The rail's artwork: the first image large, the rest as thumbnails. Each
+ * opens the viewer on itself; the viewer's own link opens the original.
+ */
 function ProductArtwork({ images, name }: { images: string[]; name: string }) {
   const t = useTranslations("orders");
   const photo = assetUrl(images[0]);
+  const [viewing, setViewing] = useState<number | null>(null);
   return (
     <>
       <div className={styles.artwork}>
         {photo ? (
-          <a href={photo} target="_blank" rel="noreferrer">
-            {/* S3 URL from the legacy bucket, opened full size: next/image would re-proxy it. */}
+          <button
+            type="button"
+            className={styles.zoomButton}
+            onClick={() => setViewing(0)}
+            aria-label={t("detail.viewArtwork", { name })}
+          >
+            {/* S3 URL from the legacy bucket: next/image would re-proxy it. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photo} alt={t("detail.artworkAlt", { name })} />
-          </a>
+          </button>
         ) : (
           <span>{t("detail.noArtwork")}</span>
         )}
       </div>
       {images.length > 1 && (
         <div className={styles.artworkMore}>
-          {images.slice(1).map((src) => (
-            <Thumbnail key={src} size="sm" src={assetUrl(src)} href={assetUrl(src)} />
+          {images.slice(1).map((src, i) => (
+            <button
+              key={src}
+              type="button"
+              className={styles.zoomThumb}
+              onClick={() => setViewing(i + 1)}
+              aria-label={t("detail.viewArtworkImage", { name, index: i + 2 })}
+            >
+              <Thumbnail size="sm" fit="contain" src={assetUrl(src)} />
+            </button>
           ))}
         </div>
+      )}
+      {viewing !== null && (
+        <ProductImageViewer
+          images={images}
+          name={name}
+          initialIndex={viewing}
+          onClose={() => setViewing(null)}
+        />
       )}
     </>
   );

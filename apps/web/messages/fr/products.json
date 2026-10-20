@@ -106,5 +106,16 @@
       "total": "Total",
       "created": "Créé le"
     }
+  },
+  "viewer": {
+    "eyebrow": "Maquette",
+    "alt": "Maquette de {name}, image {index} sur {total}",
+    "unavailable": "Image indisponible",
+    "previous": "Image précédente",
+    "next": "Image suivante",
+    "counter": "{index} / {total}",
+    "openOriginal": "Ouvrir l'original",
+    "thumbnails": "Images du produit",
+    "show": "Afficher l'image {index}"
   }
 }

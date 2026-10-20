@@ -263,6 +263,8 @@
     "productArtwork": "Diseño del producto",
     "productArtworkCount": "{count, plural, one {Diseño del producto} other {Diseños del producto (#)}}",
     "artworkAlt": "Diseño de {name}",
+    "viewArtwork": "Ampliar el diseño de {name}",
+    "viewArtworkImage": "Ampliar la imagen {index} de {name}",
     "noArtwork": "Sin diseño"
   },
   "paper": {

@@ -106,5 +106,16 @@
       "total": "Total",
       "created": "Created"
     }
+  },
+  "viewer": {
+    "eyebrow": "Artwork",
+    "alt": "{name} artwork, image {index} of {total}",
+    "unavailable": "Image unavailable",
+    "previous": "Previous image",
+    "next": "Next image",
+    "counter": "{index} / {total}",
+    "openOriginal": "Open original",
+    "thumbnails": "Product images",
+    "show": "Show image {index}"
   }
 }

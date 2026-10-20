@@ -13,6 +13,12 @@ interface ThumbnailProps {
   /** Wraps the image in a new-tab link. Usually the same value as `src`. */
   href?: string | null;
   alt?: string;
+  /**
+   * `cover` fills the square and crops (photos of a place or a reel);
+   * `contain` shows the whole image, for product artwork, where a cropped
+   * handle or base hides what the bag is.
+   */
+  fit?: "cover" | "contain";
 }
 
 /**
@@ -22,7 +28,7 @@ interface ThumbnailProps {
  * app does not own, and the optimizer 400s on any host that is not
  * pre-allowlisted. They are also thumbnails, so there is nothing to optimize.
  */
-export function Thumbnail({ src, size, href, alt = "" }: ThumbnailProps) {
+export function Thumbnail({ src, size, href, alt = "", fit = "cover" }: ThumbnailProps) {
   // Reset on `src` change, so editing a broken URL back to a good one in a form
   // shows the new image instead of staying stuck on the placeholder.
   const [failed, setFailed] = useState<string | null>(null);
@@ -34,7 +40,9 @@ export function Thumbnail({ src, size, href, alt = "" }: ThumbnailProps) {
     return <span className={classes} aria-hidden />;
   }
 
-  const classes = [styles.thumb, sizeClass].filter(Boolean).join(" ");
+  const classes = [styles.thumb, sizeClass, fit === "contain" ? styles.thumbContain : null]
+    .filter(Boolean)
+    .join(" ");
 
   // No `next/next/no-img-element` disable here: unlike the app, this package
   // lints with the react-internal config, which has no Next plugin loaded.

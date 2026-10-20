@@ -263,6 +263,8 @@
     "productArtwork": "Product artwork",
     "productArtworkCount": "{count, plural, one {Product artwork} other {Product artwork (#)}}",
     "artworkAlt": "{name} artwork",
+    "viewArtwork": "Enlarge the {name} artwork",
+    "viewArtworkImage": "Enlarge image {index} of {name}",
     "noArtwork": "No artwork"
   },
   "paper": {

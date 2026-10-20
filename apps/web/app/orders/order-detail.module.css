@@ -96,11 +96,43 @@
   color: var(--bp-ink-faint);
 }
 
+/* The whole artwork, never cropped — see orders.module.css `.photo img`. */
 .thumb img,
 .artwork img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+}
+
+/* The photo is the button that opens the artwork viewer. */
+.zoomButton {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.zoomButton:focus-visible,
+.zoomThumb:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: -2px;
+  border-radius: inherit;
+}
+
+.zoomThumb {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: none;
+  cursor: zoom-in;
+}
+
+.zoomThumb img {
+  display: block;
 }
 
 .headMeta {

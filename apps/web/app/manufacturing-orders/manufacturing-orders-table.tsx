@@ -133,7 +133,7 @@ export function ManufacturingOrdersTable({ initialSearch = "" }: { initialSearch
         <span className={shell.main}>
           {/* The order's photo — its product's first image — so an OF is
               recognised on sight. Decorative: the number sits beside it. */}
-          <Thumbnail size="sm" src={assetUrl(of.order.product.images[0] ?? null)} />
+          <Thumbnail size="sm" fit="contain" src={assetUrl(of.order.product.images[0] ?? null)} />
           <span className={shell.mainText}>
             <span className={shell.head}>
               <span className={shell.no}>{of.numero}</span>

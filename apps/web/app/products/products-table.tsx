@@ -154,7 +154,7 @@ export function ProductsTable({
       key: "image",
       header: "",
       width: "60px",
-      cell: (row) => <Thumbnail size="sm" src={assetUrl(row.images[0] ?? null)} />,
+      cell: (row) => <Thumbnail size="sm" fit="contain" src={assetUrl(row.images[0] ?? null)} />,
     },
     {
       key: "name",

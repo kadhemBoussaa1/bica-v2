@@ -263,6 +263,8 @@
     "productArtwork": "Maquette du produit",
     "productArtworkCount": "{count, plural, one {Maquette du produit} other {Maquettes du produit (#)}}",
     "artworkAlt": "Maquette de {name}",
+    "viewArtwork": "Agrandir la maquette de {name}",
+    "viewArtworkImage": "Agrandir l'image {index} de {name}",
     "noArtwork": "Aucune maquette"
   },
   "paper": {

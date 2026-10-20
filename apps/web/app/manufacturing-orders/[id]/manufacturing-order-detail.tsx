@@ -358,7 +358,7 @@ export function ManufacturingOrderDetail({ id }: { id: string }) {
         <div className={styles.headTop}>
           {/* The order's photo (its product's first image); opens full size. */}
           <span className={styles.headThumb}>
-            <Thumbnail size="md" src={photo} href={photo} />
+            <Thumbnail size="md" fit="contain" src={photo} href={photo} />
           </span>
           <div className={styles.headMain}>
             <span className={records.eyebrow}>{t("detail.eyebrow")}</span>

@@ -1,0 +1,158 @@
+/*
+ * The product artwork viewer: one image, whole, on the tint, with arrows
+ * over it and a thumbnail strip under it when the product has several.
+ */
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-3);
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: min(64dvh, 640px);
+  padding: var(--bp-space-3);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-tint);
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.unavailable {
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-faint);
+}
+
+.arrow {
+  position: absolute;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: var(--bp-control-h);
+  height: var(--bp-control-h);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-pill);
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: var(--bp-shadow-card);
+  color: var(--bp-ink);
+  cursor: pointer;
+}
+
+.arrow:hover {
+  background: var(--bp-surface);
+}
+
+.arrow:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.arrowPrev {
+  inset-inline-start: var(--bp-space-3);
+}
+
+.arrowNext {
+  inset-inline-end: var(--bp-space-3);
+}
+
+.arrowPrev svg,
+[dir="rtl"] .arrowNext svg {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .arrowPrev svg {
+  transform: none;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  min-height: 24px;
+}
+
+.counter {
+  font: 600 0.6875rem/1 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  color: var(--bp-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.original {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-1);
+  margin-inline-start: auto;
+  font: 600 0.75rem/1 var(--bp-font-display);
+  color: var(--bp-orange-700);
+}
+
+.original:hover {
+  text-decoration: underline;
+}
+
+[dir="rtl"] .external {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* Up to 50 images: the strip scrolls sideways rather than growing. */
+.strip {
+  display: flex;
+  gap: var(--bp-space-2);
+  overflow-x: auto;
+  padding-block: var(--bp-space-1);
+}
+
+.thumb {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+  cursor: pointer;
+}
+
+.thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thumb:hover {
+  border-color: var(--bp-control-border-hover);
+}
+
+.thumb:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.thumbOn,
+.thumbOn:hover {
+  border-color: var(--bp-orange-500);
+}
+
+/* On the phone sheet the stage takes what the head leaves. */
+@media (max-width: 600px) {
+  .stage {
+    height: min(70dvh, 560px);
+  }
+}

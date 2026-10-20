@@ -106,5 +106,16 @@
       "total": "الإجمالي",
       "created": "أُنشئ في"
     }
+  },
+  "viewer": {
+    "eyebrow": "التصميم",
+    "alt": "تصميم {name}، الصورة {index} من {total}",
+    "unavailable": "الصورة غير متاحة",
+    "previous": "الصورة السابقة",
+    "next": "الصورة التالية",
+    "counter": "{index} / {total}",
+    "openOriginal": "فتح الأصل",
+    "thumbnails": "صور المنتج",
+    "show": "عرض الصورة {index}"
   }
 }

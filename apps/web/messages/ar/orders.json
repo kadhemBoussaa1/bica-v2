@@ -263,6 +263,8 @@
     "productArtwork": "تصميم المنتج",
     "productArtworkCount": "{count, plural, zero {تصميم المنتج} one {تصميم المنتج} two {تصميما المنتج (#)} few {تصاميم المنتج (#)} many {تصاميم المنتج (#)} other {تصاميم المنتج (#)}}",
     "artworkAlt": "تصميم {name}",
+    "viewArtwork": "تكبير تصميم {name}",
+    "viewArtworkImage": "تكبير الصورة {index} من {name}",
     "noArtwork": "لا يوجد تصميم"
   },
   "paper": {

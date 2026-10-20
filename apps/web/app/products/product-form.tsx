@@ -211,6 +211,7 @@ export function ProductForm({
                   <div key={url} className={productStyles.imageTile}>
                     <Thumbnail
                       size="md"
+                      fit="contain"
                       src={assetUrl(url)}
                       href={assetUrl(url)}
                       alt={t("form.imageAlt", { index: index + 1 })}

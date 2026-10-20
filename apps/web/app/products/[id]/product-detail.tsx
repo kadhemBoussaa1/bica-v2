@@ -180,7 +180,7 @@ export function ProductDetail({ id }: { id: string }) {
     <>
       {/* The product's own identity line, as the reel detail carries one. */}
       <div className={grid.identity}>
-        <Thumbnail size="md" src={assetUrl(p.images[0] ?? null)} />
+        <Thumbnail size="md" fit="contain" src={assetUrl(p.images[0] ?? null)} />
         <div className={grid.identityText}>
           <div className={grid.identityName}>
             {p.name}

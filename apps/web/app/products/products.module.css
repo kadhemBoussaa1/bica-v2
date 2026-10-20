@@ -132,10 +132,11 @@
   overflow: hidden;
 }
 
+/* The whole artwork, letterboxed on the tint, never cropped. */
 .cardMedia img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
