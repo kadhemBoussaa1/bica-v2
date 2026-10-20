@@ -346,7 +346,9 @@ export class ProductionService {
         actorId: actor.id,
       });
       // Email 3 (docs/email-notifications-plan.md): what the old app mailed
-      // the boss on every production entry, with the order's photo.
+      // the boss on every production entry, with the order's photo. To the
+      // boss and the super admins only, not every admin (user, 2026-10-20);
+      // the bell above still tells every admin.
       const about = await tx.order.findUniqueOrThrow({
         where: { id: order.id },
         select: {
@@ -357,7 +359,7 @@ export class ProductionService {
       this.mail.queue(
         outbox,
         productionRecordedMail({
-          to: await this.mail.bossAndAdmins(tx),
+          to: await this.mail.bossAndSuperAdmins(tx),
           orderId: order.id,
           numero: order.numero,
           clientName: about.client?.name ?? null,

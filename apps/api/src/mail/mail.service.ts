@@ -90,9 +90,26 @@ export class MailService implements OnModuleDestroy {
     return rows.map((row) => row.email);
   }
 
-  /** The boss's fixed address and the admins': HR and production news. */
+  /** Every live SUPER_ADMIN account's address. */
+  async superAdmins(db: Db): Promise<string[]> {
+    const rows = await db.user.findMany({
+      where: { role: "SUPER_ADMIN", banned: { not: true } },
+      select: { email: true },
+    });
+    return rows.map((row) => row.email);
+  }
+
+  /** The boss's fixed address and the admins': HR news. */
   async bossAndAdmins(db: Db): Promise<string[]> {
     return dedupe([this.boss, ...(await this.admins(db))]);
+  }
+
+  /**
+   * The boss's fixed address and the super admins' only: production news
+   * (user, 2026-10-20 — it went to every admin before).
+   */
+  async bossAndSuperAdmins(db: Db): Promise<string[]> {
+    return dedupe([this.boss, ...(await this.superAdmins(db))]);
   }
 
   /** The "creations" fixed address and the admins': new orders and purchase orders. */
