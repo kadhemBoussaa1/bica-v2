@@ -71,6 +71,25 @@ export function freeMetres(roll: Pick<RollCounters, "metrageRestant" | "metrageR
 }
 
 /**
+ * How far a typed length may run past what is available and still mean all
+ * of it. A reel's length is worked out from its weight and carries long
+ * decimals (770 kg at 90 g/m² and 920 mm is 9 299.516908… m), while the app
+ * shows and pre-fills lengths to at most 2 decimals — up to half a
+ * centimetre over the real figure.
+ */
+const ROUNDING_SLACK_M = 0.005 + 1e-9;
+
+/**
+ * `metres`, or exactly `available` when `metres` exceeds it only by that
+ * rounding — so "the whole free length", as the reserve dialog pre-fills it,
+ * takes the whole free length instead of being refused for 3 mm. Anything
+ * further over stays as typed, and the guard refuses it.
+ */
+export function snapToAvailable(metres: number, available: number): number {
+  return metres > available && metres - available <= ROUNDING_SLACK_M ? available : metres;
+}
+
+/**
  * Metres in a server-side error message: plain `.` decimal, at most 2 places.
  * These messages are English and untranslated (docs/i18n.md), so they do not
  * go through the web app's French figure grouping.
@@ -109,9 +128,15 @@ export function freeGuard(metres: number): Prisma.Sql {
     AND "metrageRestant" - "metrageReserve" >= ${metres}`;
 }
 
-/** Promise `metres` (and their weight) to a reservation. */
+/**
+ * Promise `metres` (and their weight) to a reservation. A reservation of
+ * everything that is free lands exactly on `metrageRestant`, so float noise
+ * in the sum cannot leave a 1e-12 m sliver on offer.
+ */
 export function reserveSet(metres: number, kg: number): Prisma.Sql {
-  return Prisma.sql`"metrageReserve" = "metrageReserve" + ${metres},
+  return Prisma.sql`"metrageReserve" = CASE
+      WHEN "metrageRestant" - ("metrageReserve" + ${metres}) <= 1e-9 THEN "metrageRestant"
+      ELSE "metrageReserve" + ${metres} END,
     "poidsReserve" = "poidsReserve" + ${kg}`;
 }
 

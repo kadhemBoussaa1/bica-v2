@@ -25,6 +25,7 @@ import {
   kgPerMetre,
   metresFmt,
   moveRollCounters,
+  snapToAvailable,
   takeSet,
   writeRollFlags,
 } from "./roll-math";
@@ -981,24 +982,26 @@ export class StockService {
     this.assertLive(mother);
     this.assertReceived(mother);
     const free = freeMetres(mother);
-    if (free < input.metres) {
+    // As typed, or all that is free when over only by display rounding.
+    const metres = snapToAvailable(input.metres, free);
+    if (free < metres) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message:
           `Only ${metresFmt.format(free)} m of ${this.label(mother)} is free — ` +
-          `cannot cut ${metresFmt.format(input.metres)} m`,
+          `cannot cut ${metresFmt.format(metres)} m`,
       });
     }
 
-    const kg = input.metres * kgPerMetre(mother);
+    const kg = metres * kgPerMetre(mother);
     const numero = this.childLabel(mother, 1);
     // Both legs of the cut name the piece it makes.
     await setStockContext(tx, "CUT", numero);
     const after = await moveRollCounters(
       tx,
       mother.id,
-      takeSet(input.metres, kg),
-      freeGuard(input.metres),
+      takeSet(metres, kg),
+      freeGuard(metres),
     );
     if (!after) {
       // The guard held a moment ago; someone reserved or cut in between.
@@ -1013,8 +1016,8 @@ export class StockService {
         ...this.inherited(mother),
         numero,
         parentId: mother.id,
-        metrage: input.metres,
-        metrageRestant: input.metres,
+        metrage: metres,
+        metrageRestant: metres,
         poids: kg,
         poidsRestant: kg,
         disponible: true,
@@ -1036,7 +1039,7 @@ export class StockService {
         : {
             consumedByNote: this.appendNote(
               mother.consumedByNote,
-              `Cut ${metresFmt.format(input.metres)} m into ${numero}`,
+              `Cut ${metresFmt.format(metres)} m into ${numero}`,
             ),
           }),
     });

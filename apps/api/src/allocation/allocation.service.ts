@@ -23,6 +23,7 @@ import {
   moveRollCounters,
   releaseSet,
   reserveSet,
+  snapToAvailable,
   takeSet,
   writeRollFlags,
   type RollCounters,
@@ -252,7 +253,7 @@ export class AllocationService {
       });
     }
     const reserved = allocation.metrageReserve;
-    const used = input.metresUsed ?? reserved;
+    const used = snapToAvailable(input.metresUsed ?? reserved, reserved);
     if (used > reserved) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -587,8 +588,12 @@ export class AllocationService {
         message: `${roll.numero ?? "This reel"} has not been received yet — scan it in first`,
       });
     }
-    const kg = metres * kgPerMetre(roll);
-    const after = await moveRollCounters(tx, roll.id, reserveSet(metres, kg), freeGuard(metres));
+    // The length as typed, or all that is free when it is over only by the
+    // dialog's rounding. Read outside the row lock: if the reel changed
+    // since, the guard below still decides.
+    const take = snapToAvailable(metres, freeMetres(roll));
+    const kg = take * kgPerMetre(roll);
+    const after = await moveRollCounters(tx, roll.id, reserveSet(take, kg), freeGuard(take));
     if (!after) {
       // Zero rows matched: read the reel now and say why, like InkService.draw.
       const now = await this.loadRoll(tx, rollId);
@@ -612,7 +617,7 @@ export class AllocationService {
         orderId,
         paperRollId: roll.id,
         state: "RESERVED",
-        metrageReserve: metres,
+        metrageReserve: take,
         poidsReserve: kg,
         dateAllocation: dayOrNow(day),
         allocatedById: actor.id,
