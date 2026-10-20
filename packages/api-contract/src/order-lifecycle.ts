@@ -258,13 +258,16 @@ export function kindAllowsTransition(kind: OrderKind, to: OrderStatus): boolean 
 }
 
 /**
- * When an order's chosen ink colours may be taken off (docs/order-inks-plan.md):
- * only before production. No transition leads back to DRAFT, so once an order
- * is released its colours are fixed for good. Orders only — a quote's colours
- * are chosen after acceptance, like its paper.
+ * When a colour chosen for an order may be taken off again
+ * (docs/order-inks-plan.md): until the order is terminal, like adding one,
+ * so a colour chosen by mistake can be corrected after release (user,
+ * 2026-10-20; it was DRAFT only). The colour must have no ink drawn for it —
+ * `InkService.removeFromOrder` checks that, and deleting its lines first
+ * puts the ink back. Orders only — a quote's colours are chosen after
+ * acceptance, like its paper.
  */
 export function canChangeOrderInks(kind: OrderKind, status: OrderStatus): boolean {
-  return kind === "ORDER" && status === "DRAFT";
+  return kind === "ORDER" && !TERMINAL_ORDER_STATUSES.has(status);
 }
 
 /**

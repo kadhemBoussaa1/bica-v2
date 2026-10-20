@@ -6,6 +6,7 @@ import {
   inkUnitLabel,
   ordersAreScopedFor,
   PRODUCTION_VISIBLE_ORDER_STATUSES,
+  TERMINAL_ORDER_STATUSES,
   type AddOrderInksInput,
   type AdjustInkStockInput,
   type CreateInkColourInput,
@@ -532,11 +533,12 @@ export class InkService {
   }
 
   /**
-   * Takes a colour off an order: only before production
-   * (`canChangeOrderInks`) and only while no ink was drawn for it. The
-   * delete is conditional on the status, and the composite FK on `InkUsage`
-   * refuses it if a line landed after the count — the count is only there
-   * for the message.
+   * Takes a colour off an order — one chosen by mistake: until the order is
+   * terminal (`canChangeOrderInks`), and only while no ink was drawn for it,
+   * so the stock never has to be guessed back. Deleting the colour's lines
+   * first (`removeUsage`) returns their ink. The delete is conditional on
+   * the status, and the composite FK on `InkUsage` refuses it if a line
+   * landed after the count — the count is only there for the message.
    */
   async removeFromOrder(input: RemoveOrderInkInput) {
     try {
@@ -551,7 +553,7 @@ export class InkService {
         if (!canChangeOrderInks(order.kind, order.status)) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "Colours can only be removed before production",
+            message: "Colours can no longer be removed from this order",
           });
         }
         const used = await tx.inkUsage.count({
@@ -562,7 +564,7 @@ export class InkService {
           where: {
             orderId: input.orderId,
             colourId: input.colourId,
-            order: { kind: "ORDER", status: "DRAFT" },
+            order: { kind: "ORDER", status: { notIn: [...TERMINAL_ORDER_STATUSES] } },
           },
         });
         if (removed.count !== 1) {
@@ -766,7 +768,7 @@ export class InkService {
   private colourDrawn(): TRPCError {
     return new TRPCError({
       code: "CONFLICT",
-      message: "Ink has been drawn for this colour on this order; it cannot be removed",
+      message: "Ink has been recorded for this colour on this order — delete those lines first, then remove the colour",
     });
   }
 

@@ -50,8 +50,9 @@ function today(): string {
  * quantity typed here comes off the colour's balance at once, and editing or
  * deleting the line moves the balance back (`InkService`). Recording is ADMIN+
  * and PRODUCTION while the order is IN_PRODUCTION; deleting a line is ADMIN+,
- * as with production runs. A colour comes off the order only before
- * production and only while nothing was drawn for it.
+ * as with production runs. A colour chosen by mistake comes off the order,
+ * after a confirmation, until the order is completed or cancelled, and only
+ * while nothing was drawn for it — its lines are deleted first.
  *
  * ADMIN+ also sees the price frozen on each colour when it was assigned and
  * the ink cost (docs/order-ink-price-plan.md), from `costForOrder`, a query
@@ -76,6 +77,7 @@ export function OrderInks({
   const [recording, setRecording] = useState<string | null>(null);
   const [editing, setEditing] = useState<Usage | null>(null);
   const [deleting, setDeleting] = useState<Usage | null>(null);
+  const [removing, setRemoving] = useState<Colour | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Mirrors the procedures' gates — UX only; the server decides.
@@ -106,8 +108,14 @@ export function OrderInks({
   );
   const removeColour = useMutation(
     trpc.ink.removeFromOrder.mutationOptions({
-      onSuccess: () => refresh(),
-      onError: (cause) => setError(cause.message),
+      onSuccess: async () => {
+        setRemoving(null);
+        await refresh();
+      },
+      onError: (cause) => {
+        setRemoving(null);
+        setError(cause.message);
+      },
     }),
   );
 
@@ -189,19 +197,18 @@ export function OrderInks({
               <Button
                 size="dense"
                 variant="secondary"
-                busy={
-                  removeColour.isPending &&
-                  removeColour.variables?.colourId === ink.colour.id
-                }
                 onClick={() => {
                   setError(null);
-                  removeColour.mutate({ orderId, colourId: ink.colour.id });
+                  setRemoving(ink.colour);
                 }}
               >
                 {t("inks.removeColour")}
               </Button>
             )}
           </div>
+          {canRemove && ink.usages.length > 0 && (
+            <p className={styles.quiet}>{t("inks.removeColourHint")}</p>
+          )}
 
           <div className={styles.inkLines}>
             {canRecord && recording === ink.colour.id && (
@@ -291,6 +298,18 @@ export function OrderInks({
       {canAdd && inksQuery.isSuccess && (
         <AddColour orderId={orderId} onAdded={refresh} onError={setError} />
       )}
+
+      <Dialog
+        open={removing !== null}
+        title={t("inks.removeColourTitle", { code: removing?.code ?? "" })}
+        confirmLabel={t("inks.removeColour")}
+        destructive
+        busy={removeColour.isPending}
+        onConfirm={() => removing && removeColour.mutate({ orderId, colourId: removing.id })}
+        onClose={() => !removeColour.isPending && setRemoving(null)}
+      >
+        {t("inks.removeColourBody")}
+      </Dialog>
 
       <Dialog
         open={deleting !== null}
