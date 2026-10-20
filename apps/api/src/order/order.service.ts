@@ -299,8 +299,7 @@ export class OrderService {
   /**
    * The orders a run can be recorded against right now: `IN_PRODUCTION`, in
    * the caller's scope, oldest number first. The production page's order
-   * picker. Not the `inProduction` facet — that one also holds PRODUCED
-   * orders, which the floor is done with.
+   * picker. PRODUCED orders are left out: the floor is done with them.
    */
   async onFloor(actor: SessionUser) {
     return this.prisma.order.findMany({

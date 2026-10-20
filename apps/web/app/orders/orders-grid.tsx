@@ -276,6 +276,7 @@ export function OrdersGrid({
                 { key: "quotes", label: t("filters.quotes") },
                 { key: "draft", label: t("filters.draft") },
                 { key: "inProduction", label: t("filters.inProduction") },
+                { key: "produced", label: t("filters.produced") },
                 { key: "invoicing", label: t("filters.invoicing") },
                 { key: "completed", label: t("filters.completed") },
                 { key: "archived", label: t("filters.archived") },

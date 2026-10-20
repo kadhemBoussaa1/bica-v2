@@ -41,6 +41,7 @@
     "quotes": "Quotes",
     "draft": "Draft",
     "inProduction": "In production",
+    "produced": "Produced",
     "invoicing": "Invoicing",
     "completed": "Completed",
     "archived": "Archived"

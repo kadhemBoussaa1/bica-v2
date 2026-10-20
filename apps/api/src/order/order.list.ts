@@ -18,6 +18,7 @@ export const ORDER_FACET_KEYS = [
   "quotes",
   "draft",
   "inProduction",
+  "produced",
   "invoicing",
   "completed",
   "archived",
@@ -102,11 +103,11 @@ export const orderListDeclaration: ListDeclaration<
   facets: {
     quotes: { active: true, kind: "QUOTE" },
     draft: { active: true, kind: "ORDER", status: "DRAFT" },
-    inProduction: {
-      active: true,
-      kind: "ORDER",
-      status: { in: ["IN_PRODUCTION", "PRODUCED"] },
-    },
+    // PRODUCED has a chip of its own: the floor is done with those orders and
+    // they wait for an invoice, so "in production" means what the dashboard
+    // says it means — IN_PRODUCTION alone.
+    inProduction: { active: true, kind: "ORDER", status: "IN_PRODUCTION" },
+    produced: { active: true, kind: "ORDER", status: "PRODUCED" },
     invoicing: {
       active: true,
       kind: "ORDER",
