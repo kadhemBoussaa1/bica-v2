@@ -186,6 +186,11 @@ export class NotificationService implements BeforeApplicationShutdown {
     return this.accountIds(db, { role: { in: ADMIN_ROLES } });
   }
 
+  /** Every live SUPER_ADMIN. */
+  superAdmins(db: Db): Promise<string[]> {
+    return this.accountIds(db, { role: "SUPER_ADMIN" });
+  }
+
   /** Every live PRODUCTION account (exact role, not rank: siblings stay apart). */
   production(db: Db): Promise<string[]> {
     return this.accountIds(db, { role: "PRODUCTION" });

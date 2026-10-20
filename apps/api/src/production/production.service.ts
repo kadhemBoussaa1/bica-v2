@@ -310,8 +310,9 @@ export class ProductionService {
    * dependency runs one way only: packaging does not advance anything by
    * itself, it just stops being a reason the transition is refused.
    *
-   * Every admin but the recorder is notified (PRODUCTION_RECORDED), on the
-   * same transaction, pushed once it commits. Only here: correcting or
+   * Every super admin but the recorder is notified (PRODUCTION_RECORDED),
+   * on the same transaction, pushed once it commits — not ADMIN accounts
+   * (user, 2026-10-20), like the email below. Only here: correcting or
    * deleting a run tells nobody.
    */
   async create(actor: SessionUser, input: CreateProductionRunInput) {
@@ -339,7 +340,7 @@ export class ProductionService {
             day: input.dateProduction,
           },
         },
-        recipients: await this.notifications.admins(tx),
+        recipients: await this.notifications.superAdmins(tx),
         // The order, not the run: a run has no page of its own, and the
         // order's page lists its runs.
         entityId: order.id,
@@ -347,8 +348,7 @@ export class ProductionService {
       });
       // Email 3 (docs/email-notifications-plan.md): what the old app mailed
       // the boss on every production entry, with the order's photo. To the
-      // boss and the super admins only, not every admin (user, 2026-10-20);
-      // the bell above still tells every admin.
+      // boss and the super admins only, not every admin (user, 2026-10-20).
       const about = await tx.order.findUniqueOrThrow({
         where: { id: order.id },
         select: {
