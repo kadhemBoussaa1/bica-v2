@@ -155,8 +155,13 @@ export function OrdersGrid({
 
         <div className={styles.photo}>
           {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photo} alt="" loading="lazy" />
+            <>
+              {/* The same file, cached: blurred behind, whole in front. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt="" aria-hidden className={styles.photoBackdrop} loading="lazy" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt="" className={styles.photoMain} loading="lazy" />
+            </>
           ) : (
             <span>{t("grid.noPhoto")}</span>
           )}

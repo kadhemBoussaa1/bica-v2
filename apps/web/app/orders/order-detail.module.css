@@ -96,7 +96,7 @@
   color: var(--bp-ink-faint);
 }
 
-/* The whole artwork, never cropped — see orders.module.css `.photo img`. */
+/* The whole artwork, never cropped — see orders.module.css `.photoMain`. */
 .thumb img,
 .artwork img {
   width: 100%;
