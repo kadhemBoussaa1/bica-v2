@@ -46,7 +46,7 @@ const ADJUSTMENT = { in: "ADJUSTMENT", out: "ADJUSTMENT" } as const;
  * PRODUCTION and do not balance.
  */
 const REASONS: Record<StockReason, ReasonTypes> = {
-  RECEIPT: { ...ADJUSTMENT, in: "RECEIPT", sourceType: "PURCHASE" },
+  RECEIPT: { ...ADJUSTMENT, in: "RECEIPT", sourceType: "SUPPLIER_DELIVERY" },
   CONSUME: { ...ADJUSTMENT, out: "PRODUCTION_OUT", sourceType: "PRODUCTION_ORDER" },
   CUT: { in: "TRANSFER_IN", out: "TRANSFER_OUT", sourceType: "CUT" },
   UNDO_CUT: { in: "TRANSFER_IN", out: "TRANSFER_OUT", sourceType: "UNDO_CUT" },
@@ -59,21 +59,33 @@ const REASONS: Record<StockReason, ReasonTypes> = {
 };
 
 /**
- * Names the reason for the rest of the transaction. `set_config(…, true)` is
- * transaction-local, so it must run on an interactive transaction's client:
- * on a bare client it would last one statement and the trigger would never
- * see it.
+ * Names the reason for the rest of the transaction, or until the next call.
+ * `set_config(…, true)` is transaction-local, so it must run on an
+ * interactive transaction's client: on a bare client it would last one
+ * statement and the trigger would never see it.
  *
  * `documentNumber` is the number a person would recognise — the shipment a
  * reel arrived on, the order that consumed it, the piece a cut made — or
  * null where no document stands behind the change.
+ *
+ * `occurredAt` is for a writer that records a move after the fact and knows
+ * when it happened — sync-paper, copying the old app's dates. Left out, the
+ * movement happened when it is written, which is true of every move made in
+ * this app. The trigger clamps it between the log's start and now.
  */
 export async function setStockContext(
   tx: Prisma.TransactionClient,
   reason: StockReason,
   documentNumber: string | null = null,
+  occurredAt: Date | null = null,
 ): Promise<void> {
   const { in: gain, out: loss, sourceType } = REASONS[reason];
-  const context = JSON.stringify({ in: gain, out: loss, sourceType, sourceNumber: documentNumber });
+  const context = JSON.stringify({
+    in: gain,
+    out: loss,
+    sourceType,
+    sourceNumber: documentNumber,
+    occurredAt: occurredAt?.toISOString() ?? null,
+  });
   await tx.$executeRaw`SELECT set_config('bica.stock_context', ${context}, true)`;
 }

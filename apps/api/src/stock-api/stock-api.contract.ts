@@ -1,4 +1,5 @@
-import type { PaperType } from "../generated/prisma/enums.js";
+import { createHash } from "node:crypto";
+import type { OrderStatus, PaperType } from "../generated/prisma/enums.js";
 
 /**
  * The fixed parts of the stock contract with BICA Expert —
@@ -31,8 +32,91 @@ export const UNIT = "kg";
  */
 export const VALUATION_METHOD = "SPECIFIC";
 
-/** The most events one `/stock/movements` page returns. */
-export const MAX_PAGE = 500;
+/** The most rows one page returns, and how many a page holds by default. */
+export const MAX_PAGE = 1000;
+export const DEFAULT_PAGE = 500;
+
+/** Where the events of a delivery come from: a reel scanned in, or synced. */
+export const RECEIPT_SOURCE = "SUPPLIER_DELIVERY";
+
+/**
+ * `sourceDocument.type` on the wire. Receipts were written as PURCHASE until
+ * 2026-10-20, when BICA Expert asked for SUPPLIER_DELIVERY: what stands
+ * behind a receipt here is the import shipment the reel arrived on, not a
+ * purchase order.
+ */
+export function sourceDocumentType(stored: string): string {
+  return stored === "PURCHASE" ? RECEIPT_SOURCE : stored;
+}
+
+/**
+ * BICA Expert's `reason` on an ADJUSTMENT, from what caused it here. A
+ * weight typed over an untouched reel corrects a count; everything else —
+ * an archive, a restore, a deleted reel, the old app's untyped changes — is
+ * OTHER, because nothing here records whether the paper was damaged,
+ * scrapped or sampled. The opening balance and a revaluation (quantity 0)
+ * are not losses and carry none.
+ */
+export function adjustmentReason(
+  movementType: string | null,
+  sourceType: string | null,
+  quantity: number,
+): string | null {
+  if (movementType !== "ADJUSTMENT" || sourceType === "OPENING" || quantity === 0) return null;
+  return sourceType === "EDIT" ? "COUNT_CORRECTION" : "OTHER";
+}
+
+/**
+ * An order as BICA Expert's production order: OPEN while paper consumed
+ * for it is work in progress ("en cours"), COMPLETED once it is produced —
+ * every later step (invoicing, export) is past production — and CANCELLED.
+ * Paper is consumed only from IN_PRODUCTION on; a DRAFT with consumption is
+ * a legacy row, and counts as open.
+ */
+export type ProductionStatus = "OPEN" | "COMPLETED" | "CANCELLED";
+
+export const OPEN_ORDER_STATUSES: readonly OrderStatus[] = ["DRAFT", "IN_PRODUCTION"];
+
+export function productionStatus(status: OrderStatus): ProductionStatus {
+  if (status === "CANCELLED") return "CANCELLED";
+  return OPEN_ORDER_STATUSES.includes(status) ? "OPEN" : "COMPLETED";
+}
+
+/**
+ * A fixed UUID for a reconstructed history row, so pulling `/stock/history`
+ * twice gives the same `eventId` and BICA Expert's deduplication holds. A
+ * version-5 UUID (RFC 9562) of `key` in this API's own namespace.
+ */
+export function historyEventId(key: string): string {
+  const bytes = createHash("sha1").update(HISTORY_NAMESPACE).update(key).digest().subarray(0, 16);
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x50;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/** The namespace's bytes: UUID 6f1c3a52-9a0e-4d1b-8c61-2b7f4e9d0a13. */
+const HISTORY_NAMESPACE = Buffer.from("6f1c3a529a0e4d1b8c612b7f4e9d0a13", "hex");
+
+const TUNIS_DAY = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Africa/Tunis",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/**
+ * The calendar day of an instant in Tunis, `YYYY-MM-DD` — what a lot's
+ * reception and an order's start are measured in. A `@db.Date` column
+ * (midnight UTC) reads back as its own day, since Tunis is ahead of UTC.
+ */
+export function tunisDay(instant: Date | null | undefined): string | null {
+  if (!instant) return null;
+  const parts = TUNIS_DAY.formatToParts(instant);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((piece) => piece.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
 
 /** Kilograms, metres and money: a decimal string with 3 places. */
 export function decimal3(value: number): string {

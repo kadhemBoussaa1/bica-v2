@@ -1,7 +1,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { MAX_PAGE } from "./stock-api.contract";
+import { DEFAULT_PAGE, MAX_PAGE } from "./stock-api.contract";
+import type { StockReferenceService } from "./stock-api.reference";
 import { HistoryUnavailableError, type StockApiService } from "./stock-api.service";
 
 /** Where BICA Expert's base URL points: https://<host>/integration/v1. */
@@ -11,18 +12,49 @@ export const STOCK_API_BASE = "/integration/v1";
 const RATE_LIMIT = 120;
 const RATE_WINDOW_MS = 60_000;
 
+// "A limit larger than you allow is fine": clamped, not refused.
+const pageSize = z.coerce
+  .number()
+  .int()
+  .positive()
+  .default(DEFAULT_PAGE)
+  .transform((size) => Math.min(size, MAX_PAGE));
+const page = z.coerce.number().int().positive().default(1);
+
 const movementsQuery = z.object({
   afterSequence: z.coerce.number().int().nonnegative().default(0),
-  // "A limit larger than you allow is fine": clamped, not refused.
-  limit: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(MAX_PAGE)
-    .transform((limit) => Math.min(limit, MAX_PAGE)),
+  limit: pageSize,
+  eventType: z.enum(["stock.movement", "stock.snapshot"]).optional(),
+  since: z.string().optional(),
 });
 
 const asOfQuery = z.object({ asOf: z.string().optional() });
+
+const lotsQuery = z.object({
+  sku: z.string().trim().min(1).optional(),
+  warehouseCode: z.string().trim().min(1).optional(),
+  onHandOnly: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
+  page,
+  pageSize,
+});
+
+const partnersQuery = z.object({ role: z.enum(["SUPPLIER", "CUSTOMER"]).optional() });
+
+const productionOrdersQuery = z.object({
+  status: z.enum(["OPEN", "COMPLETED", "CANCELLED"]).optional(),
+  page,
+  pageSize,
+});
+
+const historyQuery = z.object({
+  since: z.string().optional(),
+  until: z.string().optional(),
+  page,
+  pageSize,
+});
 
 class BadRequest extends Error {
   constructor(
@@ -38,22 +70,27 @@ function digest(key: string): Buffer {
 }
 
 /**
- * `asOf` as an instant. A bare date is the END of that day in UTC — closing
- * stock, what a period close asks for; a datetime must carry its zone, so
- * nobody's local midnight is guessed at.
+ * A date parameter as an instant. A bare date is the END of that day in UTC
+ * for `asOf` and `until` — closing stock, what a period close asks for —
+ * and its START for `since`; a datetime must carry its zone, so nobody's
+ * local midnight is guessed at.
  */
-function parseAsOf(raw: string | undefined): Date | undefined {
+function parseInstant(
+  name: string,
+  raw: string | undefined,
+  edge: "start" | "end" = "end",
+): Date | undefined {
   if (raw === undefined || raw === "") return undefined;
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
     const start = new Date(`${raw}T00:00:00.000Z`);
     if (Number.isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== raw) {
-      throw new BadRequest("asOf is not a real date");
+      throw new BadRequest(`${name} is not a real date`);
     }
-    return new Date(start.getTime() + 86_400_000 - 1);
+    return edge === "start" ? start : new Date(start.getTime() + 86_400_000 - 1);
   }
   const instant = new Date(raw);
   if (!/(Z|[+-]\d{2}:\d{2})$/.test(raw) || Number.isNaN(instant.getTime())) {
-    throw new BadRequest("asOf must be YYYY-MM-DD or an ISO 8601 datetime with a zone");
+    throw new BadRequest(`${name} must be YYYY-MM-DD or an ISO 8601 datetime with a zone`);
   }
   return instant;
 }
@@ -76,7 +113,11 @@ function parse<T>(schema: z.ZodType<T>, query: unknown): T {
  * constant time. With none set, the API answers 503 — it exists, it is
  * just not switched on.
  */
-export function mountStockApi(http: Express, api: StockApiService): void {
+export function mountStockApi(
+  http: Express,
+  api: StockApiService,
+  reference: StockReferenceService,
+): void {
   const keys = (process.env.STOCK_API_KEYS ?? "")
     .split(",")
     .map((key) => key.trim())
@@ -136,17 +177,38 @@ export function mountStockApi(http: Express, api: StockApiService): void {
   route("/health", () => api.health());
 
   route("/stock/movements", async (req) => {
-    const { afterSequence, limit } = parse(movementsQuery, req.query);
-    return api.movements(afterSequence, limit);
+    const { afterSequence, limit, eventType, since } = parse(movementsQuery, req.query);
+    return api.movements(afterSequence, limit, {
+      eventType,
+      since: parseInstant("since", since, "start"),
+    });
   });
 
   route("/stock/levels", async (req) => {
     const { asOf } = parse(asOfQuery, req.query);
-    return api.levels(parseAsOf(asOf));
+    return api.levels(parseInstant("asOf", asOf));
   });
 
   route("/stock/valuation", async (req) => {
     const { asOf } = parse(asOfQuery, req.query);
-    return api.valuation(parseAsOf(asOf));
+    return api.valuation(parseInstant("asOf", asOf));
   });
+
+  route("/stock/lots", async (req) => reference.lots(parse(lotsQuery, req.query)));
+
+  route("/stock/history", async (req) => {
+    const query = parse(historyQuery, req.query);
+    return reference.history({
+      page: query.page,
+      pageSize: query.pageSize,
+      since: parseInstant("since", query.since, "start"),
+      until: parseInstant("until", query.until),
+    });
+  });
+
+  route("/partners", async (req) => reference.partners(parse(partnersQuery, req.query).role));
+
+  route("/production/orders", async (req) =>
+    reference.productionOrderList(parse(productionOrdersQuery, req.query)),
+  );
 }

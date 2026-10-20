@@ -7,13 +7,13 @@ import {
   SCHEMA_VERSION,
   TENANT_REF,
   UNIT,
-  VALUATION_METHOD,
   WAREHOUSE,
   decimal3,
   decimal6,
   productName,
   sumDecimal3,
 } from "./stock-api.contract";
+import { StockReferenceService, headSequence, type MovementFields } from "./stock-api.reference";
 
 type Db = Prisma.TransactionClient;
 
@@ -22,6 +22,7 @@ const EVENT_SELECT = {
   eventId: true,
   type: true,
   occurredAt: true,
+  recordedAt: true,
   movementType: true,
   sku: true,
   paperType: true,
@@ -48,10 +49,18 @@ interface LevelRow {
   grammage: number | null;
   laizeMm: number | null;
   quantity: string;
+  metres: string;
   unitCost: string;
   totalValue: string;
-  /** Reels on hand; unknown for a past `asOf`. */
-  lots: number | null;
+  /** Reels on hand. */
+  lots: number;
+}
+
+/** Which events a `/stock/movements` page returns. */
+export interface MovementFilter {
+  eventType?: "stock.movement" | "stock.snapshot";
+  /** Only events that occurred at or after this instant. */
+  since?: Date;
 }
 
 /** A past `asOf` earlier than the first event: the log cannot answer it. */
@@ -72,24 +81,39 @@ export class HistoryUnavailableError extends Error {
  */
 @Injectable()
 export class StockApiService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reference: StockReferenceService,
+  ) {}
 
-  /** Events after `afterSequence`, oldest first: movements and snapshots alike. */
-  async movements(afterSequence: number, limit: number) {
-    const [rows, head] = await Promise.all([
-      this.prisma.stockEvent.findMany({
-        where: { sequence: { gt: BigInt(afterSequence) } },
-        orderBy: { sequence: "asc" },
-        take: limit,
-        select: EVENT_SELECT,
-      }),
-      this.headSequence(this.prisma),
-    ]);
+  /**
+   * Events after `afterSequence`, oldest first: movements and snapshots
+   * alike, unless filtered.
+   *
+   * The head is read before the page, so a short page means every event up
+   * to it was looked at: `nextAfterSequence` then moves past the ones the
+   * filter skipped, and a cursor never sticks on a run of snapshots.
+   */
+  async movements(afterSequence: number, limit: number, filter: MovementFilter = {}) {
+    const head = await headSequence(this.prisma);
+    const rows = await this.prisma.stockEvent.findMany({
+      where: {
+        sequence: { gt: BigInt(afterSequence) },
+        ...(filter.eventType
+          ? { type: filter.eventType === "stock.snapshot" ? "SNAPSHOT" : "MOVEMENT" }
+          : {}),
+        ...(filter.since ? { occurredAt: { gte: filter.since } } : {}),
+      },
+      orderBy: { sequence: "asc" },
+      take: limit,
+      select: EVENT_SELECT,
+    });
     const last = rows.at(-1);
+    const scanned = last ? Number(last.sequence) : afterSequence;
     return {
-      movements: rows.map((row) => this.envelope(row)),
-      nextAfterSequence: last ? Number(last.sequence) : afterSequence,
-      lastSequence: head,
+      movements: await this.envelopes(rows),
+      nextAfterSequence: rows.length < limit ? Math.max(scanned, head) : scanned,
+      lastSequence: Math.max(head, scanned),
     };
   }
 
@@ -101,43 +125,65 @@ export class StockApiService {
    * figure BICA Expert compares against when it reconciles. SKUs that were
    * stocked at any point since the log began are listed at zero.
    *
-   * In the past: each SKU's `resulting` block from its last movement at or
-   * before `asOf`. The log starts at the opening balance, so an earlier
-   * instant throws `HistoryUnavailableError`.
+   * In the past: summed lot by lot from the movements that had OCCURRED by
+   * `asOf` — not the `resulting` block of the last one, since a movement
+   * written later can be dated earlier (sync-paper) and the resulting block
+   * is the level when it was written. Each lot is valued at the cost of its
+   * last movement among those, as the trigger values the live stock, so the
+   * sum at an instant after the last movement equals the live levels.
+   * `sequence` is the newest movement included. The log starts at the
+   * opening balance, so an earlier instant throws `HistoryUnavailableError`.
    */
   async levels(asOf?: Date) {
     const now = new Date();
     if (!asOf || asOf >= now) {
       const { sequence, rows } = await this.prisma.$transaction(
-        async (tx) => ({ sequence: await this.headSequence(tx), rows: await this.liveLevels(tx) }),
+        async (tx) => ({ sequence: await headSequence(tx), rows: await this.liveLevels(tx) }),
         { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
       );
       return this.levelsBody(now, sequence, rows);
     }
 
     const first = await this.prisma.stockEvent.findFirst({
-      orderBy: { sequence: "asc" },
+      orderBy: { occurredAt: "asc" },
       select: { occurredAt: true },
     });
     if (first && asOf < first.occurredAt) throw new HistoryUnavailableError(first.occurredAt);
 
     const rows = await this.prisma.$queryRaw<(LevelRow & { sequence: string })[]>`
-      WITH bound AS (
-        SELECT max("sequence") AS seq FROM "StockEvent"
-         WHERE "occurredAt" <= (${asOf.toISOString()}::timestamptz AT TIME ZONE 'UTC')
+      WITH moved AS (
+        SELECT * FROM "StockEvent"
+         WHERE "type" = 'MOVEMENT'
+           AND "occurredAt" <= (${asOf.toISOString()}::timestamptz AT TIME ZONE 'UTC')
+      ), lots AS (
+        SELECT "sku", "lotId",
+               sum(round("quantity"::numeric, 3)) AS kg,
+               sum(round("metres"::numeric, 3)) AS m,
+               (array_agg("unitCost" ORDER BY "sequence" DESC))[1]::numeric AS cost
+          FROM moved
+         GROUP BY "sku", "lotId"
+      ), names AS (
+        SELECT DISTINCT ON ("sku") "sku", "paperType", "grammage", "laizeMm"
+          FROM moved
+         ORDER BY "sku", "sequence" DESC
+      ), skus AS (
+        SELECT "sku", sum(kg) AS quantity, sum(m) AS metres,
+               sum(round(kg * cost, 3)) AS value,
+               count(*) FILTER (WHERE kg <> 0)::integer AS lots
+          FROM lots
+         GROUP BY "sku"
       )
-      SELECT DISTINCT ON (e."sku")
-             e."sku", e."paperType", e."grammage", e."laizeMm",
-             round(e."resultingQuantity"::numeric, 3)::numeric(18, 3)::text AS "quantity",
-             (CASE WHEN e."resultingQuantity" > 0
-                   THEN round(e."resultingValue"::numeric / e."resultingQuantity"::numeric, 6)
-                   ELSE 0 END)::numeric(18, 6)::text AS "unitCost",
-             round(e."resultingValue"::numeric, 3)::numeric(18, 3)::text AS "totalValue",
-             NULL::integer AS "lots",
-             bound.seq::text AS "sequence"
-        FROM "StockEvent" e, bound
-       WHERE e."type" = 'MOVEMENT' AND e."sequence" <= bound.seq
-       ORDER BY e."sku", e."sequence" DESC`;
+      SELECT s."sku", n."paperType", n."grammage", n."laizeMm",
+             s.quantity::numeric(18, 3)::text AS "quantity",
+             s.metres::numeric(18, 3)::text AS "metres",
+             (CASE WHEN s.quantity > 0 THEN round(s.value / s.quantity, 6) ELSE 0 END)
+               ::numeric(18, 6)::text AS "unitCost",
+             s.value::numeric(18, 3)::text AS "totalValue",
+             s.lots AS "lots",
+             (SELECT max("sequence") FROM moved)::text AS "sequence"
+        FROM skus s
+        JOIN names n ON n."sku" = s."sku"
+       ORDER BY 1`;
     return this.levelsBody(asOf, Number(rows[0]?.sequence ?? 0), rows);
   }
 
@@ -153,11 +199,26 @@ export class StockApiService {
     };
   }
 
+  /**
+   * `lastEventAt` is when the newest event was written: with the daily
+   * snapshot it is never more than a day old, so an older one means the
+   * feed has stalled rather than gone quiet.
+   */
   async health() {
+    const [lastSequence, last] = await Promise.all([
+      headSequence(this.prisma),
+      this.prisma.stockEvent.findFirst({
+        orderBy: { sequence: "desc" },
+        select: { recordedAt: true },
+      }),
+    ]);
+    const now = new Date().toISOString();
     return {
       ok: true,
-      time: new Date().toISOString(),
-      lastSequence: await this.headSequence(this.prisma),
+      time: now,
+      asOf: now,
+      lastSequence,
+      lastEventAt: last?.recordedAt.toISOString() ?? null,
     };
   }
 
@@ -181,6 +242,7 @@ export class StockApiService {
           sequence: head.last,
           type: "SNAPSHOT",
           occurredAt: asOf,
+          recordedAt: asOf,
           payload: { asOf: asOf.toISOString(), currency: CURRENCY, levels, totalValue },
         },
         select: { sequence: true },
@@ -199,47 +261,39 @@ export class StockApiService {
     return last?.occurredAt ?? null;
   }
 
-  /** The contract's envelope for one event — pulled and pushed alike. */
-  envelope(row: StockEventRow) {
-    const occurredAt = row.occurredAt.toISOString();
-    const base = {
-      eventId: row.eventId,
-      eventType: row.type === "SNAPSHOT" ? "stock.snapshot" : "stock.movement",
-      schemaVersion: SCHEMA_VERSION,
-      tenantRef: TENANT_REF,
-      sequence: Number(row.sequence),
-      occurredAt,
-    };
-    if (row.type === "SNAPSHOT") return { ...base, payload: row.payload };
+  /**
+   * The contract's envelopes for a page of events — pulled and pushed
+   * alike. A movement's lot and order are looked up for the whole page at
+   * once (`StockReferenceService.movementPayload`).
+   */
+  async envelopes(rows: readonly StockEventRow[]) {
+    const fields = rows.flatMap((row) => (row.type === "MOVEMENT" ? [movementFields(row)] : []));
+    const lookups = await this.reference.lookups(this.prisma, fields);
+    return rows.map((row) => {
+      const base = {
+        eventId: row.eventId,
+        eventType: row.type === "SNAPSHOT" ? "stock.snapshot" : "stock.movement",
+        schemaVersion: SCHEMA_VERSION,
+        tenantRef: TENANT_REF,
+        sequence: Number(row.sequence),
+        occurredAt: row.occurredAt.toISOString(),
+      };
+      if (row.type === "SNAPSHOT") return { ...base, payload: row.payload };
 
-    const quantity = row.resultingQuantity ?? 0;
-    const value = row.resultingValue ?? 0;
-    return {
-      ...base,
-      payload: {
-        movementId: String(row.sequence),
-        type: row.movementType,
-        occurredAt,
-        product: {
-          sku: row.sku,
-          name: productName(row.paperType, row.grammage, row.laizeMm),
-          unit: UNIT,
+      const quantity = row.resultingQuantity ?? 0;
+      const value = row.resultingValue ?? 0;
+      return {
+        ...base,
+        payload: {
+          ...this.reference.movementPayload(movementFields(row), lookups),
+          resulting: {
+            quantity: decimal3(quantity),
+            avgCost: decimal6(quantity > 0 ? value / quantity : 0),
+            totalValue: decimal3(value),
+          },
         },
-        warehouse: WAREHOUSE,
-        lot: row.lotId ? { id: row.lotId, number: row.lotNumber } : null,
-        quantity: decimal3(row.quantity ?? 0),
-        metres: decimal3(row.metres ?? 0),
-        unitCost: decimal6(row.unitCost ?? 0),
-        currency: CURRENCY,
-        valuationMethod: VALUATION_METHOD,
-        sourceDocument: row.sourceType ? { type: row.sourceType, number: row.sourceNumber } : null,
-        resulting: {
-          quantity: decimal3(quantity),
-          avgCost: decimal6(quantity > 0 ? value / quantity : 0),
-          totalValue: decimal3(value),
-        },
-      },
-    };
+      };
+    });
   }
 
   /** One undelivered event for the push worker, or null. */
@@ -253,11 +307,6 @@ export class StockApiService {
 
   // ---- helpers -------------------------------------------------------------
 
-  private async headSequence(db: Db): Promise<number> {
-    const head = await db.stockEventCounter.findUnique({ where: { id: 1 }, select: { last: true } });
-    return Number(head?.last ?? 0);
-  }
-
   /**
    * The live levels, one row per SKU. The on-hand rule and the rounding are
    * the trigger's (paper_stock_emit), so a level here equals the `resulting`
@@ -269,12 +318,13 @@ export class StockApiService {
         SELECT paper_stock_sku("paperType", "grammage", "laize") AS sku,
                "paperType", "grammage", round("laize")::integer AS "laizeMm",
                round("poidsRestant"::numeric, 3) AS kg,
+               round("metrageRestant"::numeric, 3) AS m,
                COALESCE("price", 0)::numeric AS price
           FROM "PaperRoll"
          WHERE "receivedAt" IS NOT NULL AND NOT "consomme" AND NOT "archived"
       ), live AS (
         SELECT sku, min("paperType") AS "paperType", min("grammage") AS "grammage",
-               min("laizeMm") AS "laizeMm", sum(kg) AS quantity,
+               min("laizeMm") AS "laizeMm", sum(kg) AS quantity, sum(m) AS metres,
                sum(round(kg * price, 3)) AS value, count(*)::integer AS lots
           FROM reels
          GROUP BY sku
@@ -289,6 +339,7 @@ export class StockApiService {
              COALESCE(l."grammage", k."grammage") AS "grammage",
              COALESCE(l."laizeMm", k."laizeMm") AS "laizeMm",
              COALESCE(l.quantity, 0)::numeric(18, 3)::text AS "quantity",
+             COALESCE(l.metres, 0)::numeric(18, 3)::text AS "metres",
              (CASE WHEN l.quantity > 0 THEN round(l.value / l.quantity, 6) ELSE 0 END)
                ::numeric(18, 6)::text AS "unitCost",
              COALESCE(l.value, 0)::numeric(18, 3)::text AS "totalValue",
@@ -304,12 +355,13 @@ export class StockApiService {
       sku: row.sku,
       warehouseCode: WAREHOUSE.code,
       quantity: row.quantity,
+      metres: row.metres,
       unitCost: row.unitCost,
       totalValue: row.totalValue,
       currency: CURRENCY,
       asOf: at,
       product: { name: productName(row.paperType, row.grammage, row.laizeMm), unit: UNIT },
-      ...(row.lots === null ? {} : { lots: row.lots }),
+      lots: row.lots,
     }));
     return {
       asOf: at,
@@ -319,4 +371,25 @@ export class StockApiService {
       totalValue: sumDecimal3(levels.map((level) => level.totalValue)),
     };
   }
+}
+
+/** A logged movement's own facts, for `movementPayload`. */
+function movementFields(row: StockEventRow): MovementFields {
+  return {
+    movementId: String(row.sequence),
+    type: row.movementType ?? "ADJUSTMENT",
+    occurredAt: row.occurredAt,
+    recordedAt: row.recordedAt,
+    sku: row.sku,
+    paperType: row.paperType,
+    grammage: row.grammage,
+    laizeMm: row.laizeMm,
+    lotId: row.lotId,
+    lotNumber: row.lotNumber,
+    quantity: row.quantity ?? 0,
+    metres: row.metres ?? 0,
+    unitCost: row.unitCost ?? 0,
+    sourceType: row.sourceType,
+    sourceNumber: row.sourceNumber,
+  };
 }

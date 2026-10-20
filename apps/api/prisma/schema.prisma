@@ -3618,9 +3618,15 @@ model StockEvent {
   sequence BigInt         @id
   eventId  String         @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type     StockEventType
-  /// When the change was committed here, UTC, read after the counter lock so
-  /// it never runs backwards against `sequence`.
+  /// When the goods moved, UTC: the clock when the row was written, unless
+  /// the writer named the moment (`setStockContext`'s `occurredAt`, which
+  /// sync-paper takes from the old app). Clamped by the trigger to between
+  /// the log's first row and `recordedAt`, so it may run behind `sequence`.
   occurredAt DateTime
+  /// When the row was written, UTC, read after the counter lock so it never
+  /// runs backwards against `sequence`. Equal to `occurredAt` unless the
+  /// writer named an earlier moment.
+  recordedAt DateTime       @default(now())
 
   // ---- MOVEMENT -------------------------------------------------------------
 
@@ -3663,6 +3669,10 @@ model StockEvent {
   /// The push worker's queue: undelivered rows in order.
   @@index([deliveredAt, sequence])
   @@index([occurredAt])
+  /// A lot's own movements: `/stock/history` skips a lot the log received.
+  @@index([lotId, sequence])
+  /// An order's paper: `/production/orders` reads its PRODUCTION_ORDER rows.
+  @@index([sourceType, sourceNumber])
 }
 
 /// The single row (`id = 1`) `StockEvent.sequence` is drawn from. Never

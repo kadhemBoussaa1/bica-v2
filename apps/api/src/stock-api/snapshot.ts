@@ -10,12 +10,14 @@
  */
 import "dotenv/config";
 import { PrismaService } from "../prisma.service";
+import { StockReferenceService } from "./stock-api.reference";
 import { StockApiService } from "./stock-api.service";
 
 async function main() {
   const prisma = new PrismaService();
   try {
-    const snapshot = await new StockApiService(prisma).createSnapshot();
+    const api = new StockApiService(prisma, new StockReferenceService(prisma));
+    const snapshot = await api.createSnapshot();
     console.log(`Snapshot written as event ${snapshot.sequence} (${snapshot.asOf.toISOString()})`);
   } finally {
     await prisma.$disconnect();

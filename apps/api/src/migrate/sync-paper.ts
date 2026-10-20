@@ -37,15 +37,28 @@
  * RESERVED allocations in metres (the invariant on
  * `PaperRoll.metrageReserve`), with `reserved` and `disponible` following.
  *
+ * What it does to stock reaches BICA Expert as typed movements, dated when
+ * the old app says they happened (docs/erp-stock-api.md §9): a new reel is
+ * a RECEIPT on its shipment's day, a new piece of a reel already here and
+ * the loss on that reel are a CUT pair, a reel the old app consumed for an
+ * order (an allocation that closes in this run, or a note naming the order)
+ * is a PRODUCTION_OUT on its consumption date. Anything else stays a
+ * LEGACY_SYNC adjustment, dated when the reel was used up if it was. The
+ * trigger clamps every date to the log's start, so a move made before
+ * go-live lands on the opening balance it corrects. The report ends with
+ * the movements written.
+ *
  * One transaction, so all of it or none. A second run on the same backup
- * writes nothing.
+ * writes nothing. It takes the stock sequence's lock first and holds it to
+ * the end, so the app's stock writes wait for it — run it when the
+ * warehouse is quiet.
  */
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PAPER_TYPES } from "@repo/api-contract";
 import { PrismaClient, type Prisma } from "../generated/prisma/client.js";
 import type { AllocationState, PaperType } from "../generated/prisma/enums.js";
-import { setStockContext } from "../stock-api/stock-context.js";
+import { setStockContext, type StockReason } from "../stock-api/stock-context.js";
 import { kgPerMetre } from "../stock/roll-math.js";
 import {
   legacyRawPool,
@@ -216,8 +229,13 @@ async function main() {
 
     await prisma.$transaction(
       async (tx) => {
-        // Whatever the old app did to stock reaches BICA Expert as
-        // LEGACY_SYNC adjustments (the trigger records them either way).
+        // The sequence's lock, taken now rather than at the first reel
+        // written: every movement after `firstSequence` is this run's, which
+        // is what the report counts.
+        const [counter] = await tx.$queryRaw<{ last: bigint }[]>`
+          SELECT "last" FROM "StockEventCounter" WHERE "id" = 1 FOR UPDATE`;
+        const firstSequence = counter?.last ?? 0n;
+        // A reel write that names no reason below is a LEGACY_SYNC adjustment.
         await setStockContext(tx, "LEGACY_SYNC");
         const stamp = new Date();
         const synced = { legacySyncedAt: stamp, updatedAt: stamp };
@@ -226,9 +244,18 @@ async function main() {
 
         const shipmentsHere = await tx.importShipment.findMany({
           where: { legacyId: { not: null } },
-          select: { id: true, legacyId: true },
+          select: { id: true, legacyId: true, numeroImport: true },
         });
         const shipmentIds = new Map(shipmentsHere.map((row) => [String(row.legacyId), row.id]));
+        /** By the old app's id: the number a receipt names, and the day it arrived. */
+        const shipmentNumbers = new Map(
+          shipmentsHere.map((row) => [String(row.legacyId), row.numeroImport]),
+        );
+        const shipmentDays = new Map(
+          shipmentRows.flatMap((row) =>
+            typeof row.date_import_day === "string" ? [[String(row.id), row.date_import_day] as const] : [],
+          ),
+        );
         const suppliers = await tx.supplier.findMany({ select: { id: true, name: true } });
         const supplierByName = new Map(
           suppliers.map((row) => [normaliseSupplierName(row.name), row.id]),
@@ -279,6 +306,7 @@ async function main() {
             select: { id: true },
           });
           shipmentIds.set(String(row.id), created.id);
+          shipmentNumbers.set(String(row.id), numeroImport);
           count("shipments created");
           lines.push(`shipment ${numeroImport}: created`);
         }
@@ -323,6 +351,121 @@ async function main() {
           },
         });
         const hereByLegacy = new Map(reelsHere.map((row) => [String(row.legacyId), row]));
+        const orders = await tx.order.findMany({
+          where: { legacyId: { not: null } },
+          select: { id: true, legacyId: true, numero: true, kind: true, status: true, active: true },
+        });
+        const orderByLegacy = new Map(orders.map((row) => [String(row.legacyId), row]));
+        const orderNumeros = new Set(orders.map((row) => row.numero));
+        const allocationsHere = await tx.rollAllocation.findMany({
+          where: { legacyId: { not: null } },
+          select: {
+            id: true,
+            legacyId: true,
+            state: true,
+            metrageReserve: true,
+            paperRollId: true,
+            updatedAt: true,
+            legacySyncedAt: true,
+          },
+        });
+        const allocationByLegacy = new Map(allocationsHere.map((row) => [String(row.legacyId), row]));
+
+        // ---- why each reel moves, for BICA Expert ---------------------------
+        //
+        // Read before any write: what the old app consumed in this run (an
+        // allocation it closed — or left open on a reel it archived as used
+        // up, `oldAppState` below — that is not consumed here yet) and which
+        // reels it cut (a piece not here yet).
+
+        const usedUpAt = new Map(
+          reelRows.flatMap((row) => {
+            const at = row.statut === "ARCHIVE" ? timestamp(row.date_consommation) : null;
+            return at ? [[String(row.id), at] as const] : [];
+          }),
+        );
+        const consumedNow = new Map<string, { numero: string; at: Date | null }>();
+        for (const row of allocationRows) {
+          const reelKey = String(row.rouleau_id);
+          const usedUp = String(row.etat) === "RESERVED" ? usedUpAt.get(reelKey) : undefined;
+          if (String(row.etat) !== "CONSUMED" && !usedUp) continue;
+          if (allocationByLegacy.get(String(row.id))?.state === "CONSUMED") continue;
+          const order = orderByLegacy.get(String(row.commande_id));
+          if (!order) continue;
+          const at = usedUp ?? timestamp(row.date_consommation);
+          const seen = consumedNow.get(reelKey);
+          if (!seen || (at && (!seen.at || at > seen.at))) consumedNow.set(reelKey, { numero: order.numero, at });
+        }
+        /** Reel → the first of its pieces the old app cut since the last run. */
+        const newPieceOf = new Map<string, string>();
+        /**
+         * Reel → when it was cut, as far as the old app tells: it records no
+         * date for a cut, but a piece used since was cut by then, so every
+         * leg of the cut takes the earliest such date. Unknown, the cut is
+         * dated when this run writes it.
+         */
+        const cutAt = new Map<string, Date>();
+        for (const row of reelRows) {
+          if (row.parent_id === null || hereByLegacy.has(String(row.id))) continue;
+          const parentKey = String(row.parent_id);
+          if (!newPieceOf.has(parentKey)) newPieceOf.set(parentKey, text(row.numero) ?? String(row.id));
+          const used = row.statut === "ARCHIVE" || (num(row.poids_restant) ?? 1) <= 0;
+          const usedAt = used
+            ? (consumedNow.get(String(row.id))?.at ?? timestamp(row.date_consommation))
+            : null;
+          const known = cutAt.get(parentKey);
+          if (usedAt && (!known || usedAt < known)) cutAt.set(parentKey, usedAt);
+        }
+
+        type Moved = [StockReason, string | null, Date | null];
+
+        const oldAppReels = new Set(reelRows.map((row) => String(row.id)));
+
+        /**
+         * How a reel new in this run came into stock: a piece was cut from
+         * its mother (here already, or new in this run too); a reel with no
+         * known mother came off its shipment, on the shipment's day, placed
+         * at noon in Tunis.
+         */
+        const arrival = (row: Row, data: ReelData): Moved => {
+          const parentKey = row.parent_id === null ? null : String(row.parent_id);
+          if (parentKey !== null && (hereByLegacy.has(parentKey) || oldAppReels.has(parentKey))) {
+            return ["CUT", data.numero, cutAt.get(parentKey) ?? null];
+          }
+          const importKey = row.import_id === null ? null : String(row.import_id);
+          const day = importKey === null ? undefined : shipmentDays.get(importKey);
+          return [
+            "RECEIPT",
+            importKey === null ? null : (shipmentNumbers.get(importKey) ?? null),
+            day ? new Date(`${day}T11:00:00.000Z`) : null,
+          ];
+        };
+
+        /**
+         * Why a reel lost weight: cut into a piece made in this run, consumed
+         * for an order, or used up for no recorded reason — dated when it was
+         * used up, if it was.
+         */
+        const departure = (legacyKey: string, data: ReelData): Moved => {
+          const piece = newPieceOf.get(legacyKey);
+          if (piece) return ["CUT", piece, cutAt.get(legacyKey) ?? null];
+          const consumed = consumedNow.get(legacyKey);
+          if (consumed) return ["CONSUME", consumed.numero, consumed.at];
+          const usedUp = data.consomme || data.archived ? data.dateConsommation : null;
+          const note = data.consumedByNote?.trim();
+          if (note && orderNumeros.has(note)) return ["CONSUME", note, usedUp];
+          return ["LEGACY_SYNC", null, usedUp];
+        };
+
+        /** Why a reel already here moved. A change of spec or a gain is untyped. */
+        const update = (legacyKey: string, here: (typeof reelsHere)[number], data: ReelData): Moved => {
+          if (here.paperType !== data.paperType || here.grammage !== data.grammage || here.laize !== data.laize) {
+            return ["LEGACY_SYNC", null, null];
+          }
+          const before = here.receivedAt !== null && !here.consomme && !here.archived ? here.poidsRestant : 0;
+          const after = !data.consomme && !data.archived ? data.poidsRestant : 0;
+          return after < before ? departure(legacyKey, data) : ["LEGACY_SYNC", null, null];
+        };
         const reels = new Map<string, Reel>();
         const oldAppIds = new Set<string>();
 
@@ -342,19 +485,54 @@ async function main() {
           let frozenWhy: string | null = null;
 
           if (!here) {
-            const created = await tx.paperRoll.create({
-              data: {
-                ...data,
-                ...synced,
-                legacyId: BigInt(legacyKey),
-                disponible: etlDisponible(row),
-                reserved: false,
-                // Every old-app reel is on the floor: it has no pending state.
-                receivedAt: stamp,
-              },
-              select: { id: true },
-            });
-            id = created.id;
+            const create = {
+              ...data,
+              ...synced,
+              legacyId: BigInt(legacyKey),
+              disponible: etlDisponible(row),
+              reserved: false,
+              // Every old-app reel is on the floor: it has no pending state.
+              receivedAt: stamp,
+            };
+            await setStockContext(tx, ...arrival(row, data));
+            const finalKg = !data.consomme && !data.archived ? data.poidsRestant : 0;
+            const arrivedKg = Math.max(data.poids ?? 0, finalKg);
+            if (arrivedKg - finalKg > 0.0005) {
+              // Arrived heavier than it is now — cut, consumed or archived
+              // between two runs, most often a piece the old app cut for an
+              // order and archived at once. Written on hand at its arrival
+              // weight first, then brought down, so a cut nets to zero and a
+              // consumption names its order; written as it is now, the paper
+              // in between would leave stock with no movement of its own.
+              const created = await tx.paperRoll.create({
+                data: {
+                  ...create,
+                  consomme: false,
+                  archived: false,
+                  poidsRestant: arrivedKg,
+                  metrageRestant: data.metrage ?? data.metrageRestant,
+                },
+                select: { id: true },
+              });
+              id = created.id;
+              await setStockContext(tx, ...departure(legacyKey, data));
+              await tx.paperRoll.update({
+                where: { id },
+                data: {
+                  poidsRestant: data.poidsRestant,
+                  metrageRestant: data.metrageRestant,
+                  consomme: data.consomme,
+                  archived: data.archived,
+                  // The run's stamp, or `@updatedAt` would mark it changed here.
+                  ...synced,
+                },
+                select: { id: true },
+              });
+              count("reels created already cut or used (in and out recorded)");
+            } else {
+              const created = await tx.paperRoll.create({ data: create, select: { id: true } });
+              id = created.id;
+            }
             count("reels created");
             lines.push(`reel ${data.numero ?? legacyKey}: created`);
           } else {
@@ -377,6 +555,7 @@ async function main() {
               count("split reels put back in stock by the old app, left archived");
               lines.push(`reel ${here.numero ?? legacyKey}: split, but back in stock in the old app — left archived`);
             } else if (changed.length > 0) {
+              await setStockContext(tx, ...update(legacyKey, here, data));
               await tx.paperRoll.update({ where: { id }, data: { ...data, ...synced }, select: { id: true } });
               count("reels updated");
               lines.push(`reel ${here.numero ?? legacyKey}: ${changed.join(", ")}`);
@@ -421,24 +600,6 @@ async function main() {
 
         // ---- allocations ----------------------------------------------------
 
-        const orders = await tx.order.findMany({
-          where: { legacyId: { not: null } },
-          select: { id: true, legacyId: true, numero: true, kind: true, status: true, active: true },
-        });
-        const orderByLegacy = new Map(orders.map((row) => [String(row.legacyId), row]));
-        const allocationsHere = await tx.rollAllocation.findMany({
-          where: { legacyId: { not: null } },
-          select: {
-            id: true,
-            legacyId: true,
-            state: true,
-            metrageReserve: true,
-            paperRollId: true,
-            updatedAt: true,
-            legacySyncedAt: true,
-          },
-        });
-        const allocationByLegacy = new Map(allocationsHere.map((row) => [String(row.legacyId), row]));
         const reelById = new Map([...reels.values()].map((reel) => [reel.id, reel]));
 
         const label = (row: Row) => {
@@ -614,6 +775,22 @@ async function main() {
           if (changedFields(row, want).length === 0) continue;
           await tx.paperRoll.update({ where: { id: row.id }, data: { ...want, ...synced }, select: { id: true } });
           count("reel counters rebuilt");
+        }
+
+        // ---- what BICA Expert will receive -----------------------------------
+
+        const moved = await tx.$queryRaw<
+          { movementType: string; sourceType: string | null; n: number; kg: string }[]
+        >`
+          SELECT "movementType"::text AS "movementType", "sourceType", count(*)::integer AS "n",
+                 round(sum("quantity")::numeric, 3)::text AS "kg"
+            FROM "StockEvent"
+           WHERE "sequence" > ${firstSequence} AND "type" = 'MOVEMENT'
+           GROUP BY 1, 2
+           ORDER BY 1, 2`;
+        for (const row of moved) {
+          lines.push(`stock movement ${row.movementType} / ${row.sourceType ?? "-"}: ${row.n} (${row.kg} kg)`);
+          counts[`stock movements ${row.movementType}`] = (counts[`stock movements ${row.movementType}`] ?? 0) + row.n;
         }
 
         if (!apply) throw new DryRunRollback();

@@ -24,6 +24,7 @@ import { ManufacturingTemplateService } from "./manufacturing/manufacturing-temp
 import { ManufacturingService } from "./manufacturing/manufacturing.service";
 import { ShipmentService } from "./shipment/shipment.service";
 import { ShiftService } from "./shift/shift.service";
+import { StockReferenceService } from "./stock-api/stock-api.reference";
 import { StockApiService } from "./stock-api/stock-api.service";
 import { StockPushService } from "./stock-api/stock-push.service";
 import { StockService } from "./stock/stock.service";
@@ -46,6 +47,7 @@ import { UserService } from "./user/user.service";
     OrderService,
     StockService,
     StockApiService,
+    StockReferenceService,
     StockPushService,
     ProductionService,
     InvoiceService,

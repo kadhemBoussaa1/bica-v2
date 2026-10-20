@@ -105,7 +105,8 @@ export class StockPushService implements OnModuleInit, OnModuleDestroy {
       // Waiting out a backoff. The rest of the queue waits with it.
       if (event.nextAttemptAt && event.nextAttemptAt.getTime() > Date.now()) return;
 
-      const error = await this.post(JSON.stringify(this.stockApi.envelope(event)));
+      const [envelope] = await this.stockApi.envelopes([event]);
+      const error = await this.post(JSON.stringify(envelope));
       if (error === null) {
         await this.prisma.stockEvent.update({
           where: { sequence: event.sequence },
