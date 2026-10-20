@@ -68,6 +68,15 @@ fi
 # --- Images ------------------------------------------------------------------
 # Only the three app images move on a deploy. postgres, nginx and certbot are
 # pulled once and updated deliberately: ./deploy/compose.sh pull postgres nginx certbot
+#
+# Make room first. Every deploy by --tag leaves ~1 GB of tagged images, and a
+# pull onto a full disk dies before any later step could clean up ("no space
+# left on device", 2026-09-29 and 2026-10-20). So remove this stack's images
+# (labelled in Dockerfile.prod) that no container uses, before pulling: what
+# survives is the running version, which after this deploy becomes the
+# previous one, the instant rollback. At most two versions are ever on disk;
+# a rollback further back pulls again. Other images are left alone.
+docker image prune -af --filter "label=com.bicapack.image" >/dev/null
 if $build; then
   echo "==> Building $tag here"
   compose build migrate api web
@@ -103,12 +112,8 @@ compose exec -T nginx nginx -s reload
 trap - ERR
 echo "$(date -Iseconds) $tag$($build && echo ' (built here)')" >>"$ROOT/.deploy-history"
 
-# Reached only on success (set -e), so a failed deploy is never cleaned up
-# while it is being debugged. Every deploy by --tag leaves a tagged image, so
-# dangling-only pruning would still fill the disk: remove this stack's images
-# (labelled in Dockerfile.prod) that no container uses, once a week old. A
-# rollback past that pulls again. Other images on the machine are left alone.
-docker image prune -af --filter "label=com.bicapack.image" --filter "until=168h" >/dev/null
+# Reached only on success (set -e), so a failed build keeps its cache while it
+# is being debugged. Images are pruned before the pull, above.
 if $build; then docker builder prune -f --filter "until=168h" >/dev/null; fi
 
 compose ps
