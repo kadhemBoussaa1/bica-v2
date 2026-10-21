@@ -78,6 +78,7 @@
   "activeMonthsNote": "{active} months out of {total} with entries · peak <peak></peak>",
   "wasteCount": "{count} waste",
   "aloneOnStation": "alone on this station this month",
+  "aloneInPeriod": "alone on this station in the period",
   "onStation": "{count} on this station",
   "outsideRanking": "Outside the ranking",
   "unattributedTitle": "<volume></volume> with no machine and no operator",
@@ -88,5 +89,15 @@
   "piecesPrinted": "Pieces printed",
   "piecesProduced": "Pieces produced",
   "goodPieces": "Good pieces",
-  "piecesControlled": "Pieces controlled"
+  "piecesControlled": "Pieces controlled",
+  "periodView": "Period",
+  "ledePeriod": "Any span of days: each station's volume, which machine and which operator did it, then the days one by one.",
+  "flowPeriod": "The period's flow",
+  "periodFrom": "From",
+  "periodTo": "to",
+  "periodStart": "First day of the period",
+  "periodEnd": "Last day of the period",
+  "byDay": "Day by day",
+  "noPeriodEntries": "No entry in this period.",
+  "unattributedTextPeriod": "{entries} carried over from the old system, spread over {days}. They swell the totals without saying who made what, so they are counted apart rather than mixed in with the real machines."
 }

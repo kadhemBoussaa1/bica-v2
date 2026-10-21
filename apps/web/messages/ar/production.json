@@ -78,6 +78,7 @@
   "activeMonthsNote": "{active} من {total} أشهر فيها إدخالات · الذروة <peak></peak>",
   "wasteCount": "{count} تالفة",
   "aloneOnStation": "وحده في هذا القسم هذا الشهر",
+  "aloneInPeriod": "وحده في هذا القسم خلال الفترة",
   "onStation": "{count} في هذا القسم",
   "outsideRanking": "خارج الترتيب",
   "unattributedTitle": "<volume></volume> بلا آلة ولا مشغّل",
@@ -88,5 +89,15 @@
   "piecesPrinted": "القطع المطبوعة",
   "piecesProduced": "القطع المنتَجة",
   "goodPieces": "القطع السليمة",
-  "piecesControlled": "القطع المراقَبة"
+  "piecesControlled": "القطع المراقَبة",
+  "periodView": "فترة",
+  "ledePeriod": "أي فترة: حجم كل مركز، وأي آلة وأي مشغّل أنجزه، ثم الأيام يومًا بيوم.",
+  "flowPeriod": "تدفق الفترة",
+  "periodFrom": "من",
+  "periodTo": "إلى",
+  "periodStart": "أول يوم في الفترة",
+  "periodEnd": "آخر يوم في الفترة",
+  "byDay": "يومًا بيوم",
+  "noPeriodEntries": "لا توجد إدخالات في هذه الفترة.",
+  "unattributedTextPeriod": "{entries} منقولة من النظام القديم، موزّعة على {days}. إنها تضخّم المجاميع دون أن تبيّن من أنتج ماذا، لذلك تُحسب على حدة بدل خلطها بالآلات الفعلية."
 }

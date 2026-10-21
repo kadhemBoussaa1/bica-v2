@@ -16,6 +16,7 @@ import {
   type ListProductionInput,
   type ProductionDailyInput,
   type ProductionMonthlyInput,
+  type ProductionRangeInput,
 } from "./production.list";
 
 /**
@@ -196,7 +197,52 @@ export class ProductionService {
    */
   async monthly(actor: SessionUser, input: ProductionMonthlyInput) {
     const { months, where } = this.monthRange(actor, input);
+    const period = await this.tallyPeriod(where);
+    return { months, ...pivotsOf(period, months, monthOf) };
+  }
 
+  /**
+   * Any span of days, shaped for the period view (user, 2026-10-21): the
+   * span's totals and its per-machine and per-person rows — `monthly`'s
+   * fold with the whole span as one cell — then one line of totals per day
+   * that has entries, newest first. A day's entries are `daily`'s, read when
+   * the day is opened, so this stays a few hundred small rows for a year.
+   */
+  async range(actor: SessionUser, input: ProductionRangeInput) {
+    const where: Prisma.ProductionRunWhereInput = {
+      AND: [
+        {
+          dateProduction: {
+            gte: new Date(`${input.from}T00:00:00.000Z`),
+            lte: new Date(`${input.to}T00:00:00.000Z`),
+          },
+        },
+        this.scopeFor(actor),
+      ],
+    };
+    const period = await this.tallyPeriod(where);
+    // The whole span is one cell, keyed by its first day.
+    const whole = pivotsOf(period, [input.from], () => input.from);
+    const days = [...new Set(period.tallies.map((t) => t.day))].sort().reverse();
+    return {
+      from: input.from,
+      to: input.to,
+      totals: whole.totals[0]!,
+      byMachine: whole.byMachine,
+      byPerson: whole.byPerson,
+      days: foldTotals(days, period.tallies, (day) => day).map(({ month, ...figures }) => ({
+        date: month,
+        ...figures,
+      })),
+    };
+  }
+
+  /**
+   * The runs of a period as day tallies, by station, machine and person,
+   * with the machines and people they name — what `monthly` and `range`
+   * fold. See `monthly` for why the headline is `SUM(quantite)`.
+   */
+  private async tallyPeriod(where: Prisma.ProductionRunWhereInput) {
     const groups = await this.prisma.productionRun.groupBy({
       by: ["stage", "machineId", "recordedById", "dateProduction"],
       where,
@@ -229,35 +275,7 @@ export class ProductionService {
       machineId: g.machineId !== null && machines.has(g.machineId) ? g.machineId : null,
       personId: g.recordedById !== null && people.has(g.recordedById) ? g.recordedById : null,
     }));
-
-    const forStage = (stage: string) => tallies.filter((t) => t.stage === stage);
-    // The `!`s below cannot miss: `tallies` keeps an id only when the map has
-    // it (see above), and `pivot` hands back exactly the ids it was given.
-    const machinePivot = (stage: string) =>
-      pivot(forStage(stage), months, (t) => t.machineId)
-        .map(({ id, ...row }) => ({ machine: id === null ? null : machines.get(id)!, ...row }))
-        .sort(namedFirst((row) => row.machine?.name ?? null));
-    const personPivot = (stage: string) =>
-      pivot(forStage(stage), months, (t) => t.personId)
-        .map(({ id, ...row }) => ({ person: id === null ? null : people.get(id)!, ...row }))
-        .sort(namedFirst((row) => row.person?.name ?? null));
-
-    return {
-      months,
-      totals: foldTotals(months, tallies),
-      /** One row per machine that ran in the range, per machine station. */
-      byMachine: {
-        PRINTING: machinePivot("PRINTING"),
-        PRODUCER: machinePivot("PRODUCER"),
-      },
-      /** One row per person who recorded in the range, per station. */
-      byPerson: {
-        PRINTING: personPivot("PRINTING"),
-        PRODUCER: personPivot("PRODUCER"),
-        QUALITY_CONTROL: personPivot("QUALITY_CONTROL"),
-        PACKAGING: personPivot("PACKAGING"),
-      },
-    };
+    return { tallies, machines, people };
   }
 
   /**
@@ -645,6 +663,51 @@ function namedFirst<T>(nameOf: (item: T) => string | null) {
   };
 }
 
+/** A day's month: `monthly`'s bucket. */
+function monthOf(day: string): string {
+  return day.slice(0, 7);
+}
+
+/**
+ * A period's totals and its per-machine and per-person rows, one cell per
+ * bucket (`bucketOf` maps a day to its bucket). Every row is zero-filled for
+ * every bucket, so the client lays cells out by position.
+ */
+function pivotsOf(
+  period: Awaited<ReturnType<ProductionService["tallyPeriod"]>>,
+  buckets: string[],
+  bucketOf: (day: string) => string,
+) {
+  const { tallies, machines, people } = period;
+  const forStage = (stage: string) => tallies.filter((t) => t.stage === stage);
+  // The `!`s below cannot miss: `tallies` keeps an id only when the map has
+  // it (see `tallyPeriod`), and `pivot` hands back exactly the ids it was given.
+  const machinePivot = (stage: string) =>
+    pivot(forStage(stage), buckets, (t) => t.machineId, bucketOf)
+      .map(({ id, ...row }) => ({ machine: id === null ? null : machines.get(id)!, ...row }))
+      .sort(namedFirst((row) => row.machine?.name ?? null));
+  const personPivot = (stage: string) =>
+    pivot(forStage(stage), buckets, (t) => t.personId, bucketOf)
+      .map(({ id, ...row }) => ({ person: id === null ? null : people.get(id)!, ...row }))
+      .sort(namedFirst((row) => row.person?.name ?? null));
+
+  return {
+    totals: foldTotals(buckets, tallies, bucketOf),
+    /** One row per machine that ran in the period, per machine station. */
+    byMachine: {
+      PRINTING: machinePivot("PRINTING"),
+      PRODUCER: machinePivot("PRODUCER"),
+    },
+    /** One row per person who recorded in the period, per station. */
+    byPerson: {
+      PRINTING: personPivot("PRINTING"),
+      PRODUCER: personPivot("PRODUCER"),
+      QUALITY_CONTROL: personPivot("QUALITY_CONTROL"),
+      PACKAGING: personPivot("PACKAGING"),
+    },
+  };
+}
+
 /** Every YYYY-MM from `from` to `to`, both included, ascending. */
 function monthsBetween(from: string, to: string): string[] {
   const months: string[] = [];
@@ -710,55 +773,66 @@ function dayTally(g: {
 }
 
 /**
- * The months' totals: each station's headline per month, the producer
- * breakdown, and the run count. One row per station through `pivot`, so the
- * tiles read off the same fold as the pivots in `monthly`; `monthlyTotals`
- * reads the same function, which is what keeps the two equal.
+ * The buckets' totals (months, unless `bucketOf` says otherwise): each
+ * station's headline per bucket, the producer breakdown, and the run count.
+ * One row per station through `pivot`, so the tiles read off the same fold
+ * as the pivots in `monthly`; `monthlyTotals` reads the same function, which
+ * is what keeps the two equal.
  */
-function foldTotals(months: string[], tallies: readonly (DayTally & { stage: string })[]) {
-  const stationCell = (stage: string, index: number) =>
+function foldTotals(
+  buckets: string[],
+  tallies: readonly (DayTally & { stage: string })[],
+  bucketOf: (day: string) => string = monthOf,
+) {
+  const station = (stage: string) =>
     pivot(
       tallies.filter((t) => t.stage === stage),
-      months,
+      buckets,
       () => null,
-    )[0]?.cells[index];
+      bucketOf,
+    )[0]?.cells;
+  const printing = station("PRINTING");
+  const producer = station("PRODUCER");
+  const control = station("QUALITY_CONTROL");
+  const packaging = station("PACKAGING");
+  const runs = new Map<string, number>();
+  for (const t of tallies) {
+    const bucket = bucketOf(t.day);
+    runs.set(bucket, (runs.get(bucket) ?? 0) + t.runCount);
+  }
 
-  return months.map((month, index) => {
-    const producer = stationCell("PRODUCER", index);
-    const printing = stationCell("PRINTING", index);
-    return {
-      month,
-      metersPrinted: printing?.headline ?? 0,
-      piecesPrinted: printing?.piecesPrinted ?? 0,
-      piecesProduced: producer?.headline ?? 0,
-      piecesControlled: stationCell("QUALITY_CONTROL", index)?.headline ?? 0,
-      parcelsClosed: stationCell("PACKAGING", index)?.headline ?? 0,
-      // The producer breakdown, as in `daily`.
-      goodPieces: producer?.goodPieces ?? 0,
-      wastePieces: producer?.wastePieces ?? 0,
-      piecesToFix: producer?.piecesToFix ?? 0,
-      runCount: tallies
-        .filter((t) => t.day.startsWith(month))
-        .reduce((sum, t) => sum + t.runCount, 0),
-    };
-  });
+  return buckets.map((month, index) => ({
+    month,
+    metersPrinted: printing?.[index]?.headline ?? 0,
+    piecesPrinted: printing?.[index]?.piecesPrinted ?? 0,
+    piecesProduced: producer?.[index]?.headline ?? 0,
+    piecesControlled: control?.[index]?.headline ?? 0,
+    parcelsClosed: packaging?.[index]?.headline ?? 0,
+    // The producer breakdown, as in `daily`.
+    goodPieces: producer?.[index]?.goodPieces ?? 0,
+    wastePieces: producer?.[index]?.wastePieces ?? 0,
+    piecesToFix: producer?.[index]?.piecesToFix ?? 0,
+    runCount: runs.get(month) ?? 0,
+  }));
 }
 
 const FIGURES = ["headline", "piecesPrinted", "goodPieces", "wastePieces", "piecesToFix", "runCount"] as const;
 
 /**
- * Folds day tallies into one row per `idOf`, with one cell per month.
+ * Folds day tallies into one row per `idOf`, with one cell per bucket —
+ * a month, unless `bucketOf` says otherwise.
  *
  * `daysActive` is a distinct count, not a count of tallies: the `groupBy` key
  * carries both the machine and the person, so a machine two people recorded
  * on the same day arrives as two tallies for that one day (and a person who
- * ran two machines likewise). Months do not share days, so a row's total is
+ * ran two machines likewise). Buckets do not share days, so a row's total is
  * the plain sum of its cells.
  */
 function pivot<T extends DayTally>(
   tallies: T[],
   months: string[],
   idOf: (tally: T) => string | null,
+  bucketOf: (day: string) => string = monthOf,
 ) {
   const blank = () => ({
     headline: 0,
@@ -775,7 +849,7 @@ function pivot<T extends DayTally>(
     const id = idOf(tally);
     let row = rows.get(id ?? "");
     if (!row) rows.set(id ?? "", (row = { id, byMonth: new Map() }));
-    const month = tally.day.slice(0, 7);
+    const month = bucketOf(tally.day);
     let cell = row.byMonth.get(month);
     if (!cell) row.byMonth.set(month, (cell = blank()));
     for (const figure of FIGURES) cell[figure] += tally[figure];

@@ -182,6 +182,7 @@ import {
   productionDailyInput,
   productionMonthlyInput,
   productionForOrderInput,
+  productionRangeInput,
 } from "../production/production.list";
 import { ProductionService } from "../production/production.service";
 import {
@@ -1410,6 +1411,17 @@ export class TrpcRouter {
         .input(productionMonthlyInput)
         .query(({ ctx, input }) =>
           this.productionService.monthly(ctx.user, input),
+        ),
+
+      /**
+       * Any span of days — the period view: the span's totals, per machine
+       * and per operator, and one line per day. A day's entries come from
+       * `daily` when it is opened.
+       */
+      range: adminProcedure
+        .input(productionRangeInput)
+        .query(({ ctx, input }) =>
+          this.productionService.range(ctx.user, input),
         ),
 
       create: shopFloorProcedure

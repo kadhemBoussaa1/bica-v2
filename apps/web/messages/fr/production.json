@@ -78,6 +78,7 @@
   "activeMonthsNote": "{active} mois sur {total} avec de la saisie · pic <peak></peak>",
   "wasteCount": "{count} déchets",
   "aloneOnStation": "seul sur le poste ce mois-ci",
+  "aloneInPeriod": "seul sur le poste sur la période",
   "onStation": "{count} sur le poste",
   "outsideRanking": "Hors du classement",
   "unattributedTitle": "<volume></volume> sans machine ni opérateur",
@@ -88,5 +89,15 @@
   "piecesPrinted": "Pièces imprimées",
   "piecesProduced": "Pièces fabriquées",
   "goodPieces": "Bonnes pièces",
-  "piecesControlled": "Pièces contrôlées"
+  "piecesControlled": "Pièces contrôlées",
+  "periodView": "Période",
+  "ledePeriod": "N'importe quelle période : le volume de chaque poste, quelle machine et quel opérateur l'ont fait, puis les journées une à une.",
+  "flowPeriod": "Le flux de la période",
+  "periodFrom": "Du",
+  "periodTo": "au",
+  "periodStart": "Premier jour de la période",
+  "periodEnd": "Dernier jour de la période",
+  "byDay": "Jour par jour",
+  "noPeriodEntries": "Aucune saisie sur cette période.",
+  "unattributedTextPeriod": "{entries} reprises de l'ancien système, réparties sur {days}. Elles gonflent les totaux sans dire qui a produit quoi, donc elles sont comptées à part plutôt que mêlées aux machines réelles."
 }

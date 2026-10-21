@@ -78,6 +78,7 @@
   "activeMonthsNote": "{active} meses de {total} con entradas · pico <peak></peak>",
   "wasteCount": "{count} de desecho",
   "aloneOnStation": "solo en el puesto este mes",
+  "aloneInPeriod": "solo en el puesto en el periodo",
   "onStation": "{count} en el puesto",
   "outsideRanking": "Fuera de la clasificación",
   "unattributedTitle": "<volume></volume> sin máquina ni operador",
@@ -88,5 +89,15 @@
   "piecesPrinted": "Piezas impresas",
   "piecesProduced": "Piezas fabricadas",
   "goodPieces": "Piezas buenas",
-  "piecesControlled": "Piezas controladas"
+  "piecesControlled": "Piezas controladas",
+  "periodView": "Periodo",
+  "ledePeriod": "Cualquier periodo: el volumen de cada puesto, qué máquina y qué operario lo hicieron, y luego los días uno a uno.",
+  "flowPeriod": "El flujo del periodo",
+  "periodFrom": "Del",
+  "periodTo": "al",
+  "periodStart": "Primer día del periodo",
+  "periodEnd": "Último día del periodo",
+  "byDay": "Día a día",
+  "noPeriodEntries": "Ninguna entrada en este periodo.",
+  "unattributedTextPeriod": "{entries} heredadas del sistema anterior, repartidas en {days}. Inflan los totales sin decir quién produjo qué, así que se cuentan aparte en lugar de mezclarse con las máquinas reales."
 }

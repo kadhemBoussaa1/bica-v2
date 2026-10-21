@@ -186,3 +186,29 @@ export const productionMonthlyInput = z
     },
   );
 export type ProductionMonthlyInput = z.infer<typeof productionMonthlyInput>;
+
+/** The widest span `production.range` answers in one call, in days. */
+const PRODUCTION_RANGE_MAX_DAYS = 366;
+
+/** Days between two YYYY-MM-DD, both included. */
+function daySpan(from: string, to: string): number {
+  return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 + 1;
+}
+
+/**
+ * Any span of days, both ends included, for the period view at
+ * `/production` (user, 2026-10-21: "from 01/09 to 10/10"). Capped like the
+ * monthly range: a year of days is the most one page reads.
+ */
+export const productionRangeInput = z
+  .object({ from: calendarDate, to: calendarDate })
+  // Zero-padded YYYY-MM-DD sorts as text the same way it sorts as a date.
+  .refine((range) => range.from <= range.to, {
+    message: "`from` must not be after `to`",
+    path: ["from"],
+  })
+  .refine((range) => daySpan(range.from, range.to) <= PRODUCTION_RANGE_MAX_DAYS, {
+    message: `A range covers at most ${PRODUCTION_RANGE_MAX_DAYS} days`,
+    path: ["to"],
+  });
+export type ProductionRangeInput = z.infer<typeof productionRangeInput>;

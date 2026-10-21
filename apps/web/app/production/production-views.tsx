@@ -15,6 +15,7 @@ import {
   MonthMeta,
   shiftMonth,
 } from "./monthly-production";
+import { PeriodMeta, PeriodProduction } from "./period-production";
 import { RunForm } from "./run-form";
 import records from "../records/records.module.css";
 import styles from "./production.module.css";
@@ -27,6 +28,38 @@ function shiftDay(date: string, days: number): string {
   return isoDay(d);
 }
 
+/** The most days `production.range` answers, both ends included. */
+const PERIOD_MAX_DAYS = 366;
+
+/** Days from `from` to `to`, both included. */
+function daysBetween(from: string, to: string): number {
+  return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 + 1;
+}
+
+/**
+ * A new period after one end moved: the other end follows when the two
+ * would cross or stretch past the server's cap, so the query is never
+ * refused for a span the pickers allowed.
+ */
+function movePeriod(
+  period: { from: string; to: string },
+  end: "from" | "to",
+  value: string,
+): { from: string; to: string } {
+  if (end === "from") {
+    const to = value > period.to ? value : period.to;
+    return {
+      from: value,
+      to: daysBetween(value, to) > PERIOD_MAX_DAYS ? shiftDay(value, PERIOD_MAX_DAYS - 1) : to,
+    };
+  }
+  const from = value < period.from ? value : period.from;
+  return {
+    from: daysBetween(from, value) > PERIOD_MAX_DAYS ? shiftDay(value, -(PERIOD_MAX_DAYS - 1)) : from,
+    to: value,
+  };
+}
+
 /**
  * The production page: its header, the view switch, the day navigation, and
  * the recording form, above whichever view is open.
@@ -34,6 +67,7 @@ function shiftDay(date: string, days: number): string {
  * `day` is the dashboard the shop runs on — one day, grouped by station, with
  * that day's totals. `month` is the same question a step back: the selected
  * month's flow, a year of trend behind it, and who did the month's work.
+ * `period` asks it of any span of days, then lists the days one by one.
  *
  * Recording lives here as well as on the order page: from here the operator
  * picks the order, from there the order is already known.
@@ -43,7 +77,7 @@ export function ProductionViews() {
   const t = useTranslations("production");
   const enums = useTranslations("enums");
   const params = useSearchParams();
-  const [view, setView] = useState<"day" | "month">("day");
+  const [view, setView] = useState<"day" | "month" | "period">("day");
   // `?date=` (the dashboard's last-day tile) opens the day view on that day.
   // Read once, on arrival: navigating days afterwards does not touch the URL.
   const [date, setDate] = useState(() => {
@@ -51,6 +85,11 @@ export function ProductionViews() {
     return asked && /^\d{4}-\d{2}-\d{2}$/.test(asked) ? asked : isoDay(new Date());
   });
   const [month, setMonth] = useState(() => isoMonth(new Date()));
+  // This month so far, until another span is picked.
+  const [period, setPeriod] = useState(() => ({
+    from: `${isoMonth(new Date())}-01`,
+    to: isoDay(new Date()),
+  }));
   const [recording, setRecording] = useState<WorkshopStage | null>(null);
 
   const today = isoDay(new Date());
@@ -77,7 +116,7 @@ export function ProductionViews() {
           <h1 className={records.title}>{t("title")}</h1>
         </div>
         <p className={records.subtitle}>
-          {view === "day" ? t("ledeDay") : t("ledeMonth")}
+          {view === "day" ? t("ledeDay") : view === "month" ? t("ledeMonth") : t("ledePeriod")}
         </p>
         {canRecord && (
           <Button variant="primary" onClick={() => startRecording("PRODUCER")}>
@@ -119,6 +158,20 @@ export function ProductionViews() {
             onClick={() => setView("month")}
           >
             {t("monthView")}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === "period"}
+            className={[
+              styles.segment,
+              view === "period" ? styles.segmentActive : null,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onClick={() => setView("period")}
+          >
+            {t("periodView")}
           </button>
         </div>
 
@@ -189,6 +242,33 @@ export function ProductionViews() {
             <MonthMeta month={month} />
           </div>
         )}
+
+        {view === "period" && (
+          <div className={styles.dayNav}>
+            <span className={styles.unit}>{t("periodFrom")}</span>
+            <DateInput
+              className={[styles.dayInput, styles.dayDate].filter(Boolean).join(" ")}
+              value={period.from}
+              onChange={(value) => value && setPeriod((current) => movePeriod(current, "from", value))}
+              aria-label={t("periodStart")}
+            />
+            <span className={styles.unit}>{t("periodTo")}</span>
+            <DateInput
+              className={[styles.dayInput, styles.dayDate].filter(Boolean).join(" ")}
+              value={period.to}
+              onChange={(value) => value && setPeriod((current) => movePeriod(current, "to", value))}
+              aria-label={t("periodEnd")}
+            />
+            <Button
+              className={styles.dayBtn}
+              disabled={period.from === `${thisMonth}-01` && period.to === today}
+              onClick={() => setPeriod({ from: `${thisMonth}-01`, to: today })}
+            >
+              {t("thisMonth")}
+            </Button>
+            <PeriodMeta from={period.from} to={period.to} />
+          </div>
+        )}
       </div>
 
       {canRecord && recording && (
@@ -217,8 +297,10 @@ export function ProductionViews() {
           date={date}
           onRecord={canRecord ? startRecording : null}
         />
-      ) : (
+      ) : view === "month" ? (
         <MonthlyProduction month={month} />
+      ) : (
+        <PeriodProduction from={period.from} to={period.to} />
       )}
     </>
   );

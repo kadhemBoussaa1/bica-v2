@@ -27,6 +27,11 @@ import { formatChange, formatMonth, formatMonthShort, formatPercent } from "../.
 /** Derived from the router, never hand-written — see the day view. */
 type MonthData = inferRouterOutputs<AppRouter>["production"]["monthly"];
 type Cell = MonthData["byMachine"]["PRINTING"][number]["cells"][number];
+/**
+ * The per-machine and per-person rows, which the period view's `range`
+ * returns in the same shape (one cell for its whole span).
+ */
+export type Pivots = Pick<MonthData, "byMachine" | "byPerson">;
 
 /** How far back the trend looks, the selected month included. */
 const TREND_MONTHS = 12;
@@ -86,9 +91,16 @@ function cellFigures(stage: WorkshopStage, cell: Cell, t: (key: string) => strin
   return figures.length > 1 && figures[0]?.value === 0 ? figures.slice(1) : figures;
 }
 
-/** Everything named that worked in the selected month — the range's last cell. */
-function rankRows(data: MonthData, enums: (key: string) => string, t: (key: string) => string) {
-  const last = data.months.length - 1;
+/**
+ * Everything named that worked in one cell — the selected month (the
+ * range's last cell), or the period view's single cell.
+ */
+export function rankRows(
+  data: Pivots,
+  last: number,
+  enums: (key: string) => string,
+  t: (key: string) => string,
+) {
   const machines: RankRow[] = [];
   const people: RankRow[] = [];
   for (const stage of WORKSHOP_STAGES) {
@@ -139,7 +151,7 @@ export function MonthMeta({ month }: { month: string }) {
   const current = data?.totals[data.totals.length - 1];
   if (!data || !current || current.runCount === 0) return null;
 
-  const { machines, people } = rankRows(data, enums, t);
+  const { machines, people } = rankRows(data, data.months.length - 1, enums, t);
   const machineCount = new Set(machines.map((row) => row.key.split(":")[1])).size;
   const personCount = new Set(people.map((row) => row.key.split(":")[1])).size;
   return (
@@ -162,15 +174,18 @@ export function MonthMeta({ month }: { month: string }) {
  * and parcels share no scale, so a single league table across them would
  * rank a press above a bag machine for no reason but its unit.
  */
-function Ranking({
+export function Ranking({
   title,
   rows,
   count,
+  period = false,
 }: {
   title: string;
   rows: RankRow[];
   /** The "5 machines" / "4 stations" that opens the summary line. */
   count: string;
+  /** The period view's ranking: "alone on the station" names no month. */
+  period?: boolean;
 }) {
   const t = useTranslations("production");
   const enums = useTranslations("enums");
@@ -233,7 +248,7 @@ function Ranking({
               </span>
               <span className={styles.rankShare}>
                 {peers.length < 2 ? (
-                  <span className={styles.rankMeta}>{t("aloneOnStation")}</span>
+                  <span className={styles.rankMeta}>{t(period ? "aloneInPeriod" : "aloneOnStation")}</span>
                 ) : (
                   <>
                     <span className={styles.rankShareHead}>
@@ -266,8 +281,17 @@ function Ranking({
  * has neither a machine nor an operator, so in a ranking it could only be one
  * enormous anonymous row above the real machines. It is counted here instead
  * — over the same months the trend shows — with its months one tap away.
+ *
+ * `period`: the period view's single cell, which has no months to list, so
+ * the text names no month and there is no detail to open.
  */
-function Unattributed({ data }: { data: MonthData }) {
+export function Unattributed({
+  data,
+  period = false,
+}: {
+  data: Pick<MonthData, "months" | "byPerson">;
+  period?: boolean;
+}) {
   const t = useTranslations("production");
   const [open, setOpen] = useState(false);
 
@@ -315,7 +339,7 @@ function Unattributed({ data }: { data: MonthData }) {
             })}
           </div>
           <p className={styles.apartBody}>
-            {t("unattributedText", {
+            {t(period ? "unattributedTextPeriod" : "unattributedText", {
               entries: t("entryCount", {
                 count: withData.reduce((sum, row) => sum + row.entries, 0),
               }),
@@ -324,14 +348,16 @@ function Unattributed({ data }: { data: MonthData }) {
             })}
           </p>
         </div>
-        <Button
-          variant="secondary"
-          size="dense"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {open ? t("hideDetail") : t("seeDetail")}
-        </Button>
+        {!period && (
+          <Button
+            variant="secondary"
+            size="dense"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? t("hideDetail") : t("seeDetail")}
+          </Button>
+        )}
       </div>
       {open && (
         <div className={styles.apartDetail}>
@@ -408,7 +434,7 @@ export function MonthlyProduction({ month }: MonthlyProductionProps) {
     );
   };
 
-  const { machines, people } = rankRows(data, enums, t);
+  const { machines, people } = rankRows(data, data.months.length - 1, enums, t);
   const first = data.months[0] ?? month;
 
   return (

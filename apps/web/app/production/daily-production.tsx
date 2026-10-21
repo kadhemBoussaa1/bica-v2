@@ -36,7 +36,7 @@ const clock = () => dateFormat({
  * The day payload, derived from the router rather than hand-written — a
  * hand-written row shape silently drifts from the server's `select`.
  */
-type DayData = inferRouterOutputs<AppRouter>["production"]["daily"];
+export type DayData = inferRouterOutputs<AppRouter>["production"]["daily"];
 type Run = DayData["byMachine"]["PRINTING"][number]["runs"][number];
 
 /**
@@ -61,7 +61,7 @@ function headline(run: Run): number {
  * groups them by machine (or by person); the day view lists them flat, each
  * entry naming its own machine.
  */
-function runsOf(day: DayData, stage: WorkshopStage): Run[] {
+export function runsOf(day: DayData, stage: WorkshopStage): Run[] {
   const groups =
     stage === "PRINTING" || stage === "PRODUCER"
       ? day.byMachine[stage]
@@ -223,7 +223,7 @@ function Entry({ run }: { run: Run }) {
  * offers to record it. The total is one per unit: a bag printer's pieces
  * and a press's metres sit side by side on the printing strip.
  */
-function Station({
+export function Station({
   stage,
   runs,
   onRecord,
