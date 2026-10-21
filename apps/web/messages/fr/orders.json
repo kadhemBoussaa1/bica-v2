@@ -72,6 +72,12 @@
   },
   "production": {
     "title": "Saisies de production",
+    "stageTitle": {
+      "PRINTING": "Saisies d'impression",
+      "PRODUCER": "Saisies de fabrication",
+      "QUALITY_CONTROL": "Saisies de contrôle qualité",
+      "PACKAGING": "Saisies d'emballage"
+    },
     "record": "Enregistrer la production",
     "empty": "Rien n'a encore été enregistré sur cette commande."
   },

@@ -72,6 +72,12 @@
   },
   "production": {
     "title": "Partes de producción",
+    "stageTitle": {
+      "PRINTING": "Partes de impresión",
+      "PRODUCER": "Partes de fabricación",
+      "QUALITY_CONTROL": "Partes de control de calidad",
+      "PACKAGING": "Partes de embalaje"
+    },
     "record": "Registrar producción",
     "empty": "Todavía no hay nada registrado en este pedido."
   },

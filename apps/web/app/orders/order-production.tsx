@@ -5,10 +5,12 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
   canAccessAny,
+  WORKSHOP_STAGES,
   type OrderStatus,
   type WorkshopStage,
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
+import { FormDialog } from "@repo/ui/form-dialog";
 import { useCurrentUser } from "../auth/use-auth";
 import { RunForm } from "../production/run-form";
 import { useTRPC } from "../trpc/client";
@@ -59,12 +61,16 @@ export function runHeadline(
 }
 
 /**
- * The production entries on an order's page: what each station has
- * recorded, and the form to add another.
+ * The production entries on an order's page: one card per station that has
+ * recorded something, in the order the work flows, each with a button that
+ * opens the recording form in a dialog. An order with no entries at all keeps
+ * a single empty card.
  *
  * The workshop's four stations are a second axis from `Role`: the stage lives
  * on the RUN, not the user, so someone covering two stations picks the stage
- * each time rather than needing two accounts.
+ * each time rather than needing two accounts. A card's button only presets
+ * the form's stage — the picker still offers all four, which is how the first
+ * entry of a station with no card yet gets recorded.
  *
  * Recording is deliberately separate from the lifecycle actions in the rail.
  * Logging output does not advance the order — but a PACKAGING entry is what
@@ -73,19 +79,21 @@ export function runHeadline(
  */
 export function OrderProduction({
   orderId,
+  numero,
   status,
 }: {
   orderId: string;
+  numero: string;
   status: OrderStatus;
 }) {
   const trpc = useTRPC();
   const t = useTranslations("orders");
-  const enums = useTranslations("enums");
   const { user } = useCurrentUser();
   const runsQuery = useQuery(
     trpc.production.forOrder.queryOptions({ orderId }),
   );
-  const [open, setOpen] = useState(false);
+  // The stage the form opens on; null while the dialog is closed.
+  const [openStage, setOpenStage] = useState<WorkshopStage | null>(null);
 
   const canRecord =
     user !== null &&
@@ -93,60 +101,81 @@ export function OrderProduction({
     status === "IN_PRODUCTION";
 
   const runs = runsQuery.data ?? [];
+  const stages = WORKSHOP_STAGES.filter((stage) =>
+    runs.some((run) => run.stage === stage),
+  );
+
+  const recordButton = (stage: WorkshopStage) =>
+    canRecord && (
+      <Button size="dense" onClick={() => setOpenStage(stage)}>
+        {t("production.record")}
+      </Button>
+    );
 
   return (
-    <section className={styles.card}>
-      <div className={styles.sectionHead}>
-        <h2 className={styles.cardTitle}>
-          {t("production.title")}
-          {runs.length > 0 && ` (${runs.length})`}
-        </h2>
-        {canRecord && !open && (
-          <Button size="dense" onClick={() => setOpen(true)}>
-            {t("production.record")}
-          </Button>
-        )}
-      </div>
-
-      {runs.length === 0 && (
-        <p className={styles.quiet}>{t("production.empty")}</p>
+    <>
+      {stages.length === 0 && (
+        <section className={styles.card}>
+          <div className={styles.sectionHead}>
+            <h2 className={styles.cardTitle}>{t("production.title")}</h2>
+            {recordButton("PRODUCER")}
+          </div>
+          <p className={styles.quiet}>{t("production.empty")}</p>
+        </section>
       )}
 
-      {runs.map((run) => (
-        <div key={run.id} className={styles.row}>
-          <span className={styles.rowStation}>
-            {enums(`workshopStage.${run.stage}`)}
-          </span>
-          <span className={styles.rowDate}>
-            {day().format(new Date(run.dateProduction))}
-          </span>
-          <span className={styles.rowValue}>{runHeadline(run, t)}</span>
-          <span className={styles.rowMeta}>
-            {/* The machine for the two machine stations; otherwise who typed
-                it in, falling back to the legacy employee where the old
-                system recorded one. */}
-            {run.machine
-              ? run.machine.name
-              : run.recordedBy
-                ? run.recordedBy.name
-                : run.employee
-                  ? `${run.employee.firstName} ${run.employee.lastName}`
-                  : "—"}
-            {run.note && <span className={styles.quiet}> · {run.note}</span>}
-          </span>
-        </div>
-      ))}
+      {stages.map((stage) => {
+        const stageRuns = runs.filter((run) => run.stage === stage);
+        return (
+          <section key={stage} className={styles.card}>
+            <div className={styles.sectionHead}>
+              <h2 className={styles.cardTitle}>
+                {t(`production.stageTitle.${stage}`)} ({stageRuns.length})
+              </h2>
+              {recordButton(stage)}
+            </div>
 
-      {canRecord && open && (
-        <div style={{ marginTop: 16 }}>
+            {stageRuns.map((run) => (
+              <div key={run.id} className={styles.row}>
+                <span className={styles.rowDate}>
+                  {day().format(new Date(run.dateProduction))}
+                </span>
+                <span className={styles.rowValue}>{runHeadline(run, t)}</span>
+                <span className={styles.rowMeta}>
+                  {/* The machine for the two machine stations; otherwise who
+                      typed it in, falling back to the legacy employee where
+                      the old system recorded one. */}
+                  {run.machine
+                    ? run.machine.name
+                    : run.recordedBy
+                      ? run.recordedBy.name
+                      : run.employee
+                        ? `${run.employee.firstName} ${run.employee.lastName}`
+                        : "—"}
+                  {run.note && (
+                    <span className={styles.quiet}> · {run.note}</span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </section>
+        );
+      })}
+
+      {canRecord && openStage !== null && (
+        <FormDialog
+          eyebrow={numero}
+          title={t("production.record")}
+          onClose={() => setOpenStage(null)}
+        >
           <RunForm
             orderId={orderId}
-            initialStage="PRODUCER"
-            onDone={() => setOpen(false)}
-            onCancel={() => setOpen(false)}
+            initialStage={openStage}
+            onDone={() => setOpenStage(null)}
+            onCancel={() => setOpenStage(null)}
           />
-        </div>
+        </FormDialog>
       )}
-    </section>
+    </>
   );
 }

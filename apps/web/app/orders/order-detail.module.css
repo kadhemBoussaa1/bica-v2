@@ -386,14 +386,6 @@
   border-bottom: 1px solid var(--bp-hairline-soft);
 }
 
-.rowStation {
-  flex: 0 0 130px;
-  font: 600 0.6875rem/1.4 var(--bp-font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--bp-accent-text);
-}
-
 .rowDate {
   flex: 0 0 90px;
   font: 400 0.78125rem/1.4 var(--bp-font-mono);

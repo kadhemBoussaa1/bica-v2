@@ -465,7 +465,7 @@ export function OrderDetail({ id }: { id: string }) {
         <OrderPaper orderId={o.id} status={o.status} kind={o.kind} />
 
         {/* Owns the entries list and the recording form. */}
-        <OrderProduction orderId={o.id} status={o.status} />
+        <OrderProduction orderId={o.id} numero={o.numero} status={o.status} />
 
         {/* Ink drawn from the colour stock — the consumable beside the paper above. */}
         <OrderInks orderId={o.id} status={o.status} kind={o.kind} />
