@@ -1,16 +1,18 @@
 /*
- * The employees module, from `Employees v3.dc.html`: the list's own columns
- * beside the banded-list shell, the record page, and the form's sheet.
- * Radii and gaps are snapped to the toolkit's scales; widths are sized from
- * the French labels, the widest of the four languages.
+ * The employees module, from `Employees v3.dc.html` and the roster's
+ * toolbar from `Employes Cartes.dc.html` (the cards have their own
+ * sheet): the list's own columns beside the banded-list shell, the
+ * record page, and the form's sheet. Radii and gaps are snapped to the
+ * toolkit's scales; widths are sized from the French labels, the widest
+ * of the four languages.
  */
-
-/* --- the list --- */
 
 /* The figure tiles take a full row of the header panel, under the title. */
 .figures {
   flex: 1 1 100%;
 }
+
+/* --- the list --- */
 
 .name {
   display: block;
@@ -59,9 +61,15 @@
   color: var(--bp-warning-text);
 }
 
+/* The off-roster view only. "depuis le 10/12/2025" in 11px mono is ~150px. */
 .status {
-  width: 130px;
+  width: 160px;
   flex: none;
+}
+
+/* The suspension date, under the pill. */
+.statusMeta {
+  margin-top: var(--bp-space-1);
 }
 
 .chevron {
@@ -75,38 +83,52 @@
   transform: rotate(180deg);
 }
 
-/* The service chips: one answer, in ink, beside the status control. */
-.services {
+/* The pressed header tiles, as tokens that lift them again. */
+.tokens {
   display: flex;
-  gap: var(--bp-space-2);
   flex-wrap: wrap;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-3) var(--bp-space-5) 0;
 }
 
-.service {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid rgb(26 23 20 / 0.14);
-  border-radius: var(--bp-radius-pill);
-  background: var(--bp-control-bg-soft);
-  color: var(--bp-ink-strong);
-  font: 500 0.8125rem/1 var(--bp-font-body);
+.token {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  min-height: 32px;
+  padding: 0 var(--bp-space-2) 0 var(--bp-space-3);
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-orange-100);
+  color: var(--bp-orange-800);
+  font: 500 0.78125rem/1 var(--bp-font-body);
   cursor: pointer;
 }
 
-.service:hover {
-  border-color: var(--bp-orange-500);
+.token:hover .tokenRemove {
+  background: var(--bp-orange-300);
 }
 
-.service:focus-visible {
+.token:focus-visible {
   outline: 2px solid var(--bp-focus);
   outline-offset: 2px;
 }
 
-.serviceActive,
-.serviceActive:hover {
-  background: var(--bp-neutral-900);
-  border-color: var(--bp-neutral-900);
-  color: #fff;
+.tokenRemove {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--bp-radius-dense);
+  font: 600 0.8125rem/1 var(--bp-font-body);
+}
+
+/* "37 employés · triés par nom", over the cards or the rows. */
+.shown {
+  margin: 0;
+  padding: var(--bp-space-3) var(--bp-space-5);
+  font: 400 0.75rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
 }
 
 /*

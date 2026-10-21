@@ -1,9 +1,10 @@
 {
   "eyebrow": "Production",
   "title": "Employees",
-  "subtitle": "The staff carried over from the old system. Salary, national ID and social security number are visible to administrators only. \"Suspended\" is the old system's headcount flag, not an archived record.",
+  "subtitle": "The staff on the roster. Only administrators see salary, national ID and social security number.",
   "newEmployee": "New employee",
   "back": "← Employees",
+  "backToOff": "← Suspended and archived",
   "loadingEmployee": "Loading employee…",
   "columns": {
     "employee": "Employee",
@@ -14,20 +15,50 @@
   "row": {
     "since": "since {date}"
   },
+  "off": {
+    "title": "Suspended and archived",
+    "subtitle": "\"Suspended\" is the old system's headcount flag: the record stays active here but is off the roster. \"Archived\" is a record removed in this app. Neither appears in the employee list or in shift planning."
+  },
+  "elsewhere": {
+    "off": "{count, plural, one {# suspended or archived record also matches} other {# suspended or archived records also match}}",
+    "roster": "{count, plural, one {# employee on the roster also matches} other {# employees on the roster also match}}"
+  },
   "tiles": {
     "onRoster": "On the roster",
     "onRosterMeta": "of {total} records",
     "suspended": "Suspended",
-    "suspendedMeta": "the old system's flag",
+    "suspendedOpen": "{archived, plural, =0 {open the list} other {+ # archived · open the list}}",
     "endingSoon": "Contracts ending within {days} d",
     "endingSoonNone": "none",
     "endingSoonMore": " and {count, plural, one {# other} other {# others}}",
     "withoutAccount": "On the roster, no account",
-    "withoutAccountMeta": "missing from shift planning"
+    "withoutAccountMeta": "missing from shift planning",
+    "filterHint": "Click to show only these employees; click again to see everyone."
+  },
+  "tokens": {
+    "endingSoon": "Contract ends < {days} d",
+    "withoutAccount": "No account",
+    "remove": "Remove the \"{filter}\" filter"
+  },
+  "shown": "{count, plural, one {# employee} other {# employees}} · sorted by name",
+  "layout": {
+    "label": "Layout",
+    "cards": "Cards",
+    "list": "List"
+  },
+  "card": {
+    "kicker": "Employee card",
+    "noAccount": "No account",
+    "matricule": "Matricule",
+    "tenureLabel": "Tenure",
+    "tenure": {
+      "new": "new",
+      "months": "{count} mo",
+      "years": "{years, plural, one {# yr} other {# yrs}}{months, plural, =0 {} other { # mo}}"
+    },
+    "since": "Since {date}"
   },
   "filters": {
-    "all": "All",
-    "onRoster": "On the roster",
     "suspended": "Suspended",
     "archived": "Archived"
   },
@@ -63,13 +94,13 @@
   },
   "archiveTitle": "Archive employee?",
   "restoreTitle": "Restore employee?",
-  "archiveBody": "<strong>{name}</strong> will be hidden from the default list. Nothing is deleted — their record and any work assigned to them stay intact.",
-  "restoreBody": "<strong>{name}</strong> will reappear in the list.",
+  "archiveBody": "<strong>{name}</strong> will leave the employee list and move to \"Suspended and archived\". Nothing is deleted — their record and any work assigned to them stay intact.",
+  "restoreBody": "<strong>{name}</strong>'s record will be active again.",
   "detail": {
     "edit": "Edit record",
     "call": "Call",
     "matricule": "Matricule {matricule}",
-    "archivedNotice": "Archived record: it no longer shows in the default list. Restore it to put it back in use.",
+    "archivedNotice": "Archived record: it now shows only under \"Suspended and archived\". Restore it to put it back in use.",
     "reveal": "Show confidential data",
     "hide": "Hide",
     "chips": {

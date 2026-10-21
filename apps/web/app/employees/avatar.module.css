@@ -1,6 +1,7 @@
 /* --- avatars: the photo, or initials on a tint. Squircles, like the toolkit. --- */
 
 .av {
+  position: relative;
   flex: none;
   display: inline-grid;
   place-items: center;
@@ -50,11 +51,34 @@
   letter-spacing: -0.02em;
 }
 
+/* An employee card's photo: the card's full width, a portrait's height. */
+.avCard {
+  width: 100%;
+  height: 168px;
+  border-radius: var(--bp-radius);
+  font: 700 3rem/1 var(--bp-font-display);
+  letter-spacing: -0.02em;
+}
+
+/*
+ * Pinned to the frame, not laid out in the grid: as a grid item its
+ * `height: 100%` resolved against a track sized by the image itself, so a
+ * portrait photo kept its own height, hung from the top and showed the wall
+ * above the head with the chin cut off. Absolute, the box is the frame's
+ * and `cover` crops.
+ *
+ * The photos are half-length 3:4 portraits with the face about a quarter
+ * of the way down, so the crop keeps the band 20% from the top: head and
+ * shoulders in a wide card, the face in a square avatar.
+ */
 .avImg {
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
+  object-position: 50% 20%;
 }
 
 .avTint0 { background: #fce3bf; color: #7a4400; }

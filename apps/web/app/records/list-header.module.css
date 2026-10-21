@@ -38,6 +38,46 @@
   --kpi-value: var(--bp-success-text);
 }
 
+/*
+ * A tile that links or filters: the list row's orange wash on hover and no
+ * lift — only the primary button lifts. The button reset keeps it looking
+ * like its siblings.
+ */
+.kpiAction {
+  display: block;
+  width: 100%;
+  font: inherit;
+  text-align: start;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.kpiAction:hover:not(:disabled) {
+  background: rgb(242 145 0 / 0.07);
+  border-color: rgb(242 145 0 / 0.6);
+  color: inherit;
+  text-decoration: none;
+}
+
+.kpiAction:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.kpiAction:disabled {
+  cursor: default;
+}
+
+/* A filter tile while its filter is on. */
+.kpiPressed,
+.kpiPressed:hover:not(:disabled) {
+  border-color: var(--bp-orange-700);
+  box-shadow:
+    inset 0 0 0 1px var(--bp-orange-700),
+    var(--bp-shadow-veil);
+}
+
 .kpiLabel {
   display: flex;
   align-items: center;
@@ -78,6 +118,7 @@
 }
 
 .kpiMeta {
+  display: block;
   font-size: 0.6875rem;
 }
 

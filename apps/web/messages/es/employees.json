@@ -1,9 +1,10 @@
 {
   "eyebrow": "Producción",
   "title": "Empleados",
-  "subtitle": "El personal traído del sistema anterior. El salario, el DNI y el número de la seguridad social solo los ven los administradores. «Suspendido» es el indicador de plantilla del sistema anterior, no una ficha archivada.",
+  "subtitle": "El personal en plantilla. Solo los administradores ven el salario, el DNI y el número de la seguridad social.",
   "newEmployee": "Nuevo empleado",
   "back": "← Empleados",
+  "backToOff": "← Suspendidos y archivados",
   "loadingEmployee": "Cargando empleado…",
   "columns": {
     "employee": "Empleado",
@@ -14,20 +15,50 @@
   "row": {
     "since": "desde el {date}"
   },
+  "off": {
+    "title": "Suspendidos y archivados",
+    "subtitle": "«Suspendido» es el indicador de plantilla del sistema anterior: la ficha sigue activa aquí pero queda fuera de la plantilla. «Archivado» es una ficha retirada en esta aplicación. Ninguno aparece en la lista de empleados ni en la planificación de turnos."
+  },
+  "elsewhere": {
+    "off": "{count, plural, one {# suspendido o archivado también coincide} other {# suspendidos o archivados también coinciden}}",
+    "roster": "{count, plural, one {# empleado en plantilla también coincide} other {# empleados en plantilla también coinciden}}"
+  },
   "tiles": {
     "onRoster": "En plantilla",
     "onRosterMeta": "de {total} fichas",
     "suspended": "Suspendidos",
-    "suspendedMeta": "indicador del sistema anterior",
+    "suspendedOpen": "{archived, plural, =0 {ver la lista} one {+ # archivado · ver la lista} other {+ # archivados · ver la lista}}",
     "endingSoon": "Contratos que terminan en {days} d",
     "endingSoonNone": "ninguno",
     "endingSoonMore": " y {count, plural, one {# más} other {# más}}",
     "withoutAccount": "En plantilla sin cuenta",
-    "withoutAccountMeta": "fuera de la planificación de turnos"
+    "withoutAccountMeta": "fuera de la planificación de turnos",
+    "filterHint": "Haga clic para ver solo estos empleados; vuelva a hacer clic para verlos a todos."
+  },
+  "tokens": {
+    "endingSoon": "Contrato termina < {days} d",
+    "withoutAccount": "Sin cuenta",
+    "remove": "Quitar el filtro «{filter}»"
+  },
+  "shown": "{count, plural, one {# empleado} other {# empleados}} · ordenados por nombre",
+  "layout": {
+    "label": "Vista",
+    "cards": "Tarjetas",
+    "list": "Lista"
+  },
+  "card": {
+    "kicker": "Tarjeta de empleado",
+    "noAccount": "Sin cuenta",
+    "matricule": "Matrícula",
+    "tenureLabel": "Antigüedad",
+    "tenure": {
+      "new": "nuevo",
+      "months": "{count, plural, one {# mes} other {# meses}}",
+      "years": "{years, plural, one {# año} other {# años}}{months, plural, =0 {} other { # m}}"
+    },
+    "since": "Desde el {date}"
   },
   "filters": {
-    "all": "Todos",
-    "onRoster": "En plantilla",
     "suspended": "Suspendidos",
     "archived": "Archivados"
   },
@@ -63,13 +94,13 @@
   },
   "archiveTitle": "¿Archivar al empleado?",
   "restoreTitle": "¿Restaurar al empleado?",
-  "archiveBody": "<strong>{name}</strong> quedará oculto en la lista por defecto. No se borra nada: su ficha y los trabajos asignados siguen intactos.",
-  "restoreBody": "<strong>{name}</strong> volverá a aparecer en la lista.",
+  "archiveBody": "<strong>{name}</strong> saldrá de la lista de empleados y pasará a «Suspendidos y archivados». No se borra nada: su ficha y los trabajos asignados siguen intactos.",
+  "restoreBody": "La ficha de <strong>{name}</strong> volverá a estar activa.",
   "detail": {
     "edit": "Editar la ficha",
     "call": "Llamar",
     "matricule": "Matrícula {matricule}",
-    "archivedNotice": "Ficha archivada: ya no aparece en la lista por defecto. Restáurela para volver a usarla.",
+    "archivedNotice": "Ficha archivada: ahora solo aparece en «Suspendidos y archivados». Restáurela para volver a usarla.",
     "reveal": "Mostrar los datos confidenciales",
     "hide": "Ocultar",
     "chips": {

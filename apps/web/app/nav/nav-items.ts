@@ -169,6 +169,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         key: "employees",
         href: "/employees",
         requires: ["ADMIN"],
+        pages: [{ key: "employeesOff", href: "/employees/suspended" }],
       },
       // The production module (day view + full history) is supervision, not
       // the floor's own tool: PRODUCTION records runs from the order detail

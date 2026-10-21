@@ -17,6 +17,7 @@
     "manufacturing-orders": "Manufacturing orders",
     "machines": "Machines",
     "employees": "Employees",
+    "employeesOff": "Suspended",
     "production": "Production",
     "stock": "Stock",
     "paper-shipments": "Paper shipments",

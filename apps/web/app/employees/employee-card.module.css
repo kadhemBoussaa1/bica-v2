@@ -1,0 +1,260 @@
+/*
+ * The employee card, from `Employes Cartes.dc.html`: an ID badge on a white
+ * surface. Radii and gaps are snapped to the toolkit's scales (the
+ * handoff's 14px insets read as space-4, its 12px block radius as dense),
+ * sides are logical, and hover adds the ring and the shadow but no lift —
+ * only the primary button lifts.
+ */
+
+/* The cards' grid: as many 240px columns as fit, stretched to the width. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--bp-space-4);
+  padding: var(--bp-space-2) var(--bp-space-4) var(--bp-space-5);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--bp-radius-card);
+  background: var(--bp-surface);
+  box-shadow:
+    0 0 0 1px var(--bp-hairline),
+    0 2px 6px rgb(26 23 20 / 0.05);
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow 160ms ease;
+}
+
+.card:hover {
+  box-shadow:
+    0 0 0 1.5px rgb(242 145 0 / 0.55),
+    var(--bp-shadow-card);
+  color: inherit;
+  text-decoration: none;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}
+
+/* --- the band: lanyard slot, logo, "employee card" --- */
+
+.band {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-5) var(--bp-space-4) var(--bp-space-3);
+  background: var(--bp-orange-50);
+  border-bottom: 3px solid var(--bp-orange-500);
+}
+
+/* Centred by auto margins rather than a transform, so it holds in RTL. */
+.slot {
+  position: absolute;
+  top: var(--bp-space-2);
+  inset-inline: 0;
+  margin-inline: auto;
+  width: 40px;
+  height: 6px;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-surface);
+  box-shadow: inset 0 0 0 1px var(--bp-orange-100);
+}
+
+.logo {
+  flex: none;
+  display: block;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: var(--bp-radius-dense);
+}
+
+.bandText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--bp-space-1);
+  min-width: 0;
+}
+
+.kicker {
+  font: 600 0.59375rem/1 var(--bp-font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-orange-700);
+}
+
+.noAccount {
+  height: 18px;
+  padding: 0 var(--bp-space-2);
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-warning-bg);
+  box-shadow: inset 0 0 0 1px rgb(224 161 6 / 0.35);
+  color: var(--bp-warning-text);
+  font: 700 0.59375rem/18px var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* --- the person --- */
+
+.photo {
+  display: block;
+  padding: var(--bp-space-4) var(--bp-space-4) 0;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bp-space-1);
+  padding: var(--bp-space-4) var(--bp-space-4) 0;
+  text-align: center;
+}
+
+.name {
+  font: 700 1rem/1.25 var(--bp-font-display);
+  text-wrap: balance;
+}
+
+.role {
+  font: 400 0.78125rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.service {
+  color: var(--bp-orange-700);
+  font-weight: 600;
+}
+
+/* Matricule | time served, two cells on one tint. */
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: var(--bp-space-4) var(--bp-space-4) 0;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  min-width: 0;
+  padding: var(--bp-space-3);
+}
+
+.fact + .fact {
+  border-inline-start: 1px solid var(--bp-hairline);
+}
+
+.factLabel {
+  font: 600 0.59375rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.factValue {
+  font: 600 0.78125rem/1.2 var(--bp-font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- the contract, pinned to the bottom so a row of cards lines up --- */
+
+.foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-4);
+}
+
+.contractRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--bp-space-2);
+}
+
+.contractType {
+  flex: none;
+  height: 22px;
+  padding: 0 var(--bp-space-2);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-orange-100);
+  color: var(--bp-orange-800);
+  font: 700 0.65625rem/22px var(--bp-font-mono);
+  letter-spacing: 0.06em;
+}
+
+.end {
+  min-width: 0;
+  font: 600 0.71875rem/1.3 var(--bp-font-mono);
+  text-align: end;
+}
+
+.endSoon {
+  color: var(--bp-danger-text);
+}
+
+.endWatch {
+  color: var(--bp-orange-700);
+}
+
+.endRunning {
+  color: var(--bp-ink-muted);
+}
+
+.endQuiet {
+  color: var(--bp-ink-faint);
+}
+
+.endUnrecorded {
+  color: var(--bp-warning-text);
+}
+
+.bar {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: var(--bp-radius-pill);
+  background: var(--bp-tint-strong);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bp-orange-500);
+}
+
+.barSoon {
+  background: var(--bp-danger);
+}
+
+.barWatch {
+  background: var(--bp-warning);
+}
+
+.since {
+  font: 400 0.6875rem/1.2 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}

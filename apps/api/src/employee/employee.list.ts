@@ -123,6 +123,14 @@ export const listEmployeesInput = listQueryBase.extend({
    * and searches, so it reveals nothing a search would not.
    */
   department: z.string().trim().min(1).max(100).nullish(),
+  /**
+   * The header's two figures as filters: a contract ending within
+   * `CONTRACT_ENDING_SOON_DAYS`, and no linked account. Flags rather than
+   * facets — they overlap each other and the status split, so neither
+   * belongs in the partition. Scope too, for the same reason as `department`.
+   */
+  endingSoon: z.boolean().default(false),
+  withoutAccount: z.boolean().default(false),
 });
 
 export type ListEmployeesInput = z.infer<typeof listEmployeesInput>;

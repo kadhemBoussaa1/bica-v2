@@ -1,9 +1,10 @@
 {
   "eyebrow": "Production",
   "title": "Employés",
-  "subtitle": "Le personnel repris de l'ancien système. Salaire, CIN et CNSS ne sont visibles que par les administrateurs. « Suspendu » est l'indicateur d'effectif de l'ancien système, pas une fiche archivée.",
+  "subtitle": "Le personnel en effectif. Seuls les administrateurs voient le salaire, le CIN et la CNSS.",
   "newEmployee": "Nouvel employé",
   "back": "← Employés",
+  "backToOff": "← Suspendus et archivés",
   "loadingEmployee": "Chargement de l'employé…",
   "columns": {
     "employee": "Employé",
@@ -14,20 +15,50 @@
   "row": {
     "since": "depuis le {date}"
   },
+  "off": {
+    "title": "Suspendus et archivés",
+    "subtitle": "« Suspendu » est l'indicateur d'effectif de l'ancien système : la fiche reste active ici mais sort de l'effectif. « Archivé » est une fiche retirée dans cette application. Ni l'un ni l'autre n'apparaît dans la liste des employés ni dans le planning des équipes."
+  },
+  "elsewhere": {
+    "off": "{count, plural, one {# suspendu ou archivé correspond aussi} other {# suspendus ou archivés correspondent aussi}}",
+    "roster": "{count, plural, one {# employé en effectif correspond aussi} other {# employés en effectif correspondent aussi}}"
+  },
   "tiles": {
     "onRoster": "En effectif",
     "onRosterMeta": "sur {total} fiches",
     "suspended": "Suspendus",
-    "suspendedMeta": "indicateur de l'ancien système",
+    "suspendedOpen": "{archived, plural, =0 {voir la liste} one {+ # archivé · voir la liste} other {+ # archivés · voir la liste}}",
     "endingSoon": "Contrats finissant sous {days} j",
     "endingSoonNone": "aucun",
     "endingSoonMore": " et {count, plural, one {# autre} other {# autres}}",
     "withoutAccount": "En effectif sans compte",
-    "withoutAccountMeta": "absents du planning des équipes"
+    "withoutAccountMeta": "absents du planning des équipes",
+    "filterHint": "Cliquer pour n'afficher que ces employés ; cliquer encore pour tous les revoir."
+  },
+  "tokens": {
+    "endingSoon": "Contrat fin < {days} j",
+    "withoutAccount": "Sans compte",
+    "remove": "Retirer le filtre « {filter} »"
+  },
+  "shown": "{count, plural, one {# employé} other {# employés}} · triés par nom",
+  "layout": {
+    "label": "Affichage",
+    "cards": "Cartes",
+    "list": "Liste"
+  },
+  "card": {
+    "kicker": "Carte employé",
+    "noAccount": "Sans compte",
+    "matricule": "Matricule",
+    "tenureLabel": "Ancienneté",
+    "tenure": {
+      "new": "nouveau",
+      "months": "{count} mois",
+      "years": "{years, plural, one {# an} other {# ans}}{months, plural, =0 {} other { # m}}"
+    },
+    "since": "Depuis le {date}"
   },
   "filters": {
-    "all": "Tous",
-    "onRoster": "En effectif",
     "suspended": "Suspendus",
     "archived": "Archivés"
   },
@@ -63,13 +94,13 @@
   },
   "archiveTitle": "Archiver l'employé ?",
   "restoreTitle": "Restaurer l'employé ?",
-  "archiveBody": "<strong>{name}</strong> sera masqué de la liste par défaut. Rien n'est supprimé : sa fiche et les travaux qui lui sont affectés restent intacts.",
-  "restoreBody": "<strong>{name}</strong> réapparaîtra dans la liste.",
+  "archiveBody": "<strong>{name}</strong> sortira de la liste des employés et passera dans « Suspendus et archivés ». Rien n'est supprimé : sa fiche et les travaux qui lui sont affectés restent intacts.",
+  "restoreBody": "La fiche de <strong>{name}</strong> redeviendra active.",
   "detail": {
     "edit": "Modifier la fiche",
     "call": "Appeler",
     "matricule": "Matricule {matricule}",
-    "archivedNotice": "Fiche archivée : elle n'apparaît plus dans la liste par défaut. Restaurez-la pour la remettre en usage.",
+    "archivedNotice": "Fiche archivée : elle n'apparaît plus que dans « Suspendus et archivés ». Restaurez-la pour la remettre en usage.",
     "reveal": "Afficher les données confidentielles",
     "hide": "Masquer",
     "chips": {

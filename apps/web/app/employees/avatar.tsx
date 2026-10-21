@@ -11,9 +11,10 @@ interface AvatarProps {
   /**
    * sm/md/lg (30–42px) for the shift screens' dense rosters; xl (46px) for
    * an employees list row, xxl (84px) for the form's photo slot, and hero
-   * (114px) for the framed portrait at the head of a record page.
+   * (114px) for the framed portrait at the head of a record page; card
+   * fills the width of an employee card, 168px tall.
    */
-  size?: "sm" | "md" | "lg" | "xl" | "xxl" | "hero";
+  size?: "sm" | "md" | "lg" | "xl" | "xxl" | "hero" | "card";
 }
 
 const SIZES: Record<NonNullable<AvatarProps["size"]>, string | undefined> = {
@@ -23,6 +24,7 @@ const SIZES: Record<NonNullable<AvatarProps["size"]>, string | undefined> = {
   xl: styles.avXl,
   xxl: styles.avXxl,
   hero: styles.avHero,
+  card: styles.avCard,
 };
 
 /** Six tints, picked by the id so one person keeps one colour everywhere. */

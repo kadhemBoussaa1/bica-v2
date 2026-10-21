@@ -64,6 +64,17 @@ type EmployeeRecordSensitive = Prisma.EmployeeGetPayload<{
 /** How many names the "ending soon" tile spells out before it stops. */
 const ENDING_SOON_NAMES = 3;
 
+/**
+ * A contract ending between today and `CONTRACT_ENDING_SOON_DAYS` from now.
+ * A date already past is not "ending" — the row says "ended" instead. The
+ * header's figure and the list's filter both read this, so they agree.
+ */
+function contractEndingWhere(): Prisma.EmployeeWhereInput {
+  const today = todayUtc();
+  const horizon = new Date(today.getTime() + CONTRACT_ENDING_SOON_DAYS * DAY_MS);
+  return { contractEndDate: { gte: today, lte: horizon } };
+}
+
 const RETURN_SELECT = {
   id: true,
   matricule: true,
@@ -99,7 +110,7 @@ export class EmployeeService {
 
   async list(actor: SessionUser, input: ListEmployeesInput) {
     const select = this.selectFor(actor);
-    const { department, ...query } = input;
+    const { department, endingSoon, withoutAccount, ...query } = input;
     return runListQuery({
       prisma: this.prisma,
       delegate: {
@@ -109,9 +120,13 @@ export class EmployeeService {
       query,
       declaration: employeeListDeclaration,
       // Personnel records are visible to anyone who can reach the module; the
-      // gate is which COLUMNS come back, not which rows. The service chip is
-      // the only narrowing, and it is scope so the status counts follow it.
-      scope: department ? { department } : {},
+      // gate is which COLUMNS come back, not which rows. The service and the
+      // header's two figures narrow it, as scope so the status counts follow.
+      scope: {
+        ...(department ? { department } : {}),
+        ...(endingSoon ? contractEndingWhere() : {}),
+        ...(withoutAccount ? { userId: null } : {}),
+      },
     });
   }
 
@@ -121,26 +136,24 @@ export class EmployeeService {
    * moves them (the status control's own counts do that).
    *
    * - `endingSoon`: on the roster, with a contract ending between today and
-   *   `CONTRACT_ENDING_SOON_DAYS` from now. A date already past is not
-   *   "ending"; the row says "ended" instead.
+   *   `CONTRACT_ENDING_SOON_DAYS` from now (`contractEndingWhere`).
    * - `withoutAccount`: on the roster with no linked account, which keeps
    *   them off the shift planner (it plans accounts, not records).
    * - `departments`: the distinct services, most staffed first, for the
-   *   list's chips and the form's picker. Free text, so read from the data.
+   *   form's picker. Free text, so read from the data.
+   * - `services`: the same with their head counts, split by the list's two
+   *   views — the roster and everyone off it (suspended or archived) — so a
+   *   view only offers the services it has people in.
    */
   async summary() {
-    const today = todayUtc();
-    const horizon = new Date(today.getTime() + CONTRACT_ENDING_SOON_DAYS * DAY_MS);
-    const endingWhere = {
-      ...ON_ROSTER_WHERE,
-      contractEndDate: { gte: today, lte: horizon },
-    } satisfies Prisma.EmployeeWhereInput;
+    const endingWhere = { ...ON_ROSTER_WHERE, ...contractEndingWhere() };
 
-    const [total, onRoster, suspended, endingCount, ending, withoutAccount, departments] =
+    const [total, onRoster, suspended, archived, endingCount, ending, withoutAccount, groups] =
       await this.prisma.$transaction([
         this.prisma.employee.count(),
         this.prisma.employee.count({ where: ON_ROSTER_WHERE }),
         this.prisma.employee.count({ where: employeeListDeclaration.facets.suspended }),
+        this.prisma.employee.count({ where: employeeListDeclaration.facets.archived }),
         this.prisma.employee.count({ where: endingWhere }),
         this.prisma.employee.findMany({
           where: endingWhere,
@@ -150,22 +163,39 @@ export class EmployeeService {
         }),
         this.prisma.employee.count({ where: { ...ON_ROSTER_WHERE, userId: null } }),
         this.prisma.employee.groupBy({
-          by: ["department"],
+          by: ["department", "active", "suspended"],
           where: { department: { not: null } },
           _count: { _all: true },
-          orderBy: [{ _count: { department: "desc" } }, { department: "asc" }],
+          orderBy: [{ department: "asc" }, { active: "asc" }, { suspended: "asc" }],
         }),
       ]);
+
+    // Head counts per service, all records and per view, then most staffed
+    // first with the name as tiebreaker.
+    const all = new Map<string, number>();
+    const roster = new Map<string, number>();
+    const off = new Map<string, number>();
+    for (const group of groups) {
+      if (group.department === null) continue;
+      const count = group._count._all;
+      const view = group.active && !group.suspended ? roster : off;
+      all.set(group.department, (all.get(group.department) ?? 0) + count);
+      view.set(group.department, (view.get(group.department) ?? 0) + count);
+    }
+    const ranked = (counts: Map<string, number>) =>
+      [...counts]
+        .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
+        .map(([name, count]) => ({ name, count }));
 
     return {
       total,
       onRoster,
       suspended,
+      archived,
       endingSoon: { count: endingCount, people: ending },
       withoutAccount,
-      departments: departments.flatMap((group) =>
-        group.department === null ? [] : [group.department],
-      ),
+      departments: ranked(all).map((service) => service.name),
+      services: { roster: ranked(roster), off: ranked(off) },
     };
   }
 
