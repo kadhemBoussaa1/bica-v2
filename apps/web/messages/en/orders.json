@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Operations",
+  "eyebrow": "Production",
   "title": "Job orders",
   "subtitle": "One card per order, with how far along it is against the quantity ordered. Pick a stage under Job orders in the menu, or search by order number and product; open a card for pricing, production and the lifecycle.",
   "newOrder": "New order",

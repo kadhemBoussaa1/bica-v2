@@ -1,7 +1,10 @@
 {
   "sections": {
     "contact": "جهات الاتصال",
-    "operations": "العمليات",
+    "production": "الإنتاج",
+    "stock": "المخزون",
+    "equipment": "المعدات",
+    "hr": "الموارد البشرية",
     "purchasing": "المشتريات",
     "finance": "المالية",
     "preferences": "التفضيلات"

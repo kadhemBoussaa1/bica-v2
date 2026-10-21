@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Exploitation",
+  "eyebrow": "Production",
   "title": "Ordres de fabrication",
   "subtitle": "Comment chaque commande est fabriquée : un ordre de fabrication (OF) par commande, traité une action après l’autre. Un OF se crée depuis la page de sa commande.",
   "tabs": {

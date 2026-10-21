@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Production",
+  "eyebrow": "HR",
   "title": "Employees",
   "subtitle": "The staff on the roster. Only administrators see salary, national ID and social security number.",
   "newEmployee": "New employee",
@@ -205,7 +205,7 @@
     }
   },
   "form": {
-    "eyebrow": "Production · Employees",
+    "eyebrow": "HR · Employees",
     "newTitle": "New employee",
     "editTitle": "Edit {name}",
     "close": "Close",

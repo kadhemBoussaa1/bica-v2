@@ -115,8 +115,10 @@ export const SETTINGS_CHILDREN: readonly NavChild[] = [
 ];
 
 /**
- * Sidebar structure. Operations first because that is the daily path, then
- * preferences, which is occasional and rank-gated.
+ * Sidebar structure. The daily path first — production, then stock — then
+ * equipment and HR, the commercial sections, and preferences, which is
+ * occasional and rank-gated. A section's title is its `nav.sections.*` key
+ * lowercased (see the sidebar and the breadcrumb).
  *
  * Planned modules mirror the list on the home page. Keep the two in step:
  * when a module ships, give it an `href` here and drop its card there.
@@ -156,16 +158,10 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
   {
-    title: "Operations",
+    // The order and everything that makes and ships it: the order, its OF,
+    // the runs recorded against it, the product spec, the truck it leaves on.
+    title: "Production",
     items: [
-      // Products and job orders are the shop floor's two: the spec to make
-      // and the order to make it against (runs are recorded from the order
-      // detail page). Everything else in this section is ADMIN and above.
-      {
-        key: "products",
-        href: "/products",
-        requires: ["ADMIN", "PRODUCTION"],
-      },
       {
         key: "job-orders",
         href: "/orders",
@@ -189,17 +185,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: "/manufacturing-orders",
         requires: ["ADMIN"],
       },
-      {
-        key: "machines",
-        href: "/machines",
-        requires: ["ADMIN"],
-      },
-      {
-        key: "employees",
-        href: "/employees",
-        requires: ["ADMIN"],
-        pages: [{ key: "employeesOff", href: "/employees/suspended" }],
-      },
       // The production module (day view + full history) is supervision, not
       // the floor's own tool: PRODUCTION records runs from the order detail
       // page and does not need the roll-up. Hidden from that role here and
@@ -208,6 +193,94 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         key: "production",
         href: "/production",
         requires: ["ADMIN"],
+      },
+      // The spec the shop floor makes against, so PRODUCTION alongside ADMIN+.
+      {
+        key: "products",
+        href: "/products",
+        requires: ["ADMIN", "PRODUCTION"],
+      },
+      // Outbound exports: the warehouse's module (docs/export-plan.md), so
+      // MAGASINIER alongside ADMIN+ — gated server-side by
+      // `warehouseProcedure`. `/shipments` and `/stock/shipments` do not
+      // nest, so `isActive` needs no special case.
+      {
+        key: "shipments",
+        href: "/shipments",
+        requires: ["ADMIN", "MAGASINIER"],
+      },
+    ],
+  },
+  {
+    // The warehouse: what arrives, what is on the shelf, and the handheld's
+    // screens. Everything here nests under `/stock`; `isActive` picks the
+    // most specific href, so no two rows light at once.
+    title: "Stock",
+    items: [
+      // Scanning reels in off the pallet. The warehouse's own screen, so
+      // MAGASINIER alongside ADMIN+ — gated server-side by
+      // `warehouseProcedure`.
+      {
+        key: "receiving",
+        href: "/stock/receiving",
+        requires: ["ADMIN", "MAGASINIER"],
+      },
+      { key: "stock", href: "/stock", requires: ["ADMIN"] },
+      // Scanning a reel to read it: the handheld's wedge scanner types the
+      // label into whatever screen is open, so it needs one that listens.
+      // Read-only — `stock.resolveScan` and `stock.rollById` are
+      // `orderModuleProcedure`, prices withheld below ADMIN.
+      {
+        key: "roll-scan",
+        href: "/stock/scan",
+        requires: ["ADMIN", "MAGASINIER"],
+      },
+      // Walking the warehouse confirming which reels are physically there.
+      // The second job for the same handheld as `receiving`, and the
+      // warehouse's own screen, so MAGASINIER alongside ADMIN+ — gated
+      // server-side by `warehouseProcedure`.
+      {
+        key: "stocktake",
+        href: "/stock/counts",
+        requires: ["ADMIN", "MAGASINIER"],
+      },
+      // Inbound paper deliveries. A separate entry from `shipments`, which
+      // is the OUTBOUND module ("what left the yard today") — the two are
+      // opposite directions and must not share a key.
+      {
+        key: "paper-shipments",
+        href: "/stock/shipments",
+        requires: ["ADMIN"],
+      },
+      // Consumables: the ink colours on the shelf and their balances. What an
+      // order draws is recorded from the order page; this is the catalogue
+      // and the two corrections (restock, adjust).
+      {
+        key: "ink-stock",
+        href: "/stock/inks",
+        requires: ["ADMIN"],
+      },
+    ],
+  },
+  {
+    title: "Equipment",
+    items: [
+      {
+        key: "machines",
+        href: "/machines",
+        requires: ["ADMIN"],
+      },
+    ],
+  },
+  {
+    // People and their shifts.
+    title: "HR",
+    items: [
+      {
+        key: "employees",
+        href: "/employees",
+        requires: ["ADMIN"],
+        pages: [{ key: "employeesOff", href: "/employees/suspended" }],
       },
       // Shift planning (docs/shift-planning-plan.md): the admin's planner
       // and inbox, and the worker's own shifts. "My shifts" is the floor's
@@ -224,60 +297,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         key: "my-shifts",
         href: "/shifts/me",
         only: ["PRODUCTION", "MAGASINIER"],
-      },
-      { key: "stock", href: "/stock", requires: ["ADMIN"] },
-      // Inbound paper deliveries. A separate entry from `shipments` below,
-      // which is the OUTBOUND module ("what left the yard today") — the two
-      // are opposite directions and must not share a key.
-      {
-        key: "paper-shipments",
-        href: "/stock/shipments",
-        requires: ["ADMIN"],
-      },
-      // Scanning reels in off the pallet. The warehouse's own screen, so
-      // MAGASINIER alongside ADMIN+ — gated server-side by
-      // `warehouseProcedure`. Nests under `/stock`, like the shipments.
-      {
-        key: "receiving",
-        href: "/stock/receiving",
-        requires: ["ADMIN", "MAGASINIER"],
-      },
-      // Scanning a reel to read it: the handheld's wedge scanner types the
-      // label into whatever screen is open, so it needs one that listens.
-      // Read-only — `stock.resolveScan` and `stock.rollById` are
-      // `orderModuleProcedure`, prices withheld below ADMIN.
-      {
-        key: "roll-scan",
-        href: "/stock/scan",
-        requires: ["ADMIN", "MAGASINIER"],
-      },
-      // Walking the warehouse confirming which reels are physically there.
-      // The second job for the same handheld as `receiving`, and the
-      // warehouse's own screen, so MAGASINIER alongside ADMIN+ — gated
-      // server-side by `warehouseProcedure`. Nests under `/stock`; `isActive`
-      // picks the most specific href, so this and `/stock` cannot both light.
-      {
-        key: "stocktake",
-        href: "/stock/counts",
-        requires: ["ADMIN", "MAGASINIER"],
-      },
-      // Consumables: the ink colours on the shelf and their balances. What an
-      // order draws is recorded from the order page; this is the catalogue
-      // and the two corrections (restock, adjust). Nests under `/stock` like
-      // the shipments — `isActive` picks the most specific.
-      {
-        key: "ink-stock",
-        href: "/stock/inks",
-        requires: ["ADMIN"],
-      },
-      // Outbound exports: the warehouse's module (docs/export-plan.md), so
-      // MAGASINIER alongside ADMIN+ — gated server-side by
-      // `warehouseProcedure`. `/shipments` and `/stock/shipments` do not
-      // nest, so `isActive` needs no special case.
-      {
-        key: "shipments",
-        href: "/shipments",
-        requires: ["ADMIN", "MAGASINIER"],
       },
     ],
   },

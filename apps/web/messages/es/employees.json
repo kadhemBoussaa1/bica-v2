@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Producción",
+  "eyebrow": "RR. HH.",
   "title": "Empleados",
   "subtitle": "El personal en plantilla. Solo los administradores ven el salario, el DNI y el número de la seguridad social.",
   "newEmployee": "Nuevo empleado",
@@ -205,7 +205,7 @@
     }
   },
   "form": {
-    "eyebrow": "Producción · Empleados",
+    "eyebrow": "RR. HH. · Empleados",
     "newTitle": "Nuevo empleado",
     "editTitle": "Editar {name}",
     "close": "Cerrar",

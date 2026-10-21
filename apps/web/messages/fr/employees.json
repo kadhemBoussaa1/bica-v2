@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Production",
+  "eyebrow": "RH",
   "title": "Employés",
   "subtitle": "Le personnel en effectif. Seuls les administrateurs voient le salaire, le CIN et la CNSS.",
   "newEmployee": "Nouvel employé",
@@ -205,7 +205,7 @@
     }
   },
   "form": {
-    "eyebrow": "Production · Employés",
+    "eyebrow": "RH · Employés",
     "newTitle": "Nouvel employé",
     "editTitle": "Modifier {name}",
     "close": "Fermer",

@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Operations",
+  "eyebrow": "Production",
   "title": "Shipments",
   "subtitle": "What left the yard, and the drafts waiting for a truck. Search by number, packing list, customs declaration, client, invoice or order. Create one from the order’s page once its invoice is issued.",
   "back": "← Shipments",
@@ -18,7 +18,7 @@
   "parcelCount": "{count, plural, one {# parcel} other {# parcels}}",
   "activityLink": "Activity on this shipment",
   "editor": {
-    "eyebrow": "Operations · Shipment",
+    "eyebrow": "Production · Shipment",
     "title": "Draft shipment",
     "lede": "The truck is not yet numbered. It takes the next {prefix} number when shipped, then freezes — only the customs declaration stays editable.",
     "ready": "Ready to ship",

@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Operaciones",
+  "eyebrow": "Producción",
   "title": "Envíos",
   "subtitle": "Lo que salió del almacén, y los borradores a la espera de un camión. Busca por número, lista de embalaje, declaración aduanera, cliente, factura o pedido. Crea uno desde la página del pedido una vez emitida su factura.",
   "back": "← Envíos",
@@ -18,7 +18,7 @@
   "parcelCount": "{count, plural, one {# bulto} other {# bultos}}",
   "activityLink": "Actividad de este envío",
   "editor": {
-    "eyebrow": "Operaciones · Envío",
+    "eyebrow": "Producción · Envío",
     "title": "Borrador de envío",
     "lede": "El camión aún no tiene número. Toma el siguiente número {prefix} al enviarse y queda congelado; solo la declaración aduanera sigue siendo editable.",
     "ready": "Listo para enviar",

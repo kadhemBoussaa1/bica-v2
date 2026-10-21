@@ -1,7 +1,10 @@
 {
   "sections": {
     "contact": "Contacts",
-    "operations": "Exploitation",
+    "production": "Production",
+    "stock": "Stock",
+    "equipment": "Équipement",
+    "hr": "RH",
     "purchasing": "Achats",
     "finance": "Finance",
     "preferences": "Préférences"

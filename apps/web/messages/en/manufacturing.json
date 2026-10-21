@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Operations",
+  "eyebrow": "Production",
   "title": "Manufacturing orders",
   "subtitle": "How each order is made: one manufacturing order (OF) per order, worked one action after the other. An OF is opened from its order’s page.",
   "tabs": {

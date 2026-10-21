@@ -1,5 +1,5 @@
 {
-  "eyebrow": "Opérations",
+  "eyebrow": "Production",
   "title": "Expéditions",
   "subtitle": "Ce qui a quitté le dépôt, et les brouillons en attente d'un camion. Recherchez par numéro, liste de colisage, déclaration en douane, client, facture ou commande. Créez-en une depuis la page de la commande une fois sa facture émise.",
   "back": "← Expéditions",
@@ -18,7 +18,7 @@
   "parcelCount": "{count, plural, one {# colis} other {# colis}}",
   "activityLink": "Activité sur cette expédition",
   "editor": {
-    "eyebrow": "Exploitation · Expédition",
+    "eyebrow": "Production · Expédition",
     "title": "Brouillon d’expédition",
     "lede": "Le camion n’est pas encore numéroté. Il prendra le prochain numéro {prefix} à l’expédition, puis sera figé — seule la déclaration en douane restera modifiable.",
     "ready": "Prêt à expédier",
