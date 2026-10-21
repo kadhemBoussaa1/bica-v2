@@ -28,6 +28,7 @@
   },
   "runFigure": {
     "PRINTING": "{count} m",
+    "PRINTING_PIECE": "{count} uds.",
     "PRODUCER": "{count} uds.",
     "QUALITY_CONTROL": "{count} uds.",
     "PACKAGING": "{count} {n, plural, one {bulto} other {bultos}}"

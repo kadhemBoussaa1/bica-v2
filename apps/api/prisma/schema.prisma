@@ -337,10 +337,13 @@ model Supplier {
 
 /// The kinds of machine on the shop floor.
 ///
-/// An enum rather than a lookup table (unlike SupplierFamily): these are eight
-/// distinct classes of physical equipment, and a ninth means the factory bought a
-/// new kind of machine — a project, not a data-entry moment. The set has been
-/// stable across the legacy system's life.
+/// An enum rather than a lookup table (unlike SupplierFamily): these are
+/// distinct classes of physical equipment, and a new one means the factory
+/// bought a new kind of machine — a project, not a data-entry moment.
+///
+/// `IMPRESSION` prints the reel, so its runs count metres; `IMPRESSION_SAC`
+/// (2026-10-21, the digital printer Y1572) prints bags already made, so its
+/// runs count pieces. See `printingUnitFor` in the contract.
 enum MachineType {
   SAC_POIGNE_TORSADE
   SAC_POIGNE_PLATE
@@ -350,6 +353,7 @@ enum MachineType {
   COUPE
   COUPE_SOUS_PLAT
   SAC_LUXE
+  IMPRESSION_SAC
 }
 
 /// A production machine. Migrated from legacy `machine` (22 rows).
@@ -1456,6 +1460,9 @@ model ProductionRun {
 
   /// PRINTING: metres of paper run through the press.
   metersPrinted Float?
+  /// PRINTING on a bag printer (`IMPRESSION_SAC`): bags printed. A printing
+  /// run fills exactly one of the two, chosen by its machine's type.
+  piecesPrinted Int?
 
   /// PRODUCER: the shift's own breakdown of what came off the machine.
   ///

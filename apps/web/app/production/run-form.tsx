@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   createProductionRunInput,
   machineTypesForStage,
+  printingUnitFor,
   WORKSHOP_STAGES,
   type WorkshopStage,
 } from "@repo/api-contract";
@@ -23,6 +24,13 @@ function today(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+interface StageField {
+  key: string;
+  labelKey: string;
+  unit?: string;
+  required: boolean;
+}
+
 /**
  * Which numeric fields each station fills, and how they are labelled.
  * `labelKey` is a key in the `production` messages.
@@ -31,12 +39,10 @@ function today(): string {
  * is the authority and validates whatever this sends, but the two must name
  * the same fields per stage or the form would submit something the server
  * rejects. `required` is what the union demands; the rest are optional there
- * too.
+ * too. Printing's field is metres until a bag printer is chosen — see
+ * `PRINTED_PIECES`.
  */
-const STAGE_FIELDS: Record<
-  WorkshopStage,
-  { key: string; labelKey: string; unit?: string; required: boolean }[]
-> = {
+const STAGE_FIELDS: Record<WorkshopStage, StageField[]> = {
   PRINTING: [
     {
       key: "metersPrinted",
@@ -68,6 +74,11 @@ const STAGE_FIELDS: Record<
     { key: "parcelsClosed", labelKey: "parcelsClosed", required: true },
   ],
 };
+
+/** Printing on a bag printer (`printingUnitFor` says PIECE): bags printed, not metres. */
+const PRINTED_PIECES: StageField[] = [
+  { key: "piecesPrinted", labelKey: "piecesPrinted", unit: "pcs", required: true },
+];
 
 interface RunFormProps {
   /**
@@ -141,6 +152,13 @@ export function RunForm({
   const machines = (machinesQuery.data?.rows ?? []).filter(
     (m) => m.active && stageMachineTypes?.some((t) => t === m.type),
   );
+  // The machine decides printing's unit; the operator never picks one.
+  const unitOf = (id: string) => {
+    const machine = machines.find((m) => m.id === id);
+    return machine ? printingUnitFor(machine.type) : "METER";
+  };
+  const fields =
+    stage === "PRINTING" && unitOf(machineId) === "PIECE" ? PRINTED_PIECES : STAGE_FIELDS[stage];
 
   const create = useMutation(
     trpc.production.create.mutationOptions({
@@ -183,7 +201,7 @@ export function RunForm({
     // Only the two machine stations carry it — the union rejects the key
     // outright on the other two, so it must not be sent at all.
     if (stageMachineTypes) payload.machineId = machineId;
-    for (const field of STAGE_FIELDS[stage]) {
+    for (const field of fields) {
       const raw = (values[field.key] ?? "").trim();
       if (raw === "") continue;
       if (Number.isNaN(decimal(raw))) {
@@ -270,7 +288,14 @@ export function RunForm({
           <SelectField
             label={t("machine")}
             value={machineId}
-            onChange={(e) => setMachineId(e.target.value)}
+            onChange={(e) => {
+              // A printer of the other kind counts in the other unit, so the
+              // figure typed for the previous one does not carry over.
+              if (stage === "PRINTING" && unitOf(e.target.value) !== unitOf(machineId)) {
+                setValues({});
+              }
+              setMachineId(e.target.value);
+            }}
             disabled={busy || machinesQuery.isPending}
             allowEmpty
             placeholder={
@@ -286,7 +311,7 @@ export function RunForm({
             }))}
           />
         )}
-        {STAGE_FIELDS[stage].map((field) => (
+        {fields.map((field) => (
           <TextField
             key={field.key}
             label={

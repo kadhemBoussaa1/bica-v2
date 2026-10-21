@@ -56,7 +56,11 @@ function useMonthQuery(month: string) {
   );
 }
 
-/** One line of a ranking: a machine, or a person at one station. */
+/**
+ * One line of a ranking: a machine, or a person at one station, in one unit.
+ * `value` is in `unit`; shares are taken among the rows of the same station
+ * AND unit, since a bag printer's pieces and a press's metres share no scale.
+ */
 interface RankRow {
   key: string;
   name: string;
@@ -64,10 +68,26 @@ interface RankRow {
   detail: string;
   stage: WorkshopStage;
   cell: Cell;
+  value: number;
+  unit: string;
+}
+
+/**
+ * A cell's figures, one per unit it holds. Printing can hold two — metres
+ * from a reel press, pieces from a bag printer — and a row that printed
+ * both ranks once in each. A cell with entries but no volume still shows,
+ * at zero in its station's unit.
+ */
+function cellFigures(stage: WorkshopStage, cell: Cell, t: (key: string) => string) {
+  const figures = [{ value: cell.headline, unit: stageUnit(stage, t) }];
+  if (stage === "PRINTING" && cell.piecesPrinted > 0) {
+    figures.push({ value: cell.piecesPrinted, unit: "pcs" });
+  }
+  return figures.length > 1 && figures[0]?.value === 0 ? figures.slice(1) : figures;
 }
 
 /** Everything named that worked in the selected month — the range's last cell. */
-function rankRows(data: MonthData, enums: (key: string) => string) {
+function rankRows(data: MonthData, enums: (key: string) => string, t: (key: string) => string) {
   const last = data.months.length - 1;
   const machines: RankRow[] = [];
   const people: RankRow[] = [];
@@ -76,26 +96,32 @@ function rankRows(data: MonthData, enums: (key: string) => string) {
       for (const row of data.byMachine[stage]) {
         const cell = row.cells[last];
         if (row.machine && cell && cell.runCount > 0) {
-          machines.push({
-            key: `${stage}:${row.machine.id}`,
-            name: row.machine.name,
-            detail: row.machine.code,
-            stage,
-            cell,
-          });
+          for (const figure of cellFigures(stage, cell, t)) {
+            machines.push({
+              key: `${stage}:${row.machine.id}:${figure.unit}`,
+              name: row.machine.name,
+              detail: row.machine.code,
+              stage,
+              cell,
+              ...figure,
+            });
+          }
         }
       }
     }
     for (const row of data.byPerson[stage]) {
       const cell = row.cells[last];
       if (row.person && cell && cell.runCount > 0) {
-        people.push({
-          key: `${stage}:${row.person.id}`,
-          name: row.person.name,
-          detail: enums(`role.${row.person.role}`),
-          stage,
-          cell,
-        });
+        for (const figure of cellFigures(stage, cell, t)) {
+          people.push({
+            key: `${stage}:${row.person.id}:${figure.unit}`,
+            name: row.person.name,
+            detail: enums(`role.${row.person.role}`),
+            stage,
+            cell,
+            ...figure,
+          });
+        }
       }
     }
   }
@@ -113,7 +139,7 @@ export function MonthMeta({ month }: { month: string }) {
   const current = data?.totals[data.totals.length - 1];
   if (!data || !current || current.runCount === 0) return null;
 
-  const { machines, people } = rankRows(data, enums);
+  const { machines, people } = rankRows(data, enums, t);
   const machineCount = new Set(machines.map((row) => row.key.split(":")[1])).size;
   const personCount = new Set(people.map((row) => row.key.split(":")[1])).size;
   return (
@@ -149,18 +175,18 @@ function Ranking({
   const t = useTranslations("production");
   const enums = useTranslations("enums");
 
-  const stationSum = (stage: WorkshopStage) =>
-    rows.filter((row) => row.stage === stage).reduce((sum, row) => sum + row.cell.headline, 0);
+  const peersOf = (row: RankRow) =>
+    rows.filter((other) => other.stage === row.stage && other.unit === row.unit);
   // One sum per unit — the two piece-counting stations add up, metres do not.
   const sums = new Map<string, number>();
   for (const row of rows) {
-    const unit = stageUnit(row.stage, t);
-    sums.set(unit, (sums.get(unit) ?? 0) + row.cell.headline);
+    sums.set(row.unit, (sums.get(row.unit) ?? 0) + row.value);
   }
   const ordered = [...rows].sort(
     (a, b) =>
       WORKSHOP_STAGES.indexOf(a.stage) - WORKSHOP_STAGES.indexOf(b.stage) ||
-      b.cell.headline - a.cell.headline,
+      a.unit.localeCompare(b.unit) ||
+      b.value - a.value,
   );
 
   return (
@@ -177,9 +203,9 @@ function Ranking({
       <div className={styles.rankingRows}>
         {rows.length === 0 && <p className={styles.rankEmpty}>{t("noMonthEntries")}</p>}
         {ordered.map((row) => {
-          const peers = rows.filter((other) => other.stage === row.stage).length;
-          const total = stationSum(row.stage);
-          const share = total > 0 ? row.cell.headline / total : 0;
+          const peers = peersOf(row);
+          const total = peers.reduce((sum, peer) => sum + peer.value, 0);
+          const share = total > 0 ? row.value / total : 0;
           return (
             <div
               key={row.key}
@@ -206,12 +232,12 @@ function Ranking({
                 />
               </span>
               <span className={styles.rankShare}>
-                {peers < 2 ? (
+                {peers.length < 2 ? (
                   <span className={styles.rankMeta}>{t("aloneOnStation")}</span>
                 ) : (
                   <>
                     <span className={styles.rankShareHead}>
-                      <span className={styles.rankMeta}>{t("onStation", { count: peers })}</span>
+                      <span className={styles.rankMeta}>{t("onStation", { count: peers.length })}</span>
                       <bdi className={styles.rankSharePct}>
                         {/* A real contribution never rounds down to "0 %". */}
                         {share > 0 && share < 0.01 ? `< ${formatPercent(0.01)}` : formatPercent(share)}
@@ -224,8 +250,8 @@ function Ranking({
                 )}
               </span>
               <span className={styles.rankValue}>
-                <span>{int().format(row.cell.headline)}</span>
-                <span className={styles.rankMeta}>{stageUnit(row.stage, t)}</span>
+                <span>{int().format(row.value)}</span>
+                <span className={styles.rankMeta}>{row.unit}</span>
               </span>
             </div>
           );
@@ -253,8 +279,9 @@ function Unattributed({ data }: { data: MonthData }) {
       for (const row of data.byPerson[stage]) {
         const cell = row.cells[index];
         if (row.person !== null || !cell || cell.runCount === 0) continue;
-        const unit = stageUnit(stage, t);
-        volumes.set(unit, (volumes.get(unit) ?? 0) + cell.headline);
+        for (const figure of cellFigures(stage, cell, t)) {
+          volumes.set(figure.unit, (volumes.get(figure.unit) ?? 0) + figure.value);
+        }
         entries += cell.runCount;
         days += cell.daysActive;
       }
@@ -381,7 +408,7 @@ export function MonthlyProduction({ month }: MonthlyProductionProps) {
     );
   };
 
-  const { machines, people } = rankRows(data, enums);
+  const { machines, people } = rankRows(data, enums, t);
   const first = data.months[0] ?? month;
 
   return (

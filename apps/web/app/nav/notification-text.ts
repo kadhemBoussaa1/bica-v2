@@ -83,7 +83,8 @@ export function describeNotification(
         detail: join(
           enums(`workshopStage.${item.params.stage}`),
           // `n` drives the plural; `count` is the figure in French grouping.
-          t(`runFigure.${item.params.stage}`, {
+          // A bag printer's run counts pieces where a press counts metres.
+          t(`runFigure.${item.params.stage === "PRINTING" && item.params.unit === "PIECE" ? "PRINTING_PIECE" : item.params.stage}`, {
             count: iso(numberFormat().format(item.params.quantity)),
             n: item.params.quantity,
           }),

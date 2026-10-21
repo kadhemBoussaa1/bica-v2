@@ -25,15 +25,16 @@ type Translate = (
 ) => string;
 
 /**
- * The headline figure for one run, in its station's unit. A migrated row has
- * only `quantite`, so that is the fallback — it IS the row's output. `m` and
- * `pcs` are symbols and stay as they are; "parcels" is a word, so it comes
- * from the messages.
+ * The headline figure for one run, in its station's unit — or pieces, for a
+ * printing run on a bag printer. A migrated row has only `quantite`, so that
+ * is the fallback — it IS the row's output. `m` and `pcs` are symbols and
+ * stay as they are; "parcels" is a word, so it comes from the messages.
  */
 export function runHeadline(
   run: {
     stage: WorkshopStage;
     metersPrinted: number | null;
+    piecesPrinted: number | null;
     piecesProduced: number | null;
     piecesControlled: number | null;
     parcelsClosed: number | null;
@@ -43,7 +44,9 @@ export function runHeadline(
 ): string {
   switch (run.stage) {
     case "PRINTING":
-      return `${int.format(run.metersPrinted ?? run.quantite)} m`;
+      return run.piecesPrinted !== null
+        ? `${int.format(run.piecesPrinted)} pcs`
+        : `${int.format(run.metersPrinted ?? run.quantite)} m`;
     case "PRODUCER":
       return `${int.format(run.piecesProduced ?? run.quantite)} pcs`;
     case "QUALITY_CONTROL":

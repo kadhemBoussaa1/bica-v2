@@ -78,6 +78,7 @@ export const PRODUCTION_SELECT = {
   // Per-stage measures. All nullable — a row only ever carries its own
   // station's, enforced by the discriminated input in `production.ts`.
   metersPrinted: true,
+  piecesPrinted: true,
   piecesProduced: true,
   wastePieces: true,
   piecesToFix: true,

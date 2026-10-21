@@ -7,7 +7,8 @@
     "SAC_POIGNE_PLATE": "Machine sac poignée plate",
     "COUPE": "Coupe",
     "COUPE_SOUS_PLAT": "Coupe sous-plat",
-    "SAC_LUXE": "Machine sac luxe"
+    "SAC_LUXE": "Machine sac luxe",
+    "IMPRESSION_SAC": "Machine d'impression sur sac"
   },
   "workshopStage": {
     "PRINTING": "Impression",

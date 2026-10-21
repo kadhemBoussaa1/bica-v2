@@ -28,6 +28,7 @@
   },
   "runFigure": {
     "PRINTING": "{count} m",
+    "PRINTING_PIECE": "{count} pcs",
     "PRODUCER": "{count} pcs",
     "QUALITY_CONTROL": "{count} pcs",
     "PACKAGING": "{count} colis"

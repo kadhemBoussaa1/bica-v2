@@ -41,6 +41,17 @@ export function stageUnit(stage: WorkshopStage, t: (key: string) => string): str
 }
 
 /**
+ * One run's own unit: its station's, except a printing run on a bag printer,
+ * which counts pieces (`piecesPrinted`) where a reel press counts metres.
+ */
+export function runUnit(
+  run: { stage: WorkshopStage; piecesPrinted: number | null },
+  t: (key: string) => string,
+): string {
+  return run.stage === "PRINTING" && run.piecesPrinted !== null ? "pcs" : stageUnit(run.stage, t);
+}
+
+/**
  * The class that carries a station's colours (`--st-*`) and its dot shape.
  * Colour plus shape, so the four stations survive a grayscale print.
  */
@@ -106,6 +117,7 @@ export function Dotted({
 export type FlowTotals = Pick<
   MonthTotals,
   | "metersPrinted"
+  | "piecesPrinted"
   | "piecesProduced"
   | "piecesControlled"
   | "parcelsClosed"
@@ -136,7 +148,8 @@ const FLOW = [
 
 /**
  * The period's flow through the four stations, then how the produced pieces
- * broke down.
+ * broke down. The printing tile carries a second figure when a bag printer
+ * ran: its pieces, which no sum may fold into the metres.
  *
  * The quality bar has ONE denominator — the produced figure its tile shows.
  * Good and to-fix split that figure; waste is counted beside it, not inside
@@ -182,7 +195,13 @@ export function FlowPanel({
       <div className={styles.eyebrow}>{title}</div>
       <div className={styles.flow}>
         {FLOW.map((tile) => {
-          const value = totals[tile.key];
+          const figures = [{ value: totals[tile.key], unit: stageUnit(tile.stage, t) }];
+          if (tile.stage === "PRINTING" && totals.piecesPrinted > 0) {
+            figures.push({ value: totals.piecesPrinted, unit: "pcs" });
+          }
+          // A bag printer alone: its pieces, not a "0 m" above them.
+          const shown = figures.length > 1 && figures[0]?.value === 0 ? figures.slice(1) : figures;
+          const value = shown.reduce((sum, figure) => sum + figure.value, 0);
           return (
             <div
               key={tile.stage}
@@ -198,10 +217,12 @@ export function FlowPanel({
                 <i className={styles.dot} aria-hidden="true" />
                 {t(tile.label)}
               </span>
-              <span className={styles.flowFigure}>
-                <span className={styles.flowValue}>{int().format(value)}</span>
-                <span className={styles.unit}>{stageUnit(tile.stage, t)}</span>
-              </span>
+              {shown.map((figure) => (
+                <span key={figure.unit} className={styles.flowFigure}>
+                  <span className={styles.flowValue}>{int().format(figure.value)}</span>
+                  <span className={styles.unit}>{figure.unit}</span>
+                </span>
+              ))}
               <span className={styles.flowMeta}>
                 {value === 0 ? t("nothingEntered") : meta(tile.stage)}
               </span>

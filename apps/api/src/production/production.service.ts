@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
 import type { CreateProductionRunInput, UpdateProductionRunInput, WorkshopStage } from "@repo/api-contract";
-import { assetUrl, machineTypesForStage, ordersAreScopedFor } from "@repo/api-contract";
+import { assetUrl, machineTypesForStage, ordersAreScopedFor, printingUnitFor } from "@repo/api-contract";
 import type { Prisma } from "../generated/prisma/client.js";
 import { runListQuery } from "../list/list-query";
 import { MailService } from "../mail/mail.service";
@@ -126,6 +126,9 @@ export class ProductionService {
     //   has NO breakdown, so a null must contribute 0. Falling back to
     //   `quantite` here would report every legacy row's full output as
     //   simultaneously good AND waste AND needing repair.
+    //
+    // A bag printer's run counts pieces, not metres: it adds 0 to the metres
+    // (its `quantite` is pieces, so no fallback) and goes to `piecesPrinted`.
     const forStage = (stage: string) => runs.filter((r) => r.stage === stage);
     const headline = (stage: string, pick: (r: DailyRun) => number | null) =>
       forStage(stage).reduce((total, r) => total + (pick(r) ?? r.quantite), 0);
@@ -135,7 +138,8 @@ export class ProductionService {
     return {
       date: input.date,
       totals: {
-        metersPrinted: headline("PRINTING", (r) => r.metersPrinted),
+        metersPrinted: headline("PRINTING", (r) => (r.piecesPrinted !== null ? 0 : r.metersPrinted)),
+        piecesPrinted: breakdown("PRINTING", (r) => r.piecesPrinted),
         piecesProduced: headline("PRODUCER", (r) => r.piecesProduced),
         piecesControlled: headline("QUALITY_CONTROL", (r) => r.piecesControlled),
         parcelsClosed: headline("PACKAGING", (r) => r.parcelsClosed),
@@ -172,6 +176,9 @@ export class ProductionService {
    * migrated row has only `quantite`. So the sum equals what `daily` reaches
    * with its `pick(r) ?? r.quantite` fallback, and a month's tiles agree with
    * its days. If `writable()` ever stops doing that, this silently drifts.
+   * Printing is the one station with two units: a bag printer's run copies
+   * its pieces into `quantite` too, so its headline is `quantite` less
+   * `piecesPrinted` (metres), and `piecesPrinted` is summed beside it.
    * The breakdown columns need no fallback: a null contributes nothing to a
    * `SUM`, which is the same rule as `daily`'s `?? 0`.
    *
@@ -318,13 +325,14 @@ export class ProductionService {
   async create(actor: SessionUser, input: CreateProductionRunInput) {
     const order = await this.assertOrderInScope(actor, input.orderId);
     const machine = await this.assertMachineFitsStage(input);
+    const data = this.writable(input);
     const outbox = this.notifications.outbox();
     const run = await this.prisma.$transaction(async (tx) => {
       const created = await tx.productionRun.create({
         data: {
           orderId: input.orderId,
           recordedById: actor.id,
-          ...this.writable(input),
+          ...data,
         },
         select: RETURN_SELECT,
       });
@@ -336,6 +344,7 @@ export class ProductionService {
             stage: input.stage,
             // The headline `writable()` copied into `quantite` for this stage.
             quantity: created.quantite,
+            unit: data.unit,
             machineName: machine?.name ?? null,
             day: input.dateProduction,
           },
@@ -366,7 +375,7 @@ export class ProductionService {
           productName: about.product.name,
           stageLabel: STAGE_LABELS[input.stage],
           quantity: created.quantite,
-          unit: input.stage === "PRINTING" ? "m" : input.stage === "PACKAGING" ? "colis" : "pcs",
+          unit: input.stage === "PACKAGING" ? "colis" : data.unit === "METER" ? "m" : "pcs",
           day: input.dateProduction,
           machineName: machine?.name ?? null,
           imageUrl: assetUrl(about.product.images[0]),
@@ -432,7 +441,8 @@ export class ProductionService {
    * it to the stage's headline figure so the existing list, its `quantite`
    * sort key and the order page's totals keep working across both eras
    * without a second "which number do I show?" branch everywhere. `unit`
-   * follows: metres for printing, pieces for the three that count pieces.
+   * follows: metres for printing on a reel press, pieces for a bag printer
+   * and for the three stations that count pieces.
    */
   private writable(input: CreateProductionRunInput | UpdateProductionRunInput) {
     const common = {
@@ -441,6 +451,7 @@ export class ProductionService {
       stage: input.stage,
       // Cleared on every write; the matching branch below sets its own back.
       metersPrinted: null as number | null,
+      piecesPrinted: null as number | null,
       piecesProduced: null as number | null,
       goodPieces: null as number | null,
       wastePieces: null as number | null,
@@ -454,13 +465,22 @@ export class ProductionService {
 
     switch (input.stage) {
       case "PRINTING":
-        return {
-          ...common,
-          machineId: input.machineId,
-          metersPrinted: input.metersPrinted,
-          quantite: input.metersPrinted,
-          unit: "METER" as const,
-        };
+        // Exactly one of the two is set — the contract's refinement.
+        return input.piecesPrinted !== undefined
+          ? {
+              ...common,
+              machineId: input.machineId,
+              piecesPrinted: input.piecesPrinted,
+              quantite: input.piecesPrinted,
+              unit: "PIECE" as const,
+            }
+          : {
+              ...common,
+              machineId: input.machineId,
+              metersPrinted: input.metersPrinted ?? 0,
+              quantite: input.metersPrinted ?? 0,
+              unit: "METER" as const,
+            };
       case "PRODUCER":
         return {
           ...common,
@@ -496,7 +516,9 @@ export class ProductionService {
    *
    * The contract requires `machineId` on those two stages but cannot check
    * the TYPE: that needs the row. Hence this, and hence the mapping living in
-   * `machineTypesForStage` where both sides read the same rule.
+   * `machineTypesForStage` where both sides read the same rule. A printing
+   * run must also carry the figure its machine counts (`printingUnitFor`):
+   * metres on a reel press, pieces on a bag printer.
    *
    * A no-op for QUALITY_CONTROL and PACKAGING, which carry no machine at all
    * (the union rejects the field outright for them), and so returns null
@@ -528,6 +550,15 @@ export class ProductionService {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: `${machine.name} is not a machine the ${input.stage === "PRINTING" ? "printing" : "producer"} station runs`,
+      });
+    }
+    if (
+      input.stage === "PRINTING" &&
+      (printingUnitFor(machine.type) === "PIECE") !== (input.piecesPrinted !== undefined)
+    ) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `${machine.name} counts ${printingUnitFor(machine.type) === "PIECE" ? "pieces" : "metres"} printed`,
       });
     }
     return machine;
@@ -632,12 +663,20 @@ function monthsBetween(from: string, to: string): string[] {
 }
 
 /** The sums both monthly reads take; `quantite` is the headline (see `monthly`). */
-const MONTHLY_SUM = { quantite: true, goodPieces: true, wastePieces: true, piecesToFix: true } as const;
+const MONTHLY_SUM = {
+  quantite: true,
+  piecesPrinted: true,
+  goodPieces: true,
+  wastePieces: true,
+  piecesToFix: true,
+} as const;
 
 /** One (stage, ..., day) group out of a monthly `groupBy`, with the station kept for `foldTotals`. */
 interface DayTally {
   day: string;
   headline: number;
+  /** Printing only: a bag printer's pieces, kept out of `headline`'s metres. */
+  piecesPrinted: number;
   goodPieces: number;
   wastePieces: number;
   piecesToFix: number;
@@ -648,13 +687,21 @@ interface DayTally {
 function dayTally(g: {
   stage: string;
   dateProduction: Date;
-  _sum: { quantite: number | null; goodPieces: number | null; wastePieces: number | null; piecesToFix: number | null };
+  _sum: {
+    quantite: number | null;
+    piecesPrinted: number | null;
+    goodPieces: number | null;
+    wastePieces: number | null;
+    piecesToFix: number | null;
+  };
   _count: { _all: number };
 }): DayTally & { stage: string } {
   return {
     stage: g.stage,
     day: g.dateProduction.toISOString().slice(0, 10),
-    headline: g._sum.quantite ?? 0,
+    // A bag printer's pieces are in `quantite` too; the headline is metres.
+    headline: (g._sum.quantite ?? 0) - (g._sum.piecesPrinted ?? 0),
+    piecesPrinted: g._sum.piecesPrinted ?? 0,
     goodPieces: g._sum.goodPieces ?? 0,
     wastePieces: g._sum.wastePieces ?? 0,
     piecesToFix: g._sum.piecesToFix ?? 0,
@@ -678,9 +725,11 @@ function foldTotals(months: string[], tallies: readonly (DayTally & { stage: str
 
   return months.map((month, index) => {
     const producer = stationCell("PRODUCER", index);
+    const printing = stationCell("PRINTING", index);
     return {
       month,
-      metersPrinted: stationCell("PRINTING", index)?.headline ?? 0,
+      metersPrinted: printing?.headline ?? 0,
+      piecesPrinted: printing?.piecesPrinted ?? 0,
       piecesProduced: producer?.headline ?? 0,
       piecesControlled: stationCell("QUALITY_CONTROL", index)?.headline ?? 0,
       parcelsClosed: stationCell("PACKAGING", index)?.headline ?? 0,
@@ -695,7 +744,7 @@ function foldTotals(months: string[], tallies: readonly (DayTally & { stage: str
   });
 }
 
-const FIGURES = ["headline", "goodPieces", "wastePieces", "piecesToFix", "runCount"] as const;
+const FIGURES = ["headline", "piecesPrinted", "goodPieces", "wastePieces", "piecesToFix", "runCount"] as const;
 
 /**
  * Folds day tallies into one row per `idOf`, with one cell per month.
@@ -713,6 +762,7 @@ function pivot<T extends DayTally>(
 ) {
   const blank = () => ({
     headline: 0,
+    piecesPrinted: 0,
     goodPieces: 0,
     wastePieces: 0,
     piecesToFix: 0,
@@ -737,7 +787,15 @@ function pivot<T extends DayTally>(
       const { days, ...figures } = byMonth.get(month) ?? blank();
       return { month, ...figures, daysActive: days.size };
     });
-    const total = { headline: 0, goodPieces: 0, wastePieces: 0, piecesToFix: 0, runCount: 0, daysActive: 0 };
+    const total = {
+      headline: 0,
+      piecesPrinted: 0,
+      goodPieces: 0,
+      wastePieces: 0,
+      piecesToFix: 0,
+      runCount: 0,
+      daysActive: 0,
+    };
     for (const cell of cells) {
       for (const figure of FIGURES) total[figure] += cell[figure];
       total.daysActive += cell.daysActive;

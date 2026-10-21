@@ -19,6 +19,7 @@ import {
   FlowPanel,
   initials,
   int,
+  runUnit,
   stageClass,
   stageUnit,
 } from "./production-shared";
@@ -39,13 +40,13 @@ type DayData = inferRouterOutputs<AppRouter>["production"]["daily"];
 type Run = DayData["byMachine"]["PRINTING"][number]["runs"][number];
 
 /**
- * The headline figure for one run. A migrated row has only `quantite`, so
- * that is the fallback — it IS the row's output.
+ * The headline figure for one run, in `runUnit`'s unit. A migrated row has
+ * only `quantite`, so that is the fallback — it IS the row's output.
  */
 function headline(run: Run): number {
   switch (run.stage) {
     case "PRINTING":
-      return run.metersPrinted ?? run.quantite;
+      return run.piecesPrinted ?? run.metersPrinted ?? run.quantite;
     case "PRODUCER":
       return run.piecesProduced ?? run.quantite;
     case "QUALITY_CONTROL":
@@ -176,7 +177,7 @@ function Entry({ run }: { run: Run }) {
 
         <div className={styles.qtyRow}>
           <span className={styles.qty}>{int().format(qty)}</span>
-          <span className={styles.qtyUnit}>{stageUnit(run.stage, t)}</span>
+          <span className={styles.qtyUnit}>{runUnit(run, t)}</span>
           {planned > 0 && (
             <span
               className={[styles.target, qty >= planned ? styles.targetMet : null]
@@ -219,7 +220,8 @@ function Entry({ run }: { run: Run }) {
 /**
  * One station's block for the day: its name and total on a strip in its own
  * colour, then every entry. A station with nothing recorded says so and
- * offers to record it.
+ * offers to record it. The total is one per unit: a bag printer's pieces
+ * and a press's metres sit side by side on the printing strip.
  */
 function Station({
   stage,
@@ -233,7 +235,11 @@ function Station({
   const t = useTranslations("production");
   const enums = useTranslations("enums");
   const label = enums(`workshopStage.${stage}`);
-  const total = runs.reduce((sum, run) => sum + headline(run), 0);
+  const totals = new Map<string, number>();
+  for (const run of runs) {
+    const unit = runUnit(run, t);
+    totals.set(unit, (totals.get(unit) ?? 0) + headline(run));
+  }
 
   return (
     <section
@@ -246,12 +252,19 @@ function Station({
         <span className={styles.unit}>
           {runs.length === 0 ? t("noEntries") : t("entryCount", { count: runs.length })}
         </span>
-        <span className={styles.stationFigure}>
-          <span className={styles.stationTotal}>
-            {runs.length === 0 ? "—" : int().format(total)}
+        {runs.length === 0 ? (
+          <span className={styles.stationFigure}>
+            <span className={styles.stationTotal}>—</span>
+            <span className={styles.unit}>{stageUnit(stage, t)}</span>
           </span>
-          <span className={styles.unit}>{stageUnit(stage, t)}</span>
-        </span>
+        ) : (
+          [...totals].map(([unit, total]) => (
+            <span key={unit} className={styles.stationFigure}>
+              <span className={styles.stationTotal}>{int().format(total)}</span>
+              <span className={styles.unit}>{unit}</span>
+            </span>
+          ))
+        )}
       </div>
 
       {runs.map((run) => (

@@ -7,7 +7,8 @@
     "SAC_POIGNE_PLATE": "Flat-handle bag machine",
     "COUPE": "Cutter",
     "COUPE_SOUS_PLAT": "Flat-bottom cutter",
-    "SAC_LUXE": "Luxury bag machine"
+    "SAC_LUXE": "Luxury bag machine",
+    "IMPRESSION_SAC": "Bag printer"
   },
   "workshopStage": {
     "PRINTING": "Printing",

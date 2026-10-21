@@ -8,8 +8,9 @@ import { z } from "zod";
  * Keep the two in step.
  *
  * An enum rather than a lookup table (unlike SupplierFamily): these are classes
- * of physical equipment, and a ninth means the factory bought a new kind of
- * machine. Ordered by how common each is in the migrated data.
+ * of physical equipment, and a new one means the factory bought a new kind of
+ * machine. Ordered by how common each is in the migrated data, then by when
+ * the type was added.
  */
 export const MACHINE_TYPES = [
   "SAC_V",
@@ -20,6 +21,7 @@ export const MACHINE_TYPES = [
   "COUPE",
   "COUPE_SOUS_PLAT",
   "SAC_LUXE",
+  "IMPRESSION_SAC",
 ] as const;
 
 export const machineTypeSchema = z.enum(MACHINE_TYPES);
@@ -259,9 +261,9 @@ export function workshopStageLabel(stage: WorkshopStage): string {
 /**
  * Which machine types each station may name.
  *
- * The printing station runs the presses; the producer station runs the bag
- * machines. Measured against the 22 machines in the data: 3 IMPRESSION and 19
- * bag machines across seven types.
+ * The printing station runs the presses — reel presses and the bag printer —
+ * and the producer station runs the bag machines. Measured against the 22
+ * machines in the data: 3 printers and 19 bag machines across seven types.
  *
  * QUALITY_CONTROL and PACKAGING are absent deliberately — they record no
  * machine at all, which is why `machineId` is nullable on the column even
@@ -271,7 +273,7 @@ export function workshopStageLabel(stage: WorkshopStage): string {
  * enforces, rather than the two drifting apart.
  */
 export const MACHINE_TYPES_FOR_STAGE = {
-  PRINTING: ["IMPRESSION"],
+  PRINTING: ["IMPRESSION", "IMPRESSION_SAC"],
   PRODUCER: [
     "SAC_V",
     "SAC_POIGNE_TORSADE",
@@ -290,8 +292,37 @@ export function machineTypesForStage(stage: WorkshopStage): readonly MachineType
     : null;
 }
 
+/**
+ * What a printing machine counts: a reel press prints paper by the metre, a
+ * bag printer prints bags already made, one by one (user, 2026-10-21: the
+ * flexo R2023026 counts metres, the digital printer Y1572 pieces). The type
+ * decides, so the operator never picks a unit.
+ */
+export function printingUnitFor(type: MachineType): ProductionUnit {
+  return type === "IMPRESSION_SAC" ? "PIECE" : "METER";
+}
+
 /** A non-negative whole count of pieces or parcels. */
 const count = z.number().int().min(0, "Cannot be negative").max(1e9);
+
+/**
+ * A printing run's figure: metres on a reel press, pieces on a bag printer —
+ * exactly one, and which one is the machine's (`printingUnitFor`), checked
+ * by the service. Both optional here so the union can say "one of them".
+ */
+const printedFigure = {
+  metersPrinted: z.number().min(0, "Cannot be negative").max(1e9).optional(),
+  piecesPrinted: count.optional(),
+};
+
+function onePrintedFigure(value: { metersPrinted?: number; piecesPrinted?: number }): boolean {
+  return (value.metersPrinted === undefined) !== (value.piecesPrinted === undefined);
+}
+
+const printedFigureIssue = {
+  message: "Enter what was printed — metres or pieces, as the machine counts",
+  path: ["metersPrinted"],
+};
 
 /**
  * Fields every run carries regardless of station.
@@ -324,15 +355,17 @@ const productionRunBase = {
  *
  * Each stage records exactly what that station measures:
  *
- *   - PRINTING         metres of paper run through the press
+ *   - PRINTING         metres of paper run through the press, or bags
+ *                      printed on a bag printer (`printingUnitFor`)
  *   - PRODUCER         pieces produced, and the shift's own breakdown
  *   - QUALITY_CONTROL  how many pieces were checked
  *   - PACKAGING        parcels closed
  *
  * PRINTING and PRODUCER additionally require `machineId`; the other two
  * stations have no machine field at all, so naming one is an unrecognised
- * key and a 400. That the machine's TYPE matches the station is checked in
- * `ProductionService` — the id alone cannot say, and the contract must not
+ * key and a 400. That the machine's TYPE matches the station — and, for
+ * printing, which of the two figures it counts — is checked in
+ * `ProductionService`: the id alone cannot say, and the contract must not
  * reach for the database.
  *
  * Every branch is `.strict()`: a field belonging to another station is a
@@ -351,11 +384,12 @@ export const createProductionRunInput = z.discriminatedUnion("stage", [
     .object({
       ...productionRunBase,
       stage: z.literal("PRINTING"),
-      /** Required: which press ran it. Validated against `IMPRESSION` server-side. */
+      /** Required: which printer ran it. Validated against its type server-side. */
       machineId: z.string().min(1, "Choose the machine"),
-      metersPrinted: z.number().min(0, "Cannot be negative").max(1e9),
+      ...printedFigure,
     })
-    .strict(),
+    .strict()
+    .refine(onePrintedFigure, printedFigureIssue),
   z
     .object({
       ...productionRunBase,
@@ -407,11 +441,12 @@ export const updateProductionRunInput = z.discriminatedUnion("stage", [
     .object({
       ...updateBase,
       stage: z.literal("PRINTING"),
-      /** Required: which press ran it. Validated against `IMPRESSION` server-side. */
+      /** Required: which printer ran it. Validated against its type server-side. */
       machineId: z.string().min(1, "Choose the machine"),
-      metersPrinted: z.number().min(0, "Cannot be negative").max(1e9),
+      ...printedFigure,
     })
-    .strict(),
+    .strict()
+    .refine(onePrintedFigure, printedFigureIssue),
   z
     .object({
       ...updateBase,

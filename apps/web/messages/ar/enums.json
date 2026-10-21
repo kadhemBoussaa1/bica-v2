@@ -7,7 +7,8 @@
     "SAC_POIGNE_PLATE": "آلة أكياس بمقبض مسطح",
     "COUPE": "آلة قص",
     "COUPE_SOUS_PLAT": "آلة قص القاع المسطح",
-    "SAC_LUXE": "آلة أكياس فاخرة"
+    "SAC_LUXE": "آلة أكياس فاخرة",
+    "IMPRESSION_SAC": "آلة طباعة على الأكياس"
   },
   "workshopStage": {
     "PRINTING": "الطباعة",

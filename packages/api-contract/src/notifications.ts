@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { PAGE_SIZES } from "./list.js";
-import { WORKSHOP_STAGES } from "./production.js";
+import { PRODUCTION_UNITS, WORKSHOP_STAGES } from "./production.js";
 import { canAccess, type Role } from "./roles.js";
 import { SHIFT_TASK_TYPES, SHIFT_TYPES, weekStartOf } from "./shifts.js";
 
@@ -137,7 +137,10 @@ export type TaskNotificationParams = z.infer<typeof taskParams>;
 /**
  * A production run recorded against an order. `quantity` is the run's
  * headline figure (its `quantite`): metres for PRINTING, pieces for PRODUCER
- * and QUALITY_CONTROL, parcels for PACKAGING — the stage says which.
+ * and QUALITY_CONTROL, parcels for PACKAGING — the stage says which, except
+ * a printing run on a bag printer, which counts pieces and says so in
+ * `unit`. Absent on rows written before 2026-10-21, all of which follow
+ * their stage.
  * `machineName` is null for the two stations that name no machine. `day` is
  * the day the work happened, which can be earlier than the row's own
  * `createdAt` when a shift is typed in late.
@@ -146,6 +149,7 @@ const productionRecordedParams = z.object({
   numero: z.string(),
   stage: z.enum(WORKSHOP_STAGES),
   quantity: z.number(),
+  unit: z.enum(PRODUCTION_UNITS).optional(),
   machineName: z.string().nullable(),
   day: isoDay,
 });

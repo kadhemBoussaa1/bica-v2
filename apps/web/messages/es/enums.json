@@ -7,7 +7,8 @@
     "SAC_POIGNE_PLATE": "Máquina de bolsas con asa plana",
     "COUPE": "Cortadora",
     "COUPE_SOUS_PLAT": "Cortadora de fondo plano",
-    "SAC_LUXE": "Máquina de bolsas de lujo"
+    "SAC_LUXE": "Máquina de bolsas de lujo",
+    "IMPRESSION_SAC": "Impresora de bolsas"
   },
   "workshopStage": {
     "PRINTING": "Impresión",

@@ -28,6 +28,7 @@
   },
   "runFigure": {
     "PRINTING": "{count} م",
+    "PRINTING_PIECE": "{count} قطعة",
     "PRODUCER": "{count} قطعة",
     "QUALITY_CONTROL": "{count} قطعة",
     "PACKAGING": "{count} طرد"
