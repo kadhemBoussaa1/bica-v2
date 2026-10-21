@@ -16,6 +16,7 @@ import {
   legacyFlagsForStatus,
   manufacturingOrderNumero,
   normaliseProductSpec,
+  ordersAreScopedFor,
   parcelBalance,
   plannedParcels,
   priceOrder,
@@ -34,12 +35,14 @@ import type { SessionUser } from "../trpc/trpc";
 import {
   ORDER_DETAIL_SELECT,
   ORDER_DETAIL_SELECT_PRICED,
+  ORDER_FACET_KEYS,
   ORDER_LIST_SELECT,
   ORDER_LIST_SELECT_PRICED,
   orderListDeclaration,
   type ListOrdersInput,
   type OrderDetail,
   type OrderDetailPriced,
+  type OrderFacet,
 } from "./order.list";
 import { orderScopeFor } from "./order.scope";
 
@@ -294,6 +297,28 @@ export class OrderService {
     return this.prisma.order.count({
       where: { AND: [{ active: true }, this.scopeFor(actor)] },
     });
+  }
+
+  /**
+   * The list's facet counts in the caller's scope, for the sidebar's status
+   * rows under Orders. Read from the list's own declaration, so a row's
+   * figure is what the page it opens counts (before a market or a search).
+   * Null for a scoped role: it gets no status rows, as the list gives it no
+   * chips — every facet but one would read a permanent 0.
+   */
+  async facetCounts(actor: SessionUser): Promise<Record<OrderFacet, number> | null> {
+    if (ordersAreScopedFor(actor.role)) return null;
+    const scope = this.scopeFor(actor);
+    const counts = await this.prisma.$transaction(
+      ORDER_FACET_KEYS.map((key) =>
+        this.prisma.order.count({
+          where: { AND: [scope, orderListDeclaration.facets[key]] },
+        }),
+      ),
+    );
+    return Object.fromEntries(
+      ORDER_FACET_KEYS.map((key, index) => [key, counts[index] ?? 0]),
+    ) as Record<OrderFacet, number>;
   }
 
   /**

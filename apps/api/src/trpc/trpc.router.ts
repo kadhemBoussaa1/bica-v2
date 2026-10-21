@@ -277,11 +277,14 @@ export class TrpcRouter {
         // floor's figure too (0 unless linked to an employee). The warehouse
         // has its own "My shifts" row, so it gets the figure as well.
         const floor = canAccessAny(ctx.user.role, ["PRODUCTION", "MAGASINIER"]);
-        const [clients, suppliers, orders, shipments, receiving, stocktake, shifts, myShifts] =
+        const [clients, suppliers, orders, orderViews, shipments, receiving, stocktake, shifts, myShifts] =
           await Promise.all([
             commercial ? this.clientService.count() : Promise.resolve(null),
             commercial ? this.supplierService.count() : Promise.resolve(null),
             this.orderService.count(ctx.user),
+            // One figure per status row under Orders; null for the floor,
+            // which gets the plain row.
+            this.orderService.facetCounts(ctx.user),
             // Drafts awaiting a truck, not a table size — the warehouse's to-do.
             warehouse ? this.shipmentService.count() : Promise.resolve(null),
             // Deliveries with reels still to scan in.
@@ -297,6 +300,7 @@ export class TrpcRouter {
           clients,
           suppliers,
           orders,
+          orderViews,
           shipments,
           receiving,
           stocktake,

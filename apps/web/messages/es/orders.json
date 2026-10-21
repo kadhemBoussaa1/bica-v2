@@ -1,7 +1,7 @@
 {
   "eyebrow": "Operaciones",
   "title": "Órdenes de trabajo",
-  "subtitle": "Una tarjeta por pedido, con su avance frente a la cantidad pedida. Filtre por etapa o busque por número de pedido y producto; abra una tarjeta para ver precios, producción y el ciclo de vida.",
+  "subtitle": "Una tarjeta por pedido, con su avance frente a la cantidad pedida. Elija una etapa en Órdenes de trabajo, en el menú, o busque por número de pedido y producto; abra una tarjeta para ver precios, producción y el ciclo de vida.",
   "newOrder": "Nuevo pedido",
   "backToList": "← Órdenes de trabajo",
   "backToOrder": "← Volver al pedido",
@@ -43,7 +43,7 @@
     "inProduction": "En producción",
     "produced": "Producidos",
     "invoicing": "Facturación",
-    "completed": "Completados",
+    "completed": "Exportados",
     "archived": "Archivados"
   },
   "transitions": {

@@ -7,7 +7,6 @@ import { useCallback, useState, type CSSProperties } from "react";
 import {
   assetUrl,
   canAccess,
-  ordersAreScopedFor,
   ORDER_MARKETS,
   PAGE_SIZES,
   type OrderMarket,
@@ -31,7 +30,7 @@ interface OrdersGridState extends DataTableState {
   pageSize: (typeof PAGE_SIZES)[number];
   sortBy: OrderSortKey;
   filter: "all" | OrderFacet;
-  /** Local or export, the second filter beside the lifecycle chips. */
+  /** Local or export, the filter beside the lifecycle view. */
   market: "all" | OrderMarket;
 }
 
@@ -62,9 +61,12 @@ const int = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
  */
 export function OrdersGrid({
   initialSearch = "",
+  filter,
 }: {
   /** The page's `?search=`, the table's first search — see list-search.ts. */
   initialSearch?: string;
+  /** The page's `?filter=`, set by the sidebar's rows under Orders. */
+  filter: "all" | OrderFacet;
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -77,7 +79,13 @@ export function OrdersGrid({
   const [state, setState] = useState<OrdersGridState>({
     ...INITIAL_STATE,
     search: initialSearch,
+    filter,
   });
+  // A new view keeps the market and the search, as a chip did, and starts
+  // again from page 1.
+  if (filter !== state.filter) {
+    setState((current) => ({ ...current, filter, page: 1 }));
+  }
 
   const ordersQuery = useQuery({
     ...trpc.order.list.queryOptions(state),
@@ -269,34 +277,18 @@ export function OrdersGrid({
             ))}
           </div>
         )}
-        // Order matches the pipeline: quotes first, then the three module
-        // inboxes in the sequence work actually flows through, then the two
-        // terminal buckets. No chips for a scoped role — the server only ever
-        // hands PRODUCTION the in-production slice, so every other chip would
-        // read a permanent 0.
-        filters={
-          me && ordersAreScopedFor(me.role)
-            ? []
-            : [
-                { key: "quotes", label: t("filters.quotes") },
-                { key: "draft", label: t("filters.draft") },
-                { key: "inProduction", label: t("filters.inProduction") },
-                { key: "produced", label: t("filters.produced") },
-                { key: "invoicing", label: t("filters.invoicing") },
-                { key: "completed", label: t("filters.completed") },
-                { key: "archived", label: t("filters.archived") },
-              ]
-        }
-        facetCounts={ordersQuery.data.facetCounts}
+        // No chips: the lifecycle views are rows under Orders in the sidebar
+        // (order-views.ts), and the view arrives as `filter`.
+        filters={[]}
         total={ordersQuery.data.total}
         pageCount={ordersQuery.data.pageCount}
         loading={ordersQuery.isFetching}
         state={state}
         onStateChange={onStateChange}
-        // Local or export, orthogonal to the chips: the server ANDs it into
-        // the scope, so the chip counts follow it and the segment counts
-        // follow the chip. Shown to every role, scoped ones included. Back
-        // to page 1 on change, the rule the chips and the search follow.
+        // Local or export, orthogonal to the view: the server ANDs it into
+        // the scope, and the segment counts follow the view. Shown to every
+        // role, scoped ones included. Back to page 1 on change, the rule the
+        // view and the search follow.
         toolbar={
           <SegmentedFilter
             label={t("market.label")}

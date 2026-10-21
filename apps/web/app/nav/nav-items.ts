@@ -1,4 +1,5 @@
 import { canAccessAny, type Role } from "@repo/api-contract";
+import { ORDER_VIEWS } from "../orders/order-views";
 
 /**
  * One nav entry. `href` is null for a module that is planned but not built:
@@ -40,6 +41,26 @@ export interface NavItem {
    * would otherwise read the segment as a record id and say "Detail".
    */
   pages?: readonly { key: string; href: string }[];
+  /**
+   * The module list's facets, as rows under this one. The row then opens and
+   * closes them like a disclosure instead of navigating; "All" leads, linking
+   * to the bare `href`, and each view opens `href?filter=<key>` — the list
+   * page's own facet parameter. `labels` is the message path of their names,
+   * so they read as the list's own words.
+   */
+  views?: NavViews;
+}
+
+/**
+ * `requires`/`only` narrow who gets the rows, as on `NavChild`; anyone else
+ * who sees the item keeps it as a plain row. Same UX-only caveat: the list's
+ * server still decides what a facet returns.
+ */
+export interface NavViews {
+  keys: readonly string[];
+  labels: string;
+  requires?: readonly Role[];
+  only?: readonly Role[];
 }
 
 /**
@@ -152,6 +173,14 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         // order detail page even though it is not "shop floor" — see
         // `orderModuleProcedure` in the API.
         requires: ["ADMIN", "PRODUCTION", "MAGASINIER"],
+        // Everyone but the floor, mirroring `ordersAreScopedFor`: the server
+        // only ever hands PRODUCTION the in-production slice, so every other
+        // row would open an empty list.
+        views: {
+          keys: ORDER_VIEWS,
+          labels: "orders.filters",
+          requires: ["ADMIN", "MAGASINIER"],
+        },
       },
       {
         // Manufacturing orders (OF) and their templates: ADMIN and above

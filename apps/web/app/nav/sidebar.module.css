@@ -378,6 +378,63 @@ a.row:hover {
 .collapsed .planned {
   display: none;
 }
+/* --- a row's views (sidebar.tsx, NavGroup): the list's facets under Orders --- */
+
+/* The left-pointing chevron, turned to point down while closed, up while open. */
+.disclosure {
+  display: inline-flex;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--bp-neutral-400);
+  transform: rotate(-90deg);
+  transition: transform 160ms ease;
+}
+
+.disclosure svg {
+  width: 14px;
+  height: 14px;
+}
+
+.disclosureOpen {
+  transform: rotate(90deg);
+}
+
+/* In the module with its views open: tinted only, since the view row below
+   holds the active ground. */
+.rowCurrent {
+  color: #fff;
+}
+
+.rowCurrent .icon {
+  opacity: 1;
+  color: var(--bp-orange-300);
+}
+
+/* Hung from the parent's icon by a hairline, so the views read as its
+   children without a second column of icons. 19px is the row's 10px inset
+   plus half the 18px icon; the 12px after it lines the labels up with the
+   parent's. */
+.views {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 4px;
+  margin-inline-start: 19px;
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid rgb(255 255 255 / 0.12);
+}
+
+.viewRow {
+  min-height: 36px;
+  font-size: 0.8125rem;
+  color: var(--bp-neutral-400);
+}
+
+.viewRow.rowActive {
+  color: #fff;
+}
+
 /* --- foot: the install row (sidebar.tsx, InstallRow) --- */
 
 /* The nav's own inset, so the row lines up with the modules above it. */
@@ -536,6 +593,11 @@ a.row:hover {
   .collapsed .count,
   .collapsed .planned {
     display: inline-flex;
+  }
+
+  /* A finger, not a pointer: the drawer's view rows get a full touch row. */
+  .viewRow {
+    min-height: 44px;
   }
 
   .collapseButton {

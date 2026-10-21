@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCurrentUser } from "../auth/use-auth";
 import { InstallDialog } from "../pwa/install-dialog";
 import { InstallIcon } from "../pwa/pwa-icons";
 import { useInstall } from "../pwa/use-install";
 import { useTRPC } from "../trpc/client";
-import { NAV_SECTIONS, canSee, isActive, type NavItem } from "./nav-items";
+import { NAV_SECTIONS, canSee, isActive, type NavItem, type NavViews } from "./nav-items";
 import { ChevronIcon, CloseIcon, NAV_ICONS } from "./nav-icons";
 import { useTranslations } from "next-intl";
 import { useDrawer, useSidebarCollapsed } from "./use-sidebar";
@@ -70,6 +70,132 @@ function NavRow({
         <span className={styles.count}>{int.format(count)}</span>
       )}
     </Link>
+  );
+}
+
+interface ViewRowsProps {
+  href: string;
+  views: NavViews;
+  pathname: string;
+  counts: Partial<Record<string, number>> | null | undefined;
+  /** The view on screen, or null while the search params are unknown. */
+  current: string | null;
+  onNavigate: () => void;
+}
+
+/** "All", then one link per view, each with its count once it is known. */
+function ViewRows({ href, views, pathname, counts, current, onNavigate }: ViewRowsProps) {
+  const messages = useTranslations();
+  const common = useTranslations("common");
+  const onList = pathname === href;
+
+  return ["all", ...views.keys].map((key) => {
+    const active = onList && current === key;
+    const count = key === "all" ? undefined : counts?.[key];
+    return (
+      <Link
+        key={key}
+        href={key === "all" ? href : `${href}?filter=${key}`}
+        className={cx(styles.row, styles.viewRow, active && styles.rowActive)}
+        aria-current={active ? "page" : undefined}
+        // The drawer closes on a path change, and a view only changes the
+        // query: without this it would stay over the list it just opened.
+        onClick={onNavigate}
+      >
+        <span className={styles.label}>
+          {key === "all" ? common("all") : messages(`${views.labels}.${key}`)}
+        </span>
+        {count !== undefined && (
+          <span className={styles.count}>{int.format(count)}</span>
+        )}
+      </Link>
+    );
+  });
+}
+
+/** The rows with the one `?filter=` names marked; an unknown one reads as "All". */
+function CurrentViewRows(props: Omit<ViewRowsProps, "current">) {
+  const filter = useSearchParams().get("filter");
+  const current = filter !== null && props.views.keys.includes(filter) ? filter : "all";
+  return <ViewRows {...props} current={current} />;
+}
+
+/**
+ * A row with views (nav-items `views`): a disclosure over the module list's
+ * facets rather than a link, opened by clicking its name. It opens by itself
+ * on entering the module, so the view on screen is in sight, and is left as
+ * it was on leaving. The desktop rail has no room for the views, so there
+ * the caller renders the plain row instead.
+ *
+ * While open, the row is only tinted: the view row below carries the active
+ * ground, and two lit rows would not say which page this is.
+ */
+function NavGroup({
+  item,
+  href,
+  views,
+  pathname,
+  count,
+  viewCounts,
+  onNavigate,
+}: {
+  item: NavItem;
+  href: string;
+  views: NavViews;
+  pathname: string;
+  count: number | null | undefined;
+  viewCounts: Partial<Record<string, number>> | null | undefined;
+  onNavigate: () => void;
+}) {
+  const nav = useTranslations("nav");
+  const label = nav(`items.${item.key}`);
+  const Icon = NAV_ICONS[item.key];
+  const listId = useId();
+  const inModule = isActive(pathname, href);
+  const [expanded, setExpanded] = useState(inModule);
+  const [seenPath, setSeenPath] = useState(pathname);
+  if (pathname !== seenPath) {
+    setSeenPath(pathname);
+    if (inModule && !isActive(seenPath, href)) setExpanded(true);
+  }
+
+  const rows = { href, views, pathname, counts: viewCounts, onNavigate };
+
+  return (
+    <div>
+      <button
+        type="button"
+        className={cx(
+          styles.row,
+          styles.rowButton,
+          inModule && (expanded ? styles.rowCurrent : styles.rowActive),
+        )}
+        aria-expanded={expanded}
+        aria-controls={listId}
+        onClick={() => setExpanded((open) => !open)}
+      >
+        <span className={styles.icon}>{Icon ? <Icon /> : null}</span>
+        <span className={styles.label}>{label}</span>
+        {count !== null && count !== undefined && (
+          <span className={styles.count}>{int.format(count)}</span>
+        )}
+        <span
+          className={cx(styles.disclosure, expanded && styles.disclosureOpen)}
+          aria-hidden="true"
+        >
+          <ChevronIcon />
+        </span>
+      </button>
+      {expanded && (
+        <div id={listId} className={styles.views}>
+          {/* `useSearchParams` needs a boundary of its own in the root
+              layout; until it resolves, no view is marked. */}
+          <Suspense fallback={<ViewRows {...rows} current={null} />}>
+            <CurrentViewRows {...rows} />
+          </Suspense>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -173,6 +299,11 @@ export function Sidebar() {
 
   if (!user) return null;
 
+  // The figures beside the view rows, per item with views.
+  const viewCounts: Record<string, Partial<Record<string, number>> | null | undefined> = {
+    "job-orders": countsQuery.data?.orderViews,
+  };
+
   const sections = NAV_SECTIONS.map((section) => ({
     ...section,
     items: section.items.filter((item) => canSee(user.role, item)),
@@ -233,14 +364,32 @@ export function Sidebar() {
                 </div>
               ) : null}
               <div className={styles.rows}>
-                {section.items.map((item) => (
-                  <NavRow
-                    key={item.key}
-                    item={item}
-                    pathname={pathname}
-                    count={counts[item.key]}
-                  />
-                ))}
+                {section.items.map((item) =>
+                  item.href &&
+                  item.views &&
+                  canSee(user.role, item.views) &&
+                  // The desktop rail shows icons only; the drawer always
+                  // shows labels, whatever the stored rail preference.
+                  !(collapsed && !open) ? (
+                    <NavGroup
+                      key={item.key}
+                      item={item}
+                      href={item.href}
+                      views={item.views}
+                      pathname={pathname}
+                      count={counts[item.key]}
+                      viewCounts={viewCounts[item.key]}
+                      onNavigate={() => setOpen(false)}
+                    />
+                  ) : (
+                    <NavRow
+                      key={item.key}
+                      item={item}
+                      pathname={pathname}
+                      count={counts[item.key]}
+                    />
+                  ),
+                )}
               </div>
             </div>
           ))}

@@ -1,7 +1,7 @@
 {
   "eyebrow": "Operations",
   "title": "Job orders",
-  "subtitle": "One card per order, with how far along it is against the quantity ordered. Filter by stage, or search by order number and product; open a card for pricing, production and the lifecycle.",
+  "subtitle": "One card per order, with how far along it is against the quantity ordered. Pick a stage under Job orders in the menu, or search by order number and product; open a card for pricing, production and the lifecycle.",
   "newOrder": "New order",
   "backToList": "← Job orders",
   "backToOrder": "← Order",
@@ -43,7 +43,7 @@
     "inProduction": "In production",
     "produced": "Produced",
     "invoicing": "Invoicing",
-    "completed": "Completed",
+    "completed": "Exported",
     "archived": "Archived"
   },
   "transitions": {
