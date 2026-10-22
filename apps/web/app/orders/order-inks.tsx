@@ -16,8 +16,9 @@ import {
   type OrderStatus,
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
+import { ComboboxField } from "@repo/ui/combobox-field";
 import { Dialog } from "@repo/ui/dialog";
-import { SelectField, TextField } from "@repo/ui/field";
+import { TextField } from "@repo/ui/field";
 import { DateField } from "@repo/ui/date-field";
 import { useCurrentUser } from "../auth/use-auth";
 import { formatPrice } from "../stock/inks/ink-ui";
@@ -353,7 +354,8 @@ function InkPrice({ cost, unit }: { cost: InkCost | undefined; unit: string }) {
 /**
  * ADMIN+ picks one more colour for the order: every active colour it does not
  * have yet, out-of-stock ones included — a job can be planned before the ink
- * is delivered.
+ * is delivered. The stock holds a hundred colours, so the list opens with a
+ * search on code or name.
  */
 function AddColour({
   orderId,
@@ -390,11 +392,11 @@ function AddColour({
 
   return (
     <form className={styles.inkAdd} onSubmit={handleSubmit} noValidate>
-      <SelectField
+      <ComboboxField
         label={t("inks.addColour")}
         value={colourId}
-        onChange={(e) => setColourId(e.target.value)}
-        disabled={add.isPending || choicesQuery.isPending}
+        onChange={setColourId}
+        disabled={add.isPending || choicesQuery.isPending || choices.length === 0}
         placeholder={
           choicesQuery.isPending
             ? t("loading")
@@ -402,6 +404,8 @@ function AddColour({
               ? t("inks.noChoice")
               : t("inks.chooseColour")
         }
+        searchPlaceholder={t("inks.searchPlaceholder")}
+        noMatch={(search) => t("inks.noMatch", { search })}
         options={choices.map((c) => {
           const colour = `${c.code}${c.name ? ` — ${c.name}` : ""}`;
           const unit = enums(`inkUnit.${c.unit}`);

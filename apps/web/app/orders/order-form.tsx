@@ -21,6 +21,7 @@ import {
   type ProductSpec,
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
+import { ComboboxField } from "@repo/ui/combobox-field";
 import { SelectField, TextField } from "@repo/ui/field";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
@@ -828,12 +829,13 @@ export function OrderForm({
               label: enums(`orderMarket.${m}`),
             }))}
           />
-          <SelectField
+          <ComboboxField
             label={t("form.client")}
             error={touched && clientId === "" ? t("form.needClientError") : undefined}
             value={clientId}
-            onChange={(e) => {
-              setClientId(e.target.value);
+            onChange={(value) => {
+              if (value === clientId) return;
+              setClientId(value);
               // A different client's product catalogue: the previous pick
               // may no longer apply.
               setExistingProductId("");
@@ -841,6 +843,8 @@ export function OrderForm({
             disabled={busy || clientsQuery.isPending}
             allowEmpty
             placeholder={clientsQuery.isPending ? t("loading") : t("noClient")}
+            searchPlaceholder={t("form.searchClient")}
+            noMatch={(search) => t("form.noMatch", { search })}
             options={clients.map((c) => ({ value: c.id, label: c.name }))}
           />
           {money$(
@@ -901,7 +905,7 @@ export function OrderForm({
           {productMode === "existing" ? (
             <>
               <div className={styles.formWide}>
-                <SelectField
+                <ComboboxField
                   label={t("form.product")}
                   error={
                     touched && existingProductId === ""
@@ -909,7 +913,7 @@ export function OrderForm({
                       : undefined
                   }
                   value={existingProductId}
-                  onChange={(e) => setExistingProductId(e.target.value)}
+                  onChange={setExistingProductId}
                   disabled={busy || productsQuery.isPending || specLocked}
                   allowEmpty
                   placeholder={
@@ -919,6 +923,8 @@ export function OrderForm({
                         ? t("form.noSharedProducts")
                         : t("form.chooseProduct")
                   }
+                  searchPlaceholder={t("form.searchProduct")}
+                  noMatch={(search) => t("form.noMatch", { search })}
                   options={[
                     ...swappable
                       .filter((p) => p.clientId !== null)
