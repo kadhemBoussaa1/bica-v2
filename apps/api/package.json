@@ -28,6 +28,8 @@
     "db:employee-accounts": "node dist/migrate/create-employee-accounts.js",
     "db:reset-order-statuses": "node dist/migrate/reset-order-statuses.js",
     "db:sync-paper": "node dist/migrate/sync-paper.js",
+    "db:sync-purchasing": "node dist/migrate/sync-purchasing.js",
+    "db:sync-pipeline": "node dist/migrate/sync-pipeline.js",
     "db:reshape-production": "node dist/migrate/reshape-legacy-production.js",
     "stock:snapshot": "node dist/stock-api/snapshot.js"
   },
