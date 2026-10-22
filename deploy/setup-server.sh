@@ -70,6 +70,9 @@ Server ready. Remaining steps, by hand, as $deploy_user (sudo -iu $deploy_user):
   4. DNS: an A record for DOMAIN pointing at this server's address.
   5. First deploy:       ./deploy/deploy.sh --ssl-init
   6. Nightly backup:     crontab -e, the line at the top of deploy/backup.sh
+  7. Disk alert:         set DISK_ALERT_TO in .env.production, crontab -e, the
+                         line at the top of deploy/disk-alert.sh, then
+                         ./deploy/disk-alert.sh --test
 
 docs/deployment.md has the database restore and the smoke test.
 EOF

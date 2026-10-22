@@ -23,6 +23,7 @@ docs
 .claude
 .github
 .deploy-history
+.disk-alert-state
 docker/certbot
 docker/nginx/state
 backups

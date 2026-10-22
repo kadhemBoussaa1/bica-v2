@@ -77,6 +77,11 @@ fi
 # previous one, the instant rollback. At most two versions are ever on disk;
 # a rollback further back pulls again. Other images are left alone.
 docker image prune -af --filter "label=com.bicapack.image" >/dev/null
+# Then untagged images of any kind, unlabelled ones included: updating
+# postgres, nginx or certbot (./deploy/compose.sh pull ...) leaves the
+# previous version behind untagged, and nothing else would ever remove it.
+# Untagged only, so the current third-party images are never touched.
+docker image prune -f >/dev/null
 if $build; then
   echo "==> Building $tag here"
   compose build migrate api web

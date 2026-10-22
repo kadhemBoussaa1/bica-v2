@@ -49,5 +49,6 @@ yarn-error.log*
 # Production deploy (deploy/, docker/): the filled-in secrets and server state
 .env.production
 .deploy-history
+.disk-alert-state
 /docker/certbot/
 /docker/nginx/state/
