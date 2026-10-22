@@ -154,5 +154,15 @@
     "IN_PROGRESS": "In progress",
     "DONE": "Done",
     "SKIPPED": "Skipped"
+  },
+  "rawMaterialType": {
+    "PAPER": "Paper",
+    "GLUE": "Glue"
+  },
+  "pricingSlot": {
+    "PAPER": "Paper",
+    "HANDLE_GLUE": "Handle glue",
+    "SIDE_GLUE": "Side glue",
+    "BASE_ADHESIVE": "Base adhesive"
   }
 }

@@ -11,6 +11,8 @@ import { InventoryService } from "./inventory/inventory.service";
 import { InvoiceService } from "./invoice/invoice.service";
 import { MachineService } from "./machine/machine.service";
 import { MailService } from "./mail/mail.service";
+import { MaterialService } from "./material/material.service";
+import { OrderPriceService } from "./material/order-prices.service";
 import { NotificationService } from "./notification/notification.service";
 import { PushService } from "./notification/push.service";
 import { OrderService } from "./order/order.service";
@@ -58,6 +60,8 @@ import { UserService } from "./user/user.service";
     StorageService,
     AuditService,
     InkService,
+    MaterialService,
+    OrderPriceService,
     AllocationService,
     InventoryService,
     ChatService,

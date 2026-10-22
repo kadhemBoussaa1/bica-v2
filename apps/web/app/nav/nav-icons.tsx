@@ -292,6 +292,17 @@ function TemplatesIcon() {
   );
 }
 
+/** Material prices: a price tag on its string. */
+function MaterialPricesIcon() {
+  return (
+    <Svg>
+      <path d="M9.5 2.5h5.5V8l-7 7-5.5-5.5z" />
+      <circle cx="12" cy="5.5" r="1" />
+      <path d="M6.5 9.5l2 2" />
+    </Svg>
+  );
+}
+
 /** Settings: three sliders — the knobs behind the app, not a gear. */
 function SettingsIcon() {
   return (
@@ -358,6 +369,7 @@ export const NAV_ICONS: Record<string, () => React.JSX.Element> = {
   users: UsersIcon,
   activity: ActivityIcon,
   templates: TemplatesIcon,
+  "material-prices": MaterialPricesIcon,
 };
 
 /** Hamburger for the mobile bar. */

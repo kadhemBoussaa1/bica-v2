@@ -38,7 +38,8 @@
     "activity": "Activity",
     "templates": "Document templates",
     "shifts": "Shift planning",
-    "my-shifts": "My shifts"
+    "my-shifts": "My shifts",
+    "material-prices": "Material prices"
   },
   "planned": "{label} — planned, not built yet",
   "plannedSr": "(planned, not available yet)",

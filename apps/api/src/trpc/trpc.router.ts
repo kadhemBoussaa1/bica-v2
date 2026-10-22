@@ -82,6 +82,11 @@ import {
   addOrderInksInput,
   adjustInkStockInput,
   createInkColourInput,
+  createRawMaterialInput,
+  rawMaterialIdInput,
+  setRawMaterialActiveInput,
+  setRawMaterialPriceInput,
+  updateRawMaterialInput,
   inkColourIdInput,
   inkUsageIdInput,
   orderInksInput,
@@ -207,6 +212,8 @@ import {
 import { StockService } from "../stock/stock.service";
 import { listInkColoursInput } from "../ink/ink.list";
 import { InkService } from "../ink/ink.service";
+import { listMaterialsInput } from "../material/material.list";
+import { MaterialService } from "../material/material.service";
 import { InventoryService } from "../inventory/inventory.service";
 import { SupplierFamilyService } from "../supplier-family/supplier-family.service";
 import { listSuppliersInput } from "../supplier/supplier.list";
@@ -243,6 +250,7 @@ export class TrpcRouter {
     private readonly storageService: StorageService,
     private readonly auditService: AuditService,
     private readonly inkService: InkService,
+    private readonly materialService: MaterialService,
     private readonly allocationService: AllocationService,
     private readonly inventoryService: InventoryService,
     private readonly chatService: ChatService,
@@ -327,19 +335,21 @@ export class TrpcRouter {
     }),
 
     /**
-     * The settings rail's figures: accounts, trace errors, template drafts.
+     * The settings rail's figures: accounts, trace errors, template drafts,
+     * live raw materials.
      * One call per settings page, refreshed on a timer like `nav.counts`,
      * and like it saying nothing about intent — so not audited; every page
      * inside the module still is. ADMIN and above, the module's own gate.
      */
     settings: router({
       summary: adminProcedure.meta({ audit: false }).query(async ({ ctx }) => {
-        const [users, activity, templates] = await Promise.all([
+        const [users, activity, templates, materials] = await Promise.all([
           this.userService.summary(ctx.user),
           this.auditService.summary(),
           this.templateService.summary(),
+          this.materialService.summary(),
         ]);
-        return { users, activity, templates };
+        return { users, activity, templates, materials };
       }),
     }),
 
@@ -863,6 +873,15 @@ export class TrpcRouter {
         .mutation(({ ctx, input }) =>
           this.orderService.acceptQuote(ctx.user, input.orderId),
         ),
+
+      /**
+       * "Update prices": an open order's catalogue lines move to the
+       * current catalogue prices (docs/raw-material-prices-plan.md §4).
+       * ADMIN+, like every price; refused once the order is priced.
+       */
+      refreshMaterialPrices: adminProcedure
+        .input(z.object({ orderId: z.string().min(1) }))
+        .mutation(({ input }) => this.orderService.refreshMaterialPrices(input.orderId)),
     }),
 
     /**
@@ -1314,6 +1333,50 @@ export class TrpcRouter {
         .mutation(({ ctx, input }) =>
           this.inkService.removeUsage(ctx.user, input.id),
         ),
+    }),
+
+    /**
+     * Raw material prices — the paper and glue catalogue the order form
+     * prefills from (docs/raw-material-prices-plan.md §4). ADMIN+ throughout:
+     * prices are commercial, and the floor never fetches them.
+     */
+    material: router({
+      list: adminProcedure
+        .input(listMaterialsInput)
+        .query(({ input }) => this.materialService.list(input)),
+
+      byId: adminProcedure
+        .input(rawMaterialIdInput)
+        .query(({ input }) => this.materialService.byId(input.id)),
+
+      create: adminProcedure
+        .input(createRawMaterialInput)
+        .mutation(({ ctx, input }) => this.materialService.create(ctx.user, input)),
+
+      update: adminProcedure
+        .input(updateRawMaterialInput)
+        .mutation(({ input }) => this.materialService.update(input)),
+
+      setActive: adminProcedure
+        .input(setRawMaterialActiveInput)
+        .mutation(({ input }) => this.materialService.setActive(input.id, input.active)),
+
+      // The material, not the price row the result returns: the trace of a
+      // price change belongs on the material's timeline, refused or not.
+      setPrice: adminProcedure
+        .meta({ audit: { entity: "materialId" } })
+        .input(setRawMaterialPriceInput)
+        .mutation(({ ctx, input }) => this.materialService.setPrice(ctx.user, input)),
+
+      /** The paper form's supplier picker; audited like any read, fetched once per dialog. */
+      supplierOptions: adminProcedure
+        .input(z.object({ currentId: z.string().min(1).optional() }))
+        .query(({ input }) => this.materialService.supplierOptions(input.currentId)),
+
+      /** The order form's prefill, read on every form open; plumbing, not audited. */
+      forOrderForm: adminProcedure
+        .meta({ audit: false })
+        .query(() => this.materialService.forOrderForm()),
     }),
 
     /**

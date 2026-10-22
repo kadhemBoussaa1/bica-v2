@@ -190,6 +190,12 @@
       "create": "Created OF template",
       "update": "Edited OF template",
       "setActive": "Archived / restored OF template"
+    },
+    "material": {
+      "create": "Material created",
+      "update": "Material updated",
+      "setActive": "Material archived / restored",
+      "setPrice": "Material price changed"
     }
   }
 }

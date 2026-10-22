@@ -262,9 +262,11 @@
   max-width: none;
 }
 
+/* `minmax(0, 1fr)` here too, for the same reason: a bare `1fr` track grew to
+   the fields' intrinsic width and pushed the form off a phone's edge. */
 @media (max-width: 1000px) {
   .formWithAside {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -282,9 +284,16 @@
   margin-bottom: 10px;
 }
 
+/*
+ * The wide form's two-column rule above is more specific than `.formGrid`, so
+ * it is named here too, or a phone kept two columns. `minmax(0, 1fr)`, not
+ * `1fr`: a bare `1fr` track will not shrink below a field's own width, which
+ * pushed the order form's pricing step past the edge of the sheet.
+ */
 @media (max-width: 560px) {
-  .formGrid {
-    grid-template-columns: 1fr;
+  .formGrid,
+  .formPanelWide .formGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -313,6 +322,9 @@
 
 .formActions {
   display: flex;
+  /* Wraps rather than spilling off a phone: three buttons (the order form's
+     Cancel, Back, Create) are wider than its sheet. */
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;

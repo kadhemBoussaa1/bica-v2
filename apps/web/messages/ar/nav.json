@@ -38,7 +38,8 @@
     "activity": "النشاط",
     "templates": "قوالب الوثائق",
     "shifts": "تخطيط الورديات",
-    "my-shifts": "ورديّاتي"
+    "my-shifts": "ورديّاتي",
+    "material-prices": "أسعار المواد الأولية"
   },
   "planned": "{label} — مخطط، لم يُبنَ بعد",
   "plannedSr": "(مخطط، غير متاح بعد)",

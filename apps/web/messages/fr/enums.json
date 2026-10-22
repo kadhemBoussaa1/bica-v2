@@ -154,5 +154,15 @@
     "IN_PROGRESS": "En cours",
     "DONE": "Terminée",
     "SKIPPED": "Ignorée"
+  },
+  "rawMaterialType": {
+    "PAPER": "Papier",
+    "GLUE": "Colle"
+  },
+  "pricingSlot": {
+    "PAPER": "Papier",
+    "HANDLE_GLUE": "Colle de poignée",
+    "SIDE_GLUE": "Colle de côté",
+    "BASE_ADHESIVE": "Colle de fond"
   }
 }

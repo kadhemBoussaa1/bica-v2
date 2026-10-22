@@ -285,20 +285,43 @@ export const ORDER_DETAIL_SELECT_PRICED = {
   pricingSource: true,
 
   // ---- pricing inputs -----------------------------------------------------
-  paperKiloPrice: true,
   profitMarginPct: true,
   lossMarginPct: true,
-  handleGlueKiloPrice: true,
   handleGlueWeightG: true,
-  sideGlueKiloPrice: true,
   sideGlueWeightG: true,
-  baseAdhesiveKiloPrice: true,
   baseAdhesiveWeightG: true,
   legacyGlueCostPerUnit: true,
   piecesPerParcel: true,
   kilosPerParcel: true,
   parcelPrice: true,
   transportCost: true,
+
+  /// The paper and glue kilo prices it was calculated with
+  /// (docs/raw-material-prices-plan.md §3), each with its material and that
+  /// material's CURRENT price, so the page can tell a line the catalogue
+  /// has moved past (stale) from one that is up to date.
+  materialPrices: {
+    select: {
+      slot: true,
+      kiloPrice: true,
+      manual: true,
+      sourcePriceId: true,
+      label: true,
+      supplierName: true,
+      material: {
+        select: {
+          id: true,
+          code: true,
+          label: true,
+          active: true,
+          grammage: true,
+          supplier: { select: { name: true } },
+          prices: { where: { validTo: null }, take: 1, select: { id: true, kiloPrice: true } },
+        },
+      },
+    },
+    orderBy: { slot: "asc" },
+  },
 
   // ---- pricing snapshot ---------------------------------------------------
   unitPrice: true,

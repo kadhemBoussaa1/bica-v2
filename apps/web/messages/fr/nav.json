@@ -38,7 +38,8 @@
     "activity": "Activité",
     "templates": "Modèles de documents",
     "shifts": "Planning des équipes",
-    "my-shifts": "Mes postes"
+    "my-shifts": "Mes postes",
+    "material-prices": "Tarifs matières"
   },
   "planned": "{label} — prévu, pas encore construit",
   "plannedSr": "(prévu, pas encore disponible)",

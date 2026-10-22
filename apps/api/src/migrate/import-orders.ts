@@ -53,6 +53,7 @@ import type {
   QuantityUnit as PrismaQuantityUnit,
   TypeImpression as PrismaTypeImpression,
 } from "../generated/prisma/enums.js";
+import { writeCarriedOverLines } from "../material/order-prices.service.js";
 import { findOrCreateProduct, generatedProductName, type ProductKey } from "../product/product.match.js";
 import { legacyPool, text } from "./legacy.js";
 
@@ -420,16 +421,14 @@ async function main() {
         quantite: numOr0(row.quantite),
         quantityUnit,
 
-        paperKiloPrice: num(row.prix_kilo),
+        // `prix_kilo` is not a column any more: it becomes the order's PAPER
+        // line, written after the upsert (`writeCarriedOverLines`).
         profitMarginPct: marge,
         lossMarginPct: tauxPerte,
 
         // No new glue lines on a migrated order — only the legacy fallback.
-        handleGlueKiloPrice: null,
         handleGlueWeightG: null,
-        sideGlueKiloPrice: null,
         sideGlueWeightG: null,
-        baseAdhesiveKiloPrice: null,
         baseAdhesiveWeightG: null,
         legacyGlueCostPerUnit,
 
@@ -564,6 +563,17 @@ async function main() {
             // No `statusChanges` here — see the `create` branch's comment.
           },
           select: { id: true },
+        });
+        // The legacy kilo price as a line carried over from before the
+        // catalogue — no material, no source — exactly as the migration
+        // copied the existing ones (docs/raw-material-prices-plan.md §7).
+        // On a re-run in place it replaces the order's lines, like every
+        // other column the update above overwrites.
+        await writeCarriedOverLines(prisma, saved.id, {
+          paper: num(row.prix_kilo),
+          handleGlue: null,
+          sideGlue: null,
+          baseAdhesive: null,
         });
         legacyToNewId.set(String(row.id), saved.id);
         importedOrderIds.push(saved.id);

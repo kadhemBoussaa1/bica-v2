@@ -94,6 +94,10 @@ function entityHref(module: string, action: string, id: string, label: string | 
     // it is the row's related entity. Unlinked on purpose, not by omission.
     case "allocation":
       return null;
+    // A material has no page of its own: the catalogue opens it in a
+    // dialog from `?material=`.
+    case "material":
+      return `/settings/material-prices?material=${encodeURIComponent(id)}`;
     case "user":
     case "auth":
       return `/settings/activity?actor=${encodeURIComponent(id)}`;

@@ -564,3 +564,35 @@
   gap: var(--bp-space-2);
   margin-top: 10px;
 }
+
+/* --- material lines (docs/raw-material-prices-plan.md §5) --- */
+
+/* A line's price, material and source badge: wraps rather than overflowing. */
+.lineValue {
+  flex: 0 1 auto;
+  min-width: 0;
+  text-align: end;
+  font: 600 0.78125rem/1.6 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.lineMaterial {
+  font: 400 0.78125rem/1.6 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* The catalogue moved past this open order: a fact, and the one action on it. */
+.staleNotice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-3);
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--bp-space-3);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border: 1px solid rgb(224 161 6 / 0.34);
+  border-radius: var(--bp-radius-block);
+  background: rgb(224 161 6 / 0.12);
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-warning-text);
+}

@@ -6,6 +6,7 @@ import {
   TYPE_IMPRESSIONS,
   optionalText,
 } from "./orders.js";
+import { orderMaterialsInput } from "./materials.js";
 import { pricingInput } from "./pricing.js";
 import { createProductInput } from "./products.js";
 
@@ -67,6 +68,11 @@ const orderBase = z.object({
   quantite: z.number().min(0, "Quantity cannot be negative").max(1e9),
 
   ...pricingInput.shape,
+
+  // The paper and three glue kilo prices, as lines naming the catalogue
+  // price each came from — docs/raw-material-prices-plan.md §3. Ignored on an
+  // order whose pricing is locked (`isPricingLocked`).
+  materials: orderMaterialsInput,
 
   // `kind`, `status` and `exportStatus` are not fields of this SHARED input —
   // see docs/order-lifecycle-plan.md §5: `kind` is set once at creation (the

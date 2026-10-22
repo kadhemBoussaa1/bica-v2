@@ -7,12 +7,14 @@
   "sectionEyebrow": "الإعدادات · {group}",
   "groups": {
     "access": "الصلاحيات",
-    "documents": "الوثائق"
+    "documents": "الوثائق",
+    "pricing": "التسعير"
   },
   "hints": {
     "users": "الحسابات والأدوار والصلاحيات",
     "activity": "من فعل ماذا ومتى",
-    "templates": "مظهر الفواتير الصادرة"
+    "templates": "مظهر الفواتير الصادرة",
+    "material-prices": "أسعار الورق والغراء للكيلوغرام"
   },
   "counts": {
     "errors": "{count} خطأ",

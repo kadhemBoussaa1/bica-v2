@@ -383,23 +383,68 @@
 }
 
 /*
- * One glue on the pricing step: its name, then its price and its weight per
- * bag stacked under it. Each group takes one column of the form grid, so the
- * three glues read side by side and the field labels need not repeat the name.
+ * The pricing step (docs/raw-material-prices-plan.md §5): titled groups of
+ * rows, each row the form grid's three columns. A material line is one row —
+ * the material, its kilo price, the grams a unit takes — so the paper and the
+ * three glues read as a table, and the margins and the packing line up under
+ * the same columns. A group spans the whole step panel.
  */
-.glueGroup {
-  min-inline-size: 0;
-  margin: 0;
-  padding: var(--bp-space-4);
-  border: 1px solid var(--bp-hairline-soft);
-  border-radius: var(--bp-radius-block);
+.pricingGroup {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: var(--bp-space-4);
 }
 
-.glueName {
-  padding: 0;
+.pricingGroupTitle {
   font: 600 0.75rem/1.2 var(--bp-font-display);
   color: var(--bp-ink);
+}
+
+.pricingRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bp-space-4) var(--bp-space-5);
+  align-items: start;
+}
+
+@media (max-width: 560px) {
+  .pricingRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- material lines (docs/raw-material-prices-plan.md §5) --- */
+
+/* A line's kilo price, with the one line under it saying where it comes from. */
+.linePrice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  min-width: 0;
+}
+
+.lineSource {
+  margin-top: 0;
+}
+
+/* A catalogue price that moved under the order: a fact to act on, not an error. */
+.lineWarn {
+  color: var(--bp-warning-text);
+}
+
+/* An inline action under a field: reads as a link, behaves as a button. */
+.lineAction {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--bp-orange-700);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.lineAction:hover {
+  color: var(--bp-orange-800);
 }

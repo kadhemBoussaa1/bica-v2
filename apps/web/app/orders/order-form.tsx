@@ -6,13 +6,18 @@ import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import {
   createOrderInput,
+  isOrderSpecLocked,
+  isPricingLocked,
   ORDER_KINDS,
   ORDER_MARKETS,
   priceOrder,
   productSpecFromRow,
+  productSwapRefusal,
   TYPE_IMPRESSIONS,
   toPricingInputs,
   updateOrderInput,
+  type MaterialLineKey,
+  type PaperType,
   type ProductSpec,
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
@@ -25,6 +30,11 @@ import { decimal } from "../records/decimal";
 import styles from "../records/records.module.css";
 import orderStyles from "./orders.module.css";
 import { bagSize } from "../products/bag-size";
+import {
+  MaterialLineFields,
+  useOrderMaterialLines,
+  type MaterialProductKey,
+} from "./order-material-lines";
 
 /**
  * The order as the edit form needs it — the PRICED shape.
@@ -50,22 +60,29 @@ type ProductOption = {
   id: string;
   name: string;
   active: boolean;
+  paperType: PaperType | null;
 } & Parameters<typeof productSpecFromRow>[0];
 
 const str = (value: number | null | undefined) =>
   value === null || value === undefined ? "" : String(value);
 
-/** The flat DB names carried in `nums`, matching `ORDER_DETAIL_SELECT`'s inputs. */
+/** A tRPC error's code ("CONFLICT"), or null for anything else. */
+function errorCode(cause: unknown): string | null {
+  const data = (cause as { data?: { code?: unknown } | null } | null)?.data;
+  return typeof data?.code === "string" ? data.code : null;
+}
+
+/**
+ * The flat DB names carried in `nums`, matching `ORDER_DETAIL_SELECT`'s inputs.
+ * No kilo prices: the paper and glue prices are the order's material lines
+ * (`useOrderMaterialLines`).
+ */
 const NUM_KEYS = [
   "quantite",
-  "paperKiloPrice",
   "profitMarginPct",
   "lossMarginPct",
-  "handleGlueKiloPrice",
   "handleGlueWeightG",
-  "sideGlueKiloPrice",
   "sideGlueWeightG",
-  "baseAdhesiveKiloPrice",
   "baseAdhesiveWeightG",
   "piecesPerParcel",
   "kilosPerParcel",
@@ -138,14 +155,10 @@ export function OrderForm({
 
   const [nums, setNums] = useState<Record<(typeof NUM_KEYS)[number], string>>({
     quantite: str(initial?.quantite),
-    paperKiloPrice: str(initial?.paperKiloPrice),
     profitMarginPct: str(initial?.profitMarginPct),
     lossMarginPct: str(initial?.lossMarginPct),
-    handleGlueKiloPrice: str(initial?.handleGlueKiloPrice),
     handleGlueWeightG: str(initial?.handleGlueWeightG),
-    sideGlueKiloPrice: str(initial?.sideGlueKiloPrice),
     sideGlueWeightG: str(initial?.sideGlueWeightG),
-    baseAdhesiveKiloPrice: str(initial?.baseAdhesiveKiloPrice),
     baseAdhesiveWeightG: str(initial?.baseAdhesiveWeightG),
     piecesPerParcel: str(initial?.piecesPerParcel),
     kilosPerParcel: str(initial?.kilosPerParcel),
@@ -188,6 +201,19 @@ export function OrderForm({
 
   const [error, setError] = useState<string | null>(null);
 
+  /*
+   * The pricing lock (docs/raw-material-prices-plan.md §2), judged on the
+   * order as loaded — the server judges it again on the stored row. A priced
+   * order keeps its prices and may change quantity and size; one on an
+   * invoice, or finished, keeps its quantity and product too.
+   */
+  const pricingLocked = initial ? isPricingLocked(initial) : false;
+  const specLocked = initial
+    ? isOrderSpecLocked({ status: initial.status, invoiced: initial.invoiceLines.length > 0 })
+    : false;
+  /** A released order whose pricing is still open because it has no parcel price yet. */
+  const openAfterRelease = initial !== undefined && initial.status !== "DRAFT" && !pricingLocked;
+
   // Pickers. Page size 100 covers every current list.
   const clientsQuery = useQuery(
     trpc.client.list.queryOptions({
@@ -205,6 +231,20 @@ export function OrderForm({
     }),
   );
   const clientProducts = productsQuery.data ?? [];
+  /**
+   * The products this order may move to. A priced order keeps the paper its
+   * frozen price is the price of: only the same bag type, paper type and
+   * handle — and grammage, when the paper line's material names one
+   * (`productSwapRefusal`; the server refuses the rest anyway).
+   */
+  const paperLineGrammage =
+    initial?.materialPrices.find((line) => line.slot === "PAPER")?.material?.grammage ?? null;
+  const swappable =
+    pricingLocked && initial
+      ? clientProducts.filter(
+          (p) => p.id === initial.productId || productSwapRefusal(initial.product, p, paperLineGrammage) === null,
+        )
+      : clientProducts;
 
   /**
    * Falls back to the order's current product when it is not in the picker's
@@ -244,16 +284,29 @@ export function OrderForm({
     await go(`/orders/${orderId}`);
   };
 
+  /*
+   * A CONFLICT is usually a catalogue price that moved between opening the
+   * form and saving: the lines re-read the catalogue, show the new price on
+   * each line it moved, and the user saves again having seen it. Any other
+   * conflict (a taken order number) keeps the server's message.
+   */
+  const onSaveError = async (cause: { message: string }) => {
+    if (errorCode(cause) === "CONFLICT" && (await lines.reloadAfterConflict())) {
+      setError(t("lines.conflict"));
+      return;
+    }
+    setError(cause.message);
+  };
   const create = useMutation(
     trpc.order.create.mutationOptions({
       onSuccess: async (saved) => done(saved.id),
-      onError: (cause) => setError(cause.message),
+      onError: onSaveError,
     }),
   );
   const update = useMutation(
     trpc.order.update.mutationOptions({
       onSuccess: async (saved) => done(saved.id),
-      onError: (cause) => setError(cause.message),
+      onError: onSaveError,
     }),
   );
 
@@ -316,38 +369,58 @@ export function OrderForm({
     newHandleWeightG,
   ]);
 
-  const liveInputs = useMemo(() => {
-    // Reads `nums` directly, not through the `n(key)` closure: `n` is
-    // recreated every render and is not itself a dependency this memo can
-    // declare, whereas `nums` is the actual reactive value it needs.
-    const num = (key: (typeof NUM_KEYS)[number]) => {
-      const trimmed = nums[key].trim();
-      return trimmed === "" ? undefined : decimal(trimmed);
+  /**
+   * What the material lines need of the bag: the slots it uses and the paper
+   * that fits it. Null until the product says enough to know.
+   */
+  const productKey: MaterialProductKey | null = useMemo(() => {
+    if (productMode === "existing") {
+      return selectedProduct
+        ? {
+            typeSac: selectedProduct.typeSac,
+            hasHandle: selectedProduct.hasHandle,
+            paperType: selectedProduct.paperType,
+            grammage: selectedProduct.grammage,
+          }
+        : null;
+    }
+    if (newTypeSac === "") return null;
+    return {
+      typeSac: newTypeSac as ProductSpec["typeSac"],
+      hasHandle: newHasHandle,
+      paperType: newPaperType === "" ? null : (newPaperType as PaperType),
+      grammage: newGrammage.trim() === "" ? 0 : decimal(newGrammage),
     };
-    const line = (
-      kiloKey: (typeof NUM_KEYS)[number],
-      weightKey: (typeof NUM_KEYS)[number],
-    ) => ({
-      kiloPrice: num(kiloKey),
-      weightG: num(weightKey),
-    });
-    return toPricingInputs(
-      {
-        paperKiloPrice: num("paperKiloPrice"),
-        profitMarginPct: num("profitMarginPct"),
-        lossMarginPct: num("lossMarginPct"),
-        handleGlue: line("handleGlueKiloPrice", "handleGlueWeightG"),
-        sideGlue: line("sideGlueKiloPrice", "sideGlueWeightG"),
-        baseAdhesive: line("baseAdhesiveKiloPrice", "baseAdhesiveWeightG"),
-        piecesPerParcel: num("piecesPerParcel"),
-        kilosPerParcel: num("kilosPerParcel"),
-        parcelPrice: num("parcelPrice"),
-        transportCost: num("transportCost"),
-      },
-      num("quantite") ?? null,
-      initial?.legacyGlueCostPerUnit ?? null,
-    );
-  }, [nums, initial?.legacyGlueCostPerUnit]);
+  }, [productMode, selectedProduct, newTypeSac, newHasHandle, newPaperType, newGrammage]);
+
+  const lines = useOrderMaterialLines({
+    stored: initial?.materialPrices ?? [],
+    product: productKey,
+    locked: pricingLocked,
+  });
+
+  // Recomputed every render: the line prices are derived from the
+  // catalogue query and the lines' state, and this is a handful of fields.
+  const num = (key: (typeof NUM_KEYS)[number]) => {
+    const trimmed = nums[key].trim();
+    return trimmed === "" ? undefined : decimal(trimmed);
+  };
+  const liveInputs = toPricingInputs(
+    {
+      profitMarginPct: num("profitMarginPct"),
+      lossMarginPct: num("lossMarginPct"),
+      handleGlue: { weightG: num("handleGlueWeightG") },
+      sideGlue: { weightG: num("sideGlueWeightG") },
+      baseAdhesive: { weightG: num("baseAdhesiveWeightG") },
+      piecesPerParcel: num("piecesPerParcel"),
+      kilosPerParcel: num("kilosPerParcel"),
+      parcelPrice: num("parcelPrice"),
+      transportCost: num("transportCost"),
+    },
+    num("quantite") ?? null,
+    initial?.legacyGlueCostPerUnit ?? null,
+    lines.prices,
+  );
 
   const figures = liveSpec ? priceOrder(liveSpec, liveInputs) : null;
   const legacyGlueInEffect =
@@ -367,6 +440,14 @@ export function OrderForm({
           : t("form.pickProductForFigures")
         : t("form.fillSpecForFigures");
 
+  /** Each material line by its name on screen, for its legend and its errors. */
+  const lineName: Record<MaterialLineKey, string> = {
+    paper: t("pricing.paperPrice"),
+    handleGlue: t("pricing.handleGlue"),
+    sideGlue: t("pricing.sideGlue"),
+    baseAdhesive: t("pricing.baseAdhesive"),
+  };
+
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
@@ -376,14 +457,10 @@ export function OrderForm({
     // that says which glue they are, but a message has no heading.
     const fieldLabel: Record<(typeof NUM_KEYS)[number], string> = {
       quantite: t("form.quantity"),
-      paperKiloPrice: t("pricing.paperPrice"),
       profitMarginPct: t("pricing.profitMargin"),
       lossMarginPct: t("pricing.lossMargin"),
-      handleGlueKiloPrice: t("pricing.handleGluePrice"),
       handleGlueWeightG: t("pricing.handleGluePerUnit"),
-      sideGlueKiloPrice: t("pricing.sideGluePrice"),
       sideGlueWeightG: t("pricing.sideGluePerUnit"),
-      baseAdhesiveKiloPrice: t("pricing.baseAdhesivePrice"),
       baseAdhesiveWeightG: t("pricing.baseAdhesivePerUnit"),
       piecesPerParcel: t("pricing.piecesPerParcel"),
       kilosPerParcel: t("pricing.kilosPerParcel"),
@@ -408,13 +485,11 @@ export function OrderForm({
       return;
     }
 
-    const line = (
-      kiloKey: (typeof NUM_KEYS)[number],
-      weightKey: (typeof NUM_KEYS)[number],
-    ) => ({
-      kiloPrice: parsed[kiloKey],
-      weightG: parsed[weightKey],
-    });
+    const materials = lines.payload();
+    if (!materials.ok) {
+      setError(t("lines.priceRequired", { line: lineName[materials.key] }));
+      return;
+    }
 
     const raw = {
       // `numero` is an update-only field: `createOrderInput` has none, and
@@ -458,12 +533,12 @@ export function OrderForm({
                   : decimal(newHandleWeightG),
             },
       quantite: parsed.quantite ?? 0,
-      paperKiloPrice: parsed.paperKiloPrice,
       profitMarginPct: parsed.profitMarginPct,
       lossMarginPct: parsed.lossMarginPct,
-      handleGlue: line("handleGlueKiloPrice", "handleGlueWeightG"),
-      sideGlue: line("sideGlueKiloPrice", "sideGlueWeightG"),
-      baseAdhesive: line("baseAdhesiveKiloPrice", "baseAdhesiveWeightG"),
+      handleGlue: { weightG: parsed.handleGlueWeightG },
+      sideGlue: { weightG: parsed.sideGlueWeightG },
+      baseAdhesive: { weightG: parsed.baseAdhesiveWeightG },
+      materials: materials.materials,
       piecesPerParcel: parsed.piecesPerParcel,
       kilosPerParcel: parsed.kilosPerParcel,
       parcelPrice: parsed.parcelPrice,
@@ -500,11 +575,13 @@ export function OrderForm({
     create.mutate(result.data);
   }
 
+  /** `frozen`: a field the pricing lock keeps as stored (see `pricingLocked`). */
   const money$ = (
     key: (typeof NUM_KEYS)[number],
     label: string,
     unit?: string,
     error?: string,
+    frozen = pricingLocked,
   ) => (
     <TextField
       label={label}
@@ -514,20 +591,41 @@ export function OrderForm({
       value={n(key)}
       onChange={(e) => setN(key, e.target.value)}
       autoComplete="off"
-      disabled={busy}
+      disabled={busy || frozen}
     />
   );
 
-  const glue = (
-    name: string,
-    kiloKey: (typeof NUM_KEYS)[number],
-    weightKey: (typeof NUM_KEYS)[number],
-  ) => (
-    <fieldset className={orderStyles.glueGroup}>
-      <legend className={orderStyles.glueName}>{name}</legend>
-      {money$(kiloKey, t("pricing.gluePrice"), "/kg")}
-      {money$(weightKey, t("pricing.glueWeight"), "g")}
-    </fieldset>
+  /**
+   * One material line as one row of the pricing step: the material (its
+   * select names the line), its kilo price, and — for a glue — the grams a
+   * unit takes. The paper row has no third field and leaves the cell empty,
+   * so the four rows line up as columns.
+   */
+  const materialRow = (key: MaterialLineKey, weightKey?: (typeof NUM_KEYS)[number]) => (
+    <div className={orderStyles.pricingRow} key={key}>
+      <MaterialLineFields
+        lines={lines}
+        line={lines.lines[key]}
+        product={productKey}
+        label={key === "paper" ? t("lines.paper") : lineName[key]}
+        priceLabel={t("lines.price")}
+        disabled={busy || pricingLocked}
+        error={
+          key === "paper" && touched && !((lines.prices.paper ?? 0) > 0)
+            ? t("form.needPaperPriceError")
+            : undefined
+        }
+      />
+      {weightKey && money$(weightKey, t("pricing.glueWeight"), "g")}
+    </div>
+  );
+
+  /** A titled group of the pricing step, one or more rows wide. */
+  const pricingGroup = (title: string, rows: ReactNode) => (
+    <div className={orderStyles.pricingGroup}>
+      <span className={orderStyles.pricingGroupTitle}>{title}</span>
+      {rows}
+    </div>
   );
 
   const section = (title: string, hint?: ReactNode) => (
@@ -568,7 +666,7 @@ export function OrderForm({
     // product needs a pick, a new one needs enough spec to price — which is
     // exactly what `liveSpec` already means.
     2: productMode === "existing" ? existingProductId !== "" : liveSpec !== null,
-    3: liveSpec !== null && decimal(n("paperKiloPrice").trim()) > 0,
+    3: liveSpec !== null && (lines.prices.paper ?? 0) > 0,
   };
 
   /*
@@ -581,7 +679,7 @@ export function OrderForm({
   if (market === "") missing.push(t("form.needMarket"));
   if (!(stepQuantity > 0)) missing.push(t("form.needQuantity"));
   if (!stepValid[2]) missing.push(t("form.needProduct"));
-  if (!(decimal(n("paperKiloPrice").trim()) > 0)) missing.push(t("form.needPaperPrice"));
+  if (!((lines.prices.paper ?? 0) > 0)) missing.push(t("form.needPaperPrice"));
 
   /*
    * Selling at or below cost. The handoff warns when the profit margin does
@@ -750,6 +848,7 @@ export function OrderForm({
             t("form.quantity"),
             quantityUnit,
             touched && !(stepQuantity > 0) ? t("form.needQuantityError") : undefined,
+            specLocked,
           )}
           <div className={styles.formWide}>
             <TextField
@@ -779,6 +878,11 @@ export function OrderForm({
           hidden={step !== 2}
         >
           {section(t("form.sectionProduct"))}
+          {(specLocked || pricingLocked) && (
+            <p className={[styles.hint, styles.formWide].filter(Boolean).join(" ")}>
+              {specLocked ? t("lines.specLockedNote") : t("lines.productFilterNote")}
+            </p>
+          )}
           <div className={styles.formWide}>
             <SelectField
               label={t("form.choose")}
@@ -786,7 +890,7 @@ export function OrderForm({
               onChange={(e) =>
                 setProductMode(e.target.value as "existing" | "new")
               }
-              disabled={busy}
+              disabled={busy || specLocked}
               options={[
                 { value: "existing", label: t("form.existingProduct") },
                 { value: "new", label: t("form.newProduct") },
@@ -806,7 +910,7 @@ export function OrderForm({
                   }
                   value={existingProductId}
                   onChange={(e) => setExistingProductId(e.target.value)}
-                  disabled={busy || productsQuery.isPending}
+                  disabled={busy || productsQuery.isPending || specLocked}
                   allowEmpty
                   placeholder={
                     productsQuery.isPending
@@ -816,13 +920,13 @@ export function OrderForm({
                         : t("form.chooseProduct")
                   }
                   options={[
-                    ...clientProducts
+                    ...swappable
                       .filter((p) => p.clientId !== null)
                       .map((p) => ({
                         value: p.id,
                         label: `${p.name} — ${bagSize(p)} ${p.grammage}g`,
                       })),
-                    ...clientProducts
+                    ...swappable
                       .filter((p) => p.clientId === null)
                       .map((p) => ({
                         value: p.id,
@@ -914,38 +1018,63 @@ export function OrderForm({
           hidden={step !== 3}
         >
           {section(t("form.sectionPricing"))}
-          {money$(
-            "paperKiloPrice",
-            t("pricing.paperPrice"),
-            "/kg",
-            touched && !(decimal(n("paperKiloPrice").trim()) > 0)
-              ? t("form.needPaperPriceError")
-              : undefined,
-          )}
-          {money$("profitMarginPct", t("pricing.profitMargin"), "%")}
-          {money$("lossMarginPct", t("pricing.lossMargin"), "%")}
-          {/* One group per glue, named once in its legend, so each field
-              only says what it is: a price per kg, or grams per bag. */}
-          {(!liveSpec || liveSpec.hasHandle) &&
-            glue(t("pricing.handleGlue"), "handleGlueKiloPrice", "handleGlueWeightG")}
-          {glue(t("pricing.sideGlue"), "sideGlueKiloPrice", "sideGlueWeightG")}
-          {glue(t("pricing.baseAdhesive"), "baseAdhesiveKiloPrice", "baseAdhesiveWeightG")}
-          {initial?.legacyGlueCostPerUnit != null && (
-            <p
-              className={[styles.hint, styles.formWide]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {t("form.legacyGlueHint", {
-                value: numFmt.format(initial.legacyGlueCostPerUnit),
-              })}
+          {/* Why the section is read-only, or why it is still open. */}
+          {pricingLocked ? (
+            <p className={[styles.hint, styles.formWide].filter(Boolean).join(" ")}>
+              {t("lines.lockedNote")}
+            </p>
+          ) : openAfterRelease ? (
+            <p className={[styles.hint, styles.formWide].filter(Boolean).join(" ")}>
+              {t("lines.openAfterRelease")}
+            </p>
+          ) : null}
+          {lines.catalogEmpty && (
+            <p className={[styles.hint, styles.formWide].filter(Boolean).join(" ")}>
+              {t("lines.noCatalogue")}
             </p>
           )}
-          {liveSpec?.typeSac === "SOUS_PLAT"
-            ? money$("kilosPerParcel", t("pricing.kilosPerParcel"))
-            : money$("piecesPerParcel", t("pricing.piecesPerParcel"))}
-          {money$("parcelPrice", t("pricing.parcelPrice"))}
-          {money$("transportCost", t("pricing.transportPerParcel"))}
+          {/*
+            Three groups of aligned rows rather than one flowing grid: the
+            material lines (one row each — material, price, weight), the two
+            margins, then packing and transport. A glue the bag does not use
+            has no row, unless the order already carries a line for it.
+          */}
+          {pricingGroup(
+            t("lines.materialsTitle"),
+            <>
+              {materialRow("paper")}
+              {(lines.used("handleGlue") || lines.lines.handleGlue.stored) &&
+                materialRow("handleGlue", "handleGlueWeightG")}
+              {(lines.used("sideGlue") || lines.lines.sideGlue.stored) &&
+                materialRow("sideGlue", "sideGlueWeightG")}
+              {(lines.used("baseAdhesive") || lines.lines.baseAdhesive.stored) &&
+                materialRow("baseAdhesive", "baseAdhesiveWeightG")}
+              {initial?.legacyGlueCostPerUnit != null && (
+                <p className={styles.hint}>
+                  {t("form.legacyGlueHint", {
+                    value: numFmt.format(initial.legacyGlueCostPerUnit),
+                  })}
+                </p>
+              )}
+            </>,
+          )}
+          {pricingGroup(
+            t("lines.marginsTitle"),
+            <div className={orderStyles.pricingRow}>
+              {money$("profitMarginPct", t("pricing.profitMargin"), "%")}
+              {money$("lossMarginPct", t("pricing.lossMargin"), "%")}
+            </div>,
+          )}
+          {pricingGroup(
+            t("lines.packingTitle"),
+            <div className={orderStyles.pricingRow}>
+              {liveSpec?.typeSac === "SOUS_PLAT"
+                ? money$("kilosPerParcel", t("pricing.kilosPerParcel"))
+                : money$("piecesPerParcel", t("pricing.piecesPerParcel"))}
+              {money$("parcelPrice", t("pricing.parcelPrice"))}
+              {money$("transportCost", t("pricing.transportPerParcel"))}
+            </div>,
+          )}
 
           {/* No "Production" section: the paper need is computed and shown on
               the detail page, and reservations are made from stock there. */}

@@ -30,6 +30,7 @@ export * from "./sales-invoice-model.js";
 export * from "./document-templates.js";
 export * from "./shipments.js";
 export * from "./ink.js";
+export * from "./materials.js";
 export * from "./allocation.js";
 export * from "./inventory.js";
 export * from "./chat.js";

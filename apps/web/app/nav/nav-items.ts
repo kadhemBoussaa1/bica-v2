@@ -89,7 +89,7 @@ export function canSee(role: Role, entry: { requires?: readonly Role[]; only?: r
 }
 
 /** The settings rail's groups, in display order. */
-export const SETTINGS_GROUPS = ["access", "documents"] as const;
+export const SETTINGS_GROUPS = ["access", "documents", "pricing"] as const;
 export type SettingsGroup = (typeof SETTINGS_GROUPS)[number];
 
 interface NavSection {
@@ -112,6 +112,10 @@ export const SETTINGS_CHILDREN: readonly NavChild[] = [
   // SUPER_ADMIN only: publishing the default restyles every invoice
   // issued afterwards, and the server gates every write the same way.
   { key: "templates", href: "/settings/templates", requires: ["SUPER_ADMIN"], group: "documents" },
+  // The paper and glue price catalogue the order form prefills from
+  // (docs/raw-material-prices-plan.md). ADMIN and above, like every
+  // procedure behind it.
+  { key: "material-prices", href: "/settings/material-prices", group: "pricing" },
 ];
 
 /**

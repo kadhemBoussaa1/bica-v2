@@ -154,5 +154,15 @@
     "IN_PROGRESS": "En curso",
     "DONE": "Hecha",
     "SKIPPED": "Omitida"
+  },
+  "rawMaterialType": {
+    "PAPER": "Papel",
+    "GLUE": "Cola"
+  },
+  "pricingSlot": {
+    "PAPER": "Papel",
+    "HANDLE_GLUE": "Cola del asa",
+    "SIDE_GLUE": "Cola lateral",
+    "BASE_ADHESIVE": "Adhesivo del fondo"
   }
 }

@@ -4,6 +4,8 @@ import type {
   CreateOrderInput,
   OrderProductRef,
   OrderStatus,
+  PricingInputs,
+  ProductSwapRefusal,
   TransitionOrderInput,
   UpdateOrderInput,
   OrderMarket,
@@ -13,6 +15,9 @@ import {
   kindAllowsTransition,
   canAccess,
   findOrderTransition,
+  isOrderSpecLocked,
+  isPricingLocked,
+  kiloPricesFromLines,
   legacyFlagsForStatus,
   manufacturingOrderNumero,
   normaliseProductSpec,
@@ -20,13 +25,16 @@ import {
   parcelBalance,
   plannedParcels,
   priceOrder,
+  pricingInputsFromRow,
   productSpecFromRow,
+  productSwapRefusal,
   toPricingInputs,
 } from "@repo/api-contract";
 import { AllocationService } from "../allocation/allocation.service";
 import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery, searchWhere } from "../list/list-query";
 import { MailService } from "../mail/mail.service";
+import { kiloPricesFromResolved, OrderPriceService } from "../material/order-prices.service";
 import { orderCreatedMail } from "../mail/templates";
 import { NotificationService, type NotificationOutbox } from "../notification/notification.service";
 import { PrismaService } from "../prisma.service";
@@ -79,6 +87,18 @@ const LIFECYCLE_SELECT = {
   status: true,
 } as const;
 
+/**
+ * Why a priced order may not move to the product it was sent
+ * (`productSwapRefusal`, docs/raw-material-prices-plan.md §2): its size may
+ * change, the paper its frozen price is the price of may not.
+ */
+const SWAP_REFUSALS: Record<ProductSwapRefusal, string> = {
+  typeSac: "This order's prices are locked — it cannot change to another bag type",
+  paperType: "This order's prices are locked — it cannot change to another paper type",
+  hasHandle: "This order's prices are locked — it cannot gain or lose a handle",
+  grammage: "This order's paper price is for one grammage — it cannot change grammage",
+};
+
 /** The spec columns `resolveProduct` needs off a candidate `Product` row. */
 const PRODUCT_RESOLVE_SELECT = {
   id: true,
@@ -104,6 +124,7 @@ export class OrderService {
     private readonly allocations: AllocationService,
     private readonly notifications: NotificationService,
     private readonly mail: MailService,
+    private readonly prices: OrderPriceService,
   ) {}
 
   /**
@@ -422,13 +443,21 @@ export class OrderService {
           input.clientId ?? null,
           null,
         );
+        // The material lines first: a catalogue price that moved since the
+        // form opened refuses the save before a number is spent on it.
+        const lines = await this.prices.resolve(tx, input.materials, product, null);
         const numero = await this.allocateNumero(tx);
         const order = await tx.order.create({
           data: {
             numero,
             ...this.writable(input),
+            quantite: input.quantite,
+            ...this.pricingColumns(input),
             productId: product.id,
-            ...this.priced(product, input, null),
+            ...this.priced(
+              product,
+              toPricingInputs(input, input.quantite, null, kiloPricesFromResolved(lines)),
+            ),
             kind: input.kind,
             status: "DRAFT",
             ...legacyFlagsForStatus(input.kind, "DRAFT"),
@@ -443,6 +472,7 @@ export class OrderService {
           },
           select: RETURN_SELECT,
         });
+        await this.prices.write(tx, order.id, lines);
         // `clientId` is optional on the form, so the row may name no client.
         const client = input.clientId
           ? await tx.client.findUnique({ where: { id: input.clientId }, select: { name: true } })
@@ -552,6 +582,23 @@ export class OrderService {
    * takes the same lock — can never build an OF number from a `numero` this
    * save is about to replace. While an OF exists the order must keep a
    * `CMD-<n>` number, or the OF would have none to follow.
+   *
+   * The pricing lock (docs/raw-material-prices-plan.md §2), judged on the
+   * stored row under that same lock, in three tiers:
+   *
+   *   - open (DRAFT, or released with no parcel price yet): everything is
+   *     editable and the figures are recomputed, as before the lock;
+   *   - priced (`isPricingLocked`): the pricing inputs and material lines
+   *     are frozen — the input is ignored, not refused, since the form sends
+   *     them back unchanged — and the figures are recomputed from them only
+   *     when the quantity or the computed size moved (decision 5b), so a
+   *     typo fix can never carry a formula change into a priced order;
+   *   - on an invoice or finished (`isOrderSpecLocked`): the quantity and
+   *     product are frozen too, and nothing moves the figures it was billed
+   *     with.
+   *
+   * The fields that never touched the price (number, description, client,
+   * market, printing) stay editable in every tier.
    */
   async update(input: UpdateOrderInput) {
     await this.assertNumeroFree(input.numero, input.id);
@@ -578,24 +625,96 @@ export class OrderService {
             });
           }
         }
+        // kind/status/the legacy booleans are deliberately absent from every
+        // write below: `update` never touches the lifecycle. Only `create`,
+        // `transition` and `acceptQuote` do — see their doc comments.
+        // `numero` is written here, not in `writable`: `create` allocates its
+        // own and this is the only path that takes one from the caller.
+
+        const invoiced = current._count.invoiceLines > 0;
+        if (isOrderSpecLocked({ status: current.status, invoiced })) {
+          const why = invoiced ? "is on an invoice" : "is finished";
+          if (input.quantite !== current.quantite) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `This order ${why} — its quantity can no longer change`,
+            });
+          }
+          if (input.product.mode !== "existing" || input.product.id !== current.productId) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `This order ${why} — its product can no longer change`,
+            });
+          }
+          return tx.order.update({
+            where: { id: input.id },
+            data: { numero: input.numero, ...this.writable(input) },
+            select: RETURN_SELECT,
+          });
+        }
+
         const product = await this.resolveProduct(
           tx,
           input.product,
           input.clientId ?? null,
           current.productId,
         );
+
+        if (isPricingLocked(current)) {
+          const lines = await tx.orderMaterialPrice.findMany({
+            where: { orderId: input.id },
+            select: { slot: true, kiloPrice: true, material: { select: { grammage: true } } },
+          });
+          const paperGrammage = lines.find((line) => line.slot === "PAPER")?.material?.grammage ?? null;
+          const refusal = productSwapRefusal(current.product, product, paperGrammage);
+          if (refusal) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: SWAP_REFUSALS[refusal] });
+          }
+          const figures = this.priced(
+            product,
+            pricingInputsFromRow(current, input.quantite, kiloPricesFromLines(lines)),
+          );
+          // The size is compared rather than the product id: a product edited
+          // on the products page changes every order naming it, and this is
+          // where a priced one catches up — its reel width and metres are
+          // what roll allocation reads.
+          const moved =
+            input.quantite !== current.quantite ||
+            figures.productionWidthCm !== current.productionWidthCm ||
+            figures.cuttingLengthCm !== current.cuttingLengthCm ||
+            figures.unitWeightG !== current.unitWeightG;
+          return tx.order.update({
+            where: { id: input.id },
+            data: {
+              numero: input.numero,
+              ...this.writable(input),
+              quantite: input.quantite,
+              productId: product.id,
+              ...(moved ? figures : {}),
+            },
+            select: RETURN_SELECT,
+          });
+        }
+
+        const lines = await this.prices.resolve(tx, input.materials, product, input.id);
+        await this.prices.write(tx, input.id, lines);
         return tx.order.update({
           where: { id: input.id },
           data: {
-            // Written here, not in `writable`: `create` allocates its own and
-            // this is the only path that takes one from the caller.
             numero: input.numero,
             ...this.writable(input),
+            quantite: input.quantite,
+            ...this.pricingColumns(input),
             productId: product.id,
-            ...this.priced(product, input, current.legacyGlueCostPerUnit),
-            // kind/status/the legacy booleans are deliberately absent: `update`
-            // never touches the lifecycle. Only `create`, `transition` and
-            // `acceptQuote` do — see their doc comments.
+            ...this.priced(
+              product,
+              toPricingInputs(
+                input,
+                input.quantite,
+                current.legacyGlueCostPerUnit,
+                kiloPricesFromResolved(lines),
+              ),
+            ),
           },
           select: RETURN_SELECT,
         });
@@ -1052,6 +1171,33 @@ export class OrderService {
   }
 
   /**
+   * "Update prices" (docs/raw-material-prices-plan.md §4): an open order's
+   * catalogue lines move to their materials' current prices and the figures
+   * are recomputed — the one way a catalogue change reaches a saved
+   * document, and only on request. Refused once the pricing is locked.
+   * Returns the total before and after, for the toast.
+   */
+  async refreshMaterialPrices(orderId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 FROM "Order" WHERE "id" = ${orderId} FOR UPDATE`;
+      const current = await this.assertExists(orderId, tx);
+      if (isPricingLocked(current)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This order's prices are locked — they no longer follow the catalogue",
+        });
+      }
+      const { lines, moved } = await this.prices.refresh(tx, orderId);
+      const figures = this.priced(
+        current.product,
+        pricingInputsFromRow(current, current.quantite, kiloPricesFromLines(lines)),
+      );
+      await tx.order.update({ where: { id: orderId }, data: figures });
+      return { id: orderId, moved, before: current.orderTotal, after: figures.orderTotal };
+    });
+  }
+
+  /**
    * Archive or restore. No hard delete: nine legacy tables reference an order,
    * and the ones not yet migrated (production, ordre_fabrication, invoicing)
    * will reference these rows too.
@@ -1136,9 +1282,11 @@ export class OrderService {
   }
 
   /**
-   * The single server pricing path: every create and update recomputes the
-   * full snapshot from the resolved product's spec and this input's pricing
-   * fields, and re-stores it — see the "never locked" decision on the model.
+   * The single server pricing path: the full snapshot from the resolved
+   * product's spec and the engine inputs the caller built — from this save's
+   * input and resolved material lines on an open order, from the frozen row
+   * and its stored lines on a priced one (docs/raw-material-prices-plan.md
+   * §2). Writing it is the caller's decision.
    *
    * `legacyGlueCostPerUnit` is not a form field (see `pricingInput`'s doc
    * comment) — it is preserved from the current row on update (`current`,
@@ -1146,12 +1294,10 @@ export class OrderService {
    * client payload can never invent or overwrite it.
    */
   private priced(
-    product: { id: string } & Parameters<typeof productSpecFromRow>[0],
-    input: CreateOrderInput | UpdateOrderInput,
-    currentLegacyGlue: number | null,
+    product: Parameters<typeof productSpecFromRow>[0],
+    inputs: PricingInputs,
   ) {
     const spec = productSpecFromRow(product);
-    const inputs = toPricingInputs(input, input.quantite, currentLegacyGlue);
     const figures = priceOrder(spec, inputs);
     return {
       quantityUnit: figures.quantityUnit,
@@ -1172,8 +1318,9 @@ export class OrderService {
   }
 
   /**
-   * Every column not derived by `priced()`: identity, the flattened pricing
-   * inputs and the printing field.
+   * The columns no lock ever freezes: identity and the printing field. The
+   * quantity and the pricing inputs (`pricingColumns`) are written by the
+   * caller, per tier — see `update`.
    *
    * No `images`: artwork moved to `Product` (2026-09-03), where the same
    * "omitting it preserves what is stored" rule now lives — see
@@ -1202,22 +1349,6 @@ export class OrderService {
       clientId: input.clientId ?? null,
       market: input.market,
 
-      quantite: input.quantite,
-
-      paperKiloPrice: input.paperKiloPrice ?? null,
-      profitMarginPct: input.profitMarginPct ?? null,
-      lossMarginPct: input.lossMarginPct ?? null,
-      handleGlueKiloPrice: input.handleGlue.kiloPrice ?? null,
-      handleGlueWeightG: input.handleGlue.weightG ?? null,
-      sideGlueKiloPrice: input.sideGlue.kiloPrice ?? null,
-      sideGlueWeightG: input.sideGlue.weightG ?? null,
-      baseAdhesiveKiloPrice: input.baseAdhesive.kiloPrice ?? null,
-      baseAdhesiveWeightG: input.baseAdhesive.weightG ?? null,
-      piecesPerParcel: input.piecesPerParcel ?? null,
-      kilosPerParcel: input.kilosPerParcel ?? null,
-      parcelPrice: input.parcelPrice ?? null,
-      transportCost: input.transportCost ?? null,
-
       // No paper figures: the need is in `priced()` and what is reserved or
       // consumed lives on `RollAllocation` — docs/roll-allocation-plan.md.
 
@@ -1225,15 +1356,57 @@ export class OrderService {
     };
   }
 
+  /**
+   * The flattened pricing inputs, written only while the order's pricing is
+   * open. No kilo prices: those are the material lines `OrderPriceService`
+   * writes (docs/raw-material-prices-plan.md §3).
+   */
+  private pricingColumns(input: CreateOrderInput | UpdateOrderInput) {
+    return {
+      profitMarginPct: input.profitMarginPct ?? null,
+      lossMarginPct: input.lossMarginPct ?? null,
+      handleGlueWeightG: input.handleGlue.weightG ?? null,
+      sideGlueWeightG: input.sideGlue.weightG ?? null,
+      baseAdhesiveWeightG: input.baseAdhesive.weightG ?? null,
+      piecesPerParcel: input.piecesPerParcel ?? null,
+      kilosPerParcel: input.kilosPerParcel ?? null,
+      parcelPrice: input.parcelPrice ?? null,
+      transportCost: input.transportCost ?? null,
+    };
+  }
+
+  /**
+   * The row as a save needs it: identity, the lock's inputs (status, parcel
+   * price, invoice lines), and the frozen pricing inputs and stored figures
+   * a priced order is re-priced from and compared against.
+   */
   private async assertExists(id: string, db: Db = this.prisma) {
     const found = await db.order.findUnique({
       where: { id },
       select: {
         id: true,
         numero: true,
+        status: true,
+        quantite: true,
         productId: true,
+        product: { select: PRODUCT_RESOLVE_SELECT },
         legacyGlueCostPerUnit: true,
+        profitMarginPct: true,
+        lossMarginPct: true,
+        handleGlueWeightG: true,
+        sideGlueWeightG: true,
+        baseAdhesiveWeightG: true,
+        piecesPerParcel: true,
+        kilosPerParcel: true,
+        parcelPrice: true,
+        transportCost: true,
+        productionWidthCm: true,
+        cuttingLengthCm: true,
+        unitWeightG: true,
+        finalParcelPrice: true,
+        orderTotal: true,
         manufacturingOrder: { select: { id: true, numero: true, year: true } },
+        _count: { select: { invoiceLines: true } },
       },
     });
     if (!found) {

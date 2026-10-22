@@ -7,12 +7,14 @@
   "sectionEyebrow": "Settings · {group}",
   "groups": {
     "access": "Access",
-    "documents": "Documents"
+    "documents": "Documents",
+    "pricing": "Pricing"
   },
   "hints": {
     "users": "Accounts, roles and access",
     "activity": "Who did what, and when",
-    "templates": "How issued invoices look"
+    "templates": "How issued invoices look",
+    "material-prices": "Paper and glue prices per kilo"
   },
   "counts": {
     "errors": "{count} err.",

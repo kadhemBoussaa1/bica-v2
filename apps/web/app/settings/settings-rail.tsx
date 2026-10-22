@@ -15,6 +15,7 @@ type Summary = {
   users: { active: number; banned: number };
   activity: { total: number; errors: number };
   templates: { defaultVersion: number | null; drafts: number };
+  materials: { active: number };
 };
 
 /**
@@ -65,6 +66,8 @@ export function SettingsRail() {
               : t("counts.version", { version: summary.templates.defaultVersion }),
           warn: false,
         };
+      case "material-prices":
+        return { text: figure.format(summary.materials.active), warn: false };
       default:
         return { text: "", warn: false };
     }

@@ -24,6 +24,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import {
   isIncompleteSpec,
+  kiloPricesFromLines,
   pricingInputsFromRow,
   priceOrder,
   productSpecFromRow,
@@ -54,7 +55,10 @@ async function main() {
   });
 
   try {
+    // Sorted, so two runs list their mismatches in the same order and the
+    // output can be diffed (docs/raw-material-prices-plan.md §7).
     const orders = await prisma.order.findMany({
+      orderBy: [{ numero: "asc" }, { id: "asc" }],
       select: {
         numero: true,
         quantite: true,
@@ -68,14 +72,13 @@ async function main() {
         finalUnitPrice: true,
         finalParcelPrice: true,
 
-        paperKiloPrice: true,
+        // The four kilo prices are the order's material lines
+        // (docs/raw-material-prices-plan.md §3).
+        materialPrices: { select: { slot: true, kiloPrice: true } },
         profitMarginPct: true,
         lossMarginPct: true,
-        handleGlueKiloPrice: true,
         handleGlueWeightG: true,
-        sideGlueKiloPrice: true,
         sideGlueWeightG: true,
-        baseAdhesiveKiloPrice: true,
         baseAdhesiveWeightG: true,
         legacyGlueCostPerUnit: true,
         piecesPerParcel: true,
@@ -124,7 +127,11 @@ async function main() {
       }
 
       const spec = productSpecFromRow(order.product);
-      const inputs = pricingInputsFromRow(order, order.quantite);
+      const inputs = pricingInputsFromRow(
+        order,
+        order.quantite,
+        kiloPricesFromLines(order.materialPrices),
+      );
       const figures = priceOrder(spec, inputs);
 
       const dimensionsOk =

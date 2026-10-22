@@ -98,6 +98,8 @@ model User {
   manufacturingOrdersCreated   ManufacturingOrder[]         @relation("ManufacturingOrderCreatedBy")
   manufacturingOrdersCancelled ManufacturingOrder[]         @relation("ManufacturingOrderCancelledBy")
   manufacturingComments        ManufacturingActionComment[] @relation("ManufacturingCommentAuthor")
+  /// Catalogue prices this user entered — docs/raw-material-prices-plan.md.
+  rawMaterialPricesEntered RawMaterialPrice[] @relation("RawMaterialPriceEnteredBy")
 
   @@index([role, id])
   /// Foreign key: Postgres does not index one on its own, and deleting a user
@@ -319,6 +321,8 @@ model Supplier {
   purchaseInvoices PurchaseInvoice[]
   purchaseOrders   PurchaseOrder[]
   goodsReceipts    GoodsReceipt[]
+  /// The papers priced per this supplier — see RawMaterial.
+  rawMaterials     RawMaterial[]
 
   /// Legacy bigint primary key — see Client.legacyId.
   legacyId BigInt? @unique
@@ -683,9 +687,10 @@ enum OrderStatus {
 /// the name.
 ///
 /// Never locked: a product stays editable even once orders reference it.
-/// Changing its specification does not rewrite those orders' recorded prices
-/// — each is recomputed the next time it is saved, from whatever the product
-/// looks like then. See `docs/legacy-migration.md` for the dedupe and the 11
+/// Changing its specification does not rewrite those orders' recorded prices:
+/// an open order is recomputed at its next save, a priced one when its next
+/// save finds its computed size changed (from its frozen inputs), and one on
+/// an invoice or finished never (docs/raw-material-prices-plan.md §2). See `docs/legacy-migration.md` for the dedupe and the 11
 /// migrated rows whose `grammage` is 0 (real historical orders, priced as
 /// "incomplete" until someone enters the real value).
 model Product {
@@ -753,9 +758,11 @@ model Product {
 /// The bag specification is no longer inline: it is a `Product`, either
 /// picked from the client's existing ones or created alongside the order.
 /// Pricing is computed **live** by the engine in `@repo/api-contract` from
-/// `Product` plus this order's inputs, and re-stored as a snapshot on every
-/// save — see the 11 `*Cm`/`*G`/price columns below, none of which is
-/// user-editable directly.
+/// `Product` plus this order's inputs and material lines, and stored as a
+/// snapshot — see the 11 `*Cm`/`*G`/price columns below, none of which is
+/// user-editable directly. Once the order has left DRAFT and is priced, its
+/// inputs freeze and only a quantity or size change re-prices it
+/// (docs/raw-material-prices-plan.md §2).
 ///
 /// **Reproduction, checked against the legacy database**: every FOND_CARRE
 /// and FOND_V unit price (244/244) and parcel price (133/133) reproduces
@@ -796,23 +803,25 @@ model Order {
   quantite Float
 
   // ---- pricing inputs -------------------------------------------------
+  //
+  // The paper and glue KILO PRICES are not columns here: they are the
+  // order's `materialPrices` lines, prefilled from the raw material
+  // catalogue and copied onto the order (docs/raw-material-prices-plan.md;
+  // the legacy `prix_kilo` became a PAPER line). Those lines and every input
+  // below freeze once the order has left DRAFT and has a parcel price —
+  // `isPricingLocked` in `@repo/api-contract`.
 
-  /// Price of the paper, per kilogram. Legacy `prix_kilo`.
-  paperKiloPrice  Float?
   /// Percent: 2 means 2%. Legacy `marge`.
   profitMarginPct Float?
   /// Percent. Legacy `taux_perte`.
   lossMarginPct   Float?
 
-  /// Three glue lines, each a kilo price and a weight in grams per unit.
-  /// Typed per order — never prefilled from the product or from history.
+  /// Grams per unit of each of the three glues; their kilo prices are the
+  /// HANDLE_GLUE / SIDE_GLUE / BASE_ADHESIVE material lines.
   /// `handleGlue*` is only read when the product has a handle.
-  handleGlueKiloPrice   Float?
-  handleGlueWeightG     Float?
-  sideGlueKiloPrice     Float?
-  sideGlueWeightG       Float?
-  baseAdhesiveKiloPrice Float?
-  baseAdhesiveWeightG   Float?
+  handleGlueWeightG   Float?
+  sideGlueWeightG     Float?
+  baseAdhesiveWeightG Float?
 
   /// Migrated orders only, and not a form field: the old system recorded glue
   /// as a cost per bag rather than a weight and a kilo price. Used as a
@@ -831,10 +840,14 @@ model Order {
   /// Transport, per parcel. Legacy `prix_transport`.
   transportCost   Float?
 
-  // ---- pricing snapshot: rewritten on every save, never hand-edited -----
+  // ---- pricing snapshot: computed, never hand-edited ---------------------
+  //
+  // Rewritten by every save of an open order; on a priced one only when its
+  // quantity or computed size changes (re-priced from its frozen inputs);
+  // never once it is on an invoice or finished — `OrderService.update`.
 
-  /// Where this snapshot came from. LEGACY until the order is next saved,
-  /// which recomputes everything below and flips this to COMPUTED.
+  /// Where this snapshot came from. LEGACY until a save recomputes everything
+  /// below, which flips this to COMPUTED.
   pricingSource PricingSource @default(COMPUTED)
 
   /// Centimetres. Paper reel width needed to make the bag ("laize").
@@ -958,6 +971,9 @@ model Order {
   /// The stock colours the job is printed in, chosen by ADMIN+. Usage may
   /// only be recorded against one of these — see OrderInk.
   inks        OrderInk[]
+  /// The paper and glue kilo prices it was calculated with, one per slot —
+  /// see OrderMaterialPrice.
+  materialPrices OrderMaterialPrice[]
   /// The sales invoice lines that bill this order. Empty on every migrated
   /// order; at most one today (`InvoiceService.createFromOrder` refuses a
   /// second) — see docs/sales-invoice-plan.md §3.2 for why the link is on
@@ -3687,4 +3703,135 @@ model StockEvent {
 model StockEventCounter {
   id   Int    @id
   last BigInt @default(0)
+}
+
+// ---------------------------------------------------------------------------
+// Raw material prices — the catalogue the order form prefills from
+// (docs/raw-material-prices-plan.md)
+// ---------------------------------------------------------------------------
+
+/// The four kilo prices `priceOrder` reads, one per order snapshot line.
+enum PricingSlot {
+  PAPER
+  HANDLE_GLUE
+  SIDE_GLUE
+  BASE_ADHESIVE
+}
+
+enum RawMaterialType {
+  PAPER
+  GLUE
+}
+
+/// A paper or a glue the order form prices from. Paper and the three glues
+/// only (cartons, transport and inks keep their own fields).
+///
+/// A paper material names its supplier, because that is what its price
+/// depends on: "KRAFT R PLUS · Perevalls" is one material whatever the
+/// grammage, Delfort's 35 g and 38 g are two. Archive rather than delete,
+/// like Supplier: price rows and order lines keep naming it.
+model RawMaterial {
+  id    String          @id @default(cuid())
+  /// Unique, typed by the admin.
+  code  String          @unique
+  label String
+  /// Immutable after create: order lines rely on slot ↔ type.
+  type  RawMaterialType
+
+  /// Paper only, and required there (CHECK). Restrict: a supplier with
+  /// materials is archived, never deleted.
+  supplierId String?
+  supplier   Supplier?  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  /// Paper only, required there (CHECK). Matched against Product.paperType.
+  paperType  PaperType?
+  /// Paper only. Null = any grammage. Matched against Product.grammage.
+  grammage   Float?
+
+  active Boolean @default(true)
+
+  prices   RawMaterialPrice[]
+  defaults PricingSlotDefault[]
+  /// The order lines priced from it. Restrict: a material is archived, never
+  /// deleted.
+  lines    OrderMaterialPrice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The list leads with the active facet and the type chip.
+  @@index([active, type, label, id])
+  @@index([supplierId])
+}
+
+/// Append-only. A new price closes the current row (`validTo`) and inserts
+/// the next, in one transaction under a lock of the material row. At most
+/// one current row per material: a partial unique index, hand-written in the
+/// migration (`RawMaterialPrice_current_key`), since Prisma cannot express
+/// its WHERE clause.
+model RawMaterialPrice {
+  id          String      @id @default(cuid())
+  materialId  String
+  material    RawMaterial @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  /// Per kilogram. Positive (CHECK).
+  kiloPrice   Float
+  /// Written by `setPrice`, the same instant as the closed row's `validTo`.
+  validFrom   DateTime    @default(now())
+  /// Null = the current price.
+  validTo     DateTime?
+  enteredById String?
+  enteredBy   User?       @relation("RawMaterialPriceEnteredBy", fields: [enteredById], references: [id], onDelete: SetNull)
+  comment     String?
+
+  /// The order lines that came from this price (`sourcePriceId`).
+  lines OrderMaterialPrice[]
+
+  /// A material's history, newest first.
+  @@index([materialId, validFrom, id])
+  @@index([enteredById])
+}
+
+/// The glue each order glue line starts with. A slot has at most one default
+/// (the primary key); one glue may be the default of several lines. Never
+/// PAPER (CHECK): the paper line is matched on the product instead.
+model PricingSlotDefault {
+  slot       PricingSlot @id
+  materialId String
+  material   RawMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([materialId])
+}
+
+/// The price an order was calculated with, one row per slot — the order's own
+/// copy, so a document never changes when the catalogue does
+/// (docs/raw-material-prices-plan.md §3). Written only by `OrderPriceService`
+/// (and the importer's `writeCarriedOverLines`); the pricing engine reads
+/// these, never the catalogue.
+model OrderMaterialPrice {
+  id      String      @id @default(cuid())
+  orderId String
+  order   Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  slot    PricingSlot
+
+  /// Null only on lines carried over from before the catalogue.
+  materialId    String?
+  material      RawMaterial?      @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  /// Copied at save, so the line reads the same after a rename. Null exactly
+  /// when materialId is (CHECK).
+  label         String?
+  supplierName  String?
+  /// The price the engine used. Zero allowed: carried-over lines are copied
+  /// verbatim, and the engine already reads 0 as "not priced".
+  kiloPrice     Float
+  /// The catalogue row the line came from; for a manual line, the one that
+  /// was current when it was overridden. Null on carried-over lines.
+  sourcePriceId String?
+  sourcePrice   RawMaterialPrice? @relation(fields: [sourcePriceId], references: [id], onDelete: Restrict)
+  manual        Boolean           @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orderId, slot])
+  @@index([materialId])
+  @@index([sourcePriceId])
 }

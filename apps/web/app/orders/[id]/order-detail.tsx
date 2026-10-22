@@ -23,6 +23,7 @@ import { ProductImageUpload } from "../../products/product-image-upload";
 import { ProductImageViewer } from "../../products/product-image-viewer";
 import { OrderInks } from "../order-inks";
 import { OrderManufacturing } from "../order-manufacturing";
+import { OrderMaterialPrices } from "../order-material-prices";
 import { OrderPaper } from "../order-paper";
 import { OrderProduction, runHeadline } from "../order-production";
 import { OrderStatusBadge } from "../order-status";
@@ -174,6 +175,8 @@ export function OrderDetail({ id }: { id: string }) {
   )[0];
   const photo = assetUrl(p.images[0]);
   const priced = hasPricing(o) ? o : null;
+  /** The paper's kilo price is the order's PAPER material line. */
+  const paperLine = priced?.materialPrices.find((line) => line.slot === "PAPER") ?? null;
   const packed = packedFrom(runs);
   // Several invoices and shipments after a partial export
   // (docs/export-plan.md): one pair per cycle. The invoices ride the priced
@@ -366,41 +369,8 @@ export function OrderDetail({ id }: { id: string }) {
         {priced && (
           <>
             <Card title={t("detail.gluePaperPrinting")}>
+              <OrderMaterialPrices order={priced} canWrite={canWrite} />
               <div className={styles.specGrid}>
-                {p.hasHandle && (
-                  <Spec
-                    label={t("pricing.handleGlue")}
-                    value={
-                      priced.handleGlueKiloPrice !== null ||
-                      priced.handleGlueWeightG !== null
-                        ? `${num(priced.handleGlueKiloPrice) ?? "—"}/kg · ${num(priced.handleGlueWeightG) ?? "—"} g`
-                        : null
-                    }
-                  />
-                )}
-                <Spec
-                  label={t("pricing.sideGlue")}
-                  value={
-                    priced.sideGlueKiloPrice !== null ||
-                    priced.sideGlueWeightG !== null
-                      ? `${num(priced.sideGlueKiloPrice) ?? "—"}/kg · ${num(priced.sideGlueWeightG) ?? "—"} g`
-                      : null
-                  }
-                />
-                <Spec
-                  label={t("pricing.baseAdhesive")}
-                  value={
-                    priced.baseAdhesiveKiloPrice !== null ||
-                    priced.baseAdhesiveWeightG !== null
-                      ? `${num(priced.baseAdhesiveKiloPrice) ?? "—"}/kg · ${num(priced.baseAdhesiveWeightG) ?? "—"} g`
-                      : null
-                  }
-                />
-                <Spec
-                  label={t("pricing.paperPrice")}
-                  value={num(priced.paperKiloPrice)}
-                  unit="/kg"
-                />
                 <Spec
                   label={t("pricing.printing")}
                   value={
@@ -415,9 +385,7 @@ export function OrderDetail({ id }: { id: string }) {
                   {t("detail.legacyGluePerUnit", {
                     value: num(priced.legacyGlueCostPerUnit) ?? "",
                   })}{" "}
-                  {priced.handleGlueKiloPrice === null &&
-                  priced.sideGlueKiloPrice === null &&
-                  priced.baseAdhesiveKiloPrice === null
+                  {priced.materialPrices.every((line) => line.slot === "PAPER")
                     ? t("detail.legacyInEffect")
                     : t("detail.legacyReplaced")}
                 </p>
@@ -693,12 +661,12 @@ export function OrderDetail({ id }: { id: string }) {
             {priced.pricingSource === "LEGACY" && (
               <p className={styles.hint} style={{ margin: "0 0 10px" }}>
                 {t("detail.legacyPricing")}
-                {priced.paperKiloPrice === null && ` ${t("detail.legacyPricingReprice")}`}
+                {paperLine === null && ` ${t("detail.legacyPricingReprice")}`}
               </p>
             )}
             {(
               [
-                ["paperPrice", num(priced.paperKiloPrice), "/kg"],
+                ["paperPrice", num(paperLine?.kiloPrice ?? null), "/kg"],
                 ["unitPrice", num(priced.unitPrice), ""],
                 ["withMargins", num(priced.unitPriceWithMargins), ""],
                 ["gluePerUnit", num(priced.glueCostPerUnit), ""],

@@ -190,6 +190,12 @@
       "create": "Plantilla de OF creada",
       "update": "Plantilla de OF editada",
       "setActive": "Plantilla de OF archivada / restaurada"
+    },
+    "material": {
+      "create": "Materia creada",
+      "update": "Materia modificada",
+      "setActive": "Materia archivada / restaurada",
+      "setPrice": "Precio de materia cambiado"
     }
   }
 }

@@ -190,6 +190,12 @@
       "create": "Modèle d'OF créé",
       "update": "Modèle d'OF modifié",
       "setActive": "Modèle d'OF archivé / restauré"
+    },
+    "material": {
+      "create": "Matière créée",
+      "update": "Matière modifiée",
+      "setActive": "Matière archivée / restaurée",
+      "setPrice": "Prix de matière modifié"
     }
   }
 }

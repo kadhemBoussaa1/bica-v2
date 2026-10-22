@@ -1,5 +1,11 @@
 import { canAccess, type Role } from "./roles.js";
-import { ORDER_STATUSES, type OrderKind, type OrderStatus } from "./orders.js";
+import {
+  ORDER_STATUSES,
+  type OrderKind,
+  type OrderStatus,
+  type PaperType,
+  type TypeSac,
+} from "./orders.js";
 
 /**
  * The order lifecycle transition table — the single authority for which
@@ -277,6 +283,71 @@ export function canChangeOrderInks(kind: OrderKind, status: OrderStatus): boolea
  */
 export function canAddOrderInks(kind: OrderKind, status: OrderStatus): boolean {
   return kind === "ORDER" && !TERMINAL_ORDER_STATUSES.has(status);
+}
+
+/**
+ * Whether an order's pricing inputs are frozen (docs/raw-material-prices-plan.md
+ * §2, decision 8): its four material lines, margins, glue weights, packing,
+ * carton and transport. From the moment it has left DRAFT AND has a parcel
+ * price — leaving DRAFT alone is not enough, because release checks no price
+ * and an order released unpriced must still be priceable, or it could never
+ * be invoiced. A terminal order is finished, priced or not.
+ *
+ * One-way: no transition leads back to DRAFT, and a priced order is only ever
+ * re-priced from its frozen inputs, which keep a parcel price.
+ */
+export function isPricingLocked(order: {
+  status: OrderStatus;
+  finalParcelPrice: number | null;
+}): boolean {
+  return (
+    TERMINAL_ORDER_STATUSES.has(order.status) ||
+    (order.status !== "DRAFT" && (order.finalParcelPrice ?? 0) > 0)
+  );
+}
+
+/**
+ * Whether an order's quantity and product are frozen too (plan §2, decision
+ * 10): once it is on a sales invoice, draft or issued, or finished. The
+ * invoice line copies the parcel price when it is written, and after a
+ * partial export the balance still to bill is counted from `parcelCount`, so
+ * a later change would move both away from what was billed. `invoiced` is
+ * "a `SalesInvoiceLine` references the order".
+ */
+export function isOrderSpecLocked(order: { status: OrderStatus; invoiced: boolean }): boolean {
+  return TERMINAL_ORDER_STATUSES.has(order.status) || order.invoiced;
+}
+
+/** What `productSwapRefusal` compares: the paper a bag is made of, not its size. */
+export interface ProductPaperKey {
+  typeSac: TypeSac;
+  paperType: PaperType | null;
+  hasHandle: boolean;
+  grammage: number;
+}
+
+export type ProductSwapRefusal = "typeSac" | "paperType" | "hasHandle" | "grammage";
+
+/**
+ * Why a priced, locked order may not move to `next` (plan §2, decision 9), or
+ * null when it may. Its size may change — a wider bag uses more paper and is
+ * re-priced from the frozen kilo price — but not what the frozen price is
+ * the price OF: another bag type (a FOND turned SOUS_PLAT is priced per
+ * kilogram, from a packing figure that is frozen and usually blank), another
+ * paper type, a handle gained or lost (its glue line would be missing or
+ * left over), or another grammage when the paper line's material is priced
+ * for one grammage only (`paperLineGrammage`; null when it names none).
+ */
+export function productSwapRefusal(
+  current: ProductPaperKey,
+  next: ProductPaperKey,
+  paperLineGrammage: number | null,
+): ProductSwapRefusal | null {
+  if (next.typeSac !== current.typeSac) return "typeSac";
+  if (next.paperType !== current.paperType) return "paperType";
+  if (next.hasHandle !== current.hasHandle) return "hasHandle";
+  if (paperLineGrammage !== null && next.grammage !== paperLineGrammage) return "grammage";
+  return null;
 }
 
 /** Every `OrderStatus` that is not terminal — used to render the full pipeline. */

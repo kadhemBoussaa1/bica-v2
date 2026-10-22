@@ -1,0 +1,260 @@
+/*
+ * The material price catalogue (docs/raw-material-prices-plan.md §5): the
+ * table's cells, the material's detail dialog with its price history, and
+ * the two form dialogs. The table itself is the toolkit's, flattened onto
+ * the settings panel by `data-surface="panel"`.
+ */
+
+/* --- table cells --- */
+
+.material {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.priceValue {
+  font: 600 0.875rem/1.2 var(--bp-font-mono);
+  color: var(--bp-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.priceUnit {
+  margin-inline-start: 2px;
+  font: 500 0.71875rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.since {
+  font: 400 0.71875rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  white-space: nowrap;
+}
+
+/* "›" is a mirrored character: right-to-left text already turns it round. */
+.chevron {
+  color: var(--bp-ink-faint);
+}
+
+/* A code is one token: cut with an ellipsis, never broken at its hyphens. */
+.code {
+  display: block;
+  white-space: nowrap;
+}
+
+/* --- dialogs --- */
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+}
+
+.dialogBody > :global(*) {
+  min-width: 0;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bp-space-3) var(--bp-space-4);
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  min-width: 0;
+}
+
+.factLabel {
+  font: 600 0.65625rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.factValue {
+  margin: 0;
+  font: 500 0.875rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink);
+  overflow-wrap: anywhere;
+}
+
+.factMono {
+  font-family: var(--bp-font-mono);
+}
+
+/* The current price, and the one action that changes it. */
+.current {
+  display: flex;
+  gap: var(--bp-space-3);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: var(--bp-space-3) var(--bp-space-4);
+  background: var(--bp-veil-bg);
+  border: 1px solid var(--bp-veil-border);
+  border-radius: var(--bp-radius-block);
+}
+
+.currentText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  min-width: 0;
+}
+
+.currentFigure {
+  font: 600 1.5rem/1.1 var(--bp-font-mono);
+  color: var(--bp-ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.currentFigure .priceUnit {
+  font-size: 0.8125rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  font: 600 0.8125rem/1.3 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+/* The history: a plain table, scrolled sideways rather than squeezed on a phone. */
+.historyWrap {
+  overflow-x: auto;
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+}
+
+.history {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.history th {
+  padding: var(--bp-space-2) var(--bp-space-3);
+  text-align: start;
+  font: 600 0.65625rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+  background: var(--bp-tint);
+  white-space: nowrap;
+}
+
+.history td {
+  padding: var(--bp-space-2) var(--bp-space-3);
+  border-top: 1px solid var(--bp-hairline-soft);
+  vertical-align: top;
+}
+
+.history .num {
+  text-align: end;
+  font-family: var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.history .when {
+  font-family: var(--bp-font-mono);
+  white-space: nowrap;
+}
+
+.history .comment {
+  min-width: 140px;
+  color: var(--bp-ink-muted);
+}
+
+.currentTag {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid rgb(32 96 59 / 0.3);
+  border-radius: var(--bp-radius-pill);
+  background: rgb(46 125 79 / 0.16);
+  font: 600 0.625rem/1.3 var(--bp-font-mono);
+  letter-spacing: 0.06em;
+  color: var(--bp-success-text);
+  white-space: nowrap;
+}
+
+.note {
+  margin: 0;
+  font: 400 0.78125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* Archive on one side, the dialog's own actions on the other. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bp-space-2);
+  align-items: center;
+  padding-top: var(--bp-space-4);
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.actionsEnd {
+  display: flex;
+  gap: var(--bp-space-2);
+  margin-inline-start: auto;
+}
+
+/* --- form dialogs --- */
+
+.codeLabel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--bp-space-3);
+}
+
+.twoUp {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bp-space-3);
+}
+
+/* A labelled group that is not one field: the type switch, the glue lines.
+   Starts aligned, so a two-segment switch keeps its own width. */
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bp-space-2);
+}
+
+/* The toolkit's field label, for a group the toolkit's fields do not wrap. */
+.fieldLabel {
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.slots {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bp-space-2);
+}
+
+@media (max-width: 560px) {
+  .facts,
+  .codeLabel,
+  .twoUp,
+  .slots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -38,7 +38,8 @@
     "activity": "Actividad",
     "templates": "Plantillas de documentos",
     "shifts": "Planificación de turnos",
-    "my-shifts": "Mis turnos"
+    "my-shifts": "Mis turnos",
+    "material-prices": "Precios de materias"
   },
   "planned": "{label} — previsto, aún no construido",
   "plannedSr": "(previsto, aún no disponible)",

@@ -7,12 +7,14 @@
   "sectionEyebrow": "Ajustes · {group}",
   "groups": {
     "access": "Acceso",
-    "documents": "Documentos"
+    "documents": "Documentos",
+    "pricing": "Tarifas"
   },
   "hints": {
     "users": "Cuentas, roles y accesos",
     "activity": "Quién hizo qué y cuándo",
-    "templates": "Aspecto de las facturas emitidas"
+    "templates": "Aspecto de las facturas emitidas",
+    "material-prices": "Precios por kilo de papel y colas"
   },
   "counts": {
     "errors": "{count} err.",
