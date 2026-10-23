@@ -105,7 +105,8 @@ export const PRODUCTION_SELECT = {
     },
   },
   employeeId: true,
-  employee: { select: { id: true, firstName: true, lastName: true, matricule: true } },
+  /// `photo`: the day view shows a migrated run's person by their face too.
+  employee: { select: { id: true, firstName: true, lastName: true, matricule: true, photo: true } },
   /// Which machine ran it — PRINTING and PRODUCER only; null on PACKAGING
   /// and on every migrated row.
   machineId: true,
@@ -115,10 +116,12 @@ export const PRODUCTION_SELECT = {
   /// Who typed it in, and when — `createdAt` is the insertion time that pairs
   /// with `recordedBy`, distinct from `dateProduction` (when the work
   /// happened). Null on every migrated row.
-  /// `image` is null on every user today (nothing in the app uploads one), so
-  /// the daily view renders initials. Selected anyway so it renders a photo
-  /// the moment avatars exist, without another schema pass.
-  recordedBy: { select: { id: true, name: true, image: true, role: true } },
+  /// The face is the photo on the account's employee record (Employee.userId):
+  /// that is where photos are uploaded. `User.image` is null on every account,
+  /// since nothing in the app sets it. No employee, or no photo: initials.
+  recordedBy: {
+    select: { id: true, name: true, role: true, employee: { select: { photo: true } } },
+  },
   createdAt: true,
 } satisfies Prisma.ProductionRunSelect;
 

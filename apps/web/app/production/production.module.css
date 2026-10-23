@@ -652,6 +652,15 @@
   font: 700 1rem/1 var(--bp-font-display);
 }
 
+/* The person beside an entry's name when the machine holds the big photo. */
+.markSmall {
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--bp-radius-dense);
+  font-size: 0.6875rem;
+}
+
 .entryBody {
   display: flex;
   flex: 1 1 280px;

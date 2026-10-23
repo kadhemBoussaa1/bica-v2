@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
-import { WORKSHOP_STAGES, type WorkshopStage } from "@repo/api-contract";
+import { assetUrl, WORKSHOP_STAGES, type WorkshopStage } from "@repo/api-contract";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import styles from "./production.module.css";
@@ -81,6 +81,21 @@ export function initials(name: string): string {
   if (!first) return "?";
   const second = words[1];
   return ((first[0] ?? "") + (second ? (second[0] ?? "") : (first[1] ?? ""))).toUpperCase();
+}
+
+/**
+ * What a person's `.mark` holds: the photo on their employee record, or
+ * their initials when there is none — and while a photo fails to load, as a
+ * dead link on the old app's bucket does. The same fallback as the
+ * employees' `Avatar`, at the size and in the colour of the station.
+ */
+export function Face({ photo, name }: { photo: string | null | undefined; name: string }) {
+  const src = assetUrl(photo);
+  const [failed, setFailed] = useState<string | null>(null);
+  if (src === null || failed === src) return <>{initials(name)}</>;
+  // Plain <img>: DB-sourced URLs on a bucket this app does not own.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" loading="lazy" onError={() => setFailed(src)} />;
 }
 
 /**

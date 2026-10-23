@@ -12,10 +12,10 @@ import { TableSkeleton } from "@repo/ui/skeleton";
 import { useTRPC } from "../trpc/client";
 import {
   Dotted,
+  Face,
   FlowPanel,
   HEADLINE_OF,
   TrendCard,
-  initials,
   int,
   stageClass,
   stageUnit,
@@ -71,6 +71,8 @@ interface RankRow {
   name: string;
   /** The machine's code, or the person's role. */
   detail: string;
+  /** The person's employee photo; null on a machine row, which shows initials. */
+  photo: string | null;
   stage: WorkshopStage;
   cell: Cell;
   value: number;
@@ -113,6 +115,7 @@ export function rankRows(
               key: `${stage}:${row.machine.id}:${figure.unit}`,
               name: row.machine.name,
               detail: row.machine.code,
+              photo: null,
               stage,
               cell,
               ...figure,
@@ -129,6 +132,7 @@ export function rankRows(
             key: `${stage}:${row.person.id}:${figure.unit}`,
             name: row.person.name,
             detail: enums(`role.${row.person.role}`),
+            photo: row.person.employee?.photo ?? null,
             stage,
             cell,
             ...figure,
@@ -227,7 +231,7 @@ export function Ranking({
               className={[styles.rankRow, stageClass(row.stage)].filter(Boolean).join(" ")}
             >
               <span className={styles.mark} aria-hidden="true">
-                {initials(row.name)}
+                <Face photo={row.photo} name={row.name} />
               </span>
               <span className={styles.rankWho}>
                 <span className={styles.rankName}>

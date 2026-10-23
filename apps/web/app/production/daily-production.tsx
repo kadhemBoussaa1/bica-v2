@@ -16,8 +16,8 @@ import { OrderStatusBadge } from "../orders/order-status";
 import { useTRPC } from "../trpc/client";
 import {
   Dotted,
+  Face,
   FlowPanel,
-  initials,
   int,
   runUnit,
   stageClass,
@@ -133,7 +133,10 @@ function Entry({ run }: { run: Run }) {
       run.wastePieces !== null);
 
   const photo = assetUrl(run.machine?.imageUrl);
-  const face = assetUrl(person?.image);
+  // The person's employee photo: the account's, or on a migrated run the
+  // employee the old app named.
+  const face = person ? person.employee?.photo : run.employee?.photo;
+  const named = person !== null || run.employee !== null;
 
   return (
     <article className={styles.entry}>
@@ -148,19 +151,18 @@ function Entry({ run }: { run: Run }) {
         </span>
       ) : (
         <span className={styles.mark} aria-hidden="true">
-          {face !== null ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={face} alt="" />
-          ) : person || run.employee ? (
-            initials(operator)
-          ) : (
-            "—"
-          )}
+          {named ? <Face photo={face} name={operator} /> : "—"}
         </span>
       )}
 
       <div className={styles.entryBody}>
         <div className={styles.entryWho}>
+          {/* The machine has the big photo; the person gets a small one. */}
+          {run.machine && named && (
+            <span className={[styles.mark, styles.markSmall].filter(Boolean).join(" ")} aria-hidden="true">
+              <Face photo={face} name={operator} />
+            </span>
+          )}
           <span className={styles.operator}>{operator}</span>
           <span className={styles.unit}>{role}</span>
           {time && <span className={styles.time}>{time}</span>}
