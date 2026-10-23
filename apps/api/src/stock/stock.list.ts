@@ -76,9 +76,9 @@ export const rollListDeclaration: ListDeclaration<
     createdAt: (dir) => [{ archived: "asc" }, { createdAt: dir }],
   },
   defaultSort: "paperGrade",
-  // Function form: the shipment number is on a relation and cannot be named
-  // as a flat column. `numero` is a label, not a key, but it is still what
-  // someone reads off a reel.
+  // Function form: the shipment number and supplier name are on relations
+  // and cannot be named as flat columns. `numero` is a label, not a key, but
+  // it is still what someone reads off a reel.
   searchable: (term) => ({
     OR: [
       { numero: contains(term) },
@@ -86,6 +86,7 @@ export const rollListDeclaration: ListDeclaration<
       { paperGrade: contains(term) },
       { description: contains(term) },
       { importShipment: { numeroImport: contains(term) } },
+      { importShipment: { supplier: { name: contains(term) } } },
     ],
   }),
   facets: {
@@ -147,8 +148,15 @@ export const ROLL_SELECT = {
   receivedAt: true,
   parentId: true,
   importShipmentId: true,
+  // The supplier name is not pricing: `supplierOptions` already hands every
+  // stock reader the same names for the filter.
   importShipment: {
-    select: { id: true, numeroImport: true, dateImport: true },
+    select: {
+      id: true,
+      numeroImport: true,
+      dateImport: true,
+      supplier: { select: { name: true } },
+    },
   },
   createdAt: true,
 } satisfies Prisma.PaperRollSelect;

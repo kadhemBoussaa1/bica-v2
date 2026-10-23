@@ -343,6 +343,7 @@
     "paper": "Paper",
     "none": "None",
     "otherPapers": "— Other papers —",
+    "otherGlues": "— Other glues —",
     "archived": "{label} (archived)",
     "carried": "Pre-catalogue",
     "fromCatalogue": "Catalogue price, since {date}",

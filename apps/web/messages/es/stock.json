@@ -10,7 +10,7 @@
   "mustBeNumber": "{label} debe ser un número",
   "rolls": {
     "title": "Stock",
-    "subtitle": "Bobinas de papel migradas del sistema anterior, con el envío en que llegó cada una. Cortar una bobina registra el trozo contra la bobina de origen, de modo que un resto conserva su procedencia.",
+    "subtitle": "Bobinas de papel migradas del sistema anterior, con el proveedor de cada una. Cortar una bobina registra el trozo contra la bobina de origen, de modo que un resto conserva su procedencia.",
     "newTitle": "Añadir bobina",
     "newSubtitle": "Una bobina de papel tal como llegó. El peso restante empieza igual al peso entregado.",
     "detailTitle": "Bobina de papel",
@@ -29,7 +29,7 @@
       "paper": "Papel",
       "remaining": "Restante",
       "length": "Metraje",
-      "shipment": "Envío",
+      "supplier": "Proveedor",
       "received": "Recibida"
     },
     "filters": {
@@ -39,7 +39,7 @@
       "archived": "Archivadas",
       "pending": "Pendiente"
     },
-    "searchPlaceholder": "Buscar n.º de bobina, calidad, envío…",
+    "searchPlaceholder": "Buscar n.º de bobina, calidad, proveedor…",
     "emptyMessage": "Ninguna bobina coincide con estos filtros.",
     "form": {
       "shipment": "Envío",

@@ -133,6 +133,9 @@ export function useOrderMaterialLines({
   const storedFor = (key: MaterialLineKey) =>
     stored.find((line) => line.slot === MATERIAL_LINE_SLOTS[key]) ?? null;
   const used = (key: MaterialLineKey) => !product || slotUsedBy(MATERIAL_LINE_SLOTS[key], product);
+  /** The ids of a glue line's default glues. */
+  const defaultsFor = (slot: PricingSlot) =>
+    defaults.flatMap((entry) => (entry.slot === slot ? [entry.materialId] : []));
 
   /** The catalogue's suggestion for an untouched line. */
   function suggestion(key: MaterialLineKey): FormMaterial | null {
@@ -143,8 +146,10 @@ export function useOrderMaterialLines({
       const fits = materials.filter((material) => paperFits(material, product));
       return fits.length === 1 ? (fits[0] ?? null) : null;
     }
-    const preset = defaults.find((entry) => entry.slot === slot);
-    return preset ? byId(preset.materialId) : null;
+    // Several defaults are a choice the form does not make, like several
+    // fitting papers: the line starts empty and lists them first.
+    const presets = defaultsFor(slot);
+    return presets.length === 1 && presets[0] ? byId(presets[0]) : null;
   }
 
   function effective(key: MaterialLineKey): EffectiveLine {
@@ -292,6 +297,7 @@ export function useOrderMaterialLines({
     prices,
     repriced,
     materials,
+    defaultsFor,
     catalogLoading: !locked && catalogQuery.isPending,
     catalogEmpty: !locked && catalogQuery.isSuccess && materials.length === 0,
     used,
@@ -346,14 +352,24 @@ export function MaterialLineFields({
     label: [material.label, material.supplier?.name].filter(Boolean).join(" · "),
   });
 
-  // Papers that fit the bag first; the others stay reachable below a rule,
-  // for the job that really is printed on something else.
-  const fitting = isPaper && product ? kinds.filter((material) => paperFits(material, product)) : kinds;
-  const others = isPaper && product ? kinds.filter((material) => !paperFits(material, product)) : [];
+  // Papers that fit the bag first, and a glue line's default glues; the
+  // others stay reachable below a rule, for the job that really is made
+  // with something else.
+  const lineDefaults = isPaper ? [] : lines.defaultsFor(line.slot);
+  const preferred =
+    isPaper && product
+      ? (material: FormMaterial) => paperFits(material, product)
+      : lineDefaults.length > 0
+        ? (material: FormMaterial) => lineDefaults.includes(material.id)
+        : null;
+  const fitting = preferred ? kinds.filter(preferred) : kinds;
+  const others = preferred ? kinds.filter((material) => !preferred(material)) : [];
   const options: SelectOption[] = [
     { value: "", label: t("lines.none") },
     ...fitting.map(option),
-    ...(others.length > 0 ? [{ value: "__others", label: t("lines.otherPapers"), disabled: true }] : []),
+    ...(others.length > 0
+      ? [{ value: "__others", label: t(isPaper ? "lines.otherPapers" : "lines.otherGlues"), disabled: true }]
+      : []),
     ...others.map(option),
   ];
   // The stored line's own material when the catalogue no longer offers it

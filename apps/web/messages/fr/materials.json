@@ -70,7 +70,7 @@
     "grammage": "Grammage (facultatif)",
     "grammageHint": "Vide : le prix vaut pour tous les grammages de ce papier chez ce fournisseur.",
     "defaults": "Lignes par défaut",
-    "defaultsHint": "Le formulaire de commande préremplit ces lignes avec cette colle. Une ligne n'a qu'une colle par défaut : la cocher ici la retire de l'autre.",
+    "defaultsHint": "Le formulaire de commande préremplit ces lignes avec cette colle. Plusieurs colles peuvent partager une ligne : le formulaire la laisse alors à choisir, en les proposant en premier.",
     "price": "Prix au kilo",
     "comment": "Commentaire (facultatif)",
     "commentPlaceholder": "Facture, devis, hausse annoncée…",

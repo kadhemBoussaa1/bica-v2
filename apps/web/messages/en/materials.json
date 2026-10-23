@@ -70,7 +70,7 @@
     "grammage": "Grammage (optional)",
     "grammageHint": "Empty: the price holds for every grammage of this paper from this supplier.",
     "defaults": "Default lines",
-    "defaultsHint": "The order form prefills these lines with this glue. A line has one default glue: ticking it here takes it off the other.",
+    "defaultsHint": "The order form prefills these lines with this glue. Several glues can share a line: the form then leaves it for you to choose, with them listed first.",
     "price": "Price per kilo",
     "comment": "Comment (optional)",
     "commentPlaceholder": "Invoice, quote, announced increase…",

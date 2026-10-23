@@ -367,9 +367,8 @@ export class MaterialService {
   }
 
   /**
-   * Makes `slots` exactly the lines this glue is the default of: each named
-   * slot moves to it (the slot is the primary key, so it leaves whichever
-   * glue had it), and any other slot it held is cleared.
+   * Makes `slots` exactly the lines this glue is the default of. Other glues
+   * keep theirs: a line may have several defaults.
    */
   private async setDefaults(
     tx: Prisma.TransactionClient,
@@ -379,13 +378,10 @@ export class MaterialService {
     await tx.pricingSlotDefault.deleteMany({
       where: { materialId, slot: { notIn: [...slots] } },
     });
-    for (const slot of slots) {
-      await tx.pricingSlotDefault.upsert({
-        where: { slot },
-        create: { slot, materialId },
-        update: { materialId },
-      });
-    }
+    await tx.pricingSlotDefault.createMany({
+      data: slots.map((slot) => ({ slot, materialId })),
+      skipDuplicates: true,
+    });
   }
 
   /**

@@ -10,7 +10,7 @@
   "mustBeNumber": "{label} must be a number",
   "rolls": {
     "title": "Stock",
-    "subtitle": "Paper reels migrated from the previous system, with the shipment each arrived in. Cutting a reel records the piece against the roll it came from, so a remnant keeps its lineage.",
+    "subtitle": "Paper reels migrated from the previous system, with the supplier of each. Cutting a reel records the piece against the roll it came from, so a remnant keeps its lineage.",
     "newTitle": "Add reel",
     "newSubtitle": "A reel of paper as it arrived. Remaining weight starts equal to the weight delivered.",
     "detailTitle": "Paper roll",
@@ -29,7 +29,7 @@
       "paper": "Paper",
       "remaining": "Remaining",
       "length": "Length",
-      "shipment": "Shipment",
+      "supplier": "Supplier",
       "received": "Received"
     },
     "filters": {
@@ -39,7 +39,7 @@
       "consumed": "Consumed",
       "archived": "Archived"
     },
-    "searchPlaceholder": "Search roll no., grade, shipment…",
+    "searchPlaceholder": "Search roll no., grade, supplier…",
     "emptyMessage": "No rolls match these filters.",
     "form": {
       "shipment": "Shipment",

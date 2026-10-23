@@ -359,6 +359,7 @@ export class StockService {
       "Length (m)",
       "Length remaining (m)",
       "State",
+      "Supplier",
       "Shipment",
       "Imported",
       ...(priced ? ["Price", "Price with transport"] : []),
@@ -397,6 +398,7 @@ export class StockService {
         round2(row.metrage),
         round2(row.metrageRestant),
         state,
+        row.importShipment?.supplier.name ?? null,
         row.importShipment?.numeroImport ?? null,
         row.importShipment?.dateImport
           ? row.importShipment.dateImport.toISOString().slice(0, 10)

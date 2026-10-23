@@ -70,7 +70,7 @@
     "grammage": "Gramaje (opcional)",
     "grammageHint": "Vacío: el precio vale para todos los gramajes de este papel de este proveedor.",
     "defaults": "Líneas por defecto",
-    "defaultsHint": "El formulario de pedido rellena estas líneas con esta cola. Una línea tiene una sola cola por defecto: marcarla aquí la quita de la otra.",
+    "defaultsHint": "El formulario de pedido rellena estas líneas con esta cola. Varias colas pueden compartir una línea: el formulario la deja entonces por elegir, con ellas en primer lugar.",
     "price": "Precio por kilo",
     "comment": "Comentario (opcional)",
     "commentPlaceholder": "Factura, presupuesto, subida anunciada…",

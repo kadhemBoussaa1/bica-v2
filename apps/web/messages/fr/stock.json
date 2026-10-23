@@ -10,7 +10,7 @@
   "mustBeNumber": "{label} doit être un nombre",
   "rolls": {
     "title": "Stock",
-    "subtitle": "Bobines de papier reprises de l’ancien système, avec l’arrivage dans lequel chacune est arrivée. Couper une bobine enregistre le morceau contre la bobine d’origine, pour qu’une chute garde sa filiation.",
+    "subtitle": "Bobines de papier reprises de l’ancien système, avec le fournisseur de chacune. Couper une bobine enregistre le morceau contre la bobine d’origine, pour qu’une chute garde sa filiation.",
     "newTitle": "Ajouter une bobine",
     "newSubtitle": "Une bobine de papier telle qu’elle est arrivée. Le poids restant part égal au poids livré.",
     "detailTitle": "Bobine de papier",
@@ -29,7 +29,7 @@
       "paper": "Papier",
       "remaining": "Restant",
       "length": "Métrage",
-      "shipment": "Arrivage",
+      "supplier": "Fournisseur",
       "received": "Reçu"
     },
     "filters": {
@@ -39,7 +39,7 @@
       "archived": "Archivées",
       "pending": "En attente"
     },
-    "searchPlaceholder": "Rechercher n° de bobine, qualité, arrivage…",
+    "searchPlaceholder": "Rechercher n° de bobine, qualité, fournisseur…",
     "emptyMessage": "Aucune bobine ne correspond à ces filtres.",
     "form": {
       "shipment": "Arrivage",

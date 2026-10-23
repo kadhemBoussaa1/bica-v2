@@ -433,12 +433,14 @@ export function RollsTable({
       cell: (row) => <LengthCell remaining={row.metrageRestant} total={row.metrage} />,
     },
     {
-      key: "shipment",
-      header: t("rolls.columns.shipment"),
+      key: "supplier",
+      header: t("rolls.columns.supplier"),
       width: "minmax(110px,1fr)",
+      // Through the shipment: a reel has no supplier of its own, and 159
+      // legacy reels have no shipment at all.
       cell: (row) =>
         row.importShipment ? (
-          <span className={styles.text}>{row.importShipment.numeroImport}</span>
+          <span className={styles.text}>{row.importShipment.supplier.name}</span>
         ) : (
           <span className={styles.absent} />
         ),

@@ -3792,14 +3792,16 @@ model RawMaterialPrice {
   @@index([enteredById])
 }
 
-/// The glue each order glue line starts with. A slot has at most one default
-/// (the primary key); one glue may be the default of several lines. Never
-/// PAPER (CHECK): the paper line is matched on the product instead.
+/// The glues each order glue line is meant for. A line may have several and
+/// one glue may be the default of several lines; the order form fills a line
+/// only when it has exactly one, and lists them first otherwise. Never PAPER
+/// (CHECK): the paper line is matched on the product instead.
 model PricingSlotDefault {
-  slot       PricingSlot @id
+  slot       PricingSlot
   materialId String
   material   RawMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
 
+  @@id([slot, materialId])
   @@index([materialId])
 }
 

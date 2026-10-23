@@ -343,6 +343,7 @@
     "paper": "Papel",
     "none": "Ninguno",
     "otherPapers": "— Otros papeles —",
+    "otherGlues": "— Otras colas —",
     "archived": "{label} (archivada)",
     "carried": "Antes del catálogo",
     "fromCatalogue": "Precio del catálogo, desde el {date}",

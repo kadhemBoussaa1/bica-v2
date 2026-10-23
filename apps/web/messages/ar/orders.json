@@ -343,6 +343,7 @@
     "paper": "الورق",
     "none": "لا شيء",
     "otherPapers": "— أوراق أخرى —",
+    "otherGlues": "— أنواع غراء أخرى —",
     "archived": "{label} (مؤرشفة)",
     "carried": "قبل الكتالوج",
     "fromCatalogue": "سعر الكتالوج، منذ {date}",
