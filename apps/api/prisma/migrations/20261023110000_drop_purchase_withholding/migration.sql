@@ -4,13 +4,16 @@
 -- database, 2026-10-23), and on every invoice of this one — so the user
 -- dropped it. `netPayable` stays, equal to `totalTtc`.
 --
--- The guard comes first, in the same transaction: a non-zero withholding, or
--- a net payable that differs from the total (a withholding in effect), would
--- be lost with the column, so either one aborts with nothing changed. Clear
--- the withholding on that invoice through the app (or decide otherwise) and
--- deploy again.
-
-BEGIN;
+-- The guard comes first. A non-zero withholding, or a net payable that
+-- differs from the total (a withholding in effect), would be lost with the
+-- column, so either one aborts with nothing changed. Clear the withholding
+-- on that invoice through the app (or decide otherwise) and deploy again.
+--
+-- No explicit BEGIN/COMMIT: Prisma sends the file as one multi-statement
+-- query, which Postgres already runs as a single transaction. An explicit
+-- block left the session in an aborted transaction on the first deploy, so
+-- Prisma reported "current transaction is aborted" instead of the guard's
+-- own message.
 
 DO $$
 DECLARE withheld INT; reduced INT;
@@ -28,5 +31,3 @@ END $$;
 
 -- AlterTable
 ALTER TABLE "PurchaseInvoice" DROP COLUMN "withholdingTax";
-
-COMMIT;
