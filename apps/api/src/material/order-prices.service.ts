@@ -4,11 +4,11 @@ import {
   MATERIAL_LINE_KEYS,
   MATERIAL_LINE_SLOTS,
   materialTypeForSlot,
-  PRICING_SLOTS,
   slotUsedBy,
+  type MaterialLineKey,
   type OrderMaterialsInput,
   type PricingSlot,
-  type SlotKiloPrices,
+  type SlotPrices,
   type TypeSac,
 } from "@repo/api-contract";
 import type { Prisma } from "../generated/prisma/client.js";
@@ -22,13 +22,22 @@ export interface ResolvedLine {
   materialId: string | null;
   label: string | null;
   supplierName: string | null;
-  kiloPrice: number;
+  price: number;
   sourcePriceId: string | null;
   manual: boolean;
 }
 
-/** The four slots of a save: a line to write, or null for none. */
-export type ResolvedLines = Record<PricingSlot, ResolvedLine | null>;
+/**
+ * The slots a save covers: one per key of the order's `materials` input.
+ * Every `PricingSlot` since the carton joined (cartons addition C4), but
+ * declared from the input rather than the enum, so a slot the input does not
+ * carry can never be deleted by a save that never mentioned it.
+ */
+type LineSlot = (typeof MATERIAL_LINE_SLOTS)[MaterialLineKey];
+const LINE_SLOTS: readonly LineSlot[] = MATERIAL_LINE_KEYS.map((key) => MATERIAL_LINE_SLOTS[key]);
+
+/** The slots of a save: a line to write, or null for none. */
+export type ResolvedLines = Record<LineSlot, ResolvedLine | null>;
 
 /** The words a refusal uses for a slot. */
 const SLOT_NAMES: Record<PricingSlot, string> = {
@@ -36,15 +45,17 @@ const SLOT_NAMES: Record<PricingSlot, string> = {
   HANDLE_GLUE: "handle glue",
   SIDE_GLUE: "side glue",
   BASE_ADHESIVE: "base adhesive",
+  CARTON: "carton",
 };
 
-/** The engine's four kilo prices from a save's resolved lines. */
-export function kiloPricesFromResolved(lines: ResolvedLines): SlotKiloPrices {
+/** The engine's material prices from a save's resolved lines. */
+export function slotPricesFromResolved(lines: ResolvedLines): SlotPrices {
   return {
-    paper: lines.PAPER?.kiloPrice ?? null,
-    handleGlue: lines.HANDLE_GLUE?.kiloPrice ?? null,
-    sideGlue: lines.SIDE_GLUE?.kiloPrice ?? null,
-    baseAdhesive: lines.BASE_ADHESIVE?.kiloPrice ?? null,
+    paper: lines.PAPER?.price ?? null,
+    handleGlue: lines.HANDLE_GLUE?.price ?? null,
+    sideGlue: lines.SIDE_GLUE?.price ?? null,
+    baseAdhesive: lines.BASE_ADHESIVE?.price ?? null,
+    carton: lines.CARTON?.price ?? null,
   };
 }
 
@@ -54,7 +65,7 @@ export function kiloPricesFromResolved(lines: ResolvedLines): SlotKiloPrices {
  * the importer.
  */
 async function writeLines(db: Db, orderId: string, lines: ResolvedLines) {
-  for (const slot of PRICING_SLOTS) {
+  for (const slot of LINE_SLOTS) {
     const line = lines[slot];
     if (line === null) {
       await db.orderMaterialPrice.deleteMany({ where: { orderId, slot } });
@@ -70,26 +81,27 @@ async function writeLines(db: Db, orderId: string, lines: ResolvedLines) {
 
 /**
  * The importer's lines (docs/raw-material-prices-plan.md §7): the legacy
- * kilo prices as lines carried over from before the catalogue — no material,
- * no source price — exactly as the migration copied the existing ones. A
- * plain function rather than the service, because the importer runs outside
- * Nest; it goes through the same writer.
+ * kilo and carton prices as lines carried over from before the catalogue —
+ * no material, no source price — exactly as the migrations copied the
+ * existing ones. A plain function rather than the service, because the
+ * importer runs outside Nest; it goes through the same writer.
  */
-export async function writeCarriedOverLines(db: Db, orderId: string, prices: SlotKiloPrices) {
-  const carried = (kiloPrice: number | null): ResolvedLine | null =>
-    kiloPrice === null
+export async function writeCarriedOverLines(db: Db, orderId: string, prices: SlotPrices) {
+  const carried = (price: number | null): ResolvedLine | null =>
+    price === null
       ? null
-      : { materialId: null, label: null, supplierName: null, kiloPrice, sourcePriceId: null, manual: false };
+      : { materialId: null, label: null, supplierName: null, price, sourcePriceId: null, manual: false };
   await writeLines(db, orderId, {
     PAPER: carried(prices.paper),
     HANDLE_GLUE: carried(prices.handleGlue),
     SIDE_GLUE: carried(prices.sideGlue),
     BASE_ADHESIVE: carried(prices.baseAdhesive),
+    CARTON: carried(prices.carton),
   });
 }
 
 /**
- * An order's four material lines: the paper and glue kilo prices it is
+ * An order's five material lines: the paper, glue and carton prices it is
  * calculated with, copied from the catalogue (or typed over it) and never
  * changed by a catalogue price change — docs/raw-material-prices-plan.md §3.
  *
@@ -122,7 +134,7 @@ export class OrderPriceService {
             materialId: true,
             label: true,
             supplierName: true,
-            kiloPrice: true,
+            price: true,
             sourcePriceId: true,
             manual: true,
           },
@@ -152,7 +164,7 @@ export class OrderPriceService {
           materialId: current.materialId,
           label: current.label,
           supplierName: current.supplierName,
-          kiloPrice: current.kiloPrice,
+          price: current.price,
           sourcePriceId: current.sourcePriceId,
           manual: current.manual,
         };
@@ -189,7 +201,7 @@ export class OrderPriceService {
           message: `${material.label} cannot price the ${name} line`,
         });
       }
-      const price = material.prices[0] ?? null;
+      const currentPrice = material.prices[0] ?? null;
       const named = {
         materialId: material.id,
         label: material.label,
@@ -203,13 +215,13 @@ export class OrderPriceService {
             message: `${material.label} is archived and cannot be chosen`,
           });
         }
-        if (price?.id !== line.priceId) {
+        if (currentPrice?.id !== line.priceId) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: `The catalogue price of ${material.label} has changed${price ? ` to ${price.kiloPrice}` : ""} — check it and save again`,
+            message: `The catalogue price of ${material.label} has changed${currentPrice ? ` to ${currentPrice.price}` : ""} — check it and save again`,
           });
         }
-        resolved[slot] = { ...named, kiloPrice: price.kiloPrice, sourcePriceId: price.id, manual: false };
+        resolved[slot] = { ...named, price: currentPrice.price, sourcePriceId: currentPrice.id, manual: false };
         continue;
       }
 
@@ -223,8 +235,8 @@ export class OrderPriceService {
       }
       resolved[slot] = {
         ...named,
-        kiloPrice: line.kiloPrice,
-        sourcePriceId: price?.id ?? null,
+        price: line.price,
+        sourcePriceId: currentPrice?.id ?? null,
         manual: true,
       };
     }
@@ -248,7 +260,7 @@ export class OrderPriceService {
       where: { orderId },
       select: {
         slot: true,
-        kiloPrice: true,
+        price: true,
         manual: true,
         sourcePriceId: true,
         material: {
@@ -262,23 +274,23 @@ export class OrderPriceService {
       },
     });
     let moved = 0;
-    const after: { slot: PricingSlot; kiloPrice: number }[] = [];
+    const after: { slot: PricingSlot; price: number }[] = [];
     for (const line of lines) {
-      const price = line.material?.prices[0];
-      if (!line.manual && line.material?.active && price && price.id !== line.sourcePriceId) {
+      const currentPrice = line.material?.prices[0];
+      if (!line.manual && line.material?.active && currentPrice && currentPrice.id !== line.sourcePriceId) {
         await db.orderMaterialPrice.update({
           where: { orderId_slot: { orderId, slot: line.slot } },
           data: {
-            kiloPrice: price.kiloPrice,
-            sourcePriceId: price.id,
+            price: currentPrice.price,
+            sourcePriceId: currentPrice.id,
             label: line.material.label,
             supplierName: line.material.supplier?.name ?? null,
           },
         });
         moved += 1;
-        after.push({ slot: line.slot, kiloPrice: price.kiloPrice });
+        after.push({ slot: line.slot, price: currentPrice.price });
       } else {
-        after.push({ slot: line.slot, kiloPrice: line.kiloPrice });
+        after.push({ slot: line.slot, price: line.price });
       }
     }
     return { lines: after, moved };

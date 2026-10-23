@@ -738,6 +738,14 @@ model Product {
   /// data-entry job, not something the migration could decide.
   images String[]
 
+  /// The carton this bag usually ships in: a BOX material. The order form
+  /// starts a new order's carton line from it; nothing else reads it
+  /// (docs/raw-material-prices-plan.md, "Addition 2026-10-23: cartons").
+  /// Null on every product until someone picks one. `ProductService` holds
+  /// it to an active BOX; SetNull, since losing a default blocks nothing.
+  cartonId String?
+  carton   RawMaterial? @relation(fields: [cartonId], references: [id], onDelete: SetNull)
+
   /// False archives the record: it stays referenced by its orders and
   /// disappears from the default picker and list. The same convention as
   /// Client and Supplier.
@@ -751,6 +759,7 @@ model Product {
   @@index([clientId])
   @@index([active, name, id])
   @@index([typeSac])
+  @@index([cartonId])
 }
 
 /// A production order. Migrated from legacy `commande` (397 rows).
@@ -804,12 +813,13 @@ model Order {
 
   // ---- pricing inputs -------------------------------------------------
   //
-  // The paper and glue KILO PRICES are not columns here: they are the
-  // order's `materialPrices` lines, prefilled from the raw material
-  // catalogue and copied onto the order (docs/raw-material-prices-plan.md;
-  // the legacy `prix_kilo` became a PAPER line). Those lines and every input
-  // below freeze once the order has left DRAFT and has a parcel price —
-  // `isPricingLocked` in `@repo/api-contract`.
+  // The paper and glue KILO PRICES and the CARTON price are not columns
+  // here: they are the order's `materialPrices` lines, prefilled from the
+  // raw material catalogue and copied onto the order
+  // (docs/raw-material-prices-plan.md; the legacy `prix_kilo` became a PAPER
+  // line, `prix_carton` — once `parcelPrice` here — a CARTON line). Those
+  // lines and every input below freeze once the order has left DRAFT and has
+  // a parcel price — `isPricingLocked` in `@repo/api-contract`.
 
   /// Percent: 2 means 2%. Legacy `marge`.
   profitMarginPct Float?
@@ -834,9 +844,8 @@ model Order {
   /// `nombre_de_piece_par_colis`.
   piecesPerParcel Float?
   /// How many kilograms go in one parcel. SOUS_PLAT. Legacy `kilo_par_colis`.
+  /// The carton itself is priced by the CARTON material line.
   kilosPerParcel  Float?
-  /// Cost of the parcel itself (the carton). Legacy `prix_carton`.
-  parcelPrice     Float?
   /// Transport, per parcel. Legacy `prix_transport`.
   transportCost   Float?
 
@@ -869,8 +878,8 @@ model Order {
 
   /// A parcel's contents at `finalUnitPrice`.
   baseParcelPrice  Float?
-  /// `baseParcelPrice` plus `parcelPrice` plus `transportCost` — what one
-  /// parcel sells for.
+  /// `baseParcelPrice` plus the carton (the CARTON line) plus
+  /// `transportCost` — what one parcel sells for.
   finalParcelPrice Float?
   /// `quantite / unitsPerParcel`, an exact (possibly fractional) division —
   /// not rounded, so `orderTotal` matches `parcelCount × finalParcelPrice`.
@@ -3712,26 +3721,33 @@ model StockEventCounter {
 // (docs/raw-material-prices-plan.md)
 // ---------------------------------------------------------------------------
 
-/// The four kilo prices `priceOrder` reads, one per order snapshot line.
+/// The material prices `priceOrder` reads, one per order snapshot line: four
+/// kilo prices and the price of one carton (`parcelPrice`).
 enum PricingSlot {
   PAPER
   HANDLE_GLUE
   SIDE_GLUE
   BASE_ADHESIVE
+  CARTON
 }
 
+/// Also fixes the unit of the material's prices: per kilogram for PAPER and
+/// GLUE, per carton for BOX.
 enum RawMaterialType {
   PAPER
   GLUE
+  BOX
 }
 
-/// A paper or a glue the order form prices from. Paper and the three glues
-/// only (cartons, transport and inks keep their own fields).
+/// A paper, a glue or a carton the order form prices from. Transport and inks
+/// keep their own fields.
 ///
 /// A paper material names its supplier, because that is what its price
 /// depends on: "KRAFT R PLUS · Perevalls" is one material whatever the
-/// grammage, Delfort's 35 g and 38 g are two. Archive rather than delete,
-/// like Supplier: price rows and order lines keep naming it.
+/// grammage, Delfort's 35 g and 38 g are two. A carton is one size from one
+/// supplier, "Caisse 400×300×400 DD · Dallel Pack", for the same reason.
+/// Archive rather than delete, like Supplier: price rows and order lines keep
+/// naming it.
 model RawMaterial {
   id    String          @id @default(cuid())
   /// Unique, typed by the admin.
@@ -3740,7 +3756,7 @@ model RawMaterial {
   /// Immutable after create: order lines rely on slot ↔ type.
   type  RawMaterialType
 
-  /// Paper only, and required there (CHECK). Restrict: a supplier with
+  /// Paper and carton, and required there (CHECK). Restrict: a supplier with
   /// materials is archived, never deleted.
   supplierId String?
   supplier   Supplier?  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
@@ -3749,6 +3765,12 @@ model RawMaterial {
   /// Paper only. Null = any grammage. Matched against Product.grammage.
   grammage   Float?
 
+  /// Carton only, all three required and positive there (CHECK). Millimetres,
+  /// as the suppliers write them ("CAISSE 400/300/400").
+  lengthMm Float?
+  widthMm  Float?
+  heightMm Float?
+
   active Boolean @default(true)
 
   prices   RawMaterialPrice[]
@@ -3756,6 +3778,8 @@ model RawMaterial {
   /// The order lines priced from it. Restrict: a material is archived, never
   /// deleted.
   lines    OrderMaterialPrice[]
+  /// The products that ship in it (a BOX only).
+  products Product[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3774,8 +3798,9 @@ model RawMaterialPrice {
   id          String      @id @default(cuid())
   materialId  String
   material    RawMaterial @relation(fields: [materialId], references: [id], onDelete: Restrict)
-  /// Per kilogram. Positive (CHECK).
-  kiloPrice   Float
+  /// In the unit the material's type sets: per kilogram for a paper or a
+  /// glue, per carton for a box. Positive (CHECK).
+  price       Float
   /// Written by `setPrice`, the same instant as the closed row's `validTo`.
   validFrom   DateTime    @default(now())
   /// Null = the current price.
@@ -3794,8 +3819,9 @@ model RawMaterialPrice {
 
 /// The glues each order glue line is meant for. A line may have several and
 /// one glue may be the default of several lines; the order form fills a line
-/// only when it has exactly one, and lists them first otherwise. Never PAPER
-/// (CHECK): the paper line is matched on the product instead.
+/// only when it has exactly one, and lists them first otherwise. Glue slots
+/// only (CHECK): the paper line is matched on the product, and the carton
+/// line starts from `Product.cartonId`.
 model PricingSlotDefault {
   slot       PricingSlot
   materialId String
@@ -3823,9 +3849,10 @@ model OrderMaterialPrice {
   /// when materialId is (CHECK).
   label         String?
   supplierName  String?
-  /// The price the engine used. Zero allowed: carried-over lines are copied
-  /// verbatim, and the engine already reads 0 as "not priced".
-  kiloPrice     Float
+  /// The price the engine used, per kilogram or per carton as the slot says.
+  /// Zero allowed: carried-over lines are copied verbatim, and the engine
+  /// already reads 0 as "not priced".
+  price         Float
   /// The catalogue row the line came from; for a manual line, the one that
   /// was current when it was overridden. Null on carried-over lines.
   sourcePriceId String?

@@ -156,12 +156,14 @@
   },
   "rawMaterialType": {
     "PAPER": "Paper",
-    "GLUE": "Glue"
+    "GLUE": "Glue",
+    "BOX": "Carton"
   },
   "pricingSlot": {
     "PAPER": "Paper",
     "HANDLE_GLUE": "Handle glue",
     "SIDE_GLUE": "Side glue",
-    "BASE_ADHESIVE": "Base adhesive"
+    "BASE_ADHESIVE": "Base adhesive",
+    "CARTON": "Carton"
   }
 }

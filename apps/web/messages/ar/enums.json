@@ -156,12 +156,14 @@
   },
   "rawMaterialType": {
     "PAPER": "ورق",
-    "GLUE": "غراء"
+    "GLUE": "غراء",
+    "BOX": "كرتون"
   },
   "pricingSlot": {
     "PAPER": "ورق",
     "HANDLE_GLUE": "غراء المقبض",
     "SIDE_GLUE": "الغراء الجانبي",
-    "BASE_ADHESIVE": "غراء القاع"
+    "BASE_ADHESIVE": "غراء القاع",
+    "CARTON": "كرتون"
   }
 }

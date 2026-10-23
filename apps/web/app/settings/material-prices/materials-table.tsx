@@ -12,9 +12,10 @@ import records from "../../records/records.module.css";
 import { useTRPC } from "../../trpc/client";
 import settings from "../settings.module.css";
 import {
-  formatKiloPrice,
+  formatPrice,
   MaterialTypeBadge,
   useMaterialUse,
+  usePriceUnit,
   type MaterialRow,
 } from "./material-ui";
 import { useMaterials } from "./materials-provider";
@@ -27,7 +28,7 @@ import styles from "./materials.module.css";
 interface MaterialsTableState extends DataTableState {
   pageSize: (typeof PAGE_SIZES)[number];
   sortBy: "label" | "code" | "type";
-  filter: "all" | "paper" | "glue" | "archived";
+  filter: "all" | "paper" | "glue" | "box" | "archived";
 }
 
 const INITIAL_STATE: MaterialsTableState = {
@@ -60,6 +61,7 @@ export function MaterialsTable() {
   const trpc = useTRPC();
   const { open, openId } = useMaterials();
   const describe = useMaterialUse();
+  const unit = usePriceUnit();
   const [tableState, setTableState] = useState<MaterialsTableState>(INITIAL_STATE);
 
   const listQuery = useQuery({
@@ -127,8 +129,8 @@ export function MaterialsTable() {
         row.currentPrice ? (
           <span className={styles.price}>
             <span className={styles.priceValue}>
-              {formatKiloPrice(row.currentPrice.kiloPrice)}
-              <span className={styles.priceUnit}>/kg</span>
+              {formatPrice(row.currentPrice.price)}
+              <span className={styles.priceUnit}>{unit(row.type)}</span>
             </span>
             <span className={styles.since}>
               {t("since", { date: formatDay(row.currentPrice.validFrom) })}
@@ -171,6 +173,7 @@ export function MaterialsTable() {
         filters={[
           { key: "paper", label: t("filters.paper") },
           { key: "glue", label: t("filters.glue") },
+          { key: "box", label: t("filters.box") },
           { key: "archived", label: t("filters.archived") },
         ]}
         facetCounts={listQuery.data.facetCounts}
@@ -183,8 +186,12 @@ export function MaterialsTable() {
         selectedKey={openId}
         density="dense"
         searchPlaceholder={t("searchPlaceholder")}
-        emptyMessage={t("emptyMessage")}
-        emptyText={t("emptyText")}
+        // A search that finds nothing is not an empty catalogue: saying
+        // "add the paper" there reads as if the search itself had failed.
+        emptyMessage={
+          tableState.search === "" ? t("emptyMessage") : t("noMatch", { search: tableState.search })
+        }
+        emptyText={tableState.search === "" ? t("emptyText") : t("noMatchText")}
       />
       <p className={settings.sectionFoot}>{t("openHint")}</p>
     </>

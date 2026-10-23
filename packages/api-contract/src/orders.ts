@@ -88,7 +88,7 @@ export const positive = z.number().min(0).max(1e9).optional();
 
 /**
  * `createOrderInput`/`updateOrderInput` live in `order-input.ts`, not here:
- * they compose `pricingInput` (from `pricing.ts`) and `createProductInput`
+ * they compose `pricingInput` (from `pricing.ts`) and `productDefinitionInput`
  * (from `products.ts`), and `pricing.ts` imports `TYPE_SACS`/`PAPER_TYPES`
  * from this file. Defining them here would make `orders.ts` import back from
  * a module that imports it — a cycle that fails at runtime with "Cannot

@@ -17,7 +17,6 @@ import {
   findOrderTransition,
   isOrderSpecLocked,
   isPricingLocked,
-  kiloPricesFromLines,
   legacyFlagsForStatus,
   manufacturingOrderNumero,
   normaliseProductSpec,
@@ -28,13 +27,14 @@ import {
   pricingInputsFromRow,
   productSpecFromRow,
   productSwapRefusal,
+  slotPricesFromLines,
   toPricingInputs,
 } from "@repo/api-contract";
 import { AllocationService } from "../allocation/allocation.service";
 import { Prisma } from "../generated/prisma/client.js";
 import { runListQuery, searchWhere } from "../list/list-query";
 import { MailService } from "../mail/mail.service";
-import { kiloPricesFromResolved, OrderPriceService } from "../material/order-prices.service";
+import { OrderPriceService, slotPricesFromResolved } from "../material/order-prices.service";
 import { orderCreatedMail } from "../mail/templates";
 import { NotificationService, type NotificationOutbox } from "../notification/notification.service";
 import { PrismaService } from "../prisma.service";
@@ -456,7 +456,7 @@ export class OrderService {
             productId: product.id,
             ...this.priced(
               product,
-              toPricingInputs(input, input.quantite, null, kiloPricesFromResolved(lines)),
+              toPricingInputs(input, input.quantite, null, slotPricesFromResolved(lines)),
             ),
             kind: input.kind,
             status: "DRAFT",
@@ -663,7 +663,7 @@ export class OrderService {
         if (isPricingLocked(current)) {
           const lines = await tx.orderMaterialPrice.findMany({
             where: { orderId: input.id },
-            select: { slot: true, kiloPrice: true, material: { select: { grammage: true } } },
+            select: { slot: true, price: true, material: { select: { grammage: true } } },
           });
           const paperGrammage = lines.find((line) => line.slot === "PAPER")?.material?.grammage ?? null;
           const refusal = productSwapRefusal(current.product, product, paperGrammage);
@@ -672,7 +672,7 @@ export class OrderService {
           }
           const figures = this.priced(
             product,
-            pricingInputsFromRow(current, input.quantite, kiloPricesFromLines(lines)),
+            pricingInputsFromRow(current, input.quantite, slotPricesFromLines(lines)),
           );
           // The size is compared rather than the product id: a product edited
           // on the products page changes every order naming it, and this is
@@ -712,7 +712,7 @@ export class OrderService {
                 input,
                 input.quantite,
                 current.legacyGlueCostPerUnit,
-                kiloPricesFromResolved(lines),
+                slotPricesFromResolved(lines),
               ),
             ),
           },
@@ -1190,7 +1190,7 @@ export class OrderService {
       const { lines, moved } = await this.prices.refresh(tx, orderId);
       const figures = this.priced(
         current.product,
-        pricingInputsFromRow(current, current.quantite, kiloPricesFromLines(lines)),
+        pricingInputsFromRow(current, current.quantite, slotPricesFromLines(lines)),
       );
       await tx.order.update({ where: { id: orderId }, data: figures });
       return { id: orderId, moved, before: current.orderTotal, after: figures.orderTotal };
@@ -1358,8 +1358,8 @@ export class OrderService {
 
   /**
    * The flattened pricing inputs, written only while the order's pricing is
-   * open. No kilo prices: those are the material lines `OrderPriceService`
-   * writes (docs/raw-material-prices-plan.md §3).
+   * open. No material prices (paper, glues, carton): those are the lines
+   * `OrderPriceService` writes (docs/raw-material-prices-plan.md §3).
    */
   private pricingColumns(input: CreateOrderInput | UpdateOrderInput) {
     return {
@@ -1370,7 +1370,6 @@ export class OrderService {
       baseAdhesiveWeightG: input.baseAdhesive.weightG ?? null,
       piecesPerParcel: input.piecesPerParcel ?? null,
       kilosPerParcel: input.kilosPerParcel ?? null,
-      parcelPrice: input.parcelPrice ?? null,
       transportCost: input.transportCost ?? null,
     };
   }
@@ -1398,7 +1397,6 @@ export class OrderService {
         baseAdhesiveWeightG: true,
         piecesPerParcel: true,
         kilosPerParcel: true,
-        parcelPrice: true,
         transportCost: true,
         productionWidthCm: true,
         cuttingLengthCm: true,

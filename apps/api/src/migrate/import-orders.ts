@@ -413,6 +413,9 @@ async function main() {
           ? null
           : prixUnitaire * (1 + (marge ?? 0) / 100) * (1 + (tauxPerte ?? 0) / 100);
 
+      // `prix_carton` is not a column any more either: it becomes the
+      // order's CARTON line, written beside the PAPER one below.
+      const cartonPrice = num(row.prix_carton);
       const data = {
         numero,
         description: text(row.description),
@@ -434,7 +437,6 @@ async function main() {
 
         piecesPerParcel: num(row.nombre_de_piece_par_colis),
         kilosPerParcel: num(row.kilo_par_colis),
-        parcelPrice: num(row.prix_carton),
         transportCost: num(row.prix_transport),
 
         pricingSource: "LEGACY" as const,
@@ -520,7 +522,7 @@ async function main() {
         const baseParcelPrice =
           data.finalParcelPrice === null
             ? null
-            : data.finalParcelPrice - (data.parcelPrice ?? 0) - (data.transportCost ?? 0);
+            : data.finalParcelPrice - (cartonPrice ?? 0) - (data.transportCost ?? 0);
         const unitsPerParcel = quantityUnit === "KILOGRAMS" ? data.kilosPerParcel : data.piecesPerParcel;
         const parcelCount = unitsPerParcel && unitsPerParcel !== 0 ? data.quantite / unitsPerParcel : null;
 
@@ -564,9 +566,10 @@ async function main() {
           },
           select: { id: true },
         });
-        // The legacy kilo price as a line carried over from before the
-        // catalogue — no material, no source — exactly as the migration
-        // copied the existing ones (docs/raw-material-prices-plan.md §7).
+        // The legacy kilo and carton prices as lines carried over from
+        // before the catalogue — no material, no source — exactly as the
+        // migrations copied the existing ones (docs/raw-material-prices-plan.md
+        // §7 and the cartons addition).
         // On a re-run in place it replaces the order's lines, like every
         // other column the update above overwrites.
         await writeCarriedOverLines(prisma, saved.id, {
@@ -574,6 +577,7 @@ async function main() {
           handleGlue: null,
           sideGlue: null,
           baseAdhesive: null,
+          carton: cartonPrice,
         });
         legacyToNewId.set(String(row.id), saved.id);
         importedOrderIds.push(saved.id);

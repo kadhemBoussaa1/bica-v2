@@ -14,7 +14,7 @@
     "users": "Accounts, roles and access",
     "activity": "Who did what, and when",
     "templates": "How issued invoices look",
-    "material-prices": "Paper and glue prices per kilo"
+    "material-prices": "Paper, glue and carton prices"
   },
   "counts": {
     "errors": "{count} err.",

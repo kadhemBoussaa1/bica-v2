@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   createRawMaterialInput,
   GLUE_SLOTS,
+  isGlueSlot,
   PAPER_TYPES,
   RAW_MATERIAL_TYPES,
   updateRawMaterialInput,
@@ -14,14 +15,20 @@ import {
   type RawMaterialType,
 } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
-import { CheckboxField, SelectField, TextField, type SelectOption } from "@repo/ui/field";
+import { ComboboxField, type ComboboxOption } from "@repo/ui/combobox-field";
+import { CheckboxField, SelectField, TextField } from "@repo/ui/field";
 import { FormDialog } from "@repo/ui/form-dialog";
 import { decimal } from "../../records/decimal";
 import records from "../../records/records.module.css";
 import { SegmentedFilter } from "../../records/segmented-filter";
 import { useTRPC } from "../../trpc/client";
-import type { MaterialDetail } from "./material-ui";
+import { usePriceUnit, type MaterialDetail } from "./material-ui";
 import styles from "./materials.module.css";
+
+/** A carton side as the field shows it: blank for none, the stored figure otherwise. */
+function sideText(value: number | null | undefined): string {
+  return value == null ? "" : String(value);
+}
 
 /**
  * Create and edit a material. The type is chosen once: order lines rely on
@@ -43,6 +50,7 @@ export function MaterialFormDialog({
   const common = useTranslations("common");
   const enums = useTranslations("enums");
   const trpc = useTRPC();
+  const unit = usePriceUnit();
 
   const [type, setType] = useState<RawMaterialType>(material?.type ?? "PAPER");
   const [code, setCode] = useState(material?.code ?? "");
@@ -50,8 +58,11 @@ export function MaterialFormDialog({
   const [supplierId, setSupplierId] = useState(material?.supplier?.id ?? "");
   const [paperType, setPaperType] = useState<PaperType | "">(material?.paperType ?? "");
   const [grammage, setGrammage] = useState(material?.grammage == null ? "" : String(material.grammage));
+  const [lengthMm, setLengthMm] = useState(sideText(material?.lengthMm));
+  const [widthMm, setWidthMm] = useState(sideText(material?.widthMm));
+  const [heightMm, setHeightMm] = useState(sideText(material?.heightMm));
   const [slots, setSlots] = useState<GlueSlot[]>(
-    (material?.defaults ?? []).flatMap((line) => (line.slot === "PAPER" ? [] : [line.slot])),
+    (material?.defaults ?? []).flatMap((line) => (isGlueSlot(line.slot) ? [line.slot] : [])),
   );
   const [price, setPrice] = useState("");
   const [comment, setComment] = useState("");
@@ -59,7 +70,7 @@ export function MaterialFormDialog({
 
   const suppliersQuery = useQuery({
     ...trpc.material.supplierOptions.queryOptions({ currentId: material?.supplier?.id }),
-    enabled: type === "PAPER",
+    enabled: type !== "GLUE",
   });
 
   const create = useMutation(
@@ -76,16 +87,25 @@ export function MaterialFormDialog({
   );
   const busy = create.isPending || update.isPending;
 
-  // The suppliers that ship paper here first; a paper is almost always
-  // bought from one of them, and the full list is over a hundred names.
+  // The suppliers that have sold this kind of material here first (paper
+  // deliveries for a paper, box orders for a carton): it is almost always
+  // bought from one of them. The full list is over a hundred names, so the
+  // field is searchable by name.
   const suppliers = suppliersQuery.data ?? [];
-  const paperSuppliers = suppliers.filter((supplier) => supplier.paper);
-  const otherSuppliers = suppliers.filter((supplier) => !supplier.paper);
-  const supplierOptions: SelectOption[] = [
-    ...(paperSuppliers.length > 0
-      ? [{ value: "__paper", label: t("form.paperSuppliers"), disabled: true }]
+  const sells = (supplier: (typeof suppliers)[number]) => (type === "BOX" ? supplier.boxes : supplier.paper);
+  const usualSuppliers = suppliers.filter(sells);
+  const otherSuppliers = suppliers.filter((supplier) => !sells(supplier));
+  const supplierOptions: ComboboxOption[] = [
+    ...(usualSuppliers.length > 0
+      ? [
+          {
+            value: "__usual",
+            label: type === "BOX" ? t("form.boxSuppliers") : t("form.paperSuppliers"),
+            disabled: true,
+          },
+        ]
       : []),
-    ...paperSuppliers.map((supplier) => ({ value: supplier.id, label: supplier.name })),
+    ...usualSuppliers.map((supplier) => ({ value: supplier.id, label: supplier.name })),
     ...(otherSuppliers.length > 0
       ? [{ value: "__other", label: t("form.otherSuppliers"), disabled: true }]
       : []),
@@ -113,20 +133,34 @@ export function MaterialFormDialog({
     event.preventDefault();
     setError(null);
 
-    const grammageValue = number(t("form.grammage"), grammage);
-    if (grammageValue === false) return;
-    const fields =
-      type === "PAPER"
-        ? {
-            type,
-            code,
-            label,
-            supplierId,
-            paperType: paperType === "" ? undefined : paperType,
-            // Blank clears it on edit: "any grammage".
-            grammage: grammageValue ?? null,
-          }
-        : { type, code, label, defaultSlots: slots };
+    let fields;
+    if (type === "PAPER") {
+      const grammageValue = number(t("form.grammage"), grammage);
+      if (grammageValue === false) return;
+      fields = {
+        type,
+        code,
+        label,
+        supplierId,
+        paperType: paperType === "" ? undefined : paperType,
+        // Blank clears it on edit: "any grammage".
+        grammage: grammageValue ?? null,
+      };
+    } else if (type === "BOX") {
+      const length = number(t("form.length"), lengthMm);
+      if (length === false) return;
+      const width = number(t("form.width"), widthMm);
+      if (width === false) return;
+      const height = number(t("form.height"), heightMm);
+      if (height === false) return;
+      if (length === undefined || width === undefined || height === undefined) {
+        setError(t("form.sizeRequired"));
+        return;
+      }
+      fields = { type, code, label, supplierId, lengthMm: length, widthMm: width, heightMm: height };
+    } else {
+      fields = { type, code, label, defaultSlots: slots };
+    }
 
     if (material) {
       const parsed = updateRawMaterialInput.safeParse({ id: material.id, ...fields });
@@ -138,13 +172,13 @@ export function MaterialFormDialog({
       return;
     }
 
-    const kiloPrice = number(t("form.price"), price);
-    if (kiloPrice === false) return;
-    if (kiloPrice === undefined) {
-      setError(t("form.priceRequired"));
+    const amount = number(t("form.price"), price);
+    if (amount === false) return;
+    if (amount === undefined) {
+      setError(type === "BOX" ? t("form.priceRequiredBox") : t("form.priceRequired"));
       return;
     }
-    const parsed = createRawMaterialInput.safeParse({ ...fields, kiloPrice, comment });
+    const parsed = createRawMaterialInput.safeParse({ ...fields, price: amount, comment });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? common("checkForm"));
       return;
@@ -188,7 +222,13 @@ export function MaterialFormDialog({
           <TextField
             label={t("form.code")}
             format="mono"
-            placeholder={type === "PAPER" ? t("form.codePlaceholder") : t("form.codePlaceholderGlue")}
+            placeholder={
+              type === "PAPER"
+                ? t("form.codePlaceholder")
+                : type === "BOX"
+                  ? t("form.codePlaceholderBox")
+                  : t("form.codePlaceholderGlue")
+            }
             value={code}
             onChange={(event) => setCode(event.target.value)}
             autoComplete="off"
@@ -197,7 +237,13 @@ export function MaterialFormDialog({
           />
           <TextField
             label={t("form.label")}
-            placeholder={type === "PAPER" ? t("form.labelPlaceholder") : t("form.labelPlaceholderGlue")}
+            placeholder={
+              type === "PAPER"
+                ? t("form.labelPlaceholder")
+                : type === "BOX"
+                  ? t("form.labelPlaceholderBox")
+                  : t("form.labelPlaceholderGlue")
+            }
             value={label}
             onChange={(event) => setLabel(event.target.value)}
             autoComplete="off"
@@ -205,16 +251,21 @@ export function MaterialFormDialog({
           />
         </div>
 
-        {type === "PAPER" ? (
+        {type !== "GLUE" && (
+          <ComboboxField
+            label={t("form.supplier")}
+            placeholder={t("form.supplierPlaceholder")}
+            searchPlaceholder={t("form.supplierSearch")}
+            noMatch={(search) => t("form.supplierNoMatch", { search })}
+            options={supplierOptions}
+            value={supplierId}
+            onChange={setSupplierId}
+            disabled={busy || suppliersQuery.isPending}
+          />
+        )}
+
+        {type === "PAPER" && (
           <>
-            <SelectField
-              label={t("form.supplier")}
-              placeholder={t("form.supplierPlaceholder")}
-              options={supplierOptions}
-              value={supplierId}
-              onChange={(event) => setSupplierId(event.target.value)}
-              disabled={busy || suppliersQuery.isPending}
-            />
             <div className={styles.twoUp}>
               <SelectField
                 label={t("form.paperType")}
@@ -238,7 +289,37 @@ export function MaterialFormDialog({
             </div>
             <p className={styles.note}>{t("form.grammageHint")}</p>
           </>
-        ) : (
+        )}
+
+        {type === "BOX" && (
+          <>
+            <div className={styles.threeUp}>
+              {(
+                [
+                  ["length", lengthMm, setLengthMm],
+                  ["width", widthMm, setWidthMm],
+                  ["height", heightMm, setHeightMm],
+                ] as const
+              ).map(([side, value, setValue]) => (
+                <TextField
+                  key={side}
+                  label={t(`form.${side}`)}
+                  unit="mm"
+                  format="numeric"
+                  inputMode="decimal"
+                  placeholder="—"
+                  value={value}
+                  onChange={(event) => setValue(event.target.value)}
+                  autoComplete="off"
+                  disabled={busy}
+                />
+              ))}
+            </div>
+            <p className={styles.note}>{t("form.sizeHint")}</p>
+          </>
+        )}
+
+        {type === "GLUE" && (
           <div className={styles.fieldGroup} role="group" aria-labelledby="material-slots-label">
             <span id="material-slots-label" className={styles.fieldLabel}>
               {t("form.defaults")}
@@ -262,8 +343,8 @@ export function MaterialFormDialog({
           <>
             <div className={styles.twoUp}>
               <TextField
-                label={t("form.price")}
-                unit="/kg"
+                label={type === "BOX" ? t("form.priceBox") : t("form.price")}
+                unit={unit(type)}
                 format="numeric"
                 inputMode="decimal"
                 placeholder="0,00"

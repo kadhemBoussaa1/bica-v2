@@ -14,7 +14,7 @@
     "users": "Comptes, rôles et accès",
     "activity": "Qui a fait quoi, et quand",
     "templates": "Apparence des factures émises",
-    "material-prices": "Prix au kilo du papier et des colles"
+    "material-prices": "Prix du papier, des colles et des cartons"
   },
   "counts": {
     "errors": "{count} err.",

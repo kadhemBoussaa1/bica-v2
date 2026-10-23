@@ -156,12 +156,14 @@
   },
   "rawMaterialType": {
     "PAPER": "Papier",
-    "GLUE": "Colle"
+    "GLUE": "Colle",
+    "BOX": "Carton"
   },
   "pricingSlot": {
     "PAPER": "Papier",
     "HANDLE_GLUE": "Colle de poignée",
     "SIDE_GLUE": "Colle de côté",
-    "BASE_ADHESIVE": "Colle de fond"
+    "BASE_ADHESIVE": "Colle de fond",
+    "CARTON": "Carton"
   }
 }

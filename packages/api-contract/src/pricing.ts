@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { SlotKiloPrices } from "./materials.js";
+import type { SlotPrices } from "./materials.js";
 import { PAPER_TYPES, QUANTITY_UNITS, TYPE_SACS, type TypeSac } from "./orders.js";
 
 /**
@@ -441,9 +441,9 @@ const glueLineInput = z.object({
  * The legacy data has a profit margin of 100% on one order, so the ceiling is
  * generous; loss is a wastage rate and is capped at 100.
  *
- * No kilo prices: the paper and the three glue prices are the order's
- * material lines, resolved by the server against the catalogue and passed to
- * `toPricingInputs` as `SlotKiloPrices`.
+ * No material prices: the paper, the three glues and the carton are the
+ * order's material lines, resolved by the server against the catalogue and
+ * passed to `toPricingInputs` as `SlotPrices`.
  *
  * Deliberately has NO `legacyGlueCostPerUnit` field: that value exists only on
  * migrated rows, is never entered by a user, and must not be settable through
@@ -459,7 +459,6 @@ export const pricingInput = z.object({
   baseAdhesive: glueLineInput.default({}),
   piecesPerParcel: z.number().min(0).max(1e7).optional(),
   kilosPerParcel: z.number().min(0).max(1e7).optional(),
-  parcelPrice: amount,
   transportCost: amount,
 });
 
@@ -485,14 +484,15 @@ export function toProductSpec(input: ProductSpecInput): ProductSpec {
  * `pricingInput`) — the caller passes it explicitly, sourced from the stored
  * `Order` row rather than from user input. Pass `null` for a new order.
  *
- * `prices` are the order's four material lines: the ones the server resolved
- * for this save, or what the form shows for its live figures.
+ * `prices` are the order's five material lines: the ones the server resolved
+ * for this save, or what the form shows for its live figures. The carton
+ * line is the engine's `parcelPrice`.
  */
 export function toPricingInputs(
   input: PricingInput,
   quantity: number | null,
   legacyGlueCostPerUnit: number | null,
-  prices: SlotKiloPrices,
+  prices: SlotPrices,
 ): PricingInputs {
   return {
     paperKiloPrice: prices.paper,
@@ -505,7 +505,7 @@ export function toPricingInputs(
     quantity,
     piecesPerParcel: input.piecesPerParcel ?? null,
     kilosPerParcel: input.kilosPerParcel ?? null,
-    parcelPrice: input.parcelPrice ?? null,
+    parcelPrice: prices.carton,
     transportCost: input.transportCost ?? null,
   };
 }
@@ -525,13 +525,12 @@ export interface PricingInputRow {
   legacyGlueCostPerUnit: number | null;
   piecesPerParcel: number | null;
   kilosPerParcel: number | null;
-  parcelPrice: number | null;
   transportCost: number | null;
 }
 
 /**
  * Builds `PricingInputs` straight from a stored `Order` row and its stored
- * material lines (`kiloPricesFromLines`). Used by the verifier and by a save
+ * material lines (`slotPricesFromLines`). Used by the verifier and by a save
  * of a priced order, whose inputs are frozen (docs/raw-material-prices-plan.md
  * §2) — anywhere that starts from a saved order rather than from a freshly
  * parsed submission.
@@ -539,7 +538,7 @@ export interface PricingInputRow {
 export function pricingInputsFromRow(
   row: PricingInputRow,
   quantity: number | null,
-  prices: SlotKiloPrices,
+  prices: SlotPrices,
 ): PricingInputs {
   return {
     paperKiloPrice: prices.paper,
@@ -552,7 +551,7 @@ export function pricingInputsFromRow(
     quantity,
     piecesPerParcel: row.piecesPerParcel,
     kilosPerParcel: row.kilosPerParcel,
-    parcelPrice: row.parcelPrice,
+    parcelPrice: prices.carton,
     transportCost: row.transportCost,
   };
 }

@@ -62,6 +62,8 @@ type ProductOption = {
   name: string;
   active: boolean;
   paperType: PaperType | null;
+  /** Its usual carton, which a new carton line starts from. */
+  carton: { id: string; active: boolean } | null;
 } & Parameters<typeof productSpecFromRow>[0];
 
 const str = (value: number | null | undefined) =>
@@ -75,8 +77,8 @@ function errorCode(cause: unknown): string | null {
 
 /**
  * The flat DB names carried in `nums`, matching `ORDER_DETAIL_SELECT`'s inputs.
- * No kilo prices: the paper and glue prices are the order's material lines
- * (`useOrderMaterialLines`).
+ * No material prices: the paper, glue and carton prices are the order's
+ * material lines (`useOrderMaterialLines`).
  */
 const NUM_KEYS = [
   "quantite",
@@ -87,7 +89,6 @@ const NUM_KEYS = [
   "baseAdhesiveWeightG",
   "piecesPerParcel",
   "kilosPerParcel",
-  "parcelPrice",
   "transportCost",
 ] as const;
 
@@ -163,7 +164,6 @@ export function OrderForm({
     baseAdhesiveWeightG: str(initial?.baseAdhesiveWeightG),
     piecesPerParcel: str(initial?.piecesPerParcel),
     kilosPerParcel: str(initial?.kilosPerParcel),
-    parcelPrice: str(initial?.parcelPrice),
     transportCost: str(initial?.transportCost),
   });
   const n = (key: (typeof NUM_KEYS)[number]) => nums[key];
@@ -371,8 +371,10 @@ export function OrderForm({
   ]);
 
   /**
-   * What the material lines need of the bag: the slots it uses and the paper
-   * that fits it. Null until the product says enough to know.
+   * What the material lines need of the bag: the slots it uses, the paper
+   * that fits it and its usual carton. Null until the product says enough
+   * to know. A product defined here has no carton: that is set on the
+   * products page.
    */
   const productKey: MaterialProductKey | null = useMemo(() => {
     if (productMode === "existing") {
@@ -382,6 +384,7 @@ export function OrderForm({
             hasHandle: selectedProduct.hasHandle,
             paperType: selectedProduct.paperType,
             grammage: selectedProduct.grammage,
+            cartonId: selectedProduct.carton?.id ?? null,
           }
         : null;
     }
@@ -391,6 +394,7 @@ export function OrderForm({
       hasHandle: newHasHandle,
       paperType: newPaperType === "" ? null : (newPaperType as PaperType),
       grammage: newGrammage.trim() === "" ? 0 : decimal(newGrammage),
+      cartonId: null,
     };
   }, [productMode, selectedProduct, newTypeSac, newHasHandle, newPaperType, newGrammage]);
 
@@ -415,7 +419,6 @@ export function OrderForm({
       baseAdhesive: { weightG: num("baseAdhesiveWeightG") },
       piecesPerParcel: num("piecesPerParcel"),
       kilosPerParcel: num("kilosPerParcel"),
-      parcelPrice: num("parcelPrice"),
       transportCost: num("transportCost"),
     },
     num("quantite") ?? null,
@@ -447,6 +450,7 @@ export function OrderForm({
     handleGlue: t("pricing.handleGlue"),
     sideGlue: t("pricing.sideGlue"),
     baseAdhesive: t("pricing.baseAdhesive"),
+    carton: t("lines.carton"),
   };
 
   function handleSubmit(event: FormEvent) {
@@ -465,7 +469,6 @@ export function OrderForm({
       baseAdhesiveWeightG: t("pricing.baseAdhesivePerUnit"),
       piecesPerParcel: t("pricing.piecesPerParcel"),
       kilosPerParcel: t("pricing.kilosPerParcel"),
-      parcelPrice: t("pricing.parcelPrice"),
       transportCost: t("pricing.transportPerParcel"),
     };
 
@@ -542,7 +545,6 @@ export function OrderForm({
       materials: materials.materials,
       piecesPerParcel: parsed.piecesPerParcel,
       kilosPerParcel: parsed.kilosPerParcel,
-      parcelPrice: parsed.parcelPrice,
       transportCost: parsed.transportCost,
       typeImpression: typeImpression === "" ? undefined : typeImpression,
       // Artwork is not editable here; omitted so update preserves it and
@@ -598,11 +600,11 @@ export function OrderForm({
 
   /**
    * One material line as one row of the pricing step: the material (its
-   * select names the line), its kilo price, and — for a glue — the grams a
-   * unit takes. The paper row has no third field and leaves the cell empty,
-   * so the four rows line up as columns.
+   * select names the line), its price, and a third field — a glue's grams
+   * per unit, the carton's pieces (or kilos) per parcel. The paper row has
+   * none and leaves the cell empty, so the rows line up as columns.
    */
-  const materialRow = (key: MaterialLineKey, weightKey?: (typeof NUM_KEYS)[number]) => (
+  const materialRow = (key: MaterialLineKey, third?: ReactNode) => (
     <div className={orderStyles.pricingRow} key={key}>
       <MaterialLineFields
         lines={lines}
@@ -617,7 +619,7 @@ export function OrderForm({
             : undefined
         }
       />
-      {weightKey && money$(weightKey, t("pricing.glueWeight"), "g")}
+      {third}
     </div>
   );
 
@@ -1050,11 +1052,11 @@ export function OrderForm({
             <>
               {materialRow("paper")}
               {(lines.used("handleGlue") || lines.lines.handleGlue.stored) &&
-                materialRow("handleGlue", "handleGlueWeightG")}
+                materialRow("handleGlue", money$("handleGlueWeightG", t("pricing.glueWeight"), "g"))}
               {(lines.used("sideGlue") || lines.lines.sideGlue.stored) &&
-                materialRow("sideGlue", "sideGlueWeightG")}
+                materialRow("sideGlue", money$("sideGlueWeightG", t("pricing.glueWeight"), "g"))}
               {(lines.used("baseAdhesive") || lines.lines.baseAdhesive.stored) &&
-                materialRow("baseAdhesive", "baseAdhesiveWeightG")}
+                materialRow("baseAdhesive", money$("baseAdhesiveWeightG", t("pricing.glueWeight"), "g"))}
               {initial?.legacyGlueCostPerUnit != null && (
                 <p className={styles.hint}>
                   {t("form.legacyGlueHint", {
@@ -1071,15 +1073,23 @@ export function OrderForm({
               {money$("lossMarginPct", t("pricing.lossMargin"), "%")}
             </div>,
           )}
+          {/*
+            The carton is a material line like the paper (cartons addition):
+            the carton, its price per carton, and what one carton holds.
+          */}
           {pricingGroup(
             t("lines.packingTitle"),
-            <div className={orderStyles.pricingRow}>
-              {liveSpec?.typeSac === "SOUS_PLAT"
-                ? money$("kilosPerParcel", t("pricing.kilosPerParcel"))
-                : money$("piecesPerParcel", t("pricing.piecesPerParcel"))}
-              {money$("parcelPrice", t("pricing.parcelPrice"))}
-              {money$("transportCost", t("pricing.transportPerParcel"))}
-            </div>,
+            <>
+              {materialRow(
+                "carton",
+                liveSpec?.typeSac === "SOUS_PLAT"
+                  ? money$("kilosPerParcel", t("pricing.kilosPerParcel"))
+                  : money$("piecesPerParcel", t("pricing.piecesPerParcel")),
+              )}
+              <div className={orderStyles.pricingRow}>
+                {money$("transportCost", t("pricing.transportPerParcel"))}
+              </div>
+            </>,
           )}
 
           {/* No "Production" section: the paper need is computed and shown on

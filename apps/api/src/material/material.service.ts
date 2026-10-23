@@ -29,8 +29,34 @@ function isUniqueViolation(cause: unknown): boolean {
   return cause instanceof Prisma.PrismaClientKnownRequestError && cause.code === "P2002";
 }
 
+/**
+ * The columns a material's type owns: a paper's supplier, paper type and
+ * grammage, a carton's supplier and size, none for a glue (its default lines
+ * are rows of their own). `grammage` is clearable: null clears it, omitted
+ * leaves it (and on create leaves the column's null, "any grammage").
+ */
+function typeColumns(input: CreateRawMaterialInput | UpdateRawMaterialInput) {
+  switch (input.type) {
+    case "PAPER":
+      return {
+        supplierId: input.supplierId,
+        paperType: input.paperType,
+        ...(input.grammage !== undefined ? { grammage: input.grammage } : {}),
+      };
+    case "BOX":
+      return {
+        supplierId: input.supplierId,
+        lengthMm: input.lengthMm,
+        widthMm: input.widthMm,
+        heightMm: input.heightMm,
+      };
+    case "GLUE":
+      return {};
+  }
+}
+
 /** A row's `prices` relation (at most the current one) as a single value. */
-function withCurrentPrice<T extends { prices: { id: string; kiloPrice: number; validFrom: Date }[] }>({
+function withCurrentPrice<T extends { prices: { id: string; price: number; validFrom: Date }[] }>({
   prices,
   ...row
 }: T) {
@@ -39,7 +65,8 @@ function withCurrentPrice<T extends { prices: { id: string; kiloPrice: number; v
 
 /**
  * The raw material price catalogue (docs/raw-material-prices-plan.md §4):
- * papers per supplier and glues, each with an append-only price history.
+ * papers and cartons per supplier, and glues, each with an append-only price
+ * history.
  *
  * Every write path is ADMIN+ (the router), and nothing here reads an order:
  * the order form takes its prefill from `forOrderForm` and writes its own
@@ -77,7 +104,7 @@ export class MaterialService {
           orderBy: [{ validFrom: "desc" }, { id: "desc" }],
           select: {
             id: true,
-            kiloPrice: true,
+            price: true,
             validFrom: true,
             validTo: true,
             comment: true,
@@ -104,7 +131,7 @@ export class MaterialService {
    */
   async create(actor: SessionUser, input: CreateRawMaterialInput) {
     await this.assertCodeFree(input.code);
-    if (input.type === "PAPER") await this.assertSupplierAssignable(input.supplierId, null);
+    if (input.type !== "GLUE") await this.assertSupplierAssignable(input.supplierId, null);
     try {
       return await this.prisma.$transaction(async (tx) => {
         const material = await tx.rawMaterial.create({
@@ -112,16 +139,10 @@ export class MaterialService {
             code: input.code,
             label: input.label,
             type: input.type,
-            ...(input.type === "PAPER"
-              ? {
-                  supplierId: input.supplierId,
-                  paperType: input.paperType,
-                  grammage: input.grammage ?? null,
-                }
-              : {}),
+            ...typeColumns(input),
             prices: {
               create: {
-                kiloPrice: input.kiloPrice,
+                price: input.price,
                 validFrom: new Date(),
                 enteredById: actor.id,
                 comment: input.comment ?? null,
@@ -166,7 +187,7 @@ export class MaterialService {
       });
     }
     await this.assertCodeFree(input.code, input.id);
-    if (input.type === "PAPER") {
+    if (input.type !== "GLUE") {
       await this.assertSupplierAssignable(input.supplierId, current.supplierId);
     } else if (!current.active && input.defaultSlots.length > 0) {
       throw new TRPCError({
@@ -181,14 +202,7 @@ export class MaterialService {
           data: {
             code: input.code,
             label: input.label,
-            ...(input.type === "PAPER"
-              ? {
-                  supplierId: input.supplierId,
-                  paperType: input.paperType,
-                  // Clearable: null clears it, omitted leaves it.
-                  ...(input.grammage !== undefined ? { grammage: input.grammage } : {}),
-                }
-              : {}),
+            ...typeColumns(input),
           },
           select: RETURN_SELECT,
         });
@@ -255,7 +269,7 @@ export class MaterialService {
         }
         const current = await tx.rawMaterialPrice.findFirst({
           where: { materialId: input.materialId, validTo: null },
-          select: { id: true, kiloPrice: true, validFrom: true },
+          select: { id: true, price: true, validFrom: true },
         });
         if (current?.id !== input.currentPriceId) {
           throw new TRPCError({
@@ -263,10 +277,10 @@ export class MaterialService {
             message:
               current === null
                 ? "This material has no current price"
-                : `The price was changed to ${current.kiloPrice} in the meantime — check it and try again`,
+                : `The price was changed to ${current.price} in the meantime — check it and try again`,
           });
         }
-        if (current.kiloPrice === input.kiloPrice) {
+        if (current.price === input.price) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "That is already the current price",
@@ -280,12 +294,12 @@ export class MaterialService {
         return tx.rawMaterialPrice.create({
           data: {
             materialId: input.materialId,
-            kiloPrice: input.kiloPrice,
+            price: input.price,
             validFrom: at,
             enteredById: actor.id,
             comment: input.comment ?? null,
           },
-          select: { id: true, materialId: true, kiloPrice: true, validFrom: true },
+          select: { id: true, materialId: true, price: true, validFrom: true },
         });
       });
     } catch (cause) {
@@ -319,6 +333,10 @@ export class MaterialService {
           supplier: { select: { id: true, name: true } },
           paperType: true,
           grammage: true,
+          // A carton's size, which the order form's carton picker searches.
+          lengthMm: true,
+          widthMm: true,
+          heightMm: true,
           prices: CURRENT_PRICE,
         },
       }),
@@ -337,10 +355,12 @@ export class MaterialService {
   }
 
   /**
-   * The paper form's supplier picker: every live supplier, the ones that
-   * have shipped paper here first (`paper`), since a paper is almost always
-   * bought from one of them. `currentId` keeps an archived supplier a paper
-   * already names in the list, so editing that paper does not lose it.
+   * The supplier picker of the paper and carton forms: every live supplier,
+   * flagged by what it has sold here — paper (`paper`: inbound paper
+   * deliveries) and cartons (`boxes`: purchase orders for boxes). The form
+   * lists the ones matching the material first, since the full list is over
+   * a hundred names. `currentId` keeps an archived supplier a material
+   * already names in the list, so editing that material does not lose it.
    */
   async supplierOptions(currentId: string | undefined) {
     const suppliers = await this.prisma.supplier.findMany({
@@ -351,13 +371,39 @@ export class MaterialService {
         name: true,
         // `shipments` is the relation's name on Supplier — inbound paper
         // deliveries, not the outbound export shipments of the same word.
-        _count: { select: { shipments: true } },
+        _count: {
+          select: { shipments: true, purchaseOrders: { where: { category: "BOXES" } } },
+        },
       },
     });
     return suppliers.map(({ _count, ...supplier }) => ({
       ...supplier,
       paper: _count.shipments > 0,
+      boxes: _count.purchaseOrders > 0,
     }));
+  }
+
+  /**
+   * The products page's carton picker: every live carton with its supplier
+   * and size, and no price — the page is not about prices. `currentId` keeps
+   * an archived carton a product already names in the list, so editing that
+   * product does not lose it.
+   */
+  async cartonOptions(currentId: string | undefined) {
+    return this.prisma.rawMaterial.findMany({
+      where: { type: "BOX", OR: [{ active: true }, ...(currentId ? [{ id: currentId }] : [])] },
+      orderBy: [{ label: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        code: true,
+        label: true,
+        active: true,
+        lengthMm: true,
+        widthMm: true,
+        heightMm: true,
+        supplier: { select: { name: true } },
+      },
+    });
   }
 
   /** The settings rail's figure: live materials. */
@@ -385,9 +431,9 @@ export class MaterialService {
   }
 
   /**
-   * A paper's supplier must exist, and a newly named one must be live: an
-   * archived supplier stays on the papers that already name it, like an
-   * archived product on its orders.
+   * A paper's or a carton's supplier must exist, and a newly named one must
+   * be live: an archived supplier stays on the materials that already name
+   * it, like an archived product on its orders.
    */
   private async assertSupplierAssignable(supplierId: string, currentSupplierId: string | null) {
     const supplier = await this.prisma.supplier.findUnique({

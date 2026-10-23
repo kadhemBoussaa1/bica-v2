@@ -10,9 +10,10 @@ import { formatDateTime, formatDay } from "../../../i18n/formats";
 import records from "../../records/records.module.css";
 import { useTRPC } from "../../trpc/client";
 import {
-  formatKiloPrice,
+  formatPrice,
   MaterialTypeBadge,
   useMaterialUse,
+  usePriceUnit,
   type MaterialDetail,
 } from "./material-ui";
 import styles from "./materials.module.css";
@@ -39,6 +40,7 @@ export function MaterialDetailDialog({
   const t = useTranslations("materials");
   const trpc = useTRPC();
   const describe = useMaterialUse();
+  const unit = usePriceUnit();
 
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,14 +83,16 @@ export function MaterialDetailDialog({
               <MaterialTypeBadge type={material.type} />
             </dd>
           </div>
-          {material.type === "PAPER" ? (
+          {material.type !== "GLUE" ? (
             <>
               <div className={styles.fact}>
                 <dt className={styles.factLabel}>{t("detail.supplier")}</dt>
                 <dd className={styles.factValue}>{material.supplier?.name ?? "—"}</dd>
               </div>
               <div className={styles.fact}>
-                <dt className={styles.factLabel}>{t("detail.paper")}</dt>
+                <dt className={styles.factLabel}>
+                  {material.type === "BOX" ? t("detail.size") : t("detail.paper")}
+                </dt>
                 <dd className={styles.factValue}>{describe(material)}</dd>
               </div>
             </>
@@ -106,8 +110,8 @@ export function MaterialDetailDialog({
             {current ? (
               <>
                 <span className={styles.currentFigure}>
-                  {formatKiloPrice(current.kiloPrice)}
-                  <span className={styles.priceUnit}>/kg</span>
+                  {formatPrice(current.price)}
+                  <span className={styles.priceUnit}>{unit(material.type)}</span>
                 </span>
                 <span className={styles.since}>{t("since", { date: formatDay(current.validFrom) })}</span>
               </>
@@ -132,7 +136,7 @@ export function MaterialDetailDialog({
                 <th scope="col">{t("detail.historyFrom")}</th>
                 <th scope="col">{t("detail.historyTo")}</th>
                 <th scope="col" className={styles.num}>
-                  {t("detail.historyPrice")}
+                  {material.type === "BOX" ? t("detail.historyPriceBox") : t("detail.historyPrice")}
                 </th>
                 <th scope="col">{t("detail.historyBy")}</th>
                 <th scope="col">{t("detail.historyComment")}</th>
@@ -149,7 +153,7 @@ export function MaterialDetailDialog({
                       formatDateTime(row.validTo)
                     )}
                   </td>
-                  <td className={styles.num}>{formatKiloPrice(row.kiloPrice)}</td>
+                  <td className={styles.num}>{formatPrice(row.price)}</td>
                   <td>{row.enteredBy?.name ?? "—"}</td>
                   <td className={styles.comment}>{row.comment ?? ""}</td>
                 </tr>

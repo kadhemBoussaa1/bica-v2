@@ -96,8 +96,11 @@ export function isIncompleteSpec(spec: ProductSpecRow): boolean {
  * overwriting a key it does not do here, but `.pick()`/`.omit()`/`.partial()`
  * would silently drop the `superRefine` rules — never use those on
  * `productSpecInput`.
+ *
+ * What an order's inline "new product" sends (`orderProductRef`). The
+ * products page sends `createProductInput`, which adds the carton.
  */
-export const createProductInput = productSpecInput.safeExtend({
+export const productDefinitionInput = productSpecInput.safeExtend({
   name: z.string().trim().min(1, "Name is required").max(200),
   clientId: z.string().min(1).optional(),
   /**
@@ -115,6 +118,21 @@ export const createProductInput = productSpecInput.safeExtend({
    * real rule, not expressing one.
    */
   images: z.array(z.string().max(1000)).max(50).optional(),
+});
+
+/**
+ * The products page's create: the definition plus the carton the bag
+ * usually ships in, a BOX material the order form starts a new order's
+ * carton line from (docs/raw-material-prices-plan.md, cartons addition).
+ * Clearable like `images`: null clears it, omitted leaves what is stored.
+ *
+ * Not on `productDefinitionInput`: an order's inline product is matched
+ * against an existing identical one and reused, so a carton picked there
+ * would be dropped or would rewrite a product other orders share. The
+ * carton is set here, on the product, by the user's choice (2026-10-23).
+ */
+export const createProductInput = productDefinitionInput.safeExtend({
+  cartonId: z.string().min(1).nullable().optional(),
 });
 
 export const updateProductInput = createProductInput.extend({

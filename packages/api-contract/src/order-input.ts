@@ -8,27 +8,28 @@ import {
 } from "./orders.js";
 import { orderMaterialsInput } from "./materials.js";
 import { pricingInput } from "./pricing.js";
-import { createProductInput } from "./products.js";
+import { productDefinitionInput } from "./products.js";
 
 /**
  * Order create/update input. Split into its own module, not `orders.ts`,
- * because it composes `pricingInput` and `createProductInput` — see the note
+ * because it composes `pricingInput` and `productDefinitionInput` — see the note
  * in `orders.ts` on why that dependency direction cannot run the other way.
  */
 
 /**
  * Which product an order names: an existing one by id, or a brand-new spec
- * defined inline. `new` is `createProductInput` plus the literal discriminant
- * as a genuinely new key, which keeps `productSpecInput`'s `superRefine`
- * intact — see the Zod 4.5.4 note in the pricing plan: `.extend()` with a new
- * key preserves refinements, and a refined object is a valid
- * `z.discriminatedUnion` member.
+ * defined inline. `new` is `productDefinitionInput` plus the literal
+ * discriminant as a genuinely new key, which keeps `productSpecInput`'s
+ * `superRefine` intact — see the Zod 4.5.4 note in the pricing plan:
+ * `.extend()` with a new key preserves refinements, and a refined object is
+ * a valid `z.discriminatedUnion` member. No carton: that is set on the
+ * products page (see `createProductInput`).
  */
 const existingProductRef = z.object({
   mode: z.literal("existing"),
   id: z.string().min(1),
 });
-const newProductRef = createProductInput.extend({ mode: z.literal("new") });
+const newProductRef = productDefinitionInput.extend({ mode: z.literal("new") });
 export const orderProductRef = z.discriminatedUnion("mode", [
   existingProductRef,
   newProductRef,

@@ -175,8 +175,9 @@ export function OrderDetail({ id }: { id: string }) {
   )[0];
   const photo = assetUrl(p.images[0]);
   const priced = hasPricing(o) ? o : null;
-  /** The paper's kilo price is the order's PAPER material line. */
+  /** The paper's kilo price and the carton's price are the order's PAPER and CARTON lines. */
   const paperLine = priced?.materialPrices.find((line) => line.slot === "PAPER") ?? null;
+  const cartonLine = priced?.materialPrices.find((line) => line.slot === "CARTON") ?? null;
   const packed = packedFrom(runs);
   // Several invoices and shipments after a partial export
   // (docs/export-plan.md): one pair per cycle. The invoices ride the priced
@@ -666,12 +667,12 @@ export function OrderDetail({ id }: { id: string }) {
             )}
             {(
               [
-                ["paperPrice", num(paperLine?.kiloPrice ?? null), "/kg"],
+                ["paperPrice", num(paperLine?.price ?? null), "/kg"],
                 ["unitPrice", num(priced.unitPrice), ""],
                 ["withMargins", num(priced.unitPriceWithMargins), ""],
                 ["gluePerUnit", num(priced.glueCostPerUnit), ""],
                 ["finalUnitPrice", num(priced.finalUnitPrice), ""],
-                ["parcelPrice", cash(priced.parcelPrice), ""],
+                ["parcelPrice", cash(cartonLine?.price ?? null), ""],
                 ["transport", cash(priced.transportCost), ""],
                 [
                   "parcels",

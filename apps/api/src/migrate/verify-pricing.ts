@@ -24,10 +24,10 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import {
   isIncompleteSpec,
-  kiloPricesFromLines,
   pricingInputsFromRow,
   priceOrder,
   productSpecFromRow,
+  slotPricesFromLines,
 } from "@repo/api-contract";
 import { PrismaClient } from "../generated/prisma/client.js";
 import type { TypeSac } from "../generated/prisma/enums.js";
@@ -72,9 +72,9 @@ async function main() {
         finalUnitPrice: true,
         finalParcelPrice: true,
 
-        // The four kilo prices are the order's material lines
-        // (docs/raw-material-prices-plan.md §3).
-        materialPrices: { select: { slot: true, kiloPrice: true } },
+        // The kilo and carton prices are the order's material lines
+        // (docs/raw-material-prices-plan.md §3 and the cartons addition).
+        materialPrices: { select: { slot: true, price: true } },
         profitMarginPct: true,
         lossMarginPct: true,
         handleGlueWeightG: true,
@@ -83,7 +83,6 @@ async function main() {
         legacyGlueCostPerUnit: true,
         piecesPerParcel: true,
         kilosPerParcel: true,
-        parcelPrice: true,
         transportCost: true,
 
         product: {
@@ -130,7 +129,7 @@ async function main() {
       const inputs = pricingInputsFromRow(
         order,
         order.quantite,
-        kiloPricesFromLines(order.materialPrices),
+        slotPricesFromLines(order.materialPrices),
       );
       const figures = priceOrder(spec, inputs);
 

@@ -8,13 +8,14 @@ import type { AppRouter } from "api/src/trpc/trpc.router";
 import {
   MATERIAL_LINE_KEYS,
   MATERIAL_LINE_SLOTS,
+  materialTypeForSlot,
   slotUsedBy,
   type MaterialLineKey,
   type OrderMaterialLineInput,
   type OrderMaterialsInput,
   type PaperType,
   type PricingSlot,
-  type SlotKiloPrices,
+  type SlotPrices,
   type TypeSac,
 } from "@repo/api-contract";
 import { ComboboxField, type ComboboxOption } from "@repo/ui/combobox-field";
@@ -22,13 +23,15 @@ import { TextField } from "@repo/ui/field";
 import { formatDay, numberFormat } from "../../i18n/formats";
 import { decimal } from "../records/decimal";
 import styles from "../records/records.module.css";
+import { formatCartonSize, usePriceUnit } from "../settings/material-prices/material-ui";
 import { useTRPC } from "../trpc/client";
 import orderStyles from "./orders.module.css";
 
 /*
- * The order form's four material lines — the paper and the three glues,
- * each a material from the raw material catalogue and the kilo price the
- * order is calculated with (docs/raw-material-prices-plan.md §3, §5).
+ * The order form's five material lines — the paper, the three glues and the
+ * carton, each a material from the raw material catalogue and the price the
+ * order is calculated with, per kilogram or per carton
+ * (docs/raw-material-prices-plan.md §3, §5, and the cartons addition).
  *
  * The server is never sent a catalogue price, only which one the form
  * showed (`catalog`), the stored line untouched (`keep`), or a price typed
@@ -40,19 +43,23 @@ type Outputs = inferRouterOutputs<AppRouter>;
 type FormMaterial = Outputs["material"]["forOrderForm"]["materials"][number];
 type StoredLine = Extract<Outputs["order"]["byId"], { orderTotal: unknown }>["materialPrices"][number];
 
-/** What the lines need to know about the bag: which slots it uses, which paper fits. */
+/**
+ * What the lines need to know about the bag: which slots it uses, which
+ * paper fits, and the carton it usually ships in (null when none is named).
+ */
 export interface MaterialProductKey {
   typeSac: TypeSac;
   hasHandle: boolean;
   paperType: PaperType | null;
   grammage: number;
+  cartonId: string | null;
 }
 
 /**
  * A line as the user left it. `auto` is a line nobody has touched: it shows
  * the catalogue's suggestion for the bag as it currently is — the one paper
- * that fits, a glue line's default — and follows the product while it
- * changes. `keep` is the stored line, untouched.
+ * that fits, a glue line's default, the product's usual carton — and follows
+ * the product while it changes. `keep` is the stored line, untouched.
  */
 type LineState =
   | { mode: "auto" }
@@ -70,7 +77,7 @@ export interface EffectiveLine {
   /** The price field's text. */
   raw: string;
   /** The price the live figures use; null when blank or not a number. */
-  kiloPrice: number | null;
+  price: number | null;
   stored: StoredLine | null;
   /** A stored catalogue line the catalogue has moved past. */
   stale: { current: number; saved: number } | null;
@@ -98,12 +105,13 @@ function initialStates(stored: readonly StoredLine[]): Record<MaterialLineKey, L
     handleGlue: has("handleGlue") ? { mode: "keep" } : { mode: "auto" },
     sideGlue: has("sideGlue") ? { mode: "keep" } : { mode: "auto" },
     baseAdhesive: has("baseAdhesive") ? { mode: "keep" } : { mode: "auto" },
+    carton: has("carton") ? { mode: "keep" } : { mode: "auto" },
   };
 }
 
 /**
  * The lines' state and everything the form reads off it: what each shows,
- * the kilo prices for the live figures, and the payload for the save.
+ * the material prices for the live figures, and the payload for the save.
  *
  * `locked` is a priced order (`isPricingLocked`): its lines are the stored
  * ones, frozen, and the catalogue is not even fetched.
@@ -147,6 +155,9 @@ export function useOrderMaterialLines({
       const fits = materials.filter((material) => paperFits(material, product));
       return fits.length === 1 ? (fits[0] ?? null) : null;
     }
+    // The product's usual carton, while it is live and priced: an archived
+    // one is not in the catalogue the form offers, so the line starts empty.
+    if (slot === "CARTON") return product?.cartonId ? byId(product.cartonId) : null;
     // Several defaults are a choice the form does not make, like several
     // fitting papers: the line starts empty and lists them first.
     const presets = defaultsFor(slot);
@@ -157,13 +168,13 @@ export function useOrderMaterialLines({
     const slot = MATERIAL_LINE_SLOTS[key];
     const storedLine = storedFor(key);
     const base = { key, slot, stored: storedLine, stale: null, since: null, canRevert: false };
-    const none: EffectiveLine = { ...base, kind: "none", materialId: null, raw: "", kiloPrice: null };
+    const none: EffectiveLine = { ...base, kind: "none", materialId: null, raw: "", price: null };
     const catalog = (material: FormMaterial): EffectiveLine => ({
       ...base,
       kind: "catalog",
       materialId: material.id,
-      raw: String(material.currentPrice.kiloPrice),
-      kiloPrice: material.currentPrice.kiloPrice,
+      raw: String(material.currentPrice.price),
+      price: material.currentPrice.price,
       since: material.currentPrice.validFrom,
     });
 
@@ -179,14 +190,14 @@ export function useOrderMaterialLines({
           storedLine.material?.active &&
           current &&
           current.id !== storedLine.sourcePriceId
-            ? { current: current.kiloPrice, saved: storedLine.kiloPrice }
+            ? { current: current.price, saved: storedLine.price }
             : null;
         return {
           ...base,
           kind: "stored",
           materialId: storedLine.material?.id ?? null,
-          raw: String(storedLine.kiloPrice),
-          kiloPrice: storedLine.kiloPrice,
+          raw: String(storedLine.price),
+          price: storedLine.price,
           stale,
         };
       }
@@ -208,7 +219,7 @@ export function useOrderMaterialLines({
           kind: "manual",
           materialId: state.materialId,
           raw: state.raw,
-          kiloPrice: Number.isFinite(value) && value > 0 ? value : null,
+          price: Number.isFinite(value) && value > 0 ? value : null,
           canRevert: byId(state.materialId) !== null,
         };
       }
@@ -220,11 +231,12 @@ export function useOrderMaterialLines({
     EffectiveLine
   >;
 
-  const prices: SlotKiloPrices = {
-    paper: lines.paper.kiloPrice,
-    handleGlue: lines.handleGlue.kiloPrice,
-    sideGlue: lines.sideGlue.kiloPrice,
-    baseAdhesive: lines.baseAdhesive.kiloPrice,
+  const prices: SlotPrices = {
+    paper: lines.paper.price,
+    handleGlue: lines.handleGlue.price,
+    sideGlue: lines.sideGlue.price,
+    baseAdhesive: lines.baseAdhesive.price,
+    carton: lines.carton.price,
   };
 
   const set = (key: MaterialLineKey, next: LineState) => {
@@ -256,8 +268,8 @@ export function useOrderMaterialLines({
           break;
         }
         case "manual":
-          if (line.kiloPrice === null || line.materialId === null) return { ok: false, key };
-          out[key] = { mode: "manual", materialId: line.materialId, kiloPrice: line.kiloPrice };
+          if (line.price === null || line.materialId === null) return { ok: false, key };
+          out[key] = { mode: "manual", materialId: line.materialId, price: line.price };
           break;
       }
     }
@@ -273,8 +285,8 @@ export function useOrderMaterialLines({
   async function reloadAfterConflict(): Promise<boolean> {
     const shown = MATERIAL_LINE_KEYS.flatMap((key) => {
       const line = lines[key];
-      return line.kind === "catalog" && line.materialId && line.kiloPrice !== null
-        ? [{ key, materialId: line.materialId, kiloPrice: line.kiloPrice }]
+      return line.kind === "catalog" && line.materialId && line.price !== null
+        ? [{ key, materialId: line.materialId, price: line.price }]
         : [];
     });
     const fresh = await queryClient.fetchQuery({
@@ -284,8 +296,8 @@ export function useOrderMaterialLines({
     const moved: Partial<Record<MaterialLineKey, { from: number; to: number }>> = {};
     for (const entry of shown) {
       const now = fresh.materials.find((material) => material.id === entry.materialId);
-      if (now && now.currentPrice.kiloPrice !== entry.kiloPrice) {
-        moved[entry.key] = { from: entry.kiloPrice, to: now.currentPrice.kiloPrice };
+      if (now && now.currentPrice.price !== entry.price) {
+        moved[entry.key] = { from: entry.price, to: now.currentPrice.price };
       }
     }
     setRepriced(moved);
@@ -323,8 +335,9 @@ export function useOrderMaterialLines({
 export type OrderMaterialLines = ReturnType<typeof useOrderMaterialLines>;
 
 /**
- * One line's fields: the material, its kilo price, and one line under them
- * saying where the price comes from — with the action that changes that.
+ * One line's fields: the material, its price (per kilogram, or per carton),
+ * and one line under them saying where the price comes from — with the
+ * action that changes that.
  */
 export function MaterialLineFields({
   lines,
@@ -344,34 +357,46 @@ export function MaterialLineFields({
   error?: string;
 }) {
   const t = useTranslations("orders");
-  const isPaper = line.slot === "PAPER";
-  const kinds = lines.materials.filter((material) => material.type === (isPaper ? "PAPER" : "GLUE"));
+  const unit = usePriceUnit();
+  const type = materialTypeForSlot(line.slot);
+  const isPaper = type === "PAPER";
+  const isCarton = type === "BOX";
+  const kinds = lines.materials.filter((material) => material.type === type);
   // Named by code, the one name that tells two glues of one brand apart; the
-  // label and supplier are still found by the search. The price shows in
-  // the field beside it.
+  // label, the supplier and a carton's size ("400x300" finds 400 × 300 × 400)
+  // are still found by the search. The price shows in the field beside it.
   const option = (material: FormMaterial): ComboboxOption => ({
     value: material.id,
     label: material.code,
-    keywords: [material.label, material.supplier?.name].filter(Boolean).join(" "),
+    keywords: [
+      material.label,
+      material.supplier?.name,
+      material.type === "BOX" ? formatCartonSize(material) : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
   });
 
-  // Papers that fit the bag first, and a glue line's default glues; the
-  // others stay reachable below a rule, for the job that really is made
-  // with something else.
-  const lineDefaults = isPaper ? [] : lines.defaultsFor(line.slot);
+  // Papers that fit the bag first, a glue line's default glues, the
+  // product's usual carton; the others stay reachable below a rule, for the
+  // job that really is made with something else.
+  const lineDefaults = isPaper || isCarton ? [] : lines.defaultsFor(line.slot);
   const preferred =
     isPaper && product
       ? (material: FormMaterial) => paperFits(material, product)
-      : lineDefaults.length > 0
-        ? (material: FormMaterial) => lineDefaults.includes(material.id)
-        : null;
+      : isCarton
+        ? product?.cartonId
+          ? (material: FormMaterial) => material.id === product.cartonId
+          : null
+        : lineDefaults.length > 0
+          ? (material: FormMaterial) => lineDefaults.includes(material.id)
+          : null;
   const fitting = preferred ? kinds.filter(preferred) : kinds;
   const others = preferred ? kinds.filter((material) => !preferred(material)) : [];
+  const othersLabel = isPaper ? "lines.otherPapers" : isCarton ? "lines.otherCartons" : "lines.otherGlues";
   const options: ComboboxOption[] = [
     ...fitting.map(option),
-    ...(others.length > 0
-      ? [{ value: "__others", label: t(isPaper ? "lines.otherPapers" : "lines.otherGlues"), disabled: true }]
-      : []),
+    ...(others.length > 0 ? [{ value: "__others", label: t(othersLabel), disabled: true }] : []),
     ...others.map(option),
   ];
   // The stored line's own material when the catalogue no longer offers it
@@ -408,7 +433,7 @@ export function MaterialLineFields({
       <div className={orderStyles.linePrice}>
         <TextField
           label={priceLabel}
-          unit="/kg"
+          unit={unit(type)}
           error={error}
           format="numeric"
           inputMode="decimal"

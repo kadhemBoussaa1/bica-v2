@@ -4,11 +4,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
-import { isPricingLocked, type PricingSlot } from "@repo/api-contract";
+import { isPricingLocked, materialTypeForSlot, type PricingSlot } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { useToast } from "@repo/ui/toast";
 import { numberFormat } from "../../i18n/formats";
 import records from "../records/records.module.css";
+import { usePriceUnit } from "../settings/material-prices/material-ui";
 import { useTRPC } from "../trpc/client";
 import styles from "./order-detail.module.css";
 
@@ -26,9 +27,10 @@ export function isStaleLine(line: Line): boolean {
 }
 
 /**
- * The order's paper and glue lines on its detail page: each material, the
- * kilo price the order is calculated with and where that price came from
- * (docs/raw-material-prices-plan.md §5). On an open order whose catalogue
+ * The order's paper, glue and carton lines on its detail page: each
+ * material, the price the order is calculated with (per kilogram, or per
+ * carton) and where that price came from (docs/raw-material-prices-plan.md
+ * §5, and the cartons addition). On an open order whose catalogue
  * prices moved since it was saved, a notice and "Update prices" — the only
  * way a catalogue change reaches a saved order, and only on request.
  */
@@ -37,6 +39,7 @@ export function OrderMaterialPrices({ order, canWrite }: { order: PricedOrder; c
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { push } = useToast();
+  const unit = usePriceUnit();
 
   const locked = isPricingLocked(order);
   const p = order.product;
@@ -81,6 +84,7 @@ export function OrderMaterialPrices({ order, canWrite }: { order: PricedOrder; c
       weight: order.baseAdhesiveWeightG,
       shown: p.typeSac !== "SOUS_PLAT" || line("BASE_ADHESIVE") !== null,
     },
+    { slot: "CARTON", label: t("pricing.parcelPrice"), weight: null, shown: true },
   ];
 
   return (
@@ -96,8 +100,8 @@ export function OrderMaterialPrices({ order, canWrite }: { order: PricedOrder; c
               <span className={[styles.lineValue, entry ? null : styles.absent].filter(Boolean).join(" ")}>
                 {entry ? (
                   <>
-                    {kilo().format(entry.kiloPrice)}
-                    <span className={styles.unit}> /kg</span>
+                    {kilo().format(entry.price)}
+                    <span className={styles.unit}> {unit(materialTypeForSlot(row.slot))}</span>
                     {row.weight !== null && ` · ${grams().format(row.weight)} g`}
                     {material && (
                       <span className={styles.lineMaterial}>

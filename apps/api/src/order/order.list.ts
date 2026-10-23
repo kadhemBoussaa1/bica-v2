@@ -194,6 +194,9 @@ export const ORDER_DETAIL_SELECT = {
       active: true,
       images: true,
       ...PRODUCT_SPEC_SELECT,
+      // The product's usual carton, which the edit form's carton line starts
+      // from (cartons addition): an id, never a price.
+      carton: { select: { id: true, active: true } },
     },
   },
 
@@ -293,7 +296,6 @@ export const ORDER_DETAIL_SELECT_PRICED = {
   legacyGlueCostPerUnit: true,
   piecesPerParcel: true,
   kilosPerParcel: true,
-  parcelPrice: true,
   transportCost: true,
 
   /// The paper and glue kilo prices it was calculated with
@@ -303,7 +305,7 @@ export const ORDER_DETAIL_SELECT_PRICED = {
   materialPrices: {
     select: {
       slot: true,
-      kiloPrice: true,
+      price: true,
       manual: true,
       sourcePriceId: true,
       label: true,
@@ -316,7 +318,7 @@ export const ORDER_DETAIL_SELECT_PRICED = {
           active: true,
           grammage: true,
           supplier: { select: { name: true } },
-          prices: { where: { validTo: null }, take: 1, select: { id: true, kiloPrice: true } },
+          prices: { where: { validTo: null }, take: 1, select: { id: true, price: true } },
         },
       },
     },

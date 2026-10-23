@@ -226,6 +226,13 @@
   gap: var(--bp-space-3);
 }
 
+/* A carton's length, width and height, side by side as the size is read. */
+.threeUp {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bp-space-3);
+}
+
 /* A labelled group that is not one field: the type switch, the glue lines.
    Starts aligned, so a two-segment switch keeps its own width. */
 .fieldGroup {
@@ -254,6 +261,7 @@
   .facts,
   .codeLabel,
   .twoUp,
+  .threeUp,
   .slots {
     grid-template-columns: minmax(0, 1fr);
   }

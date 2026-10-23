@@ -1371,10 +1371,15 @@ export class TrpcRouter {
         .input(setRawMaterialPriceInput)
         .mutation(({ ctx, input }) => this.materialService.setPrice(ctx.user, input)),
 
-      /** The paper form's supplier picker; audited like any read, fetched once per dialog. */
+      /** The paper and carton forms' supplier picker; audited like any read, fetched once per dialog. */
       supplierOptions: adminProcedure
         .input(z.object({ currentId: z.string().min(1).optional() }))
         .query(({ input }) => this.materialService.supplierOptions(input.currentId)),
+
+      /** The products page's carton picker, without prices; audited like any read. */
+      cartonOptions: adminProcedure
+        .input(z.object({ currentId: z.string().min(1).optional() }))
+        .query(({ input }) => this.materialService.cartonOptions(input.currentId)),
 
       /** The order form's prefill, read on every form open; plumbing, not audited. */
       forOrderForm: adminProcedure

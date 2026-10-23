@@ -6,11 +6,13 @@ import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { assetUrl, createProductInput, updateProductInput } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
+import { ComboboxField, type ComboboxOption } from "@repo/ui/combobox-field";
 import { SelectField, TextField } from "@repo/ui/field";
 import { Thumbnail } from "@repo/ui/thumbnail";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
 import { useTRPC } from "../trpc/client";
+import { formatCartonSize } from "../settings/material-prices/material-ui";
 import { ProductImageUpload } from "./product-image-upload";
 import { ProductSpecFields } from "./product-spec-fields";
 import productStyles from "./products.module.css";
@@ -57,6 +59,8 @@ export function ProductForm({
    * reach the product on submit — cancelling leaves the stored list alone.
    */
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
+  /** The carton the bag usually ships in; "" for none. */
+  const [cartonId, setCartonId] = useState(initial?.carton?.id ?? "");
   const [error, setError] = useState<string | null>(null);
 
   // Active clients only, for the "shared vs one client" picker below.
@@ -64,6 +68,21 @@ export function ProductForm({
     trpc.client.list.queryOptions({ pageSize: 100, sortBy: "name", sortDir: "asc" }),
   );
   const clients = clientsQuery.data?.rows ?? [];
+
+  // Live cartons, plus the product's own if it has since been archived, so
+  // editing the product does not lose it. No prices: they are not this page's.
+  const cartonsQuery = useQuery(
+    trpc.material.cartonOptions.queryOptions({ currentId: initial?.carton?.id }),
+  );
+  const cartonOptions: ComboboxOption[] = (cartonsQuery.data ?? []).map((carton) => {
+    const name = `${carton.label} · ${carton.supplier?.name ?? "—"}`;
+    return {
+      value: carton.id,
+      label: carton.active ? name : t("form.cartonArchived", { name }),
+      // Searchable by size ("400x300" finds 400 × 300 × 400) and by code.
+      keywords: `${formatCartonSize(carton)} ${carton.code}`,
+    };
+  });
 
   const done = async () => {
     await queryClient.invalidateQueries({ queryKey: trpc.product.list.queryKey() });
@@ -115,6 +134,8 @@ export function ProductForm({
         handleWeightG: num(t("spec.handleWeight"), handleWeightG),
         // Always sent, so removing every image genuinely clears the artwork.
         images,
+        // Always sent too, so "no carton" clears it.
+        cartonId: cartonId === "" ? null : cartonId,
       };
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : common("checkForm"));
@@ -197,6 +218,22 @@ export function ProductForm({
           setHandleWeightG={setHandleWeightG}
           disabled={busy}
         />
+
+        <span className={styles.formSection}>{t("form.packaging")}</span>
+        <div className={styles.formWide}>
+          <ComboboxField
+            label={t("form.carton")}
+            value={cartonId}
+            onChange={setCartonId}
+            options={cartonOptions}
+            allowEmpty
+            placeholder={cartonsQuery.isPending ? t("loading") : t("form.noCarton")}
+            searchPlaceholder={t("form.cartonSearch")}
+            noMatch={(search) => t("form.cartonNoMatch", { search })}
+            disabled={busy || cartonsQuery.isPending}
+          />
+          <p className={styles.hint}>{t("form.cartonHint")}</p>
+        </div>
 
         <span className={styles.formSection}>{t("form.artwork")}</span>
         <div className={styles.formWide}>

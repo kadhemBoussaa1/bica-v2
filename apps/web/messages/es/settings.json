@@ -14,7 +14,7 @@
     "users": "Cuentas, roles y accesos",
     "activity": "Quién hizo qué y cuándo",
     "templates": "Aspecto de las facturas emitidas",
-    "material-prices": "Precios por kilo de papel y colas"
+    "material-prices": "Precios de papel, colas y cartones"
   },
   "counts": {
     "errors": "{count} err.",

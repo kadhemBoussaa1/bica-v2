@@ -156,12 +156,14 @@
   },
   "rawMaterialType": {
     "PAPER": "Papel",
-    "GLUE": "Cola"
+    "GLUE": "Cola",
+    "BOX": "Cartón"
   },
   "pricingSlot": {
     "PAPER": "Papel",
     "HANDLE_GLUE": "Cola del asa",
     "SIDE_GLUE": "Cola lateral",
-    "BASE_ADHESIVE": "Adhesivo del fondo"
+    "BASE_ADHESIVE": "Adhesivo del fondo",
+    "CARTON": "Cartón"
   }
 }

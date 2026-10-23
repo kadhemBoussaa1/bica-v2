@@ -156,10 +156,12 @@ export class ProductService {
    * Done as an explicit find-then-create, rather than through
    * `findOrCreateProduct`, only so the two branches can be told apart —
    * `findOrCreateProduct` itself returns a plain row either way, which is
-   * what the importer and `OrderService` want.
+   * what the importer and `OrderService` want. A reused product is returned
+   * as it is: neither the artwork nor the carton sent is written onto it.
    */
   async create(input: CreateProductInput) {
     await this.assertClientAssignable(input.clientId);
+    await this.assertCartonAssignable(input.cartonId, null);
     this.assertImagesUploaded(input.images ?? [], []);
     const key = this.toKey(input);
 
@@ -185,6 +187,7 @@ export class ProductService {
         hasHandle: key.hasHandle,
         handleWeightG: key.handleWeightG,
         images: input.images ?? [],
+        cartonId: input.cartonId ?? null,
       },
       select: RETURN_SELECT,
     });
@@ -200,6 +203,7 @@ export class ProductService {
   async update(input: UpdateProductInput) {
     const stored = await this.assertExists(input.id);
     await this.assertClientAssignable(input.clientId);
+    await this.assertCartonAssignable(input.cartonId, stored.cartonId);
     this.assertImagesUploaded(input.images ?? [], stored.images);
     const key = this.toKey(input);
     return this.prisma.product.update({
@@ -218,6 +222,8 @@ export class ProductService {
         hasHandle: key.hasHandle,
         handleWeightG: key.handleWeightG,
         ...this.writableImages(input),
+        // Clearable like the artwork: null clears it, omitted leaves it.
+        ...(input.cartonId !== undefined ? { cartonId: input.cartonId } : {}),
       },
       select: RETURN_SELECT,
     });
@@ -291,13 +297,13 @@ export class ProductService {
   }
 
   /**
-   * Existence, plus the stored artwork the image gate compares against —
-   * `byId`'s full select and order count are not needed to write.
+   * Existence, plus the stored artwork and carton the write gates compare
+   * against — `byId`'s full select and order count are not needed to write.
    */
   private async assertExists(id: string) {
     const found = await this.prisma.product.findUnique({
       where: { id },
-      select: { id: true, images: true },
+      select: { id: true, images: true, cartonId: true },
     });
     if (!found) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Product not found" });
@@ -313,6 +319,32 @@ export class ProductService {
       clientId: input.clientId ?? null,
       paperType: input.paperType ?? null,
     };
+  }
+
+  /**
+   * A product's carton must be a carton (a BOX material), and a newly named
+   * one must be live: an archived carton stays on the products that already
+   * name it, like an archived supplier on its papers. Null or omitted needs
+   * no check: no carton, or the stored one left alone.
+   */
+  private async assertCartonAssignable(cartonId: string | null | undefined, currentId: string | null) {
+    if (cartonId === null || cartonId === undefined) return;
+    const carton = await this.prisma.rawMaterial.findUnique({
+      where: { id: cartonId },
+      select: { type: true, active: true },
+    });
+    if (!carton) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "That carton no longer exists" });
+    }
+    if (carton.type !== "BOX") {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "That material is not a carton" });
+    }
+    if (!carton.active && cartonId !== currentId) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "That carton is archived and cannot be assigned",
+      });
+    }
   }
 
   private async assertClientAssignable(clientId: string | undefined) {

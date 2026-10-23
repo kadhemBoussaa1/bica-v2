@@ -75,6 +75,19 @@ export const PRODUCT_SELECT = {
   /// not render thumbnails, but this select serves `byId` too, and splitting
   /// it in two to save one array column per row is not worth the divergence.
   images: true,
+  /// The carton the bag usually ships in (cartons addition): what it is and
+  /// its size, never its price — this select also serves PRODUCTION.
+  carton: {
+    select: {
+      id: true,
+      label: true,
+      active: true,
+      lengthMm: true,
+      widthMm: true,
+      heightMm: true,
+      supplier: { select: { name: true } },
+    },
+  },
   active: true,
   createdAt: true,
   _count: { select: { orders: true } },

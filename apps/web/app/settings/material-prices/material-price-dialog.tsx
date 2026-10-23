@@ -11,7 +11,7 @@ import { formatDay } from "../../../i18n/formats";
 import { decimal } from "../../records/decimal";
 import records from "../../records/records.module.css";
 import { useTRPC } from "../../trpc/client";
-import { errorCode, formatKiloPrice, type MaterialDetail } from "./material-ui";
+import { errorCode, formatPrice, usePriceUnit, type MaterialDetail } from "./material-ui";
 import styles from "./materials.module.css";
 
 /**
@@ -31,6 +31,7 @@ export function MaterialPriceDialog({
 }) {
   const t = useTranslations("materials");
   const common = useTranslations("common");
+  const unit = usePriceUnit();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -53,7 +54,7 @@ export function MaterialPriceDialog({
         );
         setError(
           t("price.conflict", {
-            price: fresh.currentPrice ? formatKiloPrice(fresh.currentPrice.kiloPrice) : "—",
+            price: fresh.currentPrice ? formatPrice(fresh.currentPrice.price) : "—",
           }),
         );
       },
@@ -61,27 +62,30 @@ export function MaterialPriceDialog({
   );
   const busy = setPriceMutation.isPending;
 
+  const box = material.type === "BOX";
+  const fieldLabel = box ? t("price.newPriceBox") : t("price.newPrice");
+
   function submit(event: FormEvent) {
     event.preventDefault();
     setError(null);
     if (!current) return;
     if (price.trim() === "") {
-      setError(t("form.priceRequired"));
+      setError(box ? t("form.priceRequiredBox") : t("form.priceRequired"));
       return;
     }
-    const kiloPrice = decimal(price);
-    if (Number.isNaN(kiloPrice)) {
-      setError(t("form.mustBeNumber", { label: t("price.newPrice") }));
+    const amount = decimal(price);
+    if (Number.isNaN(amount)) {
+      setError(t("form.mustBeNumber", { label: fieldLabel }));
       return;
     }
-    if (kiloPrice === current.kiloPrice) {
+    if (amount === current.price) {
       setError(t("price.unchanged"));
       return;
     }
     const parsed = setRawMaterialPriceInput.safeParse({
       materialId: material.id,
       currentPriceId: current.id,
-      kiloPrice,
+      price: amount,
       comment,
     });
     if (!parsed.success) {
@@ -105,8 +109,8 @@ export function MaterialPriceDialog({
             <span className={styles.currentText}>
               <span className={styles.factLabel}>{t("price.current")}</span>
               <span className={styles.currentFigure}>
-                {formatKiloPrice(current.kiloPrice)}
-                <span className={styles.priceUnit}>/kg</span>
+                {formatPrice(current.price)}
+                <span className={styles.priceUnit}>{unit(material.type)}</span>
               </span>
               <span className={styles.since}>
                 {t("price.since", { date: formatDay(current.validFrom) })}
@@ -117,11 +121,11 @@ export function MaterialPriceDialog({
 
         <div className={styles.twoUp}>
           <TextField
-            label={t("price.newPrice")}
-            unit="/kg"
+            label={fieldLabel}
+            unit={unit(material.type)}
             format="numeric"
             inputMode="decimal"
-            placeholder={current ? formatKiloPrice(current.kiloPrice) : "0,00"}
+            placeholder={current ? formatPrice(current.price) : "0,00"}
             value={price}
             onChange={(event) => setPrice(event.target.value)}
             autoComplete="off"

@@ -23,6 +23,7 @@ import { Row, Val } from "../../records/record-ui";
 import styles from "../../records/records.module.css";
 import grid from "../products.module.css";
 import { bagSize } from "../bag-size";
+import { formatCartonSize } from "../../settings/material-prices/material-ui";
 
 const int = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
 const money = new Intl.NumberFormat("fr-FR", {
@@ -216,6 +217,19 @@ export function ProductDetail({ id }: { id: string }) {
             {p.hasHandle
               ? t("table.handleYes", { weight: p.handleWeightG ?? 0 })
               : t("table.handleNo")}
+          </Row>
+          <Row label={t("detail.carton")}>
+            {p.carton ? (
+              <>
+                {p.carton.label} · {p.carton.supplier?.name ?? "—"} ·{" "}
+                {t("detail.cartonSize", { size: formatCartonSize(p.carton) })}
+                {!p.carton.active && (
+                  <span className={styles.archivedTag}>{t("table.archivedTag")}</span>
+                )}
+              </>
+            ) : (
+              <Val value={null} />
+            )}
           </Row>
         </section>
 
