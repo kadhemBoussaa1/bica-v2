@@ -17,7 +17,8 @@ import {
   type SlotKiloPrices,
   type TypeSac,
 } from "@repo/api-contract";
-import { SelectField, TextField, type SelectOption } from "@repo/ui/field";
+import { ComboboxField, type ComboboxOption } from "@repo/ui/combobox-field";
+import { TextField } from "@repo/ui/field";
 import { formatDay, numberFormat } from "../../i18n/formats";
 import { decimal } from "../records/decimal";
 import styles from "../records/records.module.css";
@@ -345,11 +346,13 @@ export function MaterialLineFields({
   const t = useTranslations("orders");
   const isPaper = line.slot === "PAPER";
   const kinds = lines.materials.filter((material) => material.type === (isPaper ? "PAPER" : "GLUE"));
-  // Named by material and supplier only: the price shows in the field
-  // beside the select, which a closed select would cut off anyway.
-  const option = (material: FormMaterial) => ({
+  // Named by code, the one name that tells two glues of one brand apart; the
+  // label and supplier are still found by the search. The price shows in
+  // the field beside it.
+  const option = (material: FormMaterial): ComboboxOption => ({
     value: material.id,
-    label: [material.label, material.supplier?.name].filter(Boolean).join(" · "),
+    label: material.code,
+    keywords: [material.label, material.supplier?.name].filter(Boolean).join(" "),
   });
 
   // Papers that fit the bag first, and a glue line's default glues; the
@@ -364,8 +367,7 @@ export function MaterialLineFields({
         : null;
   const fitting = preferred ? kinds.filter(preferred) : kinds;
   const others = preferred ? kinds.filter((material) => !preferred(material)) : [];
-  const options: SelectOption[] = [
-    { value: "", label: t("lines.none") },
+  const options: ComboboxOption[] = [
     ...fitting.map(option),
     ...(others.length > 0
       ? [{ value: "__others", label: t(isPaper ? "lines.otherPapers" : "lines.otherGlues"), disabled: true }]
@@ -376,7 +378,11 @@ export function MaterialLineFields({
   // (archived), and a line from before the catalogue, which names none.
   const storedMaterial = line.stored?.material;
   if (line.kind === "stored" && storedMaterial && !kinds.some((material) => material.id === storedMaterial.id)) {
-    options.push({ value: storedMaterial.id, label: t("lines.archived", { label: storedMaterial.label }) });
+    options.push({
+      value: storedMaterial.id,
+      label: t("lines.archived", { label: storedMaterial.code }),
+      keywords: storedMaterial.label,
+    });
   }
   if (line.kind === "stored" && !storedMaterial) {
     options.push({ value: "__carried", label: t("lines.carried"), disabled: true });
@@ -388,11 +394,15 @@ export function MaterialLineFields({
 
   return (
     <>
-      <SelectField
+      <ComboboxField
         label={label}
         value={value}
         options={options}
-        onChange={(event) => lines.choose(line.key, event.target.value)}
+        onChange={(materialId) => lines.choose(line.key, materialId)}
+        allowEmpty
+        placeholder={t("lines.none")}
+        searchPlaceholder={t("lines.searchMaterial")}
+        noMatch={(search) => t("form.noMatch", { search })}
         disabled={disabled || lines.catalogLoading}
       />
       <div className={orderStyles.linePrice}>

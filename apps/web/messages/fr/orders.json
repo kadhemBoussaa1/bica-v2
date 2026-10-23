@@ -344,6 +344,7 @@
     "none": "Aucun",
     "otherPapers": "— Autres papiers —",
     "otherGlues": "— Autres colles —",
+    "searchMaterial": "Code, matière ou fournisseur…",
     "archived": "{label} (archivée)",
     "carried": "Avant catalogue",
     "fromCatalogue": "Prix du catalogue, depuis le {date}",

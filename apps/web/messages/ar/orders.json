@@ -344,6 +344,7 @@
     "none": "لا شيء",
     "otherPapers": "— أوراق أخرى —",
     "otherGlues": "— أنواع غراء أخرى —",
+    "searchMaterial": "رمز أو مادة أو مورّد…",
     "archived": "{label} (مؤرشفة)",
     "carried": "قبل الكتالوج",
     "fromCatalogue": "سعر الكتالوج، منذ {date}",
