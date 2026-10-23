@@ -1,0 +1,697 @@
+/*
+ * A purchase invoice's page: the header with its state, a strip of figures,
+ * the lines and two fact cards on the left, the scan on the right.
+ *
+ * Source: "Facture Achat Detail.dc.html" in the Claude Design project
+ * "Kraft paper bag ERP toolkit", on the toolkit v3 (Glass) tokens. The
+ * handoff's 18px radii are panels here, its 18/22px gaps snapped to the
+ * scale, its physical sides logical for Arabic. The layout itself is the
+ * shared `detailLayout` (records.module.css): record left, document right.
+ */
+
+/* --- header --- */
+
+.hero {
+  align-items: flex-start;
+}
+
+.heroMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+}
+
+.titleNo {
+  font-family: var(--bp-font-mono);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2) var(--bp-space-3);
+  flex-wrap: wrap;
+  font: 400 0.8125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/* The parts after the supplier are set off by a middle dot. */
+.metaPart::before {
+  content: "·";
+  margin-inline-end: var(--bp-space-3);
+  color: var(--bp-ink-faint);
+}
+
+.metaFigure {
+  font-family: var(--bp-font-mono);
+  color: var(--bp-ink);
+}
+
+.metaLink {
+  font-family: var(--bp-font-mono);
+  font-weight: 600;
+  color: var(--bp-orange-700);
+}
+
+.metaLink:hover {
+  color: var(--bp-orange-800);
+}
+
+.supplier {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  font-weight: 600;
+  color: var(--bp-ink);
+}
+
+.supplier:hover {
+  color: var(--bp-orange-700);
+}
+
+/* A squircle, never a circle (toolkit v3). */
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: rgb(242 145 0 / 0.16);
+  color: var(--bp-orange-800);
+  font: 700 0.625rem/1 var(--bp-font-mono);
+}
+
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-2);
+  flex-wrap: wrap;
+}
+
+/* --- the overflow menu --- */
+
+.more {
+  position: relative;
+}
+
+.moreButton {
+  width: var(--bp-control-h);
+  height: var(--bp-control-h);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius);
+  background: var(--bp-control-bg);
+  color: var(--bp-ink-muted);
+  font: 700 1rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.moreButton:hover {
+  border-color: var(--bp-control-border-hover);
+  color: var(--bp-ink);
+}
+
+.moreButton:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 2px;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--bp-space-2));
+  inset-inline-end: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  padding: var(--bp-space-1);
+  border: 1px solid var(--bp-hairline);
+  border-radius: var(--bp-radius-block);
+  background: var(--bp-surface);
+  box-shadow: var(--bp-shadow-float);
+}
+
+.menuItem {
+  min-height: 40px;
+  padding: 0 var(--bp-space-3);
+  border: 0;
+  border-radius: var(--bp-radius-dense);
+  background: transparent;
+  text-align: start;
+  font: 500 0.8125rem/1.2 var(--bp-font-body);
+  color: var(--bp-ink);
+  cursor: pointer;
+}
+
+.menuItem:hover,
+.menuItem:focus-visible {
+  background: var(--bp-tint);
+  outline: none;
+}
+
+.menuDanger {
+  color: var(--bp-danger-text);
+}
+
+.menuDanger:hover,
+.menuDanger:focus-visible {
+  background: var(--bp-danger-bg);
+}
+
+/* --- the figures --- */
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  /* The detail layout's own gap (records.module.css), so the strip sits on its rhythm. */
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.figure {
+  display: flex;
+  flex: 1 1 140px;
+  flex-direction: column;
+  gap: var(--bp-space-2);
+  padding: var(--bp-space-4) var(--bp-space-5);
+  border-inline-end: 1px solid var(--bp-hairline-soft);
+}
+
+.figure:last-child {
+  border-inline-end: 0;
+}
+
+/* What is still owed leads, on the brand tint. */
+.figureLead {
+  flex: 1.4 1 240px;
+  background: rgb(242 145 0 / 0.1);
+  border-inline-end-color: rgb(217 124 0 / 0.24);
+}
+
+.figureLabel {
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+  white-space: nowrap;
+}
+
+.figureLead .figureLabel {
+  color: var(--bp-orange-700);
+}
+
+.figureValue {
+  font: 600 1.125rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+}
+
+.figureQuiet {
+  color: var(--bp-ink-muted);
+}
+
+.figureStrong {
+  font-weight: 700;
+}
+
+.leadValue {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bp-space-1);
+  font: 700 1.875rem/1 var(--bp-font-mono);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.leadUnit {
+  font: 600 0.8125rem/1 var(--bp-font-mono);
+  letter-spacing: 0;
+  color: var(--bp-ink-muted);
+}
+
+.leadLine {
+  font: 400 0.75rem/1.4 var(--bp-font-body);
+  color: var(--bp-orange-800);
+}
+
+.leadLate {
+  color: var(--bp-danger-text);
+}
+
+/* --- cards --- */
+
+.layout {
+  align-items: flex-start;
+}
+
+/*
+ * Narrower bases than the shared layout's 460 + 520: beside the 280px
+ * sidebar a 1280–1440 screen leaves ~940–1100px, and the point of the page
+ * is the scan BESIDE the record, so the two stay side by side down to ~880px
+ * of content and stack only below that.
+ */
+.layout > .main {
+  flex: 1.15 1 440px;
+}
+
+.layout > .rail {
+  flex: 1 1 400px;
+}
+
+.card {
+  min-width: 0;
+  border: 1px solid var(--bp-glass-border);
+  border-radius: var(--bp-radius-panel);
+  background: var(--bp-glass-bg);
+  backdrop-filter: var(--bp-glass-blur);
+  box-shadow: var(--bp-shadow-panel);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  padding: var(--bp-space-4) var(--bp-space-5) var(--bp-space-3);
+}
+
+.cardTitle {
+  margin: 0;
+  font: 700 0.9375rem/1.2 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+.cardCount {
+  margin-inline-start: var(--bp-space-1);
+  font: 500 0.75rem/1 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.cardMeta {
+  font: 400 0.75rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.cardBody {
+  padding: 0 var(--bp-space-5) var(--bp-space-4);
+}
+
+/* The two fact cards side by side, stacked once they cannot both breathe. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  /* The detail layout's own gap, as above. */
+  gap: 20px;
+  align-items: start;
+}
+
+.factCard {
+  display: flex;
+  flex-direction: column;
+  padding: var(--bp-space-4) var(--bp-space-5);
+}
+
+.factCard .cardTitle {
+  padding-bottom: var(--bp-space-3);
+}
+
+.fact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  min-height: 40px;
+  border-top: 1px solid var(--bp-hairline-soft);
+}
+
+.factLabel {
+  font: 400 0.78125rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.factValue {
+  font: 500 0.8125rem/1.3 var(--bp-font-mono);
+  color: var(--bp-ink);
+  text-align: end;
+  word-break: break-word;
+}
+
+.factMissing {
+  font: 400 0.78125rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-faint);
+}
+
+/* "+ Ajouter": dashed, a gap to fill rather than a control. */
+.addLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 var(--bp-space-3);
+  border: 1px dashed var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  font: 500 0.75rem/1 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  white-space: nowrap;
+}
+
+.addLink::before {
+  content: "+";
+  margin-inline-end: var(--bp-space-1);
+}
+
+.addLink:hover {
+  border-color: var(--bp-orange-500);
+  color: var(--bp-orange-700);
+}
+
+.payButton {
+  margin-top: var(--bp-space-3);
+}
+
+/* --- lines --- */
+
+.linesScroll {
+  overflow-x: auto;
+}
+
+.lines {
+  width: 100%;
+  min-width: 460px;
+  border-collapse: collapse;
+}
+
+.lines th {
+  padding: var(--bp-space-3) var(--bp-space-2);
+  border-block: 1px solid var(--bp-hairline-soft);
+  background: var(--bp-tint);
+  font: 600 0.625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+  text-align: start;
+  white-space: nowrap;
+}
+
+.lines td {
+  padding: var(--bp-space-3) var(--bp-space-2);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+  font: 500 0.8125rem/1.2 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-ink);
+  vertical-align: middle;
+}
+
+.lines tr:last-child td {
+  border-bottom: 0;
+}
+
+.lines th:first-child,
+.lines td:first-child {
+  padding-inline-start: var(--bp-space-5);
+}
+
+.lines th:last-child,
+.lines td:last-child {
+  padding-inline-end: var(--bp-space-5);
+}
+
+.lines .num {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.article {
+  display: block;
+  font: 600 0.84375rem/1.25 var(--bp-font-body);
+}
+
+.articleSub {
+  display: block;
+  margin-top: var(--bp-space-1);
+  font: 400 0.71875rem/1.3 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.lines .lineTotal {
+  font-weight: 600;
+}
+
+.dash {
+  color: var(--bp-ink-faint);
+}
+
+.sum {
+  display: grid;
+  grid-template-columns: auto minmax(120px, auto);
+  justify-content: end;
+  align-items: baseline;
+  gap: var(--bp-space-2) var(--bp-space-5);
+  padding: var(--bp-space-3) var(--bp-space-5) var(--bp-space-4);
+  border-top: 1px solid var(--bp-hairline-soft);
+  border-radius: 0 0 var(--bp-radius-panel) var(--bp-radius-panel);
+  background: var(--bp-tint);
+}
+
+.sumLabel {
+  font: 400 0.78125rem/1 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+  text-align: end;
+}
+
+.sumValue {
+  font: 700 0.875rem/1 var(--bp-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.sumCheck {
+  grid-column: 1 / -1;
+  font: 400 0.75rem/1.3 var(--bp-font-body);
+  text-align: end;
+}
+
+.sumOk {
+  color: var(--bp-success-text);
+}
+
+.sumOk::before {
+  content: "✓ ";
+}
+
+.sumOff {
+  color: var(--bp-danger-text);
+}
+
+/* --- the scan --- */
+
+.scan {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scanHead {
+  display: flex;
+  align-items: center;
+  gap: var(--bp-space-3);
+  padding: var(--bp-space-3) var(--bp-space-4);
+  border-bottom: 1px solid var(--bp-hairline-soft);
+}
+
+.scanTitle {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bp-space-1);
+  min-width: 0;
+}
+
+.scanFile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 0.71875rem/1.2 var(--bp-font-mono);
+  color: var(--bp-ink-muted);
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 3px;
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-tint-strong);
+}
+
+.zoomButton {
+  width: 30px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--bp-ink-muted);
+  font: 600 0.9375rem/1 var(--bp-font-body);
+  cursor: pointer;
+}
+
+.zoomButton:hover:not(:disabled) {
+  background: var(--bp-surface);
+  color: var(--bp-ink);
+}
+
+.zoomButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.zoomButton:focus-visible {
+  outline: 2px solid var(--bp-focus);
+  outline-offset: 1px;
+}
+
+.zoomLabel {
+  min-width: 48px;
+  text-align: center;
+  font: 600 0.71875rem/1 var(--bp-font-mono);
+  color: var(--bp-ink);
+}
+
+.openLink {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 34px;
+  padding: 0 var(--bp-space-3);
+  border: 1px solid var(--bp-control-border);
+  border-radius: var(--bp-radius-dense);
+  background: var(--bp-control-bg);
+  font: 600 0.75rem/1 var(--bp-font-body);
+  color: var(--bp-ink);
+}
+
+.openLink::after {
+  content: "↗";
+  margin-inline-start: var(--bp-space-1);
+}
+
+.openLink:hover {
+  border-color: var(--bp-control-border-hover);
+}
+
+/* The page sits on a darker ground, like paper on a desk. */
+.scanBody {
+  height: min(72vh, 760px);
+  overflow: auto;
+  background: rgb(26 23 20 / 0.06);
+}
+
+.scanFrame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.scanImage {
+  display: block;
+  max-width: none;
+  margin: var(--bp-space-4) auto;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: var(--bp-shadow-card);
+}
+
+.scanEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bp-space-2);
+  height: 100%;
+  padding: var(--bp-space-5);
+  text-align: center;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.scanEmpty strong {
+  font: 600 0.875rem/1.3 var(--bp-font-display);
+  color: var(--bp-ink);
+}
+
+.scanFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bp-space-3);
+  flex-wrap: wrap;
+  padding: var(--bp-space-2) var(--bp-space-4);
+  border-top: 1px solid var(--bp-hairline-soft);
+  font: 400 0.75rem/1 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+.pager {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bp-space-1);
+}
+
+.attach {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: 600 0.75rem/1 var(--bp-font-body);
+  color: var(--bp-orange-700);
+  cursor: pointer;
+}
+
+.attach::before {
+  content: "+ ";
+}
+
+.attach:hover:not(:disabled) {
+  color: var(--bp-orange-800);
+}
+
+.attach:disabled {
+  color: var(--bp-ink-muted);
+  cursor: progress;
+}
+
+.scanError {
+  margin: 0 var(--bp-space-4) var(--bp-space-4);
+}
+
+/* --- the payment dialog --- */
+
+.payForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bp-space-4);
+  margin-top: var(--bp-space-3);
+}
+
+/* The form's gap spaces the error; the shared notice's own margin would double it. */
+.payForm .payError {
+  margin: 0;
+}

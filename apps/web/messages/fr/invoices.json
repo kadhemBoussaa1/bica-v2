@@ -57,8 +57,6 @@
     "exclVat": "Total HT",
     "vat": "TVA",
     "inclVat": "Total TTC",
-    "withholding": "Retenue à la source",
-    "withholdingTax": "Retenue à la source",
     "currency": "Devise",
     "exchangeRate": "Taux de change",
     "trace": "Trace",
@@ -132,8 +130,7 @@
       "totals": {
         "exclVat": "Total HT : {amount}",
         "vat": "TVA : {amount}",
-        "inclVat": "Total TTC : {amount}",
-        "netPayable": "Net à payer : {amount}"
+        "inclVat": "Total TTC : {amount}"
       }
     },
     "kpis": {
@@ -182,6 +179,60 @@
       "title": "Aucune facture d’achat",
       "text": "Rien ne correspond à ces filtres à la fois.",
       "reset": "Réinitialiser"
+    },
+    "detail": {
+      "title": "Facture <no>{numero}</no>",
+      "paidOn": "Payée le {date}",
+      "issuedOn": "Émise le <b>{date}</b>",
+      "receipt": "Réception <link>{numero}</link>",
+      "legacyReceipt": "Réception (ancien système) <b>{ref}</b>",
+      "recordPayment": "Enregistrer le paiement",
+      "moreActions": "Plus d'actions",
+      "deleteInvoice": "Supprimer la facture…",
+      "payLine": {
+        "paid": "Réglée le {date}",
+        "paidWith": "Réglée le {date} · {method}",
+        "due": "Échéance le {date} · {when}",
+        "late": "Échue le {date} · {when}",
+        "nodate": "Échéance non renseignée · ajoutez-la pour suivre un retard"
+      },
+      "lines": "Lignes",
+      "amountsIn": "Montants en {currency}",
+      "noCurrency": "Devise non renseignée",
+      "article": "Article",
+      "unitPrice": "P.U.",
+      "discount": "Rem.",
+      "sumMatches": "Égale au total TTC",
+      "sumDiffers": "Écart de {amount} avec le total TTC",
+      "details": "Détails",
+      "add": "Ajouter",
+      "paymentRecorded": "Paiement de {amount} enregistré",
+      "payDialog": {
+        "title": "Paiement de la facture {numero}",
+        "confirm": "Enregistrer le paiement",
+        "chooseMethod": "Choisir le mode",
+        "dateRequired": "Indiquez la date du paiement.",
+        "future": "Un paiement ne peut pas être daté dans le futur.",
+        "methodRequired": "Choisissez le mode de paiement."
+      },
+      "upload": {
+        "failed": "L'envoi du document a échoué.",
+        "tooLarge": "Ce fichier dépasse 25 Mo.",
+        "wrongType": "Choisissez un PDF ou une image (JPEG, PNG, WebP, HEIC, TIFF)."
+      },
+      "attach": "Joindre un document",
+      "uploading": "Envoi en cours…",
+      "attached": "Document joint à la facture",
+      "zoomOut": "Réduire",
+      "zoomIn": "Agrandir",
+      "open": "Ouvrir",
+      "openTab": "Ouvrir dans un onglet",
+      "noScanHint": "Joignez le scan de la facture reçue : un PDF ou une photo.",
+      "noPreview": "Ce format ne s'affiche pas ici : ouvrez-le dans un onglet.",
+      "previous": "Document précédent",
+      "next": "Document suivant",
+      "documentOf": "Document {n} / {count}",
+      "documentCount": "{count, plural, =0 {Aucun document} one {# document} other {# documents}}"
     }
   },
   "sales": {

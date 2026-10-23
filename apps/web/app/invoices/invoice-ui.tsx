@@ -5,6 +5,7 @@ import { assetUrl, withMention, type ProductMention } from "@repo/api-contract";
 import { FileLink } from "@repo/ui/file-link";
 import type { PaymentState } from "api/src/invoice/invoice.list";
 import records from "../records/records.module.css";
+import shell from "../records/banded-list.module.css";
 import styles from "./invoices.module.css";
 import { dateFormat } from "../../i18n/formats";
 
@@ -61,6 +62,44 @@ const PAYMENT_CLASS: Record<PaymentState, string | undefined> = {
   overdue: records.statusDanger,
   open: records.statusInfo,
 };
+
+/**
+ * A purchase invoice's payment state as its list row and its page draw it:
+ * the server's three-way `paymentState` split into four, an open invoice
+ * with no term being "sans terme", since "à payer dans … jours" cannot be
+ * said of it. One function, so a row and its page cannot disagree.
+ */
+export type PurchaseState = "paid" | "late" | "due" | "nodate";
+
+export function purchaseState(row: {
+  paymentState: PaymentState;
+  dueAt: string | Date | null;
+}): PurchaseState {
+  if (row.paymentState === "paid") return "paid";
+  if (row.paymentState === "overdue") return "late";
+  return row.dueAt === null ? "nodate" : "due";
+}
+
+/** Colour and dot shape per state (banded-list tones), from the list handoff's `STATUS` table. */
+export const PURCHASE_STATE_TONE: Record<PurchaseState, string | undefined> = {
+  paid: shell.toneSuccess,
+  late: shell.toneDanger,
+  due: shell.tonePending,
+  nodate: shell.toneNeutral,
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Whole days from today to a `@db.Date` value — negative once it has
+ * passed. Today is taken at UTC midnight, the way those columns are read,
+ * so a due date compares by day.
+ */
+export function daysUntil(value: string | Date): number {
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.round((new Date(value).getTime() - today) / DAY_MS);
+}
 
 /** Paid / overdue / open, as decided by the server against its own "today". */
 export function PaymentBadge({ state }: { state: PaymentState }) {

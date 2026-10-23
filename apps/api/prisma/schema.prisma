@@ -1669,11 +1669,15 @@ enum PaymentMethod {
 /// with `ligne_facture_achat` (2928) as `PurchaseInvoiceLine` and the PDF scans
 /// in `document_facturation` (639) as `documents`.
 ///
-/// Two legacy columns are deliberately NOT carried:
+/// Three legacy features are deliberately NOT carried:
 ///   - `brouillon` ("draft") is TRUE on every one of the 661 invoices in both
 ///     tables, so it distinguishes nothing. Payment state is read from
 ///     `paidAt`/`dueAt` instead — see `purchaseInvoiceListDeclaration`.
 ///   - `exonere` is NULL on every row.
+///   - The withholding tax (`total_retenue`, from a `compte_retenue_id` and
+///     its rate) was never used: zero on all 691 invoices and no withholding
+///     account in the old app (checked live, 2026-10-23), so the user dropped
+///     it — migration 20261023110000_drop_purchase_withholding.
 model PurchaseInvoice {
   id String @id @default(cuid())
 
@@ -1710,14 +1714,13 @@ model PurchaseInvoice {
   /// `totalTtc` equals the sum of `lines.total` on every migrated invoice, but
   /// `totalHt` differs from it on 87 — see PurchaseInvoiceLine. Every app write
   /// (`InvoiceService.purchaseHeader`) recomputes them from the lines.
-  totalHt        Float?
-  vatAmount      Float?
-  totalTtc       Float?
-  /// Retenue à la source. Zero on every legacy row, but the column exists and
-  /// the withholding is real Tunisian practice, so it is carried.
-  withholdingTax Float?
-  /// `totalTtc - withholdingTax`; equal to `totalTtc` on every legacy row.
-  netPayable     Float?
+  totalHt    Float?
+  vatAmount  Float?
+  totalTtc   Float?
+  /// What is owed: `totalTtc`, there being no withholding (see the model
+  /// note). Kept as its own column because the lists and the dashboard sum
+  /// it, and every legacy row carries it equal to `totalTtc`.
+  netPayable Float?
 
   /// "TND" (505), "EUR" (45), or null (64). Not defaulted to TND: an invoice
   /// whose currency was never recorded should say so.
@@ -1807,7 +1810,7 @@ model PurchaseInvoiceLine {
 /// with `ligne_facture_vente` (314) and one PDF each in `document_facturation`.
 ///
 /// Same shape as PurchaseInvoice minus what only applies to a supplier's
-/// invoice (withholding, exchange rate, receipt-note link). Two models rather
+/// invoice (exchange rate, receipt-note link). Two models rather
 /// than one with a `kind`: the partner relation differs in both target and
 /// nullability, and the two lists are browsed separately.
 /// Whether a sales invoice is still being drafted or has been issued — see

@@ -284,6 +284,15 @@ function invoiceNumero(row: Row): string | null {
 }
 
 function invoiceData(row: Row, numero: string, supplierId: string, report: Report) {
+  const totalTtc = num(row.totalttc);
+  // No withholding here (dropped 2026-10-23, never used in the old app): what
+  // is owed is the total. One the old app withholds is reported, not carried
+  // at a lower net.
+  if ((num(row.total_retenue) ?? 0) !== 0) {
+    report.unresolved.push(
+      `${numero}: withholding ${String(row.total_retenue)} in the old app is not carried, net payable = total`,
+    );
+  }
   return {
     numero,
     issuedAt: legacyDate(row.date_facture),
@@ -295,9 +304,8 @@ function invoiceData(row: Row, numero: string, supplierId: string, report: Repor
     supplierId,
     totalHt: num(row.totalht),
     vatAmount: num(row.tva),
-    totalTtc: num(row.totalttc),
-    withholdingTax: num(row.total_retenue),
-    netPayable: num(row.netapayer),
+    totalTtc,
+    netPayable: totalTtc,
     currency: text(row.devise)?.toUpperCase() ?? null,
     exchangeRate: rateOrNull(row.cours),
     legacyReceiptType: text(row.gr_type),

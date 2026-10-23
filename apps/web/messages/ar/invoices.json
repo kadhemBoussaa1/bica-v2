@@ -57,8 +57,6 @@
     "exclVat": "الإجمالي دون الضريبة",
     "vat": "ض.ق.م",
     "inclVat": "الإجمالي شامل الضريبة",
-    "withholding": "الخصم من المورد",
-    "withholdingTax": "الخصم من المورد",
     "currency": "العملة",
     "exchangeRate": "سعر الصرف",
     "trace": "التتبع",
@@ -132,8 +130,7 @@
       "totals": {
         "exclVat": "دون الضريبة: {amount}",
         "vat": "ض.ق.م: {amount}",
-        "inclVat": "شامل الضريبة: {amount}",
-        "netPayable": "الصافي المستحق: {amount}"
+        "inclVat": "شامل الضريبة: {amount}"
       }
     },
     "kpis": {
@@ -182,6 +179,60 @@
       "title": "لا توجد فواتير شراء",
       "text": "لا شيء يطابق هذه المرشحات معًا.",
       "reset": "إعادة الضبط"
+    },
+    "detail": {
+      "title": "فاتورة <no>{numero}</no>",
+      "paidOn": "مدفوعة في {date}",
+      "issuedOn": "صدرت في <b>{date}</b>",
+      "receipt": "الاستلام <link>{numero}</link>",
+      "legacyReceipt": "الاستلام (النظام القديم) <b>{ref}</b>",
+      "recordPayment": "تسجيل الدفع",
+      "moreActions": "إجراءات أخرى",
+      "deleteInvoice": "حذف الفاتورة…",
+      "payLine": {
+        "paid": "سُدِّدت في {date}",
+        "paidWith": "سُدِّدت في {date} · {method}",
+        "due": "تستحق في {date} · {when}",
+        "late": "استحقت في {date} · {when}",
+        "nodate": "تاريخ الاستحقاق غير مسجَّل · أضفه لمتابعة التأخير"
+      },
+      "lines": "الأسطر",
+      "amountsIn": "المبالغ بـ {currency}",
+      "noCurrency": "العملة غير محددة",
+      "article": "الصنف",
+      "unitPrice": "سعر الوحدة",
+      "discount": "الخصم",
+      "sumMatches": "يساوي الإجمالي شامل الضريبة",
+      "sumDiffers": "فرق {amount} عن الإجمالي شامل الضريبة",
+      "details": "التفاصيل",
+      "add": "إضافة",
+      "paymentRecorded": "تم تسجيل دفع {amount}",
+      "payDialog": {
+        "title": "دفع الفاتورة {numero}",
+        "confirm": "تسجيل الدفع",
+        "chooseMethod": "اختر طريقة الدفع",
+        "dateRequired": "أدخل تاريخ الدفع.",
+        "future": "لا يمكن أن يكون تاريخ الدفع في المستقبل.",
+        "methodRequired": "اختر طريقة الدفع."
+      },
+      "upload": {
+        "failed": "تعذّر رفع الوثيقة.",
+        "tooLarge": "يتجاوز هذا الملف 25 ميغابايت.",
+        "wrongType": "اختر ملف PDF أو صورة (JPEG أو PNG أو WebP أو HEIC أو TIFF)."
+      },
+      "attach": "إرفاق وثيقة",
+      "uploading": "جارٍ الرفع…",
+      "attached": "أُرفقت الوثيقة بالفاتورة",
+      "zoomOut": "تصغير",
+      "zoomIn": "تكبير",
+      "open": "فتح",
+      "openTab": "فتح في علامة تبويب",
+      "noScanHint": "أرفق صورة الفاتورة كما استُلمت: ملف PDF أو صورة.",
+      "noPreview": "لا يمكن عرض هذا الملف هنا: افتحه في علامة تبويب.",
+      "previous": "الوثيقة السابقة",
+      "next": "الوثيقة التالية",
+      "documentOf": "الوثيقة {n} من {count}",
+      "documentCount": "{count, plural, =0 {لا وثائق} one {وثيقة واحدة} two {وثيقتان} few {# وثائق} many {# وثيقة} other {# وثيقة}}"
     }
   },
   "sales": {

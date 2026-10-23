@@ -57,8 +57,6 @@
     "exclVat": "Excl. VAT",
     "vat": "VAT",
     "inclVat": "Incl. VAT",
-    "withholding": "Withholding",
-    "withholdingTax": "Withholding tax",
     "currency": "Currency",
     "exchangeRate": "Exchange rate",
     "trace": "Trace",
@@ -132,8 +130,7 @@
       "totals": {
         "exclVat": "Excl. VAT: {amount}",
         "vat": "VAT: {amount}",
-        "inclVat": "Incl. VAT: {amount}",
-        "netPayable": "Net payable: {amount}"
+        "inclVat": "Incl. VAT: {amount}"
       }
     },
     "kpis": {
@@ -182,6 +179,60 @@
       "title": "No purchase invoices",
       "text": "Nothing matches these filters at once.",
       "reset": "Reset"
+    },
+    "detail": {
+      "title": "Invoice <no>{numero}</no>",
+      "paidOn": "Paid {date}",
+      "issuedOn": "Issued <b>{date}</b>",
+      "receipt": "Receipt <link>{numero}</link>",
+      "legacyReceipt": "Receipt (old system) <b>{ref}</b>",
+      "recordPayment": "Record payment",
+      "moreActions": "More actions",
+      "deleteInvoice": "Delete invoice…",
+      "payLine": {
+        "paid": "Settled {date}",
+        "paidWith": "Settled {date} · {method}",
+        "due": "Due {date} · {when}",
+        "late": "Was due {date} · {when}",
+        "nodate": "No due date · add one to track lateness"
+      },
+      "lines": "Lines",
+      "amountsIn": "Amounts in {currency}",
+      "noCurrency": "Currency not set",
+      "article": "Item",
+      "unitPrice": "Unit price",
+      "discount": "Disc.",
+      "sumMatches": "Equals the total incl. VAT",
+      "sumDiffers": "{amount} off the total incl. VAT",
+      "details": "Details",
+      "add": "Add",
+      "paymentRecorded": "Payment of {amount} recorded",
+      "payDialog": {
+        "title": "Payment of invoice {numero}",
+        "confirm": "Record payment",
+        "chooseMethod": "Choose a method",
+        "dateRequired": "Enter the payment date.",
+        "future": "A payment cannot be dated in the future.",
+        "methodRequired": "Choose the payment method."
+      },
+      "upload": {
+        "failed": "The document could not be uploaded.",
+        "tooLarge": "This file is over 25 MB.",
+        "wrongType": "Choose a PDF or an image (JPEG, PNG, WebP, HEIC, TIFF)."
+      },
+      "attach": "Attach a document",
+      "uploading": "Uploading…",
+      "attached": "Document attached to the invoice",
+      "zoomOut": "Zoom out",
+      "zoomIn": "Zoom in",
+      "open": "Open",
+      "openTab": "Open in a new tab",
+      "noScanHint": "Attach the scan of the invoice as received: a PDF or a photo.",
+      "noPreview": "This format cannot be shown here: open it in a tab.",
+      "previous": "Previous document",
+      "next": "Next document",
+      "documentOf": "Document {n} of {count}",
+      "documentCount": "{count, plural, =0 {No documents} one {# document} other {# documents}}"
     }
   },
   "sales": {

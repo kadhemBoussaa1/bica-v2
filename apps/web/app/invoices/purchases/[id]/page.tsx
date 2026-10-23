@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { PurchaseInvoiceDetail } from "./purchase-invoice-detail";
 import styles from "../../../records/records.module.css";
 
+/** The header is the detail's own: it carries the invoice's number and state. */
 export default async function PurchaseInvoicePage({
   params,
 }: {
@@ -16,14 +17,6 @@ export default async function PurchaseInvoicePage({
       <Link className={styles.back} href="/invoices/purchases">
         {t("purchases.back")}
       </Link>
-      <header className={styles.header}>
-        <div className={styles.heading}>
-          <span className={styles.eyebrow}>{t("eyebrow")}</span>
-          <h1 className={styles.title}>{t("purchases.detailTitle")}</h1>
-        </div>
-        <p className={styles.subtitle}>{t("purchases.detailSubtitle")}</p>
-      </header>
-
       <PurchaseInvoiceDetail id={id} />
     </div>
   );

@@ -23,6 +23,9 @@ import {
   discardSalesInvoiceDraftInput,
   purchaseInvoiceIdInput,
   updatePurchaseInvoiceInput,
+  recordPurchasePaymentInput,
+  purchaseInvoiceDocumentUploadInput,
+  addPurchaseInvoiceDocumentInput,
   createPurchaseOrderInput,
   updatePurchaseOrderInput,
   purchaseOrderIdInput,
@@ -1545,6 +1548,27 @@ export class TrpcRouter {
       remove: adminProcedure
         .input(purchaseInvoiceIdInput)
         .mutation(({ input }) => this.invoiceService.removePurchase(input.id)),
+
+      /** The detail page's payment: two columns only, never a full re-save. */
+      recordPayment: adminProcedure
+        .input(recordPurchasePaymentInput)
+        .mutation(({ input }) => this.invoiceService.recordPurchasePayment(input)),
+
+      /**
+       * Attaching a scan, in the two steps every upload takes: mint the
+       * presigned PUT, then file the resulting URL. Nothing is written by
+       * minting, so an abandoned upload leaves the invoice untouched.
+       */
+      createDocumentUpload: adminProcedure
+        .input(purchaseInvoiceDocumentUploadInput)
+        .mutation(async ({ input }) => {
+          await this.invoiceService.assertPurchaseDocumentUploadable(input.id);
+          return this.storageService.createUpload(input);
+        }),
+
+      addDocument: adminProcedure
+        .input(addPurchaseInvoiceDocumentInput)
+        .mutation(({ input }) => this.invoiceService.addPurchaseDocument(input)),
     }),
 
     /**

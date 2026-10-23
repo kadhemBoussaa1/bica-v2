@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
 import type {
+  AddPurchaseInvoiceDocumentInput,
   CreatePurchaseInvoiceInput,
   CreateSalesInvoiceInput,
   DiscardSalesInvoiceDraftInput,
@@ -8,6 +9,7 @@ import type {
   InvoiceableOrdersInput,
   IssueSalesInvoiceInput,
   ProductMention,
+  RecordPurchasePaymentInput,
   RemoveOrderFromSalesInvoiceInput,
   SalesInvoiceLineInput,
   UpdatePurchaseInvoiceInput,
@@ -19,6 +21,7 @@ import {
   invoiceLineFigures,
   invoiceTotals,
   plannedParcels,
+  plantDay,
   productSpecFromRow,
 } from "@repo/api-contract";
 import { Prisma } from "../generated/prisma/client.js";
@@ -26,6 +29,7 @@ import { runListQuery } from "../list/list-query";
 import { OrderService, type Db } from "../order/order.service";
 import { SALES_INVOICE_PDF_SELECT, toSalesInvoiceModel } from "../pdf/sales-invoice.model";
 import { PrismaService } from "../prisma.service";
+import { StorageService } from "../storage/storage.service";
 import { ensureDefaultSalesInvoiceVersion } from "../template/template.defaults";
 import type { SessionUser } from "../trpc/trpc";
 import {
@@ -154,6 +158,7 @@ export class InvoiceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orders: OrderService,
+    private readonly storage: StorageService,
   ) {}
 
   async listPurchase(input: ListPurchaseInvoicesInput) {
@@ -368,7 +373,8 @@ export class InvoiceService {
   /**
    * Records a supplier's invoice. No lifecycle: the document already exists
    * on paper, numbered by the supplier, so this is a plain create with the
-   * totals derived from the lines and `netPayable = totalTtc − withholding`.
+   * totals derived from the lines and `netPayable = totalTtc` (no withholding:
+   * see the model note).
    */
   async createPurchase(input: CreatePurchaseInvoiceInput) {
     await this.assertPurchaseNumeroFree(input.numero);
@@ -416,10 +422,59 @@ export class InvoiceService {
     return { id };
   }
 
+  /**
+   * Records the payment of an unpaid invoice — the detail page's "Record the
+   * payment". Only `paidAt` and `paymentMethod` are written, so nothing the
+   * form would recompute moves (see `recordPurchasePaymentInput`).
+   *
+   * An invoice already paid is refused rather than overwritten: a second
+   * click, or a second tab, must not silently move the date of a payment
+   * already on the books — the edit form is where a wrong one is corrected.
+   * The date is the plant's calendar day and may not be in the future.
+   */
+  async recordPurchasePayment(input: RecordPurchasePaymentInput) {
+    if (input.paidAt > plantDay()) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "A payment cannot be dated in the future" });
+    }
+    const paidAt = new Date(input.paidAt);
+    // Conditional on `paidAt IS NULL`, so two concurrent records cannot both win.
+    const { count } = await this.prisma.purchaseInvoice.updateMany({
+      where: { id: input.id, paidAt: null },
+      data: { paidAt, paymentMethod: input.paymentMethod },
+    });
+    if (count === 0) {
+      await this.assertPurchaseExists(input.id);
+      throw new TRPCError({ code: "CONFLICT", message: "This invoice's payment is already recorded" });
+    }
+    return { id: input.id, paidAt, paymentMethod: input.paymentMethod };
+  }
+
+  /** The gate before minting an upload URL: the invoice must exist. */
+  async assertPurchaseDocumentUploadable(id: string) {
+    await this.assertPurchaseExists(id);
+  }
+
+  /**
+   * Files an uploaded scan after the invoice's others. The URL is
+   * client-supplied, so it must be on this app's bucket — the same gate the
+   * employee documents and the chat apply — or any link could be filed as a
+   * "scan" and opened from the record by the next admin.
+   */
+  async addPurchaseDocument(input: AddPurchaseInvoiceDocumentInput) {
+    await this.assertPurchaseExists(input.id);
+    if (!this.storage.isOwnAssetUrl(input.url)) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Document must be an uploaded file" });
+    }
+    return this.prisma.purchaseInvoice.update({
+      where: { id: input.id },
+      data: { documents: { push: input.url } },
+      select: { id: true, documents: true },
+    });
+  }
+
   /** The header columns written from the form, with the derived totals. */
   private purchaseHeader(input: CreatePurchaseInvoiceInput) {
     const totals = invoiceTotals(input.lines);
-    const withholdingTax = input.withholdingTax ?? null;
     const date = (value: string | null | undefined) => (value ? new Date(value) : null);
     return {
       numero: input.numero,
@@ -432,10 +487,9 @@ export class InvoiceService {
       forProduction: input.forProduction ?? null,
       currency: input.currency ?? null,
       exchangeRate: input.exchangeRate ?? null,
-      withholdingTax,
       receiptId: input.receiptId ?? null,
       ...totals,
-      netPayable: totals.totalTtc - (withholdingTax ?? 0),
+      netPayable: totals.totalTtc,
     };
   }
 

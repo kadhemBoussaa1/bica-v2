@@ -9,7 +9,14 @@ import { Button } from "@repo/ui/button";
 import { TableSkeleton } from "@repo/ui/skeleton";
 import { DataTable, type DataTableState } from "@repo/ui/data-table";
 import type { InvoiceFacet, PurchaseInvoiceSortKey } from "api/src/invoice/invoice.list";
-import { formatDay, formatMoney } from "../invoice-ui";
+import {
+  daysUntil,
+  formatDay,
+  formatMoney,
+  PURCHASE_STATE_TONE,
+  purchaseState,
+  type PurchaseState,
+} from "../invoice-ui";
 import { formatMonth } from "../../../i18n/formats";
 import { useTRPC } from "../../trpc/client";
 import { KpiRow, KpiTile } from "../../records/kpi";
@@ -64,24 +71,6 @@ const CURRENCIES = ["TND", "EUR", "USD"] as const;
 /** The segments, as facet keys: all, still owed, past term, settled. */
 const SEGMENTS = ["all", "unpaid", "overdue", "paid"] as const;
 
-type RowState = "paid" | "late" | "due" | "nodate";
-
-/** Colour and dot shape per state, from the handoff's `STATUS` table. */
-const TONE: Record<RowState, string | undefined> = {
-  paid: shell.toneSuccess,
-  late: shell.toneDanger,
-  due: shell.tonePending,
-  nodate: shell.toneNeutral,
-};
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** Today at UTC midnight, the way `@db.Date` values are read, so a due date compares by day. */
-function todayUtc(): number {
-  const now = new Date();
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-}
-
 /** `YYYY-MM` of an issue date, the band key; `null` for an undated invoice. */
 function monthOf(issuedAt: string | Date | null): string | null {
   return issuedAt === null ? null : new Date(issuedAt).toISOString().slice(0, 7);
@@ -119,22 +108,11 @@ export function PurchaseInvoicesTable({
     setTableState((current) => ({ ...current, page: pageCount }));
   }
 
-  const today = todayUtc();
-
-  const stateOf = (row: InvoiceRow): RowState =>
-    row.paymentState === "paid"
-      ? "paid"
-      : row.paymentState === "overdue"
-        ? "late"
-        : row.dueAt === null
-          ? "nodate"
-          : "due";
-
   /** "réglée", "12 j de retard", "aujourd'hui", "dans 4 j" or "terme non renseigné". */
-  const dueMeta = (row: InvoiceRow, state: RowState): string => {
+  const dueMeta = (row: InvoiceRow, state: PurchaseState): string => {
     if (state === "paid") return t("purchases.row.settled");
     if (row.dueAt === null) return t("purchases.row.noTerm");
-    const days = Math.round((new Date(row.dueAt).getTime() - today) / DAY_MS);
+    const days = daysUntil(row.dueAt);
     if (days < 0) return t("purchases.row.late", { count: -days });
     if (days === 0) return t("purchases.row.dueToday");
     return t("purchases.row.dueIn", { count: days });
@@ -145,13 +123,13 @@ export function PurchaseInvoicesTable({
     currency ?? t("purchases.kpis.noCurrencyShort");
 
   const row = (invoice: InvoiceRow): ReactNode => {
-    const state = stateOf(invoice);
+    const state = purchaseState(invoice);
     const late = state === "late";
     return (
       <Link
         key={invoice.id}
         href={`/invoices/purchases/${invoice.id}`}
-        className={[shell.row, TONE[state]].filter(Boolean).join(" ")}
+        className={[shell.row, PURCHASE_STATE_TONE[state]].filter(Boolean).join(" ")}
       >
         <span className={shell.main}>
           <i className={shell.dot} aria-hidden />

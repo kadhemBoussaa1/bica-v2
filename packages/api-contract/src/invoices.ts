@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { enumLabel, type PaperType } from "./orders.js";
 import type { ProductSpec } from "./pricing.js";
+import { createUploadInput } from "./storage.js";
 
 /**
  * Sales invoices raised from orders — docs/sales-invoice-plan.md.
@@ -263,8 +264,6 @@ export const purchaseInvoiceInput = z.object({
   forProduction: z.boolean().nullable().optional(),
   currency: z.enum(CURRENCIES).nullable().optional(),
   exchangeRate: z.number().positive().max(1e6).nullable().optional(),
-  /** Retenue à la source, an amount in the invoice's currency. */
-  withholdingTax: z.number().min(0).max(1e9).nullable().optional(),
   /** The goods receipt this was raised against; must be the same supplier's. */
   receiptId: z.string().min(1).nullable().optional(),
   lines: z.array(invoiceLineInput).min(1).max(100),
@@ -280,3 +279,40 @@ export const updatePurchaseInvoiceInput = purchaseInvoiceInput.extend({
 export type UpdatePurchaseInvoiceInput = z.infer<typeof updatePurchaseInvoiceInput>;
 
 export const purchaseInvoiceIdInput = z.object({ id: z.string().min(1) });
+
+/**
+ * Settling a purchase invoice from its page: the day it was paid and how.
+ *
+ * Its own procedure rather than `update`, which replaces the whole invoice
+ * and recomputes the totals from the lines — re-saving one of the 87
+ * migrated invoices whose `totalHt` differs from its lines would rewrite
+ * figures nobody touched. The method is required here although the column
+ * is nullable: a nullable method is the legacy blanks, not something to
+ * record anew.
+ */
+export const recordPurchasePaymentInput = z.object({
+  id: z.string().min(1),
+  paidAt: isoDate,
+  paymentMethod: z.enum(PAYMENT_METHODS),
+});
+export type RecordPurchasePaymentInput = z.infer<typeof recordPurchasePaymentInput>;
+
+/**
+ * A presigned PUT for a scan on one purchase invoice. The id lets the
+ * procedure refuse an unknown invoice before it hands out a capability.
+ */
+export const purchaseInvoiceDocumentUploadInput = createUploadInput.extend({
+  id: z.string().min(1),
+});
+export type PurchaseInvoiceDocumentUploadInput = z.infer<typeof purchaseInvoiceDocumentUploadInput>;
+
+/**
+ * Files an uploaded scan on the invoice, after the ones it has. `url` is
+ * what the upload returned; the server checks it is on this app's bucket
+ * before storing it, since a client could send any string.
+ */
+export const addPurchaseInvoiceDocumentInput = z.object({
+  id: z.string().min(1),
+  url: z.string().max(1000),
+});
+export type AddPurchaseInvoiceDocumentInput = z.infer<typeof addPurchaseInvoiceDocumentInput>;

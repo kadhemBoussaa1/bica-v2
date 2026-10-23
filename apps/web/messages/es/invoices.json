@@ -57,8 +57,6 @@
     "exclVat": "Base imponible",
     "vat": "IVA",
     "inclVat": "Total con IVA",
-    "withholding": "Retención",
-    "withholdingTax": "Retención en origen",
     "currency": "Moneda",
     "exchangeRate": "Tipo de cambio",
     "trace": "Traza",
@@ -132,8 +130,7 @@
       "totals": {
         "exclVat": "Base imponible: {amount}",
         "vat": "IVA: {amount}",
-        "inclVat": "Total con IVA: {amount}",
-        "netPayable": "Neto a pagar: {amount}"
+        "inclVat": "Total con IVA: {amount}"
       }
     },
     "kpis": {
@@ -182,6 +179,60 @@
       "title": "Ninguna factura de compra",
       "text": "Nada coincide con estos filtros a la vez.",
       "reset": "Restablecer"
+    },
+    "detail": {
+      "title": "Factura <no>{numero}</no>",
+      "paidOn": "Pagada el {date}",
+      "issuedOn": "Emitida el <b>{date}</b>",
+      "receipt": "Recepción <link>{numero}</link>",
+      "legacyReceipt": "Recepción (sistema antiguo) <b>{ref}</b>",
+      "recordPayment": "Registrar el pago",
+      "moreActions": "Más acciones",
+      "deleteInvoice": "Eliminar la factura…",
+      "payLine": {
+        "paid": "Liquidada el {date}",
+        "paidWith": "Liquidada el {date} · {method}",
+        "due": "Vence el {date} · {when}",
+        "late": "Venció el {date} · {when}",
+        "nodate": "Sin vencimiento · añádalo para seguir los retrasos"
+      },
+      "lines": "Líneas",
+      "amountsIn": "Importes en {currency}",
+      "noCurrency": "Moneda sin definir",
+      "article": "Artículo",
+      "unitPrice": "P.U.",
+      "discount": "Desc.",
+      "sumMatches": "Igual al total con IVA",
+      "sumDiffers": "Diferencia de {amount} con el total con IVA",
+      "details": "Detalles",
+      "add": "Añadir",
+      "paymentRecorded": "Pago de {amount} registrado",
+      "payDialog": {
+        "title": "Pago de la factura {numero}",
+        "confirm": "Registrar el pago",
+        "chooseMethod": "Elegir la forma de pago",
+        "dateRequired": "Indique la fecha del pago.",
+        "future": "Un pago no puede tener fecha futura.",
+        "methodRequired": "Elija la forma de pago."
+      },
+      "upload": {
+        "failed": "No se pudo subir el documento.",
+        "tooLarge": "Este archivo supera los 25 MB.",
+        "wrongType": "Elija un PDF o una imagen (JPEG, PNG, WebP, HEIC, TIFF)."
+      },
+      "attach": "Adjuntar un documento",
+      "uploading": "Subiendo…",
+      "attached": "Documento adjuntado a la factura",
+      "zoomOut": "Reducir",
+      "zoomIn": "Ampliar",
+      "open": "Abrir",
+      "openTab": "Abrir en una pestaña",
+      "noScanHint": "Adjunte el escaneo de la factura recibida: un PDF o una foto.",
+      "noPreview": "Este formato no se muestra aquí: ábralo en una pestaña.",
+      "previous": "Documento anterior",
+      "next": "Documento siguiente",
+      "documentOf": "Documento {n} / {count}",
+      "documentCount": "{count, plural, =0 {Ningún documento} one {# documento} other {# documentos}}"
     }
   },
   "sales": {

@@ -185,6 +185,15 @@ async function main() {
         unresolved.push(`${numero}: supplier ${String(row.fournisseur_id)} not found, skipped`);
         continue;
       }
+      // No withholding here (dropped 2026-10-23, never used in the old app):
+      // what is owed is the total. One the old app withholds is reported, not
+      // carried at a lower net.
+      const totalTtc = num(row.total_ttc);
+      if ((num(row.total_retenue) ?? 0) !== 0) {
+        unresolved.push(
+          `${numero}: withholding ${String(row.total_retenue)} in the old app is not carried, net payable = total`,
+        );
+      }
 
       const data = {
         numero,
@@ -197,9 +206,8 @@ async function main() {
         supplierId,
         totalHt: num(row.total_ht),
         vatAmount: num(row.tva),
-        totalTtc: num(row.total_ttc),
-        withholdingTax: num(row.total_retenue),
-        netPayable: num(row.net_a_payer),
+        totalTtc,
+        netPayable: totalTtc,
         currency: text(row.devise)?.toUpperCase() ?? null,
         exchangeRate: rateOrNull(row.cours),
         legacyReceiptType: text(row.gr_type),

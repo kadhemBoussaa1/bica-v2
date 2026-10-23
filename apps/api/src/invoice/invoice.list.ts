@@ -199,7 +199,6 @@ export const PURCHASE_INVOICE_SELECT = {
 export const PURCHASE_INVOICE_DETAIL_SELECT = {
   ...PURCHASE_INVOICE_SELECT,
   forProduction: true,
-  withholdingTax: true,
   exchangeRate: true,
   legacyReceiptType: true,
   legacyReceiptId: true,

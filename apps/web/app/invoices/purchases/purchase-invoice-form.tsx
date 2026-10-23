@@ -87,11 +87,6 @@ export function PurchaseInvoiceForm({
       ? ""
       : String(initial.exchangeRate),
   );
-  const [withholdingTax, setWithholdingTax] = useState(
-    initial?.withholdingTax === null || initial?.withholdingTax === undefined
-      ? ""
-      : String(initial.withholdingTax),
-  );
   const [receiptId, setReceiptId] = useState(initial?.receipt?.id ?? "");
   const [lines, setLines] = useState<EditableLine[]>(() =>
     initial && initial.lines.length > 0
@@ -153,7 +148,6 @@ export function PurchaseInvoiceForm({
   const inputs = lines.map((line, index) => toLineInput(line, index + 1));
   const totals = invoiceTotals(inputs);
   const shownCurrency = currency || null;
-  const withholding = Number(withholdingTax.replace(",", ".")) || 0;
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -180,7 +174,6 @@ export function PurchaseInvoiceForm({
         forProduction: forProduction === "" ? null : forProduction === "yes",
         currency: currency || null,
         exchangeRate: num(t("fields.exchangeRate"), exchangeRate),
-        withholdingTax: num(t("fields.withholdingTax"), withholdingTax),
         receiptId: receiptId || null,
         lines: inputs,
       };
@@ -329,15 +322,6 @@ export function PurchaseInvoiceForm({
           autoComplete="off"
           disabled={busy}
         />
-        <TextField
-          label={t("fields.withholdingTax")}
-          format="numeric"
-          value={withholdingTax}
-          onChange={(e) => setWithholdingTax(e.target.value)}
-          autoComplete="off"
-          disabled={busy}
-        />
-        <div />
         <DateField
           label={t("fields.paidOn")}
           value={paidAt}
@@ -376,14 +360,10 @@ export function PurchaseInvoiceForm({
               amount: formatMoney(totals.vatAmount, shownCurrency) ?? "",
             })}
           </span>
-          <span>
+          {/* What is owed: there is no withholding, so the net is the total. */}
+          <strong>
             {t("purchases.form.totals.inclVat", {
               amount: formatMoney(totals.totalTtc, shownCurrency) ?? "",
-            })}
-          </span>
-          <strong>
-            {t("purchases.form.totals.netPayable", {
-              amount: formatMoney(totals.totalTtc - withholding, shownCurrency) ?? "",
             })}
           </strong>
         </div>
