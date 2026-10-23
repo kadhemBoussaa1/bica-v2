@@ -359,9 +359,10 @@
   color: var(--bp-ink-muted);
 }
 
-/* The last production day: four station figures, a link to that day. The
-   figures go four across once the tile's content box has room, two by two
-   before that. */
+/* The last production day: three station figures, a link to that day. The
+   figures go three across once the tile's content box has room (the same
+   ~96px a column had when there were four stations, across at 420px), two
+   then one before that. */
 .kpiWide {
   container: kpiwide / inline-size;
   display: flex;
@@ -385,9 +386,9 @@
   gap: var(--bp-space-2) var(--bp-space-3);
 }
 
-@container kpiwide (min-width: 420px) {
+@container kpiwide (min-width: 320px) {
   .kpiStations {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -432,7 +433,8 @@
 .stages {
   display: grid;
   /* 200px, not the handoff's 220: beside the 280px sidebar at 1280 the
-     panel is ~890px wide, and at 220 the four cards break three and one. */
+     panel is ~890px wide, and the three cards stay on one line well before
+     a phone stacks them. */
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: var(--bp-space-3);
 }
@@ -525,10 +527,6 @@
   margin-top: var(--bp-space-2);
   font: 400 0.78125rem/1.4 var(--bp-font-body);
   color: var(--bp-ink-muted);
-}
-
-.noteWarn {
-  color: var(--bp-warning-text);
 }
 
 .quality {

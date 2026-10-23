@@ -75,7 +75,6 @@
     "stageTitle": {
       "PRINTING": "سجلات الطباعة",
       "PRODUCER": "سجلات التصنيع",
-      "QUALITY_CONTROL": "سجلات مراقبة الجودة",
       "PACKAGING": "سجلات التغليف"
     },
     "record": "تسجيل إنتاج",

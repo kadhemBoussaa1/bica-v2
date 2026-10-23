@@ -53,7 +53,7 @@ export function runUnit(
 
 /**
  * The class that carries a station's colours (`--st-*`) and its dot shape.
- * Colour plus shape, so the four stations survive a grayscale print.
+ * Colour plus shape, so the three stations survive a grayscale print.
  */
 export function stageClass(stage: WorkshopStage): string | undefined {
   switch (stage) {
@@ -61,8 +61,6 @@ export function stageClass(stage: WorkshopStage): string | undefined {
       return styles.stPrinting;
     case "PRODUCER":
       return styles.stProducer;
-    case "QUALITY_CONTROL":
-      return styles.stControl;
     case "PACKAGING":
       return styles.stPackaging;
   }
@@ -119,7 +117,6 @@ export type FlowTotals = Pick<
   | "metersPrinted"
   | "piecesPrinted"
   | "piecesProduced"
-  | "piecesControlled"
   | "parcelsClosed"
   | "goodPieces"
   | "piecesToFix"
@@ -130,7 +127,6 @@ export type FlowTotals = Pick<
 export const HEADLINE_OF = {
   PRINTING: "metersPrinted",
   PRODUCER: "piecesProduced",
-  QUALITY_CONTROL: "piecesControlled",
   PACKAGING: "parcelsClosed",
 } as const satisfies Record<WorkshopStage, keyof MonthTotals>;
 
@@ -138,7 +134,6 @@ export const HEADLINE_OF = {
 const FLOW = [
   { stage: "PRINTING", key: "metersPrinted", label: "printed" },
   { stage: "PRODUCER", key: "piecesProduced", label: "produced" },
-  { stage: "QUALITY_CONTROL", key: "piecesControlled", label: "controlled" },
   { stage: "PACKAGING", key: "parcelsClosed", label: "parcelsClosed" },
 ] as const satisfies ReadonlyArray<{
   stage: (typeof WORKSHOP_STAGES)[number];
@@ -147,7 +142,7 @@ const FLOW = [
 }>;
 
 /**
- * The period's flow through the four stations, then how the produced pieces
+ * The period's flow through the three stations, then how the produced pieces
  * broke down. The printing tile carries a second figure when a bag printer
  * ran: its pieces, which no sum may fold into the metres.
  *
@@ -331,8 +326,8 @@ export function FlowPanel({
 
 /**
  * One station's months as a strip of bars — a card per station rather than
- * one chart, because the four stations count in different units and a shared
- * axis would flatten three of them against the fourth.
+ * one chart, because the three stations count in different units and a shared
+ * axis would flatten two of them against the third.
  *
  * The figure in the card's head follows the bar under the pointer, or the
  * one last tapped: a `title` tooltip never opens on a touch screen, and this

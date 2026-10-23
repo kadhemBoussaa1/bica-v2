@@ -238,21 +238,20 @@ export type ProductionUnit = (typeof PRODUCTION_UNITS)[number];
  * recording one. It is not built yet.
  */
 /**
- * The four workshop stations, mirroring `WorkshopStage` in the Prisma schema.
+ * The three workshop stations, mirroring `WorkshopStage` in the Prisma schema.
  *
  * A SECOND AXIS, not part of `Role` — see the enum's own doc comment in the
- * schema. `Role` is a rank; these four are peers, so they cannot share it.
+ * schema. `Role` is a rank; these three are peers, so they cannot share it.
  * Ordered as the work flows, which is how the picker reads.
  */
 export const WORKSHOP_STAGES = [
   "PRINTING",
   "PRODUCER",
-  "QUALITY_CONTROL",
   "PACKAGING",
 ] as const;
 export type WorkshopStage = (typeof WORKSHOP_STAGES)[number];
 
-/** "QUALITY_CONTROL" -> "Quality control". */
+/** "PRODUCER" -> "Producer". */
 export function workshopStageLabel(stage: WorkshopStage): string {
   const words = stage.replace(/_/g, " ").toLowerCase();
   return words.charAt(0).toUpperCase() + words.slice(1);
@@ -265,9 +264,9 @@ export function workshopStageLabel(stage: WorkshopStage): string {
  * and the producer station runs the bag machines. Measured against the 22
  * machines in the data: 3 printers and 19 bag machines across seven types.
  *
- * QUALITY_CONTROL and PACKAGING are absent deliberately — they record no
- * machine at all, which is why `machineId` is nullable on the column even
- * though it is required for the two stations listed here.
+ * PACKAGING is absent deliberately — it records no machine at all, which is
+ * why `machineId` is nullable on the column even though it is required for
+ * the two stations listed here.
  *
  * Exported so the form filters its picker by exactly the same rule the server
  * enforces, rather than the two drifting apart.
@@ -355,14 +354,13 @@ const productionRunBase = {
  *
  * Each stage records exactly what that station measures:
  *
- *   - PRINTING         metres of paper run through the press, or bags
- *                      printed on a bag printer (`printingUnitFor`)
- *   - PRODUCER         pieces produced, and the shift's own breakdown
- *   - QUALITY_CONTROL  how many pieces were checked
- *   - PACKAGING        parcels closed
+ *   - PRINTING   metres of paper run through the press, or bags printed on
+ *                a bag printer (`printingUnitFor`)
+ *   - PRODUCER   pieces produced, and the shift's own breakdown
+ *   - PACKAGING  parcels closed
  *
- * PRINTING and PRODUCER additionally require `machineId`; the other two
- * stations have no machine field at all, so naming one is an unrecognised
+ * PRINTING and PRODUCER additionally require `machineId`; PACKAGING has no
+ * machine field at all, so naming one is an unrecognised
  * key and a 400. That the machine's TYPE matches the station — and, for
  * printing, which of the two figures it counts — is checked in
  * `ProductionService`: the id alone cannot say, and the contract must not
@@ -400,14 +398,6 @@ export const createProductionRunInput = z.discriminatedUnion("stage", [
       goodPieces: count.optional(),
       wastePieces: count.optional(),
       piecesToFix: count.optional(),
-    })
-    .strict(),
-  z
-    .object({
-      ...productionRunBase,
-      stage: z.literal("QUALITY_CONTROL"),
-      /** One count, no pass/fail split: the volume controlled, not a verdict. */
-      piecesControlled: count,
     })
     .strict(),
   z
@@ -457,13 +447,6 @@ export const updateProductionRunInput = z.discriminatedUnion("stage", [
       goodPieces: count.optional(),
       wastePieces: count.optional(),
       piecesToFix: count.optional(),
-    })
-    .strict(),
-  z
-    .object({
-      ...updateBase,
-      stage: z.literal("QUALITY_CONTROL"),
-      piecesControlled: count,
     })
     .strict(),
   z

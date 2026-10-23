@@ -13,13 +13,12 @@ const int = () => numberFormat({ maximumFractionDigits: 0 });
 type Figure = Exclude<keyof MonthTotals, "month">;
 
 /**
- * The four stations in flow order, each with its headline and its label.
+ * The three stations in flow order, each with its headline and its label.
  * The KPI row's last-day tile reads it too.
  */
 export const STAGES = [
   { stage: "PRINTING", figure: "metersPrinted", label: "printed" },
   { stage: "PRODUCER", figure: "piecesProduced", label: "produced" },
-  { stage: "QUALITY_CONTROL", figure: "piecesControlled", label: "controlled" },
   { stage: "PACKAGING", figure: "parcelsClosed", label: "parcelsClosed" },
 ] as const satisfies ReadonlyArray<{ stage: WorkshopStage; figure: Figure; label: string }>;
 
@@ -49,7 +48,6 @@ export function ProductionSection({ data, range }: { data: Summary; range: Range
   const period = first === last ? formatMonth(first) : `${formatMonthShort(first)} – ${formatMonthShort(last)}`;
 
   const produced = sum("piecesProduced");
-  const controlled = sum("piecesControlled");
 
   return (
     <Panel
@@ -63,12 +61,8 @@ export function ProductionSection({ data, range }: { data: Summary; range: Range
           const unit = stageUnit(entry.stage, p);
           const firstWithData = values.findIndex((value) => value > 0);
           const peak = values.indexOf(Math.max(...values));
-          // Control above production is not wrong, but it asks a question:
-          // pieces controlled that this range never produced.
-          const overControlled = entry.stage === "QUALITY_CONTROL" && controlled > produced;
-          const note = overControlled
-            ? t("moreThanProduced")
-            : firstWithData === -1
+          const note =
+            firstWithData === -1
               ? t("nothing")
               : firstWithData > 0
                 ? t("since", { month: formatMonth(months[firstWithData] ?? data.month) })
@@ -121,9 +115,7 @@ export function ProductionSection({ data, range }: { data: Summary; range: Range
                 <span>{formatMonthName(months[0] ?? data.month)}</span>
                 <span>{formatMonthName(data.month)}</span>
               </div>
-              <div className={[styles.stageNote, overControlled ? styles.noteWarn : null].filter(Boolean).join(" ")}>
-                {note}
-              </div>
+              <div className={styles.stageNote}>{note}</div>
             </div>
           );
         })}

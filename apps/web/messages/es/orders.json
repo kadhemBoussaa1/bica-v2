@@ -75,7 +75,6 @@
     "stageTitle": {
       "PRINTING": "Partes de impresión",
       "PRODUCER": "Partes de fabricación",
-      "QUALITY_CONTROL": "Partes de control de calidad",
       "PACKAGING": "Partes de embalaje"
     },
     "record": "Registrar producción",

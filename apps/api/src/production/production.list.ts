@@ -20,15 +20,14 @@ export type ProductionSortKey = (typeof PRODUCTION_SORT_KEYS)[number];
  * `employeeId` on 43. The station is what people actually filter by.
  *
  * They partition the table exactly, by construction: `stage` is a non-null
- * enum with these four values and every facet is one equality on it. If a
- * fifth station is ever added to `WorkshopStage` it MUST be added here too —
- * an unlisted value would vanish from every chip while still counting in the
+ * enum with these three values and every facet is one equality on it. If a
+ * station is ever added to `WorkshopStage` it MUST be added here too — an
+ * unlisted value would vanish from every chip while still counting in the
  * pager, the same trap documented at length in `order.list.ts`.
  */
 export const PRODUCTION_FACET_KEYS = [
   "printing",
   "producer",
-  "qualityControl",
   "packaging",
 ] as const;
 export type ProductionFacet = (typeof PRODUCTION_FACET_KEYS)[number];
@@ -63,7 +62,6 @@ export const productionListDeclaration: ListDeclaration<
   facets: {
     printing: { stage: "PRINTING" },
     producer: { stage: "PRODUCER" },
-    qualityControl: { stage: "QUALITY_CONTROL" },
     packaging: { stage: "PACKAGING" },
   },
 };
@@ -84,7 +82,6 @@ export const PRODUCTION_SELECT = {
   piecesToFix: true,
   goodPieces: true,
   defectivePieces: true,
-  piecesControlled: true,
   parcelsClosed: true,
 
   note: true,
@@ -109,8 +106,8 @@ export const PRODUCTION_SELECT = {
   },
   employeeId: true,
   employee: { select: { id: true, firstName: true, lastName: true, matricule: true } },
-  /// Which machine ran it — PRINTING and PRODUCER only; null on the other two
-  /// stations and on every migrated row.
+  /// Which machine ran it — PRINTING and PRODUCER only; null on PACKAGING
+  /// and on every migrated row.
   machineId: true,
   /// `imageUrl` is the machine photo the day view shows over each station;
   /// null on machines without one, which render a placeholder.

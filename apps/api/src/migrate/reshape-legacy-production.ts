@@ -189,7 +189,6 @@ const RUN_SELECT = {
   defectivePieces: true,
   wastePieces: true,
   piecesToFix: true,
-  piecesControlled: true,
   parcelsClosed: true,
   note: true,
   verifiedAt: true,
@@ -213,7 +212,6 @@ interface Target {
   defectivePieces: number | null;
   wastePieces: number | null;
   piecesToFix: number | null;
-  piecesControlled: number | null;
   parcelsClosed: number | null;
   note: string | null;
   verifiedAt: Date | null;
@@ -457,7 +455,6 @@ async function main() {
             defectivePieces: null,
             wastePieces: null,
             piecesToFix: stage === "PRODUCER" && defective !== null ? Math.trunc(defective) : null,
-            piecesControlled: null,
             parcelsClosed: null,
             note: note === "" ? null : note,
             verifiedAt: row.verified_at instanceof Date ? row.verified_at : null,

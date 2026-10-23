@@ -58,7 +58,6 @@
     "title": "Production",
     "sub": "From printing to packing, {period}. The bars show the last 12 months.",
     "link": "Open production",
-    "moreThanProduced": "More than produced: control of earlier stock?",
     "nothing": "Nothing entered in 12 months",
     "since": "Entered only since {month}",
     "peak": "Peak in {month}: <figure></figure>",

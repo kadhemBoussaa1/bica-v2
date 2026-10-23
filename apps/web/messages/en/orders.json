@@ -75,7 +75,6 @@
     "stageTitle": {
       "PRINTING": "Printing entries",
       "PRODUCER": "Producer entries",
-      "QUALITY_CONTROL": "Quality control entries",
       "PACKAGING": "Packaging entries"
     },
     "record": "Record production",

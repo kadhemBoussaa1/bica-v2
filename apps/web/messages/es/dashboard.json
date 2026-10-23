@@ -58,7 +58,6 @@
     "title": "Producción",
     "sub": "De la impresión al embalaje, {period}. Las barras muestran los últimos 12 meses.",
     "link": "Abrir producción",
-    "moreThanProduced": "Más que lo fabricado: ¿control de un stock anterior?",
     "nothing": "Nada registrado en 12 meses",
     "since": "Registrado solo desde {month}",
     "peak": "Pico en {month}: <figure></figure>",

@@ -1194,7 +1194,7 @@ enum ProductionUnit {
 ///
 /// A SECOND AXIS, deliberately not part of `Role`. `Role` is a rank — the
 /// whole RBAC (`hasRank`, `canAccess`, "strictly higher rank to manage a
-/// user") is built on it being strictly ordered. These four are peers: a
+/// user") is built on it being strictly ordered. These three are peers: a
 /// printer does not outrank a packer. Folding them into `Role` would force a
 /// rank onto each, and every number picked would be a lie — the same
 /// two-axes-in-one-enum mistake the four workflow booleans made (see
@@ -1202,10 +1202,13 @@ enum ProductionUnit {
 ///
 /// The stage lives on the RUN, not on the user: someone who covers two
 /// stations picks the stage each time rather than needing two accounts.
+///
+/// A fourth station, QUALITY_CONTROL, was dropped on 2026-10-23: the
+/// production manager judged it unnecessary and it held no runs in either
+/// app (migration 20261023100000_drop_quality_control_stage).
 enum WorkshopStage {
   PRINTING
   PRODUCER
-  QUALITY_CONTROL
   PACKAGING
 }
 
@@ -1495,10 +1498,6 @@ model ProductionRun {
   goodPieces      Int?
   defectivePieces Int?
 
-  /// QUALITY_CONTROL: how many pieces were checked. One count, no pass/fail
-  /// split — the workshop records the volume controlled, not a verdict.
-  piecesControlled Int?
-
   /// PACKAGING: parcels closed.
   parcelsClosed Int?
 
@@ -1526,7 +1525,7 @@ model ProductionRun {
 
   /// Which machine the work ran on. Required by the PRINTING and PRODUCER
   /// stages (enforced in `createProductionRunInput`, not by the column, since
-  /// QUALITY_CONTROL and PACKAGING have no machine) and matched to the
+  /// PACKAGING has no machine) and matched to the
   /// station: a printing run names an `IMPRESSION` machine, a producer run
   /// one of the bag machines. See `machineTypesForStage`.
   ///

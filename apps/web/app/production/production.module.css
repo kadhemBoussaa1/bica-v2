@@ -9,7 +9,7 @@
  * form grid) comes from records.module.css.
  */
 
-/* --- the four stations: a colour AND a dot shape each, so they survive a
+/* --- the three stations: a colour AND a dot shape each, so they survive a
        grayscale print. Tints are alpha so they sit on glass. --- */
 
 .stPrinting {
@@ -28,15 +28,6 @@
   --st-line: rgb(34 88 124 / 0.3);
   --st-head: rgb(89 128 166 / 0.1);
   --st-shape: 2px;
-}
-
-.stControl {
-  --st-dot: var(--bp-success);
-  --st-fg: var(--bp-success-text);
-  --st-tint: rgb(46 125 79 / 0.14);
-  --st-line: rgb(32 96 59 / 0.28);
-  --st-head: rgb(46 125 79 / 0.1);
-  --st-shape: 50%;
 }
 
 .stPackaging {
@@ -209,7 +200,7 @@
   color: var(--bp-ink-muted);
 }
 
-/* --- the period's flow through the four stations --- */
+/* --- the period's flow through the three stations --- */
 
 .flow {
   display: flex;
@@ -771,12 +762,12 @@
 }
 
 /* --- month view: a year of trend, a card per station. Each has its own
-       scale — the four count in different units. --- */
+       scale — the three count in different units. --- */
 
 .trend {
   display: grid;
   /* 240px, not the handoff's 270: the app's page is narrower than its
-     canvas, and at 270 the four cards break three and one. */
+     canvas. */
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: var(--bp-space-4);
 }

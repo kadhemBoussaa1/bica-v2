@@ -62,14 +62,6 @@ const STAGE_FIELDS: Record<WorkshopStage, StageField[]> = {
     { key: "wastePieces", labelKey: "waste", unit: "pcs", required: false },
     { key: "piecesToFix", labelKey: "toFix", unit: "pcs", required: false },
   ],
-  QUALITY_CONTROL: [
-    {
-      key: "piecesControlled",
-      labelKey: "piecesControlled",
-      unit: "pcs",
-      required: true,
-    },
-  ],
   PACKAGING: [
     { key: "parcelsClosed", labelKey: "parcelsClosed", required: true },
   ],
@@ -199,7 +191,7 @@ export function RunForm({
       note: note.trim() === "" ? undefined : note,
     };
     // Only the two machine stations carry it — the union rejects the key
-    // outright on the other two, so it must not be sent at all.
+    // outright on packaging, so it must not be sent at all.
     if (stageMachineTypes) payload.machineId = machineId;
     for (const field of fields) {
       const raw = (values[field.key] ?? "").trim();

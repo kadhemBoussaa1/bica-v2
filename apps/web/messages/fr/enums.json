@@ -13,7 +13,6 @@
   "workshopStage": {
     "PRINTING": "Impression",
     "PRODUCER": "Fabrication",
-    "QUALITY_CONTROL": "Contrôle qualité",
     "PACKAGING": "Emballage"
   },
   "inkUnit": {

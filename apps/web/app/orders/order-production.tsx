@@ -38,7 +38,6 @@ export function runHeadline(
     metersPrinted: number | null;
     piecesPrinted: number | null;
     piecesProduced: number | null;
-    piecesControlled: number | null;
     parcelsClosed: number | null;
     quantite: number;
   },
@@ -51,8 +50,6 @@ export function runHeadline(
         : `${int.format(run.metersPrinted ?? run.quantite)} m`;
     case "PRODUCER":
       return `${int.format(run.piecesProduced ?? run.quantite)} pcs`;
-    case "QUALITY_CONTROL":
-      return `${int.format(run.piecesControlled ?? run.quantite)} pcs`;
     case "PACKAGING": {
       const parcels = run.parcelsClosed ?? run.quantite;
       return t("parcels", { count: parcels, n: int.format(parcels) });
@@ -66,10 +63,10 @@ export function runHeadline(
  * opens the recording form in a dialog. An order with no entries at all keeps
  * a single empty card.
  *
- * The workshop's four stations are a second axis from `Role`: the stage lives
+ * The workshop's three stations are a second axis from `Role`: the stage lives
  * on the RUN, not the user, so someone covering two stations picks the stage
  * each time rather than needing two accounts. A card's button only presets
- * the form's stage — the picker still offers all four, which is how the first
+ * the form's stage — the picker still offers all three, which is how the first
  * entry of a station with no card yet gets recorded.
  *
  * Recording is deliberately separate from the lifecycle actions in the rail.

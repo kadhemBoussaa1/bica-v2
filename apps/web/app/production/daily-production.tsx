@@ -49,8 +49,6 @@ function headline(run: Run): number {
       return run.piecesPrinted ?? run.metersPrinted ?? run.quantite;
     case "PRODUCER":
       return run.piecesProduced ?? run.quantite;
-    case "QUALITY_CONTROL":
-      return run.piecesControlled ?? run.quantite;
     case "PACKAGING":
       return run.parcelsClosed ?? run.quantite;
   }

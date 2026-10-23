@@ -13,7 +13,6 @@
   "workshopStage": {
     "PRINTING": "الطباعة",
     "PRODUCER": "التصنيع",
-    "QUALITY_CONTROL": "مراقبة الجودة",
     "PACKAGING": "التغليف"
   },
   "inkUnit": {

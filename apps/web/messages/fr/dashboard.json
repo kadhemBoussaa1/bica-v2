@@ -58,7 +58,6 @@
     "title": "Production",
     "sub": "De l'impression à l'emballage, {period}. Les barres montrent les 12 derniers mois.",
     "link": "Ouvrir la production",
-    "moreThanProduced": "Plus que le fabriqué : contrôle d'un stock antérieur ?",
     "nothing": "Rien saisi sur 12 mois",
     "since": "Saisie seulement depuis {month}",
     "peak": "Pic en {month} : <figure></figure>",

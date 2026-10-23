@@ -76,13 +76,6 @@ function dayFigures(day: DayLine, t: (key: string) => string) {
   if (day.piecesProduced > 0) {
     figures.push({ stage: "PRODUCER", value: day.piecesProduced, unit: stageUnit("PRODUCER", t) });
   }
-  if (day.piecesControlled > 0) {
-    figures.push({
-      stage: "QUALITY_CONTROL",
-      value: day.piecesControlled,
-      unit: stageUnit("QUALITY_CONTROL", t),
-    });
-  }
   if (day.parcelsClosed > 0) {
     figures.push({ stage: "PACKAGING", value: day.parcelsClosed, unit: stageUnit("PACKAGING", t) });
   }

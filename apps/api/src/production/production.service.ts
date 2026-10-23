@@ -107,8 +107,8 @@ export class ProductionService {
    * PRODUCTION user's day only covers orders on the floor.
    *
    * PRINTING and PRODUCER are grouped by MACHINE (each machine listing the
-   * people who ran it); QUALITY_CONTROL and PACKAGING by PERSON, since
-   * neither records a machine at all.
+   * people who ran it); PACKAGING by PERSON, since it records no machine
+   * at all.
    */
   async daily(actor: SessionUser, input: ProductionDailyInput) {
     const day = new Date(`${input.date}T00:00:00.000Z`);
@@ -142,7 +142,6 @@ export class ProductionService {
         metersPrinted: headline("PRINTING", (r) => (r.piecesPrinted !== null ? 0 : r.metersPrinted)),
         piecesPrinted: breakdown("PRINTING", (r) => r.piecesPrinted),
         piecesProduced: headline("PRODUCER", (r) => r.piecesProduced),
-        piecesControlled: headline("QUALITY_CONTROL", (r) => r.piecesControlled),
         parcelsClosed: headline("PACKAGING", (r) => r.parcelsClosed),
         // The producer breakdown, which does not have to sum to
         // `piecesProduced` — see the note on those columns.
@@ -156,9 +155,8 @@ export class ProductionService {
         PRINTING: groupByMachine(runs.filter((r) => r.stage === "PRINTING")),
         PRODUCER: groupByMachine(runs.filter((r) => r.stage === "PRODUCER")),
       },
-      /** Person-grouped: these two stations record no machine. */
+      /** Person-grouped: this station records no machine. */
       byPerson: {
-        QUALITY_CONTROL: groupByPerson(runs.filter((r) => r.stage === "QUALITY_CONTROL")),
         PACKAGING: groupByPerson(runs.filter((r) => r.stage === "PACKAGING")),
       },
     };
@@ -167,7 +165,7 @@ export class ProductionService {
   /**
    * A range of whole months, per machine and per operator, shaped for the
    * monthly view: the months' totals, then one pivot row per machine
-   * (PRINTING, PRODUCER) and per person (all four stations), each with one
+   * (PRINTING, PRODUCER) and per person (all three stations), each with one
    * cell per month. Every row is zero-filled for every month in the range, so
    * the client lays cells out by position and never looks one up.
    *
@@ -460,7 +458,7 @@ export class ProductionService {
    * sort key and the order page's totals keep working across both eras
    * without a second "which number do I show?" branch everywhere. `unit`
    * follows: metres for printing on a reel press, pieces for a bag printer
-   * and for the three stations that count pieces.
+   * and for the other two stations.
    */
   private writable(input: CreateProductionRunInput | UpdateProductionRunInput) {
     const common = {
@@ -474,7 +472,6 @@ export class ProductionService {
       goodPieces: null as number | null,
       wastePieces: null as number | null,
       piecesToFix: null as number | null,
-      piecesControlled: null as number | null,
       parcelsClosed: null as number | null,
       // Cleared like every other stage-specific column; the two machine
       // stations set it back below.
@@ -510,13 +507,6 @@ export class ProductionService {
           quantite: input.piecesProduced,
           unit: "PIECE" as const,
         };
-      case "QUALITY_CONTROL":
-        return {
-          ...common,
-          piecesControlled: input.piecesControlled,
-          quantite: input.piecesControlled,
-          unit: "PIECE" as const,
-        };
       case "PACKAGING":
         return {
           ...common,
@@ -538,9 +528,9 @@ export class ProductionService {
    * run must also carry the figure its machine counts (`printingUnitFor`):
    * metres on a reel press, pieces on a bag printer.
    *
-   * A no-op for QUALITY_CONTROL and PACKAGING, which carry no machine at all
-   * (the union rejects the field outright for them), and so returns null
-   * for them; otherwise the machine it checked.
+   * A no-op for PACKAGING, which carries no machine at all (the union
+   * rejects the field outright for it), and so returns null for it;
+   * otherwise the machine it checked.
    */
   private async assertMachineFitsStage(
     input: CreateProductionRunInput | UpdateProductionRunInput,
@@ -611,7 +601,6 @@ const RETURN_SELECT = { id: true, orderId: true, quantite: true } as const;
 const STAGE_LABELS: Record<WorkshopStage, string> = {
   PRINTING: "Impression",
   PRODUCER: "Fabrication",
-  QUALITY_CONTROL: "Contrôle qualité",
   PACKAGING: "Emballage",
 };
 
@@ -639,7 +628,7 @@ function groupByMachine(runs: DailyRun[]) {
 }
 
 /**
- * Groups QC/packaging runs by the person who recorded them. `recordedBy` is
+ * Groups packaging runs by the person who recorded them. `recordedBy` is
  * null on every migrated row, so those collect under one unattributed bucket
  * for the same reason as above.
  */
@@ -702,7 +691,6 @@ function pivotsOf(
     byPerson: {
       PRINTING: personPivot("PRINTING"),
       PRODUCER: personPivot("PRODUCER"),
-      QUALITY_CONTROL: personPivot("QUALITY_CONTROL"),
       PACKAGING: personPivot("PACKAGING"),
     },
   };
@@ -793,7 +781,6 @@ function foldTotals(
     )[0]?.cells;
   const printing = station("PRINTING");
   const producer = station("PRODUCER");
-  const control = station("QUALITY_CONTROL");
   const packaging = station("PACKAGING");
   const runs = new Map<string, number>();
   for (const t of tallies) {
@@ -806,7 +793,6 @@ function foldTotals(
     metersPrinted: printing?.[index]?.headline ?? 0,
     piecesPrinted: printing?.[index]?.piecesPrinted ?? 0,
     piecesProduced: producer?.[index]?.headline ?? 0,
-    piecesControlled: control?.[index]?.headline ?? 0,
     parcelsClosed: packaging?.[index]?.headline ?? 0,
     // The producer breakdown, as in `daily`.
     goodPieces: producer?.[index]?.goodPieces ?? 0,
