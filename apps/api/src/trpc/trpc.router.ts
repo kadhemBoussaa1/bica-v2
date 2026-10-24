@@ -32,6 +32,7 @@ import {
   createGoodsReceiptInput,
   updateGoodsReceiptInput,
   goodsReceiptIdInput,
+  goodsReceiptInvoiceUploadInput,
   issueSalesInvoiceInput,
   salesInvoiceIdInput,
   updateSalesInvoiceDraftInput,
@@ -559,6 +560,9 @@ export class TrpcRouter {
 
       /** The counters above the list; see `SupplierService.stats`. */
       stats: adminProcedure.query(() => this.supplierService.stats()),
+
+      /** Every active supplier, id and name, for the forms' searchable pickers. */
+      options: adminProcedure.query(() => this.supplierService.options()),
 
       /** Live duplicate check for the name field on the supplier form. */
       similar: adminProcedure
@@ -1769,7 +1773,7 @@ export class TrpcRouter {
 
       create: adminProcedure
         .input(createPurchaseOrderInput)
-        .mutation(({ input }) => this.purchasingService.createOrder(input)),
+        .mutation(({ ctx, input }) => this.purchasingService.createOrder(ctx.user, input)),
 
       /** Header always; category never; lines and supplier only while no receipt holds a delivery or an invoice (the empty receipt born with the order is rebuilt). */
       update: adminProcedure
@@ -1793,16 +1797,43 @@ export class TrpcRouter {
 
       create: adminProcedure
         .input(createGoodsReceiptInput)
-        .mutation(({ input }) => this.purchasingService.createReceipt(input)),
+        .mutation(({ ctx, input }) => this.purchasingService.createReceipt(ctx.user, input)),
 
       update: adminProcedure
         .input(updateGoodsReceiptInput)
-        .mutation(({ input }) => this.purchasingService.updateReceipt(input)),
+        .mutation(({ ctx, input }) => this.purchasingService.updateReceipt(ctx.user, input)),
 
       /** Refused while a purchase invoice is raised on it. */
       remove: adminProcedure
         .input(goodsReceiptIdInput)
         .mutation(({ input }) => this.purchasingService.removeReceipt(input.id)),
+
+      /**
+       * "Confirm reception": the sign-off the legacy app called validating,
+       * refused until the goods are all in (or, for transport, the prices
+       * checked), and raising the purchase invoice from the receipt in the
+       * same transaction. Freezes the lines.
+       */
+      confirm: adminProcedure
+        .input(goodsReceiptIdInput)
+        .mutation(({ ctx, input }) => this.purchasingService.confirmReceipt(ctx.user, input.id)),
+
+      /** Takes a confirmation back; refused while an invoice is raised on the receipt. */
+      reopen: adminProcedure
+        .input(goodsReceiptIdInput)
+        .mutation(({ ctx, input }) => this.purchasingService.reopenReceipt(ctx.user, input.id)),
+
+      /**
+       * Mints the presigned PUT for the supplier's invoice. Nothing is
+       * written: the form saves the URL with the receipt, where
+       * `updateReceipt` checks it is on this app's bucket.
+       */
+      createInvoiceUpload: adminProcedure
+        .input(goodsReceiptInvoiceUploadInput)
+        .mutation(async ({ input }) => {
+          await this.purchasingService.assertReceiptInvoiceUploadable(input.id);
+          return this.storageService.createUpload(input);
+        }),
     }),
 
     /**

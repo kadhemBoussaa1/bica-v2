@@ -106,10 +106,12 @@ export const purchaseOrderListDeclaration: ListDeclaration<
   // Function form: the supplier name is on a relation, and the lines are
   // one-to-many — "HOTMELT" should find every glue order, which only the
   // line text can say.
+  // Also who raised it, which the row shows.
   searchable: (term) => ({
     OR: [
       { numero: contains(term) },
       { supplier: { name: contains(term) } },
+      { createdByName: contains(term) },
       { lines: { some: { designation: contains(term) } } },
     ],
   }),
@@ -124,6 +126,7 @@ export const PURCHASE_ORDER_SELECT = {
   expectedAt: true,
   supplierId: true,
   supplier: { select: { id: true, name: true, active: true } },
+  createdByName: true,
   totalHt: true,
   totalQuantity: true,
   currency: true,
@@ -296,7 +299,6 @@ export const PURCHASE_ORDER_DETAIL_SELECT = {
   ...PURCHASE_ORDER_SELECT,
   address: true,
   notes: true,
-  createdByName: true,
   createdAt: true,
   lines: {
     select: {

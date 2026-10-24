@@ -116,6 +116,20 @@ export class SupplierService {
     };
   }
 
+  /**
+   * Every supplier a form may pick: the active ones, by name. Not `list`,
+   * whose page tops out at 100 — 142 suppliers are active, so a picker fed
+   * from one page silently left the last names out. The picker searches
+   * this list by name on the client.
+   */
+  async options() {
+    return this.prisma.supplier.findMany({
+      where: { active: true },
+      select: { id: true, name: true },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+    });
+  }
+
   /** Live duplicate check for the form's name field — see `findSimilar`. */
   async similar(input: SimilarPartnerNameInput) {
     const name = input.name.trim();

@@ -67,7 +67,7 @@
     "currency": "Currency",
     "status": "Status",
     "reception": "Reception",
-    "validated": "Validated",
+    "validated": "Confirmed",
     "invoiceOnNote": "Invoice no. on note",
     "invoices": "Invoices",
     "invoice": "Invoice",
@@ -81,7 +81,7 @@
     "back": "← Purchase orders",
     "detailTitle": "Purchase order",
     "detailSubtitle": "An order to a supplier as recorded: its lines, totals, and the goods receipts raised against it.",
-    "searchPlaceholder": "Search order no., supplier, designation…",
+    "searchPlaceholder": "Search order no., supplier, raised by, designation…",
     "empty": {
       "title": "No purchase orders",
       "text": "Nothing matches these filters at once.",
@@ -110,6 +110,8 @@
       "chooseCategory": "Choose a category",
       "chooseSupplier": "Choose a supplier",
       "supplierHint": "Only active suppliers are offered.",
+      "supplierSearch": "Supplier name…",
+      "supplierNoMatch": "No supplier matches “{search}”",
       "supplierLocked": "A delivery has been recorded against this order, so its supplier can no longer be changed.",
       "categoryHint": "Decides the number series and which measurements the lines carry.",
       "submit": "Raise order",
@@ -180,7 +182,24 @@
       "detailsSection": "Delivery",
       "linesSection": "What arrived",
       "orderLocked": "The order cannot be changed once the receipt exists.",
-      "mustBeNumber": "{label} must be a number"
+      "mustBeNumber": "{label} must be a number",
+      "invoiceFile": "Supplier's invoice (scan)",
+      "upload": {
+        "drop": "Drop the invoice here",
+        "choose": "Attach the invoice",
+        "open": "Open",
+        "download": "Download",
+        "remove": "Remove",
+        "uploading": "Uploading…",
+        "failed": "The upload failed. Check the connection and try again.",
+        "tooLarge": "That file is larger than 25 MB.",
+        "wrongType": "Attach a photo, PDF, spreadsheet or document.",
+        "saved": "Saved",
+        "unsaved": "Not saved yet — save the changes"
+      },
+      "linesLocked": "Reception confirmed: the lines can no longer change — the purchase invoice was built from them. To correct them, reopen the receipt from its page (deleting its invoice first if it has one).",
+      "invoiceSection": "Supplier's invoice",
+      "invoiceNumberHint": "Confirming the reception records the purchase invoice under this number."
     },
     "detail": {
       "linesPanel": "Lines against the order",
@@ -193,9 +212,29 @@
       "fullyReceived": "Fully received against the order",
       "activityLink": "Activity on this receipt",
       "notInvoiced": "Not on an invoice yet",
-      "notInvoicedBody": "No purchase invoice names this receipt. Once the supplier invoices it, the two can be linked.",
-      "noScan": "No scanned note attached",
-      "noScanBody": "The paper the driver left is not attached to this receipt."
+      "notInvoicedBody": "No purchase invoice names this receipt. Confirming the reception records one from the invoice number and scan.",
+      "noScan": "No invoice attached",
+      "noScanBody": "Attach the supplier's invoice from Edit; confirming the reception files it on the purchase invoice."
+    },
+    "confirm": {
+      "button": "Confirm reception",
+      "badge": "Reception confirmed",
+      "title": "Confirm reception {numero}?",
+      "body": "Purchase invoice {invoice} from {supplier} will be recorded from this receipt: one line per item received, at the order's price, with the scanned invoice if one is attached. VAT is set to 0 % — correct it on the invoice if the supplier charged any.",
+      "bodyBilled": "This receipt is already on invoice {invoice}: no new invoice is recorded.",
+      "locks": "Once the reception is confirmed, the receipt's lines can no longer be edited.",
+      "done": "Reception {numero} confirmed",
+      "doneRaised": "Reception {numero} confirmed — invoice {invoice} recorded",
+      "openInvoice": "Open the invoice",
+      "blockedIncomplete": "Can be confirmed once everything has arrived.",
+      "blockedPrice": "Enter the checked price on every line (Edit): it must match the order.",
+      "blockedNumber": "Enter the supplier's invoice number (Edit) to confirm."
+    },
+    "reopen": {
+      "button": "Reopen",
+      "title": "Reopen reception {numero}?",
+      "body": "The confirmation is withdrawn and the lines can be edited again. Confirm again to record the purchase invoice.",
+      "done": "Reception {numero} reopened"
     }
   },
   "preview": {

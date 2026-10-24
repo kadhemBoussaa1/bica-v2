@@ -175,6 +175,14 @@ export function PurchaseOrdersTable({
         )}
       </span>
 
+      {/* `data-label` names the figure once the column heads are gone (stacked). */}
+      <span
+        className={[styles.createdBy, styles.createdByName, shell.col].filter(Boolean).join(" ")}
+        data-label={t("fields.raisedBy")}
+      >
+        {order.createdByName ? <bdi>{order.createdByName}</bdi> : <span className={records.absent} />}
+      </span>
+
       <span className={[styles.reception, shell.col].filter(Boolean).join(" ")}>
         <span className={shell.pill}>
           <i className={shell.pillDot} aria-hidden />
@@ -243,6 +251,7 @@ export function PurchaseOrdersTable({
         <div className={shell.columns} aria-hidden>
           <span className={shell.main}>{t("fields.order")} ↓</span>
           <span className={styles.supplier}>{t("fields.supplier")}</span>
+          <span className={styles.createdBy}>{t("fields.raisedBy")}</span>
           <span className={styles.reception}>{t("fields.reception")}</span>
           <span className={styles.total}>{t("fields.totalHt")}</span>
         </div>

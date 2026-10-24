@@ -14,6 +14,7 @@ import {
 import type { PurchaseCategory } from "api/src/purchasing/purchasing.list";
 import { Button } from "@repo/ui/button";
 import { SelectField, TextField } from "@repo/ui/field";
+import { ComboboxField } from "@repo/ui/combobox-field";
 import { DateField } from "@repo/ui/date-field";
 import { useToast } from "@repo/ui/toast";
 import {
@@ -73,9 +74,6 @@ export function PurchaseOrderForm({
   );
   const [expectedAt, setExpectedAt] = useState(dateInput(initial?.expectedAt ?? null));
   const [currency, setCurrency] = useState(initial?.currency ?? "TND");
-  const [address, setAddress] = useState(initial?.address ?? "");
-  const [notes, setNotes] = useState(initial?.notes ?? "");
-  const [createdByName, setCreatedByName] = useState(initial?.createdByName ?? "");
   const [lines, setLines] = useState<EditableOrderLine[]>(() =>
     initial && initial.lines.length > 0
       ? initial.lines.map((line, index) => toEditableOrderLine(line, index + 1))
@@ -83,12 +81,11 @@ export function PurchaseOrderForm({
   );
   const [error, setError] = useState<string | null>(null);
 
-  // Active suppliers only: the server refuses an archived one, so the picker
-  // must not offer it. One already on this order is appended below.
-  const suppliersQuery = useQuery(
-    trpc.supplier.list.queryOptions({ pageSize: 100, sortBy: "name", sortDir: "asc" }),
-  );
-  const suppliers = (suppliersQuery.data?.rows ?? []).filter((s) => s.active);
+  // Every active supplier, searchable by name: the server refuses an archived
+  // one, so the picker must not offer it. One already on this order is
+  // appended below.
+  const suppliersQuery = useQuery(trpc.supplier.options.queryOptions());
+  const suppliers = suppliersQuery.data ?? [];
 
   const invalidate = () =>
     Promise.all([
@@ -128,9 +125,6 @@ export function PurchaseOrderForm({
       issuedAt,
       expectedAt: expectedAt || null,
       currency,
-      address: address.trim() || null,
-      notes: notes.trim() || null,
-      createdByName: createdByName.trim() || null,
     };
     // Omitted entirely when frozen: the update schema makes `lines` optional
     // precisely so a header-only edit is expressible.
@@ -191,10 +185,10 @@ export function PurchaseOrderForm({
         </div>
 
         <div>
-          <SelectField
+          <ComboboxField
             label={t("fields.supplier")}
             value={supplierId}
-            onChange={(e) => setSupplierId(e.target.value)}
+            onChange={setSupplierId}
             disabled={busy || suppliersQuery.isPending || linesLocked}
             options={[
               ...suppliers.map((s) => ({ value: s.id, label: s.name })),
@@ -205,6 +199,8 @@ export function PurchaseOrderForm({
             placeholder={
               suppliersQuery.isPending ? common("loading") : t("orders.form.chooseSupplier")
             }
+            searchPlaceholder={t("orders.form.supplierSearch")}
+            noMatch={(search) => t("orders.form.supplierNoMatch", { search })}
           />
           <p className={styles.hint}>
             {linesLocked ? t("orders.form.supplierLocked") : t("orders.form.supplierHint")}
@@ -231,28 +227,11 @@ export function PurchaseOrderForm({
           onChange={setExpectedAt}
           disabled={busy}
         />
-        <TextField
-          label={t("fields.raisedBy")}
-          value={createdByName}
-          onChange={(e) => setCreatedByName(e.target.value)}
-          autoComplete="off"
-          disabled={busy}
-        />
-
-        <TextField
-          label={t("fields.deliveryAddress")}
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          autoComplete="off"
-          disabled={busy}
-        />
-        <TextField
-          label={t("fields.notes")}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          autoComplete="off"
-          disabled={busy}
-        />
+        {/*
+          No "raised by", address or notes (2026-10-24): the server records
+          who raised the order from the session, and the other two are no
+          longer entered.
+        */}
 
         <span className={styles.formSection}>{t("orders.form.linesSection")}</span>
         <div className={styles.formWide}>

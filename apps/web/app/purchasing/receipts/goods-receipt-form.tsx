@@ -7,10 +7,16 @@ import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "api/src/trpc/trpc.router";
-import { updateGoodsReceiptInput } from "@repo/api-contract";
+import {
+  UPLOAD_CONTENT_TYPES,
+  UPLOAD_MAX_BYTES,
+  assetUrl,
+  updateGoodsReceiptInput,
+} from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { TextField } from "@repo/ui/field";
 import { DateField } from "@repo/ui/date-field";
+import { FileDropzone } from "@repo/ui/file-dropzone";
 import { useToast } from "@repo/ui/toast";
 import {
   ReceiptLinesEditor,
@@ -20,6 +26,7 @@ import {
 } from "../purchasing-lines-editor";
 import { useTRPC } from "../../trpc/client";
 import styles from "../../records/records.module.css";
+import purchasing from "../purchasing.module.css";
 import type { FormNav } from "../../records/form-nav";
 
 type GoodsReceipt = inferRouterOutputs<AppRouter>["goodsReceipt"]["byId"];
@@ -59,8 +66,7 @@ export function GoodsReceiptForm({
   );
   const [receivedAt, setReceivedAt] = useState(dateInput(initial.receivedAt));
   const [invoiceNumber, setInvoiceNumber] = useState(initial.invoiceNumber ?? "");
-  const [updatedByName, setUpdatedByName] = useState(initial.updatedByName ?? "");
-  const [notes, setNotes] = useState(initial.notes ?? "");
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(initial.invoiceUrl);
   const [lines, setLines] = useState<EditableReceiptLine[]>(() =>
     initial.lines.map((line, index) => ({
       key: index + 1,
@@ -83,6 +89,10 @@ export function GoodsReceiptForm({
     receivedQuantity: line.receivedQuantity,
   }));
   const transport = initial.category === "TRANSPORT";
+  // Confirmed: the purchase invoice was built from these lines, and the
+  // server refuses to change them until the receipt is reopened.
+  const locked = initial.validated;
+  const ticket = useMutation(trpc.goodsReceipt.createInvoiceUpload.mutationOptions());
 
   const invalidate = () =>
     Promise.all([
@@ -115,8 +125,7 @@ export function GoodsReceiptForm({
       issuedAt,
       receivedAt: receivedAt || null,
       invoiceNumber: invoiceNumber.trim() || null,
-      updatedByName: updatedByName.trim() || null,
-      notes: notes.trim() || null,
+      invoiceUrl,
       lines: lines.map((line, index) => toReceiptLineInput(line, index + 1)),
     });
     if (!parsed.success) {
@@ -139,27 +148,26 @@ export function GoodsReceiptForm({
         </p>
       )}
 
+      {/*
+        Three groups, each a row: the delivery (which order, when raised,
+        when it arrived), the supplier's invoice, then the lines. No
+        "validated" control — confirming is the detail page's "Confirm
+        reception" — and no notes or last-editor box (2026-10-24): the
+        server records who saved.
+      */}
       <div className={styles.formGrid}>
         <span className={styles.formSection}>{t("receipts.form.detailsSection")}</span>
 
-        {/*
-          The order, shown rather than picked: a receipt belongs to the order
-          it was created with for its whole life.
-        */}
-        <div>
-          <span className={styles.detailLabel}>{t("fields.order")}</span>
-          <p>
-            <Link
-              className={styles.inlineLink}
-              href={`/purchasing/orders/${initial.orderId}`}
-            >
-              <span className={styles.mono}>{initial.order.numero}</span>
+        {/* Shown rather than picked: a receipt belongs to its order for life. */}
+        <div className={purchasing.staticField}>
+          <span className={purchasing.staticLabel}>{t("fields.order")}</span>
+          <span className={purchasing.staticValue}>
+            <Link className={styles.inlineLink} href={`/purchasing/orders/${initial.orderId}`}>
+              {initial.order.numero}
             </Link>
-          </p>
+          </span>
           <p className={styles.hint}>{t("receipts.form.orderLocked")}</p>
         </div>
-        <div />
-
         <DateField
           label={t("fields.raised")}
           value={issuedAt}
@@ -173,36 +181,60 @@ export function GoodsReceiptForm({
           disabled={busy}
         />
 
-        <TextField
-          label={t("fields.invoiceOnNote")}
-          format="mono"
-          value={invoiceNumber}
-          onChange={(e) => setInvoiceNumber(e.target.value)}
-          autoComplete="off"
-          disabled={busy}
-        />
-        <TextField
-          label={t("fields.lastUpdatedBy")}
-          value={updatedByName}
-          onChange={(e) => setUpdatedByName(e.target.value)}
-          autoComplete="off"
-          disabled={busy}
-        />
-        <TextField
-          label={t("fields.notes")}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          autoComplete="off"
-          disabled={busy}
-        />
+        {/* Number and scan: confirming the reception records the purchase invoice from both. */}
+        <span className={styles.formSection}>{t("receipts.form.invoiceSection")}</span>
 
-        {/*
-          No "validated" control: the server derives it from the quantities, so
-          a receipt is validated exactly when every line is fully received.
-        */}
+        <div>
+          <TextField
+            label={t("fields.invoiceOnNote")}
+            format="mono"
+            value={invoiceNumber}
+            onChange={(e) => setInvoiceNumber(e.target.value)}
+            autoComplete="off"
+            disabled={busy}
+          />
+          <p className={styles.hint}>{t("receipts.form.invoiceNumberHint")}</p>
+        </div>
+        <div className={[purchasing.staticField, purchasing.invoiceScan].filter(Boolean).join(" ")}>
+          <span className={purchasing.staticLabel}>{t("receipts.form.invoiceFile")}</span>
+          <FileDropzone
+            label={t("receipts.form.invoiceFile")}
+            value={assetUrl(invoiceUrl)}
+            onChange={setInvoiceUrl}
+            onRequestUpload={(file) =>
+              ticket.mutateAsync({
+                id: initial.id,
+                filename: file.name,
+                contentType: file.type as (typeof UPLOAD_CONTENT_TYPES)[number],
+                size: file.size,
+              })
+            }
+            contentTypes={UPLOAD_CONTENT_TYPES}
+            maxBytes={UPLOAD_MAX_BYTES}
+            strings={{
+              drop: t("receipts.form.upload.drop"),
+              choose: t("receipts.form.upload.choose"),
+              open: t("receipts.form.upload.open"),
+              download: t("receipts.form.upload.download"),
+              remove: t("receipts.form.upload.remove"),
+              uploading: t("receipts.form.upload.uploading"),
+              failed: t("receipts.form.upload.failed"),
+              tooLarge: t("receipts.form.upload.tooLarge"),
+              wrongType: t("receipts.form.upload.wrongType"),
+            }}
+            // The file is saved with the form, not on upload.
+            meta={
+              invoiceUrl === initial.invoiceUrl
+                ? t("receipts.form.upload.saved")
+                : t("receipts.form.upload.unsaved")
+            }
+            disabled={busy}
+          />
+        </div>
 
         <span className={styles.formSection}>{t("receipts.form.linesSection")}</span>
         <div className={styles.formWide}>
+          {locked && <p className={styles.hint}>{t("receipts.form.linesLocked")}</p>}
           {orderQuery.isPending ? (
             <p className={styles.muted}>{common("loading")}</p>
           ) : (
@@ -211,7 +243,7 @@ export function GoodsReceiptForm({
               orderLines={orderLines}
               transport={transport}
               onChange={setLines}
-              busy={busy}
+              busy={busy || locked}
             />
           )}
         </div>

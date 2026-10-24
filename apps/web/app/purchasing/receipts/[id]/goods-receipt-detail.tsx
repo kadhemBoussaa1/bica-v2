@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { assetUrl } from "@repo/api-contract";
+import { RECEIPT_TOLERANCE, assetUrl } from "@repo/api-contract";
 import { Button } from "@repo/ui/button";
 import { Dialog } from "@repo/ui/dialog";
 import { useToast } from "@repo/ui/toast";
@@ -29,9 +29,9 @@ import purchasing from "../../purchasing.module.css";
  * switched the aggregates to "lines complete". Its Trail timeline restated
  * facts already in the panels, so the rail keeps the Activity link the handoff
  * also drew and drops the list — the same call docs/toolkit-v3.md records for
- * the shipment handoff. Its "Record arrival" / "Validate receipt" buttons are
- * the edit form, which owns those quantities and derives `validated` from
- * them.
+ * the shipment handoff. Its "Record arrival" is the edit form, which owns the
+ * quantities; its "Validate receipt" is "Confirm reception", the legacy
+ * sign-off that also records the supplier's invoice as a purchase invoice.
  */
 export function GoodsReceiptDetail({ id }: { id: string }) {
   const trpc = useTRPC();
@@ -42,7 +42,60 @@ export function GoodsReceiptDetail({ id }: { id: string }) {
   const common = useTranslations("common");
   const receiptQuery = useQuery(trpc.goodsReceipt.byId.queryOptions({ id }));
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmReception, setConfirmReception] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: trpc.goodsReceipt.byId.queryKey({ id }) }),
+      queryClient.invalidateQueries({ queryKey: trpc.goodsReceipt.list.queryKey() }),
+      // The order page lists its receipts with their confirmation.
+      queryClient.invalidateQueries({ queryKey: trpc.purchaseOrder.byId.queryKey() }),
+      queryClient.invalidateQueries({ queryKey: trpc.purchaseInvoice.list.queryKey() }),
+    ]);
+
+  const confirmMutation = useMutation(
+    trpc.goodsReceipt.confirm.mutationOptions({
+      onSuccess: async (confirmed) => {
+        setConfirmReception(false);
+        setError(null);
+        push({
+          title: confirmed.invoiceRaised
+            ? t("receipts.confirm.doneRaised", {
+                numero: confirmed.numero,
+                invoice: confirmed.invoice.numero,
+              })
+            : t("receipts.confirm.done", { numero: confirmed.numero }),
+          tone: "success",
+          action: {
+            label: t("receipts.confirm.openInvoice"),
+            onClick: () => router.push(`/invoices/purchases/${confirmed.invoice.id}`),
+          },
+        });
+        await refresh();
+      },
+      onError: (cause) => {
+        setConfirmReception(false);
+        setError(cause.message);
+      },
+    }),
+  );
+
+  const reopenMutation = useMutation(
+    trpc.goodsReceipt.reopen.mutationOptions({
+      onSuccess: async (reopened) => {
+        setConfirmReopen(false);
+        setError(null);
+        push({ title: t("receipts.reopen.done", { numero: reopened.numero }), tone: "success" });
+        await refresh();
+      },
+      onError: (cause) => {
+        setConfirmReopen(false);
+        setError(cause.message);
+      },
+    }),
+  );
 
   const removeMutation = useMutation(
     trpc.goodsReceipt.remove.mutationOptions({
@@ -93,6 +146,33 @@ export function GoodsReceiptDetail({ id }: { id: string }) {
   );
   const settled = measurable.length > 0 && short.length === 0;
 
+  /*
+   * Why "Confirm reception" is not open yet — the server's own checks
+   * (`PurchasingService.confirmReceipt`), so the button says what is missing
+   * instead of failing on click. The server still decides.
+   */
+  const transport = receipt.category === "TRANSPORT";
+  const billed = receipt.invoices[0] ?? null;
+  const confirmBlocker = receipt.validated
+    ? null
+    : transport
+      ? receipt.lines.some(
+            (line) =>
+              line.unitPrice === null ||
+              line.orderLine === null ||
+              Math.abs(line.unitPrice - line.orderLine.unitPrice) > RECEIPT_TOLERANCE,
+          )
+        ? t("receipts.confirm.blockedPrice")
+        : null
+      : receipt.status !== "COMPLETE"
+        ? t("receipts.confirm.blockedIncomplete")
+        : null;
+  const numberBlocker =
+    !receipt.validated && billed === null && !receipt.invoiceNumber?.trim()
+      ? t("receipts.confirm.blockedNumber")
+      : null;
+  const blocker = confirmBlocker ?? numberBlocker;
+
   return (
     <>
       {error && (
@@ -104,9 +184,32 @@ export function GoodsReceiptDetail({ id }: { id: string }) {
       <div className={purchasing.detailBadges}>
         <ReceiptStatusBadge status={receipt.status} />
         <CategoryBadge category={receipt.category} />
+        {receipt.validated && (
+          <span className={[styles.statusBadge, styles.statusSuccess].filter(Boolean).join(" ")}>
+            {t("receipts.confirm.badge")}
+          </span>
+        )}
       </div>
 
       <div className={invoices.detailActions}>
+        {blocker && <span className={purchasing.confirmHint}>{blocker}</span>}
+        {!receipt.validated && (
+          <Button
+            variant="primary"
+            disabled={blocker !== null}
+            onClick={() => {
+              setError(null);
+              setConfirmReception(true);
+            }}
+          >
+            {t("receipts.confirm.button")}
+          </Button>
+        )}
+        {receipt.validated && billed === null && (
+          <Button variant="secondary" onClick={() => setConfirmReopen(true)}>
+            {t("receipts.reopen.button")}
+          </Button>
+        )}
         <Link href={`/purchasing/receipts/${receipt.id}/edit`}>
           <Button variant="secondary">{common("edit")}</Button>
         </Link>
@@ -312,12 +415,13 @@ export function GoodsReceiptDetail({ id }: { id: string }) {
                   <Val value={receipt.updatedByName} />
                 </span>
               </div>
-              <div className={purchasing.fact}>
-                <span className={purchasing.factLabel}>{t("fields.notes")}</span>
-                <span className={purchasing.factValue}>
-                  <Val value={receipt.notes} />
-                </span>
-              </div>
+              {/* No longer entered: shown only where a migrated receipt carries a note. */}
+              {receipt.notes && (
+                <div className={purchasing.fact}>
+                  <span className={purchasing.factLabel}>{t("fields.notes")}</span>
+                  <span className={purchasing.factValue}>{receipt.notes}</span>
+                </div>
+              )}
             </div>
 
             {/* The two documents this note sits between, and its own trail. */}
@@ -381,6 +485,36 @@ export function GoodsReceiptDetail({ id }: { id: string }) {
         onClose={() => !removeMutation.isPending && setConfirmDelete(false)}
       >
         <p className={styles.muted}>{t("receipts.deleteBody", { count: receipt.lineCount })}</p>
+      </Dialog>
+
+      <Dialog
+        open={confirmReception}
+        title={t("receipts.confirm.title", { numero: receipt.numero })}
+        confirmLabel={t("receipts.confirm.button")}
+        busy={confirmMutation.isPending}
+        onConfirm={() => confirmMutation.mutate({ id: receipt.id })}
+        onClose={() => !confirmMutation.isPending && setConfirmReception(false)}
+      >
+        <p className={styles.muted}>
+          {billed === null
+            ? t("receipts.confirm.body", {
+                invoice: receipt.invoiceNumber?.trim() ?? "",
+                supplier: receipt.supplier.name,
+              })
+            : t("receipts.confirm.bodyBilled", { invoice: billed.numero })}
+        </p>
+        <p className={styles.muted}>{t("receipts.confirm.locks")}</p>
+      </Dialog>
+
+      <Dialog
+        open={confirmReopen}
+        title={t("receipts.reopen.title", { numero: receipt.numero })}
+        confirmLabel={t("receipts.reopen.button")}
+        busy={reopenMutation.isPending}
+        onConfirm={() => reopenMutation.mutate({ id: receipt.id })}
+        onClose={() => !reopenMutation.isPending && setConfirmReopen(false)}
+      >
+        <p className={styles.muted}>{t("receipts.reopen.body")}</p>
       </Dialog>
     </>
   );

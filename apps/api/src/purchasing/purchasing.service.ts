@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
 import {
   RECEIPT_TOLERANCE,
+  invoiceLineFigures,
+  invoiceTotals,
   type CreateGoodsReceiptInput,
   type CreatePurchaseOrderInput,
   type GoodsReceiptLineInput,
@@ -15,6 +17,8 @@ import { runListQuery } from "../list/list-query";
 import { MailService } from "../mail/mail.service";
 import { purchaseOrderCreatedMail } from "../mail/templates";
 import { PrismaService } from "../prisma.service";
+import { StorageService } from "../storage/storage.service";
+import type { SessionUser } from "../trpc/trpc";
 import {
   GOODS_RECEIPT_DETAIL_SELECT,
   GOODS_RECEIPT_SELECT,
@@ -69,6 +73,7 @@ export class PurchasingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly storage: StorageService,
   ) {}
 
   async listOrders(input: ListPurchaseOrdersInput) {
@@ -288,8 +293,11 @@ export class PurchasingService {
    * Raises an order. The number is allocated here, not supplied: the counter
    * upsert and the insert share one transaction, so two concurrent creates
    * cannot take the same sequence.
+   *
+   * "Raised by" is the session's name, not a typed one (2026-10-24): the
+   * legacy form had a free-text box, which the migrated rows still show.
    */
-  async createOrder(input: CreatePurchaseOrderInput) {
+  async createOrder(actor: SessionUser, input: CreatePurchaseOrderInput) {
     await this.assertSupplierAssignable(input.supplierId);
     this.assertPositionsUnique(input.lines);
 
@@ -299,6 +307,7 @@ export class PurchasingService {
         data: {
           ...this.orderHeader(input),
           category: input.category,
+          createdByName: actor.name,
           numero,
           lines: { create: input.lines.map((line) => this.orderLineRow(line)) },
         },
@@ -488,7 +497,7 @@ export class PurchasingService {
               `${existing.numero} already has deliveries recorded on ${named}, so its ` +
               (lines !== undefined ? "lines" : "supplier") +
               " can no longer be changed. Clear or delete those receipts first, or edit " +
-              "only the dates, address and notes.",
+              "only the dates and the currency.",
           });
         }
       }
@@ -595,8 +604,9 @@ export class PurchasingService {
    * concurrent 1 000 deliveries against a 1 000 line would each see nothing
    * received and both pass.
    */
-  async createReceipt(input: CreateGoodsReceiptInput) {
+  async createReceipt(actor: SessionUser, input: CreateGoodsReceiptInput) {
     this.assertPositionsUnique(input.lines);
+    this.assertInvoiceFile(input.invoiceUrl, null);
 
     return this.prisma.$transaction(async (tx) => {
       await this.lockOrder(tx, input.orderId);
@@ -608,7 +618,7 @@ export class PurchasingService {
       const numero = await this.allocateReceiptNumero(tx, order.category);
       const receipt = await tx.goodsReceipt.create({
         data: {
-          ...this.receiptHeader(input),
+          ...this.receiptHeader(actor, input),
           numero,
           category: order.category,
           supplierId: order.supplierId,
@@ -633,7 +643,7 @@ export class PurchasingService {
    * A receipt deleted, or an order line replaced, while this was in flight
    * surfaces as P2025/P2003 and is reported as such rather than as a 500.
    */
-  async updateReceipt(input: UpdateGoodsReceiptInput) {
+  async updateReceipt(actor: SessionUser, input: UpdateGoodsReceiptInput) {
     this.assertPositionsUnique(input.lines);
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -646,6 +656,9 @@ export class PurchasingService {
               "Delete it and record the delivery against the right order.",
           });
         }
+
+        this.assertInvoiceFile(input.invoiceUrl, existing.invoiceUrl);
+        if (existing.validated) this.assertLinesUnchanged(existing, input.lines);
 
         const order = await this.loadOrderForReceipt(tx, existing.orderId);
         const matched = this.assertLinesBelongToOrder(input.lines, order.lines);
@@ -665,7 +678,7 @@ export class PurchasingService {
         });
         const receipt = await tx.goodsReceipt.update({
           where: { id: input.id },
-          data: { ...this.receiptHeader(input), ...derived },
+          data: { ...this.receiptHeader(actor, input), ...derived },
           select: { id: true, numero: true, orderId: true },
         });
         await this.resync(tx, order, touched, receipt.id);
@@ -736,11 +749,123 @@ export class PurchasingService {
     });
   }
 
+  /**
+   * "Confirm reception": the office's sign-off on a delivery, and the moment
+   * the supplier's invoice is recorded — the legacy app's `validate…` and
+   * `FactureAchatService.createFromGr`, in one transaction here as there.
+   *
+   * The check is the legacy one. Goods must be COMPLETE: every order line the
+   * note touches fully delivered, counting the order's other receipts
+   * (`deriveStatus`). Legacy compared the note alone with the order's whole
+   * quantity, which no second delivery could ever pass. A transport receipt
+   * is a price check instead: each line's checked price must match the
+   * order's.
+   *
+   * Unless an invoice already names the receipt (one receipt, one invoice,
+   * as in legacy), it raises one — see `raiseReceiptInvoice`. Taken under the
+   * order's row lock like every receipt write, so no edit can move the lines
+   * between the check and the invoice built from them.
+   */
+  async confirmReceipt(actor: SessionUser, id: string) {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await this.loadReceiptForWrite(tx, id);
+        const receipt = await tx.goodsReceipt.findUnique({
+          where: { id },
+          select: RECEIPT_CONFIRM_SELECT,
+        });
+        if (!receipt) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Goods receipt not found" });
+        }
+        if (receipt.validated) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `${receipt.numero} is already confirmed`,
+          });
+        }
+        this.assertConfirmable(receipt);
+
+        const existing = receipt.invoices[0];
+        const invoice = existing ?? (await this.raiseReceiptInvoice(tx, receipt));
+        await tx.goodsReceipt.update({
+          where: { id },
+          data: { validated: true, updatedByName: actor.name },
+          select: { id: true },
+        });
+        return {
+          id: receipt.id,
+          numero: receipt.numero,
+          orderId: receipt.orderId,
+          invoice,
+          /** False when an invoice already named the receipt and none was raised. */
+          invoiceRaised: existing === undefined,
+        };
+      });
+    } catch (cause) {
+      // The number taken by a concurrent create, after `raiseReceiptInvoice` looked.
+      if (cause instanceof Prisma.PrismaClientKnownRequestError && cause.code === "P2002") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "That invoice number was just recorded on another purchase invoice — reload and try again",
+        });
+      }
+      throw cause;
+    }
+  }
+
+  /**
+   * Takes a confirmation back, so the lines can be corrected and the receipt
+   * confirmed again.
+   *
+   * Refused while a purchase invoice names the receipt: that invoice was
+   * built from the lines this would unfreeze, so it has to go first —
+   * deleted, or pointed at another receipt — and confirming again raises a
+   * fresh one from the corrected figures. The condition is repeated in the
+   * write's own `where`, as in `removeReceipt`: invoices are linked without
+   * the order's lock.
+   */
+  async reopenReceipt(actor: SessionUser, id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const receipt = await this.loadReceiptForWrite(tx, id);
+      if (!receipt.validated) {
+        throw new TRPCError({ code: "CONFLICT", message: `${receipt.numero} is not confirmed` });
+      }
+      const invoices = await tx.purchaseInvoice.findMany({
+        where: { receiptId: id },
+        select: { numero: true },
+      });
+      const { count } = await tx.goodsReceipt.updateMany({
+        where: { id, invoices: { none: {} } },
+        data: { validated: false, updatedByName: actor.name },
+      });
+      if (invoices.length > 0 || count !== 1) {
+        const named = invoices.map((invoice) => invoice.numero).join(", ");
+        throw new TRPCError({
+          code: "CONFLICT",
+          message:
+            `${receipt.numero} is billed on ${named ? `invoice ${named}` : "an invoice"}. ` +
+            "Delete that invoice, or point it at another receipt, before reopening the delivery it was built from.",
+        });
+      }
+      return { id: receipt.id, numero: receipt.numero, orderId: receipt.orderId };
+    });
+  }
+
+  /** The gate before minting an upload URL for a receipt's invoice: the receipt must exist. */
+  async assertReceiptInvoiceUploadable(id: string) {
+    const found = await this.prisma.goodsReceipt.findUnique({ where: { id }, select: { id: true } });
+    if (!found) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Goods receipt not found" });
+    }
+  }
+
   // ---- write helpers --------------------------------------------------------
 
   /**
    * The order's editable header columns, with the totals derived from the
-   * lines. `category` is not among them: it is written once, by `createOrder`.
+   * lines. `category` and `createdByName` are not among them: both are
+   * written once, by `createOrder`. Nor are `address` and `notes`, which are
+   * no longer entered (see `purchaseOrderInput`) and so are never touched.
    */
   private orderHeader(
     input: CreatePurchaseOrderInput | UpdatePurchaseOrderInput,
@@ -751,9 +876,6 @@ export class PurchasingService {
       issuedAt: this.day(input.issuedAt),
       expectedAt: input.expectedAt ? this.day(input.expectedAt) : null,
       currency: input.currency,
-      address: input.address ?? null,
-      notes: input.notes ?? null,
-      createdByName: input.createdByName ?? null,
       ...this.orderTotals(lines),
     };
   }
@@ -810,17 +932,214 @@ export class PurchasingService {
       : line.quantity * line.unitPrice * surface;
   }
 
-  /** The receipt's own header columns; the derived figures are added separately. */
-  private receiptHeader(input: CreateGoodsReceiptInput | UpdateGoodsReceiptInput) {
+  /**
+   * The receipt's own header columns; the derived figures are added separately.
+   *
+   * The optional columns keep the contract's rule — omitted is left as it is,
+   * null clears — by passing `undefined` through, which Prisma reads as "do
+   * not touch". `?? null` here used to erase the scan of every receipt saved
+   * from the form, which never sends `invoiceUrl`.
+   *
+   * `updatedByName` is whoever saves, not a typed name (2026-10-24); `notes`
+   * is no longer written at all.
+   */
+  private receiptHeader(
+    actor: SessionUser,
+    input: CreateGoodsReceiptInput | UpdateGoodsReceiptInput,
+  ) {
     return {
       orderId: input.orderId,
       issuedAt: this.day(input.issuedAt),
-      receivedAt: input.receivedAt ? this.day(input.receivedAt) : null,
-      invoiceNumber: input.invoiceNumber ?? null,
-      invoiceUrl: input.invoiceUrl ?? null,
-      notes: input.notes ?? null,
-      updatedByName: input.updatedByName ?? null,
+      receivedAt: input.receivedAt ? this.day(input.receivedAt) : input.receivedAt,
+      invoiceNumber: input.invoiceNumber,
+      invoiceUrl: input.invoiceUrl,
+      updatedByName: actor.name,
     };
+  }
+
+  /**
+   * The supplier's invoice must be a file uploaded to this app's bucket: it
+   * is filed on the purchase invoice at confirmation and opened from both
+   * records, so any other link could pass for a scan — the gate the invoice's
+   * own documents have (`InvoiceService.addPurchaseDocument`). The receipt's
+   * current value passes untouched, so a migrated scan survives an edit.
+   */
+  private assertInvoiceFile(url: string | null | undefined, stored: string | null) {
+    if (url === undefined || url === null || url === stored) return;
+    if (!this.storage.isOwnAssetUrl(url)) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "The invoice must be an uploaded file" });
+    }
+  }
+
+  /**
+   * A confirmed receipt's lines are frozen: its purchase invoice was built
+   * from them, and an edit would leave the two disagreeing. The header —
+   * dates, invoice number and scan, notes — stays editable, as it was in the
+   * legacy app; those reached the invoice once, at confirmation, and do not
+   * follow later edits. Correcting a line means reopening the receipt
+   * (`reopenReceipt`).
+   *
+   * Compared per order line on what the invoice was built from, the quantity
+   * and the price — so a line note can still be added.
+   */
+  private assertLinesUnchanged(
+    stored: {
+      numero: string;
+      lines: readonly {
+        orderLineId: string | null;
+        receivedQuantity: number | null;
+        unitPrice: number | null;
+      }[];
+    },
+    submitted: readonly GoodsReceiptLineInput[],
+  ) {
+    const before = new Map(stored.lines.map((line) => [line.orderLineId, line]));
+    const same =
+      submitted.length === stored.lines.length &&
+      submitted.every((line) => {
+        const was = before.get(line.orderLineId);
+        return (
+          was !== undefined &&
+          was.receivedQuantity === (line.receivedQuantity ?? null) &&
+          was.unitPrice === (line.unitPrice ?? null)
+        );
+      });
+    if (!same) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: `${stored.numero} is confirmed, so its lines can no longer change. Reopen it to correct them.`,
+      });
+    }
+  }
+
+  /**
+   * Refuses a confirmation the legacy app would have refused — see
+   * `confirmReceipt`. The transport price check allows `RECEIPT_TOLERANCE`,
+   * the hundredth the legacy `PRICE_TOLERANCE` allowed too.
+   */
+  private assertConfirmable(receipt: ReceiptToConfirm) {
+    if (receipt.category === "TRANSPORT") {
+      for (const line of receipt.lines) {
+        if (line.unitPrice === null) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Line ${line.position}: enter the checked unit price before confirming`,
+          });
+        }
+        if (line.orderLine === null) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Line ${line.position} no longer points at an order line to check its price against`,
+          });
+        }
+        if (Math.abs(line.unitPrice - line.orderLine.unitPrice) > RECEIPT_TOLERANCE) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              `Line ${line.position}: the checked price ${format(line.unitPrice)} ` +
+              `does not match the order's ${format(line.orderLine.unitPrice)}`,
+          });
+        }
+      }
+      return;
+    }
+
+    if (receipt.status !== "COMPLETE") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `${receipt.numero} is not fully received yet: it can be confirmed once every line it covers has arrived`,
+      });
+    }
+    const unpriced = receipt.lines.find(
+      (line) => line.orderLine === null && (line.receivedQuantity ?? 0) > 0,
+    );
+    if (unpriced) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Line ${unpriced.position} no longer points at an order line, so it has no price to bill at`,
+      });
+    }
+  }
+
+  /**
+   * The purchase invoice a confirmation raises, as the legacy
+   * `createFromGr` built it: numbered as the receipt says, from its
+   * supplier, dated the day the goods arrived (else the day the note was
+   * raised), with the uploaded scan as its document and `receiptId` naming
+   * the receipt. It also takes the order's currency, which legacy left blank
+   * for the office to fill in.
+   *
+   * One line per receipt line that brought something in: the quantity
+   * received at the order's unit price — a plate's per cm² times its surface,
+   * the rule `orderLineRow` totals the order with (legacy ignored the
+   * surface). A transport line bills its order line as ordered, a lump sum,
+   * at the checked price. Discount and VAT are 0 %, exactly as legacy did it:
+   * the office corrects the VAT on the invoice where the supplier charged it
+   * (decided 2026-10-24).
+   *
+   * The number is required, as `PurchaseInvoice.numero` is, and one already
+   * recorded is refused rather than raised twice.
+   */
+  private async raiseReceiptInvoice(tx: Prisma.TransactionClient, receipt: ReceiptToConfirm) {
+    const numero = receipt.invoiceNumber?.trim();
+    if (!numero) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Enter the supplier's invoice number on ${receipt.numero} before confirming it: the purchase invoice is recorded under that number`,
+      });
+    }
+    const taken = await tx.purchaseInvoice.findUnique({ where: { numero }, select: { id: true } });
+    if (taken) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message:
+          `Purchase invoice ${numero} is already recorded. ` +
+          `Link it to ${receipt.numero} from the invoice, or correct the number on the receipt.`,
+      });
+    }
+
+    const transport = receipt.category === "TRANSPORT";
+    const lines = receipt.lines
+      .flatMap((line) => {
+        const ordered = line.orderLine;
+        if (ordered === null) return [];
+        if (transport) {
+          return line.unitPrice === null
+            ? []
+            : [{ designation: line.designation, quantity: ordered.quantity, unitPrice: line.unitPrice }];
+        }
+        const received = line.receivedQuantity ?? 0;
+        if (received <= 0) return [];
+        const unitPrice =
+          ordered.unitSurface === null ? ordered.unitPrice : ordered.unitPrice * ordered.unitSurface;
+        return [{ designation: line.designation, quantity: received, unitPrice }];
+      })
+      .map((line, index) => ({
+        position: index + 1,
+        description: line.designation,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        discountPct: 0,
+        taxPct: 0,
+      }));
+    const totals = invoiceTotals(lines);
+
+    return tx.purchaseInvoice.create({
+      data: {
+        numero,
+        supplierId: receipt.supplierId,
+        issuedAt: receipt.receivedAt ?? receipt.issuedAt,
+        currency: receipt.order.currency,
+        receiptId: receipt.id,
+        documents: receipt.invoiceUrl ? [receipt.invoiceUrl] : [],
+        ...totals,
+        netPayable: totals.totalTtc,
+        lines: {
+          create: lines.map((line) => ({ ...line, total: invoiceLineFigures(line).total })),
+        },
+      },
+      select: { id: true, numero: true },
+    });
   }
 
 
@@ -874,7 +1193,7 @@ export class PurchasingService {
     matched: readonly MatchedLine[],
     category: PurchaseCategory,
     alreadyReceived: ReadonlyMap<string, number>,
-  ): { receivedQuantity: number | null; status: ReceiptStatus | null; validated: boolean } {
+  ): { receivedQuantity: number | null; status: ReceiptStatus | null } {
     const quantities = matched
       .map(({ line }) => line.receivedQuantity)
       .filter((quantity): quantity is number => quantity !== null && quantity !== undefined);
@@ -883,9 +1202,9 @@ export class PurchasingService {
       quantities.length === 0 ? null : quantities.reduce((sum, quantity) => sum + quantity, 0);
 
     if (category === "TRANSPORT") {
-      // A service is neither received in parts nor validated against a
-      // quantity, so both stay as the legacy transport rows have them.
-      return { receivedQuantity, status: null, validated: false };
+      // A service is not received in parts, so it has no status, as the
+      // legacy transport rows have none.
+      return { receivedQuantity, status: null };
     }
     const status = this.deriveStatus(
       matched.map(({ line, ordered }) => ({
@@ -894,16 +1213,9 @@ export class PurchasingService {
         already: alreadyReceived.get(ordered.id) ?? 0,
       })),
     );
-    return {
-      receivedQuantity,
-      status,
-      // Derived, not ticked: the receipt is validated exactly when every line
-      // it touches is fully delivered. Legacy kept a separate sign-off that
-      // *refused* to validate unless the quantities matched; deriving it
-      // removes the state where the flag and the figures disagree, at the
-      // cost of an explicit human sign-off.
-      validated: status === "COMPLETE",
-    };
+    // `validated` is not derived: it is the explicit "Confirm reception"
+    // sign-off (`confirmReceipt`), which COMPLETE only makes possible.
+    return { receivedQuantity, status };
   }
 
   /**
@@ -974,7 +1286,6 @@ export class PurchasingService {
       select: {
         id: true,
         status: true,
-        validated: true,
         lines: { select: { orderLineId: true, receivedQuantity: true } },
       },
     });
@@ -993,11 +1304,12 @@ export class PurchasingService {
           return { received, ordered: ordered.quantity, already: total - received };
         }),
       );
-      const validated = status === "COMPLETE";
-      if (status === sibling.status && validated === sibling.validated) continue;
+      // The status only: a sibling's confirmation stays as signed. Its own
+      // delivery has not changed, and its invoice bills that delivery.
+      if (status === sibling.status) continue;
       await tx.goodsReceipt.update({
         where: { id: sibling.id },
-        data: { status, validated },
+        data: { status },
         select: { id: true },
       });
     }
@@ -1118,14 +1430,21 @@ export class PurchasingService {
     await this.lockOrder(tx, head.orderId);
     const receipt = await tx.goodsReceipt.findUnique({
       where: { id },
-      select: { id: true, numero: true, orderId: true, lines: { select: { orderLineId: true } } },
+      select: {
+        id: true,
+        numero: true,
+        orderId: true,
+        validated: true,
+        invoiceUrl: true,
+        lines: { select: { orderLineId: true, receivedQuantity: true, unitPrice: true } },
+      },
     });
     if (!receipt) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Goods receipt not found" });
     }
-    const { lines, ...rest } = receipt;
+    const { lines } = receipt;
     return {
-      ...rest,
+      ...receipt,
       orderLineIds: [
         ...new Set(
           lines.map((line) => line.orderLineId).filter((lineId): lineId is string => lineId !== null),
@@ -1321,16 +1640,46 @@ interface MatchedLine {
   ordered: OrderLineFacts;
 }
 
+/** What a confirmation checks and the invoice it raises is built from. */
+const RECEIPT_CONFIRM_SELECT = {
+  id: true,
+  numero: true,
+  category: true,
+  status: true,
+  validated: true,
+  orderId: true,
+  supplierId: true,
+  issuedAt: true,
+  receivedAt: true,
+  invoiceNumber: true,
+  invoiceUrl: true,
+  order: { select: { currency: true } },
+  invoices: { select: { id: true, numero: true }, take: 1 },
+  lines: {
+    select: {
+      position: true,
+      designation: true,
+      receivedQuantity: true,
+      unitPrice: true,
+      orderLine: { select: { quantity: true, unitPrice: true, unitSurface: true } },
+    },
+    orderBy: { position: "asc" },
+  },
+} satisfies Prisma.GoodsReceiptSelect;
+
+type ReceiptToConfirm = Prisma.GoodsReceiptGetPayload<{ select: typeof RECEIPT_CONFIRM_SELECT }>;
+
 /**
  * A receipt that holds something an edit of its order would destroy: a line
- * recording a quantity, a price or a note, or a purchase invoice billing it.
- * Every other receipt — above all the empty one each order is born with
- * (`createMatchingReceipt`) — can have its lines rebuilt, its supplier
- * replaced, or be deleted with its order without losing anything.
+ * recording a quantity, a price or a note, a purchase invoice billing it, or
+ * its confirmation. Every other receipt — above all the empty one each order
+ * is born with (`createMatchingReceipt`) — can have its lines rebuilt, its
+ * supplier replaced, or be deleted with its order without losing anything.
  */
 const receiptInUse = {
   OR: [
     { invoices: { some: {} } },
+    { validated: true },
     {
       lines: {
         some: {

@@ -136,12 +136,14 @@ export function PurchaseOrderDetail({ id }: { id: string }) {
                   <Val value={order.createdByName} />
                 </span>
               </div>
-              <div className={purchasing.fact}>
-                <span className={purchasing.factLabel}>{t("fields.deliveryTo")}</span>
-                <span className={purchasing.factValue}>
-                  <Val value={order.address} />
-                </span>
-              </div>
+              {/* Address and notes are no longer entered: shown only where a
+                  migrated order carries one. */}
+              {order.address && (
+                <div className={purchasing.fact}>
+                  <span className={purchasing.factLabel}>{t("fields.deliveryTo")}</span>
+                  <span className={purchasing.factValue}>{order.address}</span>
+                </div>
+              )}
               <div className={purchasing.fact}>
                 <span className={purchasing.factLabel}>{t("fields.currency")}</span>
                 <span className={purchasing.factValue}>{order.currency}</span>
@@ -152,12 +154,12 @@ export function PurchaseOrderDetail({ id }: { id: string }) {
                   <Val value={formatQty(order.totalQuantity)} />
                 </span>
               </div>
-              <div className={purchasing.fact}>
-                <span className={purchasing.factLabel}>{t("fields.notes")}</span>
-                <span className={purchasing.factValue}>
-                  <Val value={order.notes} />
-                </span>
-              </div>
+              {order.notes && (
+                <div className={purchasing.fact}>
+                  <span className={purchasing.factLabel}>{t("fields.notes")}</span>
+                  <span className={purchasing.factValue}>{order.notes}</span>
+                </div>
+              )}
             </div>
 
             <Link className={purchasing.railLink} href={`/suppliers/${order.supplier.id}`}>

@@ -270,6 +270,54 @@
 }
 
 /*
+ * A fixed fact laid out as a field — the receipt form's order — so its row
+ * reads as one: the field label's face, then a box an input's height.
+ */
+.staticField {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.staticLabel {
+  font: 600 0.65625rem/1 var(--bp-font-mono);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bp-ink-muted);
+}
+
+.staticValue {
+  display: flex;
+  align-items: center;
+  height: var(--bp-control-h);
+  padding: 0 16px;
+  border: 1px dashed var(--bp-hairline);
+  border-radius: var(--bp-radius);
+  background: var(--bp-tint);
+  font: 500 0.875rem/1 var(--bp-font-mono);
+}
+
+/* The supplier's invoice scan: the two columns beside the number, a row of its own below 1000px. */
+.invoiceScan {
+  grid-column: span 2;
+}
+
+@media (max-width: 1000px) {
+  .invoiceScan {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Why "Confirm reception" is not available yet, beside the disabled button. */
+.confirmHint {
+  align-self: center;
+  margin-inline-end: auto;
+  font: 400 0.8125rem/1.5 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
+/*
  * Goods receipt lines, from `Goods receipts v3.dc.html`: each line shows what
  * was ordered against what arrived, with a bar for the fraction.
  *

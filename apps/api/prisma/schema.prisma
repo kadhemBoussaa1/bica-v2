@@ -2382,8 +2382,12 @@ model GoodsReceipt {
 
   /// Legacy `status`. 493 complete, 9 pending, 1 partial; null on transport.
   status    ReceiptStatus?
-  /// Legacy `validation_status` (`VALIDE` / `NON_VALIDE`). False on exactly
-  /// the 9 pending receipts.
+  /// The "Confirm reception" sign-off (`PurchasingService.confirmReceipt`),
+  /// which raises the purchase invoice from the receipt and freezes its
+  /// lines — the legacy `validation_status` (`VALIDE` / `NON_VALIDE`), which
+  /// the migrated rows carry. Never derived: from 2026-09 to 2026-10-24 it
+  /// followed `status`, and migration 20261024120000 reset the receipts
+  /// raised here that this had marked.
   validated Boolean        @default(false)
 
   /// Legacy `received_quantity`, the sum of the lines (verified on every
@@ -2396,8 +2400,10 @@ model GoodsReceipt {
   /// the invoice's own `gr_type`/`gr_id` and agrees with this text on all
   /// but one row. Kept as text because it is what the note says.
   invoiceNumber String?
-  /// Legacy `invoice_url`: a scanned document, on 132 rows. A URL into the
-  /// legacy bucket, like `PurchaseInvoice.documents` — not a managed asset.
+  /// Legacy `invoice_url`: the supplier's invoice, scanned, on 132 rows. A
+  /// URL into the bucket, like `PurchaseInvoice.documents` — not a managed
+  /// asset. Uploaded from the receipt form; confirming the receipt files it
+  /// on the invoice it raises.
   invoiceUrl    String?
 
   /// Legacy `observation` — blank on every migrated row, but a reception

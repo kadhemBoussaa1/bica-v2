@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createUploadInput } from "./storage.js";
 
 /**
  * Input schemas for purchase orders and the goods receipts raised against
@@ -89,6 +90,13 @@ export type PurchaseOrderLineInput = z.infer<typeof purchaseOrderLineInput>;
  * from the lines. The migrated rows carry copied figures — null on the
  * transport orders that never had them — and deriving keeps a stored total
  * from contradicting the lines beneath it.
+ *
+ * So are three legacy header columns, taken off the form on 2026-10-24 by
+ * the user's choice. `createdByName` is the creating session's name, set by
+ * the server on create and never edited. `address` and `notes` are no longer
+ * entered at all: the migrated values stay on their rows (the old-app sync
+ * still writes them, and the PDF still prints a note), and since the input
+ * cannot name them, no edit here can clear them.
  */
 export const purchaseOrderInput = z.object({
   category: z.enum(PURCHASE_CATEGORIES),
@@ -96,9 +104,6 @@ export const purchaseOrderInput = z.object({
   issuedAt: isoDate,
   expectedAt: isoDate.nullable().optional(),
   currency: z.string().trim().min(1, "A currency is required").max(10),
-  address: clearableText(500),
-  notes: clearableText(1000),
-  createdByName: clearableText(200),
   lines: z.array(purchaseOrderLineInput).min(1, "An order needs at least one line").max(200),
 });
 export type PurchaseOrderInput = z.infer<typeof purchaseOrderInput>;
@@ -159,10 +164,20 @@ export type GoodsReceiptLineInput = z.infer<typeof goodsReceiptLineInput>;
  * activity timeline with no record that a delivery against it was recorded.
  * Same reasoning as `countScanInput` in inventory.ts.
  *
- * `validated` is deliberately NOT here: the server derives it from the
- * quantities, so a receipt is validated exactly when every line it touches is
- * fully delivered. Accepting it from the client would let the flag contradict
- * the figures printed beside it.
+ * `validated` is deliberately NOT here: it is the "Confirm reception"
+ * sign-off, set by its own procedure (`goodsReceipt.confirm`), which checks
+ * the quantities and raises the purchase invoice in the same step. Once it is
+ * set, the lines are frozen — the invoice was built from them — while the
+ * header stays editable.
+ *
+ * `invoiceUrl` is the supplier's invoice, uploaded through
+ * `goodsReceiptInvoiceUploadInput`. Omitted, it is left as it is; null
+ * removes it.
+ *
+ * `notes` and `updatedByName` left the form on 2026-10-24 by the user's
+ * choice. The last editor is now the session's name, written by the server
+ * on every write; notes are no longer entered, and the input cannot name
+ * them, so no edit clears what the migrated rows or the old-app sync hold.
  */
 export const goodsReceiptInput = z.object({
   orderId: z.string().min(1, "Choose the order this delivery is against"),
@@ -170,8 +185,6 @@ export const goodsReceiptInput = z.object({
   receivedAt: isoDate.nullable().optional(),
   invoiceNumber: clearableText(100),
   invoiceUrl: clearableText(500),
-  notes: clearableText(1000),
-  updatedByName: clearableText(200),
   lines: z.array(goodsReceiptLineInput).min(1, "A receipt needs at least one line").max(200),
 });
 export type GoodsReceiptInput = z.infer<typeof goodsReceiptInput>;
@@ -191,6 +204,12 @@ export const updateGoodsReceiptInput = goodsReceiptInput.extend({
 export type UpdateGoodsReceiptInput = z.infer<typeof updateGoodsReceiptInput>;
 
 export const goodsReceiptIdInput = z.object({ id: z.string().min(1) });
+
+/** Minting the upload of the supplier's invoice for a receipt; the form then saves the URL. */
+export const goodsReceiptInvoiceUploadInput = createUploadInput.extend({
+  id: z.string().min(1),
+});
+export type GoodsReceiptInvoiceUploadInput = z.infer<typeof goodsReceiptInvoiceUploadInput>;
 
 /**
  * How much a received quantity may exceed what was ordered before the

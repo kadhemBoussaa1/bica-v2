@@ -67,7 +67,7 @@
     "currency": "Moneda",
     "status": "Estado",
     "reception": "Recepción",
-    "validated": "Validado",
+    "validated": "Confirmada",
     "invoiceOnNote": "N.º de factura en el albarán",
     "invoices": "Facturas",
     "invoice": "Factura",
@@ -81,7 +81,7 @@
     "back": "← Pedidos de compra",
     "detailTitle": "Pedido de compra",
     "detailSubtitle": "Un pedido a un proveedor tal como se registró: sus líneas, totales y los albaranes de recepción emitidos contra él.",
-    "searchPlaceholder": "Buscar n.º de pedido, proveedor, designación…",
+    "searchPlaceholder": "Buscar n.º de pedido, proveedor, creador, designación…",
     "empty": {
       "title": "Ningún pedido de compra",
       "text": "Nada coincide con estos filtros a la vez.",
@@ -110,6 +110,8 @@
       "chooseCategory": "Elija una categoría",
       "chooseSupplier": "Elija un proveedor",
       "supplierHint": "Solo se ofrecen proveedores activos.",
+      "supplierSearch": "Nombre del proveedor…",
+      "supplierNoMatch": "Ningún proveedor para «{search}»",
       "supplierLocked": "Se ha registrado una entrega contra este pedido, por lo que su proveedor ya no se puede cambiar.",
       "categoryHint": "Determina la serie de numeración y las medidas que llevan las líneas.",
       "submit": "Emitir pedido",
@@ -180,7 +182,24 @@
       "detailsSection": "Entrega",
       "linesSection": "Lo que llegó",
       "orderLocked": "El pedido no se puede cambiar una vez creado el albarán.",
-      "mustBeNumber": "{label} debe ser un número"
+      "mustBeNumber": "{label} debe ser un número",
+      "invoiceFile": "Factura del proveedor (escaneo)",
+      "upload": {
+        "drop": "Suelta la factura aquí",
+        "choose": "Adjuntar la factura",
+        "open": "Abrir",
+        "download": "Descargar",
+        "remove": "Quitar",
+        "uploading": "Subiendo…",
+        "failed": "La subida falló. Comprueba la conexión e inténtalo de nuevo.",
+        "tooLarge": "Ese archivo supera los 25 MB.",
+        "wrongType": "Adjunta una foto, un PDF, una hoja de cálculo o un documento.",
+        "saved": "Guardada",
+        "unsaved": "Aún no guardada: guarda los cambios"
+      },
+      "linesLocked": "Recepción confirmada: las líneas ya no pueden cambiar, la factura de compra se generó a partir de ellas. Para corregirlas, reabre el albarán desde su página (borrando antes su factura si la tiene).",
+      "invoiceSection": "Factura del proveedor",
+      "invoiceNumberHint": "Al confirmar la recepción, la factura de compra se registra con este número."
     },
     "detail": {
       "linesPanel": "Líneas frente al pedido",
@@ -193,9 +212,29 @@
       "fullyReceived": "Recibido por completo",
       "activityLink": "Actividad en este albarán",
       "notInvoiced": "Aún no facturado",
-      "notInvoicedBody": "Ninguna factura de compra menciona este albarán. Cuando el proveedor lo facture, se podrán vincular.",
-      "noScan": "Sin albarán escaneado",
-      "noScanBody": "El papel que dejó el conductor no está adjunto a este albarán."
+      "notInvoicedBody": "Ninguna factura de compra menciona este albarán. Al confirmar la recepción se registra una a partir del n.º de factura y del escaneo.",
+      "noScan": "Sin factura adjunta",
+      "noScanBody": "Adjunta la factura del proveedor desde Editar; al confirmar la recepción se adjunta a la factura de compra."
+    },
+    "confirm": {
+      "button": "Confirmar la recepción",
+      "badge": "Recepción confirmada",
+      "title": "¿Confirmar la recepción {numero}?",
+      "body": "La factura de compra {invoice} de {supplier} se registrará a partir de este albarán: una línea por artículo recibido, al precio del pedido, con la factura escaneada si está adjunta. El IVA queda en 0 %: corrígelo en la factura si el proveedor lo cobró.",
+      "bodyBilled": "Este albarán ya figura en la factura {invoice}: no se registrará ninguna factura nueva.",
+      "locks": "Una vez confirmada la recepción, las líneas del albarán ya no se pueden modificar.",
+      "done": "Recepción {numero} confirmada",
+      "doneRaised": "Recepción {numero} confirmada: factura {invoice} registrada",
+      "openInvoice": "Abrir la factura",
+      "blockedIncomplete": "Se podrá confirmar cuando haya llegado todo.",
+      "blockedPrice": "Introduce el precio verificado de cada línea (Editar): debe coincidir con el pedido.",
+      "blockedNumber": "Introduce el n.º de factura del proveedor (Editar) para confirmar."
+    },
+    "reopen": {
+      "button": "Reabrir",
+      "title": "¿Reabrir la recepción {numero}?",
+      "body": "Se retira la confirmación y las líneas vuelven a ser editables. Confirma de nuevo para registrar la factura de compra.",
+      "done": "Recepción {numero} reabierta"
     }
   },
   "preview": {

@@ -17,6 +17,20 @@
   white-space: nowrap;
 }
 
+.createdBy {
+  width: 150px;
+  flex: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The cell, not the column head: a person's name, so the body face, quieter than the supplier. */
+.createdByName {
+  font: 400 0.78125rem/1.4 var(--bp-font-body);
+  color: var(--bp-ink-muted);
+}
+
 .reception {
   width: 210px;
   flex: none;
@@ -39,10 +53,16 @@
  * lose against the shell's `.col` on stylesheet order alone.
  */
 @media (max-width: 899px) {
-  .supplier {
+  .supplier,
+  .createdBy {
     width: auto;
     flex: 1 1 100%;
     min-width: 0;
+  }
+
+  /* The column head is gone, so the cell says what it is. */
+  .createdBy::before {
+    content: attr(data-label) " · ";
   }
 
   .reception,

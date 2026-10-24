@@ -67,7 +67,7 @@
     "currency": "Devise",
     "status": "Statut",
     "reception": "Réception",
-    "validated": "Validé",
+    "validated": "Confirmée",
     "invoiceOnNote": "N° de facture sur le bon",
     "invoices": "Factures",
     "invoice": "Facture",
@@ -81,7 +81,7 @@
     "back": "← Bons de commande",
     "detailTitle": "Bon de commande",
     "detailSubtitle": "Une commande à un fournisseur telle qu'enregistrée : ses lignes, ses totaux et les bons de réception établis en regard.",
-    "searchPlaceholder": "Rechercher n° de commande, fournisseur, désignation…",
+    "searchPlaceholder": "Rechercher n° de commande, fournisseur, créateur, désignation…",
     "empty": {
       "title": "Aucun bon de commande",
       "text": "Rien ne correspond à ces filtres à la fois.",
@@ -110,6 +110,8 @@
       "chooseCategory": "Choisir une catégorie",
       "chooseSupplier": "Choisir un fournisseur",
       "supplierHint": "Seuls les fournisseurs actifs sont proposés.",
+      "supplierSearch": "Nom du fournisseur…",
+      "supplierNoMatch": "Aucun fournisseur pour « {search} »",
       "supplierLocked": "Une réception a été enregistrée pour cette commande : son fournisseur n’est plus modifiable.",
       "categoryHint": "Détermine la série de numérotation et les mesures portées par les lignes.",
       "submit": "Établir la commande",
@@ -180,7 +182,24 @@
       "detailsSection": "Réception",
       "linesSection": "Ce qui est arrivé",
       "orderLocked": "La commande ne peut plus être changée.",
-      "mustBeNumber": "{label} doit être un nombre"
+      "mustBeNumber": "{label} doit être un nombre",
+      "invoiceFile": "Facture du fournisseur (scan)",
+      "upload": {
+        "drop": "Déposez la facture ici",
+        "choose": "Joindre la facture",
+        "open": "Ouvrir",
+        "download": "Télécharger",
+        "remove": "Retirer",
+        "uploading": "Téléversement…",
+        "failed": "Le téléversement a échoué. Vérifiez la connexion et réessayez.",
+        "tooLarge": "Ce fichier dépasse 25 Mo.",
+        "wrongType": "Joignez une photo, un PDF, un tableur ou un document.",
+        "saved": "Enregistrée",
+        "unsaved": "Pas encore enregistrée — enregistrez les modifications"
+      },
+      "linesLocked": "Réception confirmée : les lignes ne peuvent plus changer, la facture d’achat a été établie à partir d’elles. Pour les corriger, rouvrez le bon depuis sa page (en supprimant d’abord sa facture s’il en a une).",
+      "invoiceSection": "Facture du fournisseur",
+      "invoiceNumberHint": "La confirmation de la réception enregistre la facture d’achat sous ce numéro."
     },
     "detail": {
       "linesPanel": "Lignes en regard de la commande",
@@ -193,9 +212,29 @@
       "fullyReceived": "Entièrement reçu",
       "activityLink": "Activité sur ce bon",
       "notInvoiced": "Pas encore facturé",
-      "notInvoicedBody": "Aucune facture d’achat ne mentionne ce bon. Dès que le fournisseur le facture, les deux peuvent être liés.",
-      "noScan": "Aucun bon scanné",
-      "noScanBody": "Le papier laissé par le chauffeur n’est pas joint à ce bon."
+      "notInvoicedBody": "Aucune facture d’achat ne mentionne ce bon. Confirmer la réception l’enregistre à partir du n° de facture et du scan.",
+      "noScan": "Aucune facture jointe",
+      "noScanBody": "Joignez la facture du fournisseur depuis Modifier ; la confirmation la joint à la facture d’achat."
+    },
+    "confirm": {
+      "button": "Confirmer la réception",
+      "badge": "Réception confirmée",
+      "title": "Confirmer la réception {numero} ?",
+      "body": "La facture d’achat {invoice} de {supplier} sera enregistrée à partir de ce bon : une ligne par article reçu, au prix de la commande, avec la facture scannée si elle est jointe. La TVA est mise à 0 % : corrigez-la sur la facture si le fournisseur en a facturé.",
+      "bodyBilled": "Ce bon figure déjà sur la facture {invoice} : aucune nouvelle facture ne sera enregistrée.",
+      "locks": "Une fois la réception confirmée, les lignes du bon ne peuvent plus être modifiées.",
+      "done": "Réception {numero} confirmée",
+      "doneRaised": "Réception {numero} confirmée — facture {invoice} enregistrée",
+      "openInvoice": "Ouvrir la facture",
+      "blockedIncomplete": "À confirmer une fois tout reçu.",
+      "blockedPrice": "Saisissez le prix vérifié de chaque ligne (Modifier) : il doit correspondre à la commande.",
+      "blockedNumber": "Saisissez le n° de facture du fournisseur (Modifier) pour confirmer."
+    },
+    "reopen": {
+      "button": "Rouvrir",
+      "title": "Rouvrir la réception {numero} ?",
+      "body": "La confirmation est annulée et les lignes redeviennent modifiables. Confirmez de nouveau pour enregistrer la facture d’achat.",
+      "done": "Réception {numero} rouverte"
     }
   },
   "preview": {
