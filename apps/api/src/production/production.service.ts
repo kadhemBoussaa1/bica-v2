@@ -135,6 +135,7 @@ export class ProductionService {
       forStage(stage).reduce((total, r) => total + (pick(r) ?? r.quantite), 0);
     const breakdown = (stage: string, pick: (r: DailyRun) => number | null) =>
       forStage(stage).reduce((total, r) => total + (pick(r) ?? 0), 0);
+    const orderBefore = await this.orderBefore(day, forStage("PRODUCER"));
 
     return {
       date: input.date,
@@ -159,7 +160,50 @@ export class ProductionService {
       byPerson: {
         PACKAGING: groupByPerson(runs.filter((r) => r.stage === "PACKAGING")),
       },
+      /** Per producer run id: its order's output before it — see `orderBefore`. */
+      orderBefore,
     };
+  }
+
+  /**
+   * What the producer station had recorded against each run's order BEFORE
+   * that run — the grey part of the day view's order progress bar, with the
+   * run itself drawn after it.
+   *
+   * The same count as the order list's ring (`OrderService.producedFor`):
+   * PRODUCER runs only, `piecesProduced`, or `quantite` on a migrated row.
+   * "Before" is the timeline: an earlier day, or the same day typed in
+   * earlier (`createdAt`, then `id`, so two runs saved in the same
+   * millisecond still have an order). A run dated after the day is not
+   * before anything on it.
+   *
+   * No scope here: runs are scoped by their order, so every run of an order
+   * already on the day is in scope too.
+   */
+  private async orderBefore(day: Date, runs: DailyRun[]): Promise<Record<string, number>> {
+    const result: Record<string, number> = {};
+    if (runs.length === 0) return result;
+    const history = await this.prisma.productionRun.findMany({
+      where: {
+        orderId: { in: [...new Set(runs.map((run) => run.orderId))] },
+        stage: "PRODUCER",
+        dateProduction: { lte: day },
+      },
+      select: {
+        id: true,
+        orderId: true,
+        dateProduction: true,
+        createdAt: true,
+        piecesProduced: true,
+        quantite: true,
+      },
+    });
+    for (const run of runs) {
+      result[run.id] = history
+        .filter((earlier) => earlier.orderId === run.orderId && isBefore(earlier, run))
+        .reduce((total, earlier) => total + (earlier.piecesProduced ?? earlier.quantite), 0);
+    }
+    return result;
   }
 
   /**
@@ -641,6 +685,18 @@ function groupByPerson(runs: DailyRun[]) {
     else groups.set(key, { person: run.recordedBy, runs: [run] });
   }
   return [...groups.values()].sort(namedFirst((group) => group.person?.name ?? null));
+}
+
+/** Whether run `a` comes before run `b` on the timeline: day, then typed-in time, then id. */
+function isBefore(
+  a: { id: string; dateProduction: Date; createdAt: Date },
+  b: { id: string; dateProduction: Date; createdAt: Date },
+): boolean {
+  const day = a.dateProduction.getTime() - b.dateProduction.getTime();
+  if (day !== 0) return day < 0;
+  const typed = a.createdAt.getTime() - b.createdAt.getTime();
+  if (typed !== 0) return typed < 0;
+  return a.id < b.id;
 }
 
 /** Named rows first, alphabetically; the unattributed bucket (no name) last. */

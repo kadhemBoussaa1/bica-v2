@@ -104,7 +104,13 @@ function DayEntries({ date }: { date: string }) {
       {WORKSHOP_STAGES.map((stage) => {
         const runs = runsOf(day, stage);
         return runs.length === 0 ? null : (
-          <Station key={stage} stage={stage} runs={runs} onRecord={null} />
+          <Station
+            key={stage}
+            stage={stage}
+            runs={runs}
+            orderBefore={day.orderBefore}
+            onRecord={null}
+          />
         );
       })}
     </div>

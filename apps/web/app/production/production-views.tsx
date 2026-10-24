@@ -113,7 +113,7 @@ export function ProductionViews() {
       <header className={records.header}>
         <div className={records.heading}>
           <span className={records.eyebrow}>{t("eyebrow")}</span>
-          <h1 className={records.title}>{t("title")}</h1>
+          <h1 className={records.title}>{view === "day" ? t("titleDay") : t("title")}</h1>
         </div>
         <p className={records.subtitle}>
           {view === "day" ? t("ledeDay") : view === "month" ? t("ledeMonth") : t("ledePeriod")}
@@ -177,61 +177,75 @@ export function ProductionViews() {
 
         {view === "day" && (
           <div className={styles.dayNav}>
-            <Button
-              className={styles.dayBtn}
-              onClick={() => setDate(shiftDay(date, -1))}
-            >
-              {t("previousDay")}
-            </Button>
-            <DateInput
-              className={[styles.dayInput, styles.dayDate].filter(Boolean).join(" ")}
-              value={date}
-              onChange={(value) => value && setDate(value)}
-              aria-label={t("productionDay")}
-            />
-            <Button
-              className={styles.dayBtn}
-              onClick={() => setDate(shiftDay(date, 1))}
-            >
-              {t("nextDay")}
-            </Button>
-            <Button
-              className={styles.dayBtn}
-              disabled={date === today}
-              onClick={() => setDate(today)}
-            >
-              {t("today")}
-            </Button>
+            {/* The handoff's stepper, its label kept a real input so a day
+                can still be typed or picked. */}
+            <div className={styles.stepper}>
+              <button
+                type="button"
+                className={styles.stepBtn}
+                onClick={() => setDate(shiftDay(date, -1))}
+                aria-label={t("dayBefore")}
+              >
+                <span className={styles.stepArrow} aria-hidden="true">‹</span>
+              </button>
+              <DateInput
+                className={[styles.stepInput, styles.dayDate].filter(Boolean).join(" ")}
+                value={date}
+                onChange={(value) => value && setDate(value)}
+                aria-label={t("productionDay")}
+              />
+              {date === today && <span className={styles.todayTag}>{t("todayTag")}</span>}
+              <button
+                type="button"
+                className={styles.stepBtn}
+                onClick={() => setDate(shiftDay(date, 1))}
+                aria-label={t("dayAfter")}
+              >
+                <span className={styles.stepArrow} aria-hidden="true">›</span>
+              </button>
+            </div>
+            {/* Today is tagged in the stepper; any other day offers the way back. */}
+            {date !== today && (
+              <Button className={styles.dayBtn} onClick={() => setDate(today)}>
+                {t("today")}
+              </Button>
+            )}
             <DayMeta date={date} />
           </div>
         )}
 
         {view === "month" && (
           <div className={styles.dayNav}>
-            <Button
-              className={styles.dayBtn}
-              onClick={() => setMonth(shiftMonth(month, -1))}
-            >
-              {t("previousMonth")}
-            </Button>
-            {/* Desktop Firefox and Safari have no month picker and render
-                this as a plain text box, so anything that is not a whole
-                YYYY-MM is ignored rather than sent to the query. */}
-            <input
-              type="month"
-              className={styles.dayInput}
-              value={month}
-              onChange={(e) =>
-                MONTH_PATTERN.test(e.target.value) && setMonth(e.target.value)
-              }
-              aria-label={t("productionMonth")}
-            />
-            <Button
-              className={styles.dayBtn}
-              onClick={() => setMonth(shiftMonth(month, 1))}
-            >
-              {t("nextMonth")}
-            </Button>
+            <div className={styles.stepper}>
+              <button
+                type="button"
+                className={styles.stepBtn}
+                onClick={() => setMonth(shiftMonth(month, -1))}
+                aria-label={t("monthBefore")}
+              >
+                <span className={styles.stepArrow} aria-hidden="true">‹</span>
+              </button>
+              {/* Desktop Firefox and Safari have no month picker and render
+                  this as a plain text box, so anything that is not a whole
+                  YYYY-MM is ignored rather than sent to the query. */}
+              <input
+                type="month"
+                className={styles.stepInput}
+                value={month}
+                onChange={(e) =>
+                  MONTH_PATTERN.test(e.target.value) && setMonth(e.target.value)
+                }
+                aria-label={t("productionMonth")}
+              />
+              <button
+                type="button"
+                className={styles.stepBtn}
+                onClick={() => setMonth(shiftMonth(month, 1))}
+                aria-label={t("monthAfter")}
+              >
+                <span className={styles.stepArrow} aria-hidden="true">›</span>
+              </button>
+            </div>
             <Button
               className={styles.dayBtn}
               disabled={month === thisMonth}

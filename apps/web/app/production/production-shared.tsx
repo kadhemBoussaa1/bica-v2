@@ -146,7 +146,7 @@ export const HEADLINE_OF = {
 } as const satisfies Record<WorkshopStage, keyof MonthTotals>;
 
 
-const FLOW = [
+export const FLOW = [
   { stage: "PRINTING", key: "metersPrinted", label: "printed" },
   { stage: "PRODUCER", key: "piecesProduced", label: "produced" },
   { stage: "PACKAGING", key: "parcelsClosed", label: "parcelsClosed" },
@@ -157,16 +157,60 @@ const FLOW = [
 }>;
 
 /**
- * The period's flow through the three stations, then how the produced pieces
- * broke down. The printing tile carries a second figure when a bag printer
- * ran: its pieces, which no sum may fold into the metres.
+ * One station's figures in a flow: its headline, plus — on printing, when a
+ * bag printer ran — its pieces, which no sum may fold into the metres. A bag
+ * printer alone shows its pieces, not a "0 m" above them.
+ */
+export function flowFigures(
+  tile: (typeof FLOW)[number],
+  totals: FlowTotals,
+  t: (key: string) => string,
+): Array<{ value: number; unit: string }> {
+  const figures = [{ value: totals[tile.key], unit: stageUnit(tile.stage, t) }];
+  if (tile.stage === "PRINTING" && totals.piecesPrinted > 0) {
+    figures.push({ value: totals.piecesPrinted, unit: "pcs" });
+  }
+  return figures.length > 1 && figures[0]?.value === 0 ? figures.slice(1) : figures;
+}
+
+/**
+ * How the produced pieces broke down — the one definition every quality
+ * block reads.
  *
- * The quality bar has ONE denominator — the produced figure its tile shows.
- * Good and to-fix split that figure; waste is counted beside it, not inside
- * it, because waste never made it into the produced count. The shift's
- * breakdown does not have to add up (see the schema note on those columns),
- * so whatever is left over is drawn as its own "not broken down" segment
- * rather than silently stretched over.
+ * ONE denominator: the produced figure. Good and to-fix split it; waste is
+ * counted beside it, not inside it, because waste never made it into the
+ * produced count. The shift's breakdown does not have to add up (see the
+ * schema note on those columns), so whatever is left over is its own "not
+ * broken down" part rather than silently stretched over. `brokenDown` is
+ * false when nothing was declared good or to fix: a rate would then read
+ * "0 % conformes", which says the day was all bad when it only says nobody
+ * broke it down.
+ */
+export function qualityOf(totals: FlowTotals, t: (key: string) => string) {
+  const produced = totals.piecesProduced;
+  // A breakdown larger than the produced figure would overflow the bar.
+  const whole = Math.max(produced, totals.goodPieces + totals.piecesToFix);
+  const gap = whole - totals.goodPieces - totals.piecesToFix;
+  const parts = [
+    { key: "good", label: t("good"), value: totals.goodPieces, className: styles.good },
+    { key: "fix", label: t("toFix"), value: totals.piecesToFix, className: styles.fix },
+    ...(gap > 0
+      ? [{ key: "gap", label: t("notBrokenDown"), value: gap, className: styles.gap }]
+      : []),
+  ];
+  return {
+    produced,
+    whole,
+    gap,
+    parts,
+    rate: whole > 0 ? totals.goodPieces / whole : 0,
+    brokenDown: totals.goodPieces + totals.piecesToFix > 0,
+  };
+}
+
+/**
+ * The period's flow through the three stations (`flowFigures`), then how the
+ * produced pieces broke down (`qualityOf`).
  *
  * The rate leads, then a small table carries every figure in words and
  * numbers; the bar under it only shows the proportion. A part of a few
@@ -184,33 +228,14 @@ export function FlowPanel({
   meta: (stage: WorkshopStage) => React.ReactNode;
 }) {
   const t = useTranslations("production");
-  const produced = totals.piecesProduced;
-  // A breakdown larger than the produced figure would overflow the bar.
-  const whole = Math.max(produced, totals.goodPieces + totals.piecesToFix);
-  const gap = whole - totals.goodPieces - totals.piecesToFix;
-  const parts = [
-    { key: "good", label: t("good"), value: totals.goodPieces, className: styles.good },
-    { key: "fix", label: t("toFix"), value: totals.piecesToFix, className: styles.fix },
-    ...(gap > 0
-      ? [{ key: "gap", label: t("notBrokenDown"), value: gap, className: styles.gap }]
-      : []),
-  ];
-  const rate = whole > 0 ? totals.goodPieces / whole : 0;
-  // Nothing declared good or to fix: a rate would read "0 % conformes",
-  // which says the day was all bad when it only says nobody broke it down.
-  const brokenDown = totals.goodPieces + totals.piecesToFix > 0;
+  const { produced, whole, gap, parts, rate, brokenDown } = qualityOf(totals, t);
 
   return (
     <section className={styles.panel} aria-label={title}>
       <div className={styles.eyebrow}>{title}</div>
       <div className={styles.flow}>
         {FLOW.map((tile) => {
-          const figures = [{ value: totals[tile.key], unit: stageUnit(tile.stage, t) }];
-          if (tile.stage === "PRINTING" && totals.piecesPrinted > 0) {
-            figures.push({ value: totals.piecesPrinted, unit: "pcs" });
-          }
-          // A bag printer alone: its pieces, not a "0 m" above them.
-          const shown = figures.length > 1 && figures[0]?.value === 0 ? figures.slice(1) : figures;
+          const shown = flowFigures(tile, totals, t);
           const value = shown.reduce((sum, figure) => sum + figure.value, 0);
           return (
             <div
